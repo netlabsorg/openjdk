@@ -54,10 +54,22 @@ G.PATH_JDK_IMPORT       = 'J:\Coding\openjdk\openjdk6\build\windows-i586\j2sdk-i
  */
 G.LOG_FILE              = 'se.log' /* ScriptDir'se.log' */
 
-/**
- * Generate include file dependencies for C/C++ sources.
+/*
+ * Advanced definitions
+ * ----------------------------------------------------------------------------
+ *
+ * Used mostly for developing and debugging.
  */
-call EnvSet 'INCREMENTAL_BUILD', 'true'
+
+/**
+ * Path to the debug version of kLIBC DLL (used with -l flag). Optional.
+ */
+G.PATH_TOOL_KLIBC_DEBUG     = ''
+
+/**
+ * Path to the log check version of kLIBC DLL (used with -L flag). Optional.
+ */
+G.PATH_TOOL_KLIBC_LOGCHK    = ''
 
 /**
  * Here you may put any additional environment variable definitions needed for
