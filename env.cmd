@@ -1,6 +1,8 @@
 /*
  * Script to set up the build environment for OpenJDK
  *
+ * Best used with the SE script (see README for details).
+ *
  * NOTE:
  *
  *   Do not modify this script to tailor for your local environment,
@@ -22,11 +24,45 @@ rc = SysLoadFuncs()
 /* running under se.cmd? */
 UnderSE = EnvGet('SE_CMD_RUNNING') \== ''
 
-if (\UnderSE & EnvGet('OPENJDK_ENV_CMD_DONE') == 1) then do
-    say
-    say 'OpenJDK build environment is already set up.'
-    exit 0
+if (\UnderSE) then do
+    if (EnvGet('OPENJDK_ENV_CMD_DONE') == 1) then do
+        say
+        say 'OpenJDK build environment is already set up.'
+        exit 0
+    end
 end
+else do
+    aArgs = EnvGet('SE_CMD_ARGS')
+end
+
+/*
+ * get flags
+ */
+aFlags = ''
+if (left(aArgs, 1) == '-') then do
+    parse var aArgs '-'aFlags aArgs
+end
+
+if (verify(aFlags, 'Hh?', 'M')) then do
+    say 'Flags for 'ScriptFile':'
+    say ' -r    Start commands in release environment'
+    say ' -l    Use debug version of LIBC DLL'
+    say ' -L    Use log check version of LIBC DLL'
+    say ' -j    Enable java launcher debug output'
+    say ' -o    Enable Odin extended logging'
+
+    if (UnderSE) then call EnvSet 'SE_CMD_ARGS', 'exit'
+    exit
+end
+
+fRelease        = pos('r', aFlags) \= 0
+fLibcDebug      = pos('l', aFlags) \= 0
+fLibcLogChk     = pos('L', aFlags) \= 0
+fJavaDebug      = pos('j', aFlags) \= 0
+fOdinLog        = pos('o', aFlags) \= 0
+
+/* running make? */
+fMake = word(aArgs, 1) == 'make'
 
 /*
  * empty some variables for detecting if LocalEnv.cmd sets them
@@ -51,6 +87,20 @@ if (G.PATH_TOOL_GCC4_ENV \== '') then do
     cmdline = 'call' G.PATH_TOOL_GCC4_ENV
     cmdline
     drop cmdline
+end
+
+if (\fMake) then do
+    if (G.PATH_TOOL_KLIBC_DEBUG \== '' && \fLibcDebug) then do
+        address 'cmd' 'set LIBPATHSTRICT=T'
+        call EnvAddFront 'BEGINLIBPATH', G.PATH_TOOL_KLIBC_DEBUG
+        call EnvSet 'LIBC_STRICT_DISABLED', '1'
+    end
+    else
+    if (G.PATH_TOOL_KLIBC_LOGCHK \== '' && \fLibcLogChk) then do
+        address 'cmd' 'set LIBPATHSTRICT=T'
+        call EnvAddFront 'BEGINLIBPATH', G.PATH_TOOL_KLIBC_LOGCHK
+        call EnvSet 'LIBC_STRICT_DISABLED', '1'
+    end
 end
 
 /*
@@ -89,6 +139,13 @@ call EnvSetIfEmpty 'ALT_FREETYPE_HEADERS_PATH', UnixSlashes(ScriptDir'libs\freet
 call EnvSetIfEmpty 'ALT_FREETYPE_LIB_PATH', UnixSlashes(ScriptDir'libs\freetype\lib')
 call EnvSetIfEmpty 'ALT_JDK_IMPORT_PATH', UnixSlashes(G.PATH_JDK_IMPORT)
 
+/**
+ * generate include file dependencies for C/C++ sources.
+ */
+call EnvSetIfEmpty 'INCREMENTAL_BUILD', 'true'
+
+if (fJavaDebug && \fMake) then call EnvSet '_JAVA_LAUNCHER_DEBUG', '1'
+
 /*
  * @todo temporarily disable some components
  */
@@ -96,6 +153,24 @@ call EnvSet 'BUILD_CORBA', 'false'
 call EnvSet 'BUILD_JAXP', 'false'
 call EnvSet 'BUILD_JAXWS', 'false'
 
+/*
+ * set up Odin32 runtime
+ */
+if (fRelease) then do
+    call EnvAddFront 'PATH', G.PATH_LIB_ODIN32'\bin\Release;'G.PATH_LIB_ODIN32'\bin'
+    call EnvAddFront 'BEGINLIBPATH', G.PATH_LIB_ODIN32'\bin\Release;'G.PATH_LIB_ODIN32'\bin'
+end
+else do
+    call EnvAddFront 'PATH', G.PATH_LIB_ODIN32'\bin\Debug;'G.PATH_LIB_ODIN32'\bin'
+    call EnvAddFront 'BEGINLIBPATH', G.PATH_LIB_ODIN32'\bin\Debug;'G.PATH_LIB_ODIN32'\bin'
+end
+
+if (fOdinLog) then call EnvSet 'WIN32LOG_ENABLED', '1'
+else call EnvSet 'WIN32LOG_ENABLED', ''
+
+/*
+ * finally, start the command
+ */
 if (\UnderSE) then do
     /* final mark */
     call EnvSet 'OPENJDK_ENV_CMD_DONE', 1
@@ -122,10 +197,10 @@ if (\UnderSE) then do
 end
 else do
     if (G.LOG_FILE \== '') then do
-        /* instruct to copy all output to the log file */
-        args = EnvGet('SE_CMD_ARGS')' 2>&1 | tee' G.LOG_FILE
-        call EnvSet 'SE_CMD_ARGS', args
+        /* copy all output to the log file */
+        aArgs = aArgs '2>&1 | tee' G.LOG_FILE
     end
+    call EnvSet 'SE_CMD_ARGS', aArgs
 end
 
 exit
