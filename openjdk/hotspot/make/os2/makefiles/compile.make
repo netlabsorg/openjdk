@@ -63,8 +63,11 @@ CPP_FLAGS += -D__WIN32OS2__ -D__i386__ -DSTRICT -D_POSIX_SOURCE \
         	 -D_SVID_SOURCE
 CPP_FLAGS += -I$(ALT_ODINSDK_PATH)/include/Win -I$(ALT_ODINSDK_PATH)/include
 
-LINK_FLAGS  += -L$(ALT_ODINSDK_PATH)/lib -L$(ALT_ODINSDK_PATH)/lib/Release \
-			   -lkernel32.lib -luser32.lib -lgdi32.lib -lwinspool.lib \
+PRODUCT_LINK_FLAGS      += -L$(ALT_ODINSDK_PATH)/lib/Release -L$(ALT_ODINSDK_PATH)/lib
+FASTDEBUG_LINK_FLAGS    += -L$(ALT_ODINSDK_PATH)/lib/Debug -L$(ALT_ODINSDK_PATH)/lib
+DEBUG_LINK_FLAGS        += -L$(ALT_ODINSDK_PATH)/lib/Debug -L$(ALT_ODINSDK_PATH)/lib
+
+LINK_FLAGS  += -lkernel32.lib -luser32.lib -lgdi32.lib -lwinspool.lib \
                -lcomdlg32.lib -ladvapi32.lib -lshell32.lib -lole32.lib \
                -loleaut32.lib -lWsock32.lib -lwinmm.lib \
                -lemxlibwrap0.lib -lemxlibwrap1.lib

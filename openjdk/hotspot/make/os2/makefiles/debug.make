@@ -34,6 +34,7 @@ include ../local.make
 include $(WorkSpace)/make/os2/makefiles/compile.make
 
 CXX_FLAGS += $(DEBUG_OPT_OPTION)
+LINK_FLAGS += $(DEBUG_LINK_FLAGS)
 
 include $(WorkSpace)/make/os2/makefiles/vm.make
 include local.make
