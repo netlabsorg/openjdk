@@ -326,11 +326,25 @@ endif # COMPILE_IT
 # Class libraries with JNI native methods get a include to the package.
 #
 ifdef PACKAGE
+
+ifeq ($(PLATFORM), os2)
+# OS/2 is based on Odin32 so PLATFORM_SRC is 'windows'. But in some cases we
+# provide the native implementations so the 'os2' vpath should come first
+PLATFORM_SRC_OS2 = $(PLATFORM_SRC:%/windows=%/os2)
+ifeq ($(PLATFORM_SRC), $(PLATFORM_SRC_OS2))
+  $(error Both PLATFORM_SRC and PLATFORM_SRC_OS2 are '$(PLATFOROM_SRC)'!)
+endif
+vpath %.c $(PLATFORM_SRC_OS2)/native/$(PKGDIR)
+OTHER_INCLUDES += -I$(PLATFORM_SRC_OS2)/native/common
+OTHER_INCLUDES += -I$(PLATFORM_SRC_OS2)/native/$(PKGDIR)
+endif
+
 vpath %.c $(PLATFORM_SRC)/native/$(PKGDIR)
 vpath %.c $(SHARE_SRC)/native/$(PKGDIR)
 OTHER_INCLUDES += -I$(SHARE_SRC)/native/common -I$(PLATFORM_SRC)/native/common
 OTHER_INCLUDES += -I$(SHARE_SRC)/native/$(PKGDIR) \
 		  -I$(PLATFORM_SRC)/native/$(PKGDIR)
+
 endif
 
 #
