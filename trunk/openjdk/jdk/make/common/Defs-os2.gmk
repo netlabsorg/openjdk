@@ -153,8 +153,10 @@ CPPFLAGS_COMMON += -D__WIN32OS2__ -D__i386__ -DSTRICT -D_POSIX_SOURCE \
 				   -D_SVID_SOURCE
 CPPFLAGS_COMMON += -I$(ODINSDK_PATH)/include/Win -I$(ODINSDK_PATH)/include \
                    -DWINE_LARGE_INTEGER
-LDFLAGS_COMMON  += -L$(ODINSDK_PATH)/lib -L$(ODINSDK_PATH)/lib/Release \
-				   -lkernel32.lib -luser32.lib -ladvapi32.lib \
+
+LDFLAGS_OPT     += -L$(ODINSDK_PATH)/lib/Release -L$(ODINSDK_PATH)/lib
+LDFLAGS_DBG     += -L$(ODINSDK_PATH)/lib/Debug -L$(ODINSDK_PATH)/lib
+LDFLAGS_COMMON  += -lkernel32.lib -luser32.lib -ladvapi32.lib \
 				   -lminivcrt.lib -lntdll.lib
 
 #

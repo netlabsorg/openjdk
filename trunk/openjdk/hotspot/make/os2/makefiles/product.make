@@ -33,6 +33,7 @@ include ../local.make
 include $(WorkSpace)/make/os2/makefiles/compile.make
 
 CXX_FLAGS += $(PRODUCT_OPT_OPTION)
+LINK_FLAGS += $(PRODUCT_LINK_FLAGS)
 
 RELEASE =
 
