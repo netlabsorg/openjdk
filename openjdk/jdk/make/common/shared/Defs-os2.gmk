@@ -1,0 +1,63 @@
+#
+# Copyright 2005-2007 Sun Microsystems, Inc.  All Rights Reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# Copyright 2010 netlabs.org. OS/2 parts
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Sun designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Sun in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+# CA 95054 USA or visit www.sun.com if you need additional information or
+# have any questions.
+#
+
+#
+# Definitions for OS/2.
+#
+
+# Default for COMPILER_WARNINGS_FATAL on OS/2 (C++ compiler warnings)
+#    Level: Default is 3, 0 means none, 4 is the most but may be unreliable
+#    Some makefiles may have set this to 0 to turn off warnings completely,
+#    which also effectively creates a COMPILER_WARNINGS_FATAL=false situation.
+#    Program.gmk may turn this down to 2 (building .exe's).
+ifndef COMPILER_WARNING_LEVEL
+  COMPILER_WARNING_LEVEL=3
+endif
+ifndef COMPILER_WARNINGS_FATAL
+  COMPILER_WARNINGS_FATAL=false
+endif
+
+# OS/2 should use parallel compilation for best build times
+ifndef COMPILE_APPROACH
+  COMPILE_APPROACH = normal
+endif
+
+# Indication that we are doing an incremental build.
+#    This may trigger the creation of make depend files.
+#    (This may not be working on windows yet, always force to false.)
+override INCREMENTAL_BUILD = false
+
+# FullPath just makes sure it never ends with a / and no duplicates
+define FullPath
+$(shell cd $1 2> $(DEV_NULL) && pwd)
+endef
+
+# OptFullPath: Absolute path name of a dir that might not initially exist.
+define OptFullPath
+$(shell if [ "$1" != "" -a -d "$1" ]; then (cd $1 && pwd); else echo "$1"; fi)
+endef
+

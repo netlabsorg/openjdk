@@ -72,7 +72,7 @@ PLATFORM_SHARED=done
 #     ISA_DIR                     solaris only: /sparcv9 or /amd64
 #     LIBARCH32                   solaris only: sparc or i386
 #     LIBARCH64                   solaris only: sparcv9 or amd64
-#     REQUIRED_WINDOWS_VERSION    windows only: specific version of windows 
+#     REQUIRED_WINDOWS_VERSION    windows only: specific version of windows
 #     USING_CYGWIN                windows only: true or false
 #     WINDOWS_NT_VERSION_STRING   windows only: long version name
 #     REQUIRED_OS_VERSION         required OS version, e.g. 5.10, 2.4
@@ -85,7 +85,7 @@ PLATFORM_SHARED=done
 #     REQUIRED_LINUX_VER          linux only: required version of linux
 #     REQUIRED_LINUX_FULLVER      linux only: required full version of linux
 #     REQUIRED_ALSA_VERSION       linux only: required version of ALSA
-#     REQUIRED_FREETYPE_VERSION   openjdk only: required version of freetype 
+#     REQUIRED_FREETYPE_VERSION   openjdk only: required version of freetype
 
 SYSTEM_UNAME := $(shell uname)
 
@@ -173,7 +173,7 @@ ifeq ($(SYSTEM_UNAME), SunOS)
   else
     REQUIRED_OS_VERSION = 5.8
   endif
-  # Minimum disk space needed as determined by running 'du -sk' on 
+  # Minimum disk space needed as determined by running 'du -sk' on
   #    a fully built workspace.
   ifeq ($(ARCH_FAMILY), sparc)
     REQUIRED_FREE_SPACE=1300000
@@ -249,7 +249,7 @@ ifeq ($(SYSTEM_UNAME), Linux)
 
   # Suffix for file bundles used in previous release
   BUNDLE_FILE_SUFFIX=.tar.gz
-  # Minimum disk space needed as determined by running 'du -sk' on 
+  # Minimum disk space needed as determined by running 'du -sk' on
   #    a fully built workspace.
   REQUIRED_FREE_SPACE=1460000
   LINUX_VERSION_INFO = /etc/redhat-release
@@ -371,7 +371,7 @@ ifeq ($(PLATFORM), windows)
   ARCH_VM_SUBDIR=jre/bin
   # Suffix for file bundles used in previous release
   BUNDLE_FILE_SUFFIX=.tar
-  # Minimum disk space needed as determined by running 'du -sk' on 
+  # Minimum disk space needed as determined by running 'du -sk' on
   #    a fully built workspace.
   REQUIRED_FREE_SPACE=500000
   # ISHIELD_TEMP_MIN is the difference of an empty C:\TEMP vs. one after a
@@ -388,6 +388,57 @@ ifeq ($(PLATFORM), windows)
     else \
       echo "512"; \
     fi)
+endif
+
+# Platform settings specific to OS/2
+ifeq ($(SYSTEM_UNAME), OS/2)
+  PLATFORM = os2
+  OS_NAME = os2
+  OS_VERSION := $(shell uname -r)
+  OS_VENDOR = IBM
+  TEMP_DISK = $(subst \,/,$(TEMP))
+  ARCH_DATA_MODEL = 32
+  ARCH = i586
+  # LIBARCH is used to preserve the jre/lib/i386 directory name for 32-bit intel
+  LIBARCH = i386
+  # Value of Java os.arch property
+  ARCHPROP = x86
+  ARCH_FAMILY = $(ARCH)
+  # Where is unwanted output to be delivered?
+  DEV_NULL = nul
+  # Classpath separator
+  CLASSPATH_SEPARATOR = ;
+  # The suffix used for object file (.o for unix .obj for windows)
+  OBJECT_SUFFIX = obj
+  # The suffix applied to executables (.exe for windows, nothing for solaris)
+  EXE_SUFFIX = .exe
+  # The prefix applied to library files (lib for solaris, nothing for windows)
+  LIB_PREFIX =
+  LIBRARY_SUFFIX = dll
+  LIB_SUFFIX = lib
+  # User name determination (set _USER)
+  ifndef USER
+    ifdef USERNAME
+      _USER := $(USERNAME)
+    else
+      ifdef LOGNAME
+        _USER := $(LOGNAME)
+      else
+        _USER := $(shell id -un)
+      endif
+    endif
+  else
+    _USER:=$(USER)
+  endif
+  # Location of client/server directories
+  ARCH_VM_SUBDIR=jre/bin
+  # Suffix for file bundles used in previous release
+  BUNDLE_FILE_SUFFIX=.tar
+  # Minimum disk space needed as determined by running 'du -sk' on
+  #    a fully built workspace.
+  REQUIRED_FREE_SPACE=500000
+  # How much RAM does this machine have:
+  # @todo
 endif
 
 # Machines with 512Mb or less of real memory are considered low memory
@@ -426,13 +477,13 @@ REQUIRED_UNZIP_VER = 5.12
 REQUIRED_MAKE_VER = 3.78
 
 # Unix type settings (same for all unix platforms)
-ifneq ($(PLATFORM), windows)
+ifneq ($(filter-out windows os2, $(PLATFORM)),)
   # Temporary disk area
   TEMP_DISK=/tmp
   # Where is unwanted output to be delivered?
   DEV_NULL = /dev/null
   export DEV_NULL
-  # Character used between entries in classpath 
+  # Character used between entries in classpath
   CLASSPATH_SEPARATOR = :
   # suffix used for object file (.o for unix .obj for windows)
   OBJECT_SUFFIX = o

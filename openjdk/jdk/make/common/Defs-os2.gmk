@@ -1,0 +1,125 @@
+#
+# Copyright 1999-2007 Sun Microsystems, Inc.  All Rights Reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# Copyright 2010 netlabs.org. OS/2 parts
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Sun designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Sun in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+# CA 95054 USA or visit www.sun.com if you need additional information or
+# have any questions.
+#
+
+#
+# Makefile to specify compiler flags for programs and libraries
+# targeted to Windows builds.  Should not contain any rules.
+#
+# WARNING: This file is shared with other workspaces.
+#          So when it includes other files, it must use JDK_TOPDIR.
+#
+
+# Get shared JDK settings
+include $(JDK_MAKE_SHARED_DIR)/Defs.gmk
+
+HPIS = os2
+
+# LIB_LOCATION, which for OS/2 identifies where .exe files go, may be
+# set by each GNUmakefile. The default is BINDIR.
+ifndef LIB_LOCATION
+  LIB_LOCATION = $(BINDIR)
+endif # LIB_LOCATION
+
+ifndef PLATFORM_SRC
+  PLATFORM_SRC  = $(BUILDDIR)/../src/os2
+endif # PLATFORM_SRC
+
+# Platform specific closed sources
+ifndef OPENJDK
+  ifndef CLOSED_PLATFORM_SRC
+    CLOSED_PLATFORM_SRC  = $(BUILDDIR)/../src/closed/os2
+  endif
+endif
+
+# for backwards compatability, the old "win32" is used here instead of
+# the more proper "windows"
+PLATFORM_INCLUDE_NAME = os2
+PLATFORM_INCLUDE      = $(INCLUDEDIR)/$(PLATFORM_INCLUDE_NAME)
+
+# C Compiler flag definitions
+
+#
+# Default optimization
+#
+CC_HIGHEST_OPT = -O3
+CC_HIGHER_OPT  = -O3
+CC_LOWER_OPT   = -O2
+CC_NO_OPT      =
+
+ifeq ($(PRODUCT), java)
+    _OPT = $(CC_HIGHER_OPT)
+else
+    _OPT = $(CC_LOWER_OPT)
+    CPPFLAGS_DBG    += -DLOGGING
+endif
+
+# If NO_OPTIMIZATIONS is defined in the environment, turn all optimzations off
+ifdef NO_OPTIMIZATIONS
+  CC_HIGHEST_OPT = $(CC_NO_OPT)
+  CC_HIGHER_OPT  = $(CC_NO_OPT)
+  CC_LOWER_OPT   = $(CC_NO_OPT)
+endif
+
+#
+# Selection of warning messages
+#
+GCC_INHIBIT	= -Wno-unused -Wno-parentheses
+GCC_STYLE	=
+GCC_WARNINGS	= -W -Wall $(GCC_STYLE) $(GCC_INHIBIT)
+
+#
+# Treat compiler warnings as errors, if warnings not allowed
+#
+ifeq ($(COMPILER_WARNINGS_FATAL),true)
+  GCC_WARNINGS += -Werror
+endif
+
+#
+# Preprocessor macro definitions
+#
+
+#
+# Output options (use specific filenames to avoid parallel compile errors)
+#
+
+#
+# Path and option to link against the VM, if you have to.
+#
+JVMLIB = $(LIBDIR)/jvm.lib
+JAVALIB = $(LIBDIR)/java.lib
+
+LIBRARY_SUFFIX = dll
+LIB_SUFFIX     = lib
+
+# Settings for the JDI - Serviceability Agent binding.
+HOTSPOT_SALIB_PATH   = $(HOTSPOT_IMPORT_PATH)/jre/bin
+SALIB_NAME = $(LIB_PREFIX)sawindbg.$(LIBRARY_SUFFIX)
+SAMAP_NAME = $(LIB_PREFIX)sawindbg.map
+
+# SA is not supported so far.
+INCLUDE_SA = false
+
