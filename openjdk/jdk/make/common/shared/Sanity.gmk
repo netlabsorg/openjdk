@@ -844,7 +844,7 @@ endif
 # CUPS_HEADERS_PATH must be valid
 ######################################################
 sane-cups:
-ifneq ($(PLATFORM), windows)
+ifneq ($(filter-out windows os2,$(PLATFORM)),)
 	@if [ ! -r $(CUPS_HEADERS_PATH)/cups/cups.h ]; then \
 	  $(ECHO) "ERROR: You do not have access to valid Cups header files. \n" \
 	    "      Please check your access to \n" \
