@@ -53,6 +53,10 @@ ifeq ($(PLATFORM), windows)
   FREETYPE_DLL=$(FT_LIB)/freetype.dll
   DFLAG=/D
 else
+ifeq ($(PLATFORM), os2)
+  FT_OPTIONS += $(LDFLAGS)
+  DFLAG = -D
+else
   FT_OPTIONS += -L$(FT_LIB)
   DFLAG = -D
 
@@ -62,6 +66,7 @@ else
   else #linux
       FT_OPTIONS += -Wl,-rpath -Wl,$(FT_LIB)
   endif
+endif
 endif
 
 FT_OPTIONS += $(DFLAG)REQUIRED_FREETYPE_VERSION=$(REQUIRED_FREETYPE_VERSION)
