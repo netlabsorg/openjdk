@@ -55,6 +55,16 @@ ifeq ($(PLATFORM), windows)
 
 endif
 
+ifeq ($(PLATFORM), os2)
+
+  # Settings specific to OS/2
+  CC           = $(COMPILER_PATH)gcc
+  CPP          = $(COMPILER_PATH)gcc -E
+  CXX          = $(COMPILER_PATH)g++
+  REQUIRED_CC_VER = 3.2
+
+endif
+
 ifeq ($(PLATFORM), linux)
 
   # Settings specific to Linux

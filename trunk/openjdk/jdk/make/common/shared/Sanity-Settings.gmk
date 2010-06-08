@@ -102,8 +102,11 @@ ifeq ($(PLATFORM),windows)
   endif
   ALL_SETTINGS+=$(call addAltSetting,MSDEVTOOLS_PATH)
 else
+ifeq ($(PLATFORM),os2)
+else
   ALL_SETTINGS+=$(call addAltSetting,MOTIF_DIR)
   ALL_SETTINGS+=$(call addOptionalSetting,MOTIF_REQUIRED)
+endif
 endif
 ALL_SETTINGS+=$(call addOptionalSetting,COMPILER_NAME)
 ALL_SETTINGS+=$(call addOptionalSetting,COMPILER_VERSION)
@@ -259,7 +262,7 @@ ifdef OPENJDK
   ALL_SETTINGS+=$(call addAltSetting,BINARY_PLUGS_JARFILE)
   ALL_SETTINGS+=$(call addAltSetting,BINARY_PLUGS_PATH)
   ALL_SETTINGS+=$(call addAltSetting,BUILD_BINARY_PLUGS_PATH)
-else 
+else
   ALL_SETTINGS+=$(call addHeading,OPENJDK Export Binary Plug Settings)
   ALL_SETTINGS+=$(call addOptionalSetting,PLUG_EXPORT_DIRNAME)
 endif
