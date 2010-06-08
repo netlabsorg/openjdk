@@ -50,7 +50,6 @@ FT_OPTIONS += $(XARCH)
 
 #add runtime library search path
 ifeq ($(PLATFORM), windows)
-  FREETYPE_LIB=$(FT_LIB)/freetype.lib
   FREETYPE_DLL=$(FT_LIB)/freetype.dll
   DFLAG=/D
 else
@@ -59,9 +58,9 @@ else
 
   #add runtime lib search path to ensure test will be runnable
   ifeq ($(PLATFORM), solaris)
-    FT_OPTIONS += -R $(FT_LIB) -lfreetype
+    FT_OPTIONS += -R $(FT_LIB)
   else #linux
-      FT_OPTIONS += -Wl,-rpath -Wl,$(FT_LIB) -lfreetype
+      FT_OPTIONS += -Wl,-rpath -Wl,$(FT_LIB)
   endif
 endif
 
