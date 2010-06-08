@@ -55,8 +55,7 @@ ifndef OPENJDK
   endif
 endif
 
-# for backwards compatability, the old "win32" is used here instead of
-# the more proper "windows"
+# platform specific include files
 PLATFORM_INCLUDE_NAME = os2
 PLATFORM_INCLUDE      = $(INCLUDEDIR)/$(PLATFORM_INCLUDE_NAME)
 

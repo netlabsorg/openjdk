@@ -96,6 +96,11 @@ ifeq ($(PLATFORM), windows)
     $(EGREP) "\#define" | $(NAWK) '{print $$3}')
 endif
 
+ifeq ($(PLATFORM), os2)
+  FREE_SPACE := $(shell $(DF) -kP $(OUTPUTDIR) | $(TAIL) -1 | $(NAWK) '{print $$4;}')
+  TEMP_FREE_SPACE := $(shell $(DF) -kP $(TEMP_DISK) | $(TAIL) -1 | $(NAWK) '{print $$4;}')
+endif
+
 # Get the version numbers of what we are using
 _MAKE_VER  :=$(shell $(MAKE) --version 2>&1 | $(HEAD) -n 1)
 _ZIP_VER   :=$(shell $(ZIPEXE) -help 2>&1 | $(HEAD) -n 4 | $(EGREP) '^Zip')
@@ -216,7 +221,7 @@ sane-make:
 ######################################################
 # Check the BUILD_NUMBER to make sure it contains bNN
 ######################################################
-sane-build_number: 
+sane-build_number:
 	@if [ "`$(ECHO) $(BUILD_NUMBER) | $(SED) 's@.*b[0-9][0-9]*.*@bNN@'`" != "bNN" ] ; then \
 	    $(ECHO) "WARNING: The BUILD_NUMBER needs to contain b[0-9][0-9]*. Currently BUILD_NUMBER=$(BUILD_NUMBER). \n" \
 	      "        This has been known to cause build failures. \n" \
@@ -289,7 +294,7 @@ sane-memory_check:
 # Check the locale (value of LC_ALL, not being empty or ==C can be a problem)
 ######################################################
 sane-locale:
-ifneq ($(PLATFORM), windows)
+ifneq ($(filter-out windows os2,$(PLATFORM)),)
 	@if [ "$(LC_ALL)" != "" -a "$(LC_ALL)" != "C" ]; then \
 	  $(ECHO) "WARNING: LC_ALL has been set to $(LC_ALL), this can cause build failures. \n" \
 	    "        Try setting LC_ALL to \"C\". \n" \
@@ -661,9 +666,9 @@ ifdef ALT_OUTPUTDIR
 	    "      not a Relative Path Name. \n" \
 	    "" >> $(ERROR_FILE) ; \
 	fi
-  ifeq ($(PLATFORM), windows)
+  ifeq ($(filter-out windows os2,$(PLATFORM)),)
 	@if [ `$(ECHO) $(subst \,/,$(ALT_OUTPUTDIR)) | $(EGREP) -ci '^([a-z]:)'` -ne 1 ]; then \
-	  $(ECHO) "ERROR: On windows, ALT_OUTPUTDIR must contain the drive letter. \n" \
+	  $(ECHO) "ERROR: On Windows and OS/2, ALT_OUTPUTDIR must contain the drive letter. \n" \
 	    "" >> $(ERROR_FILE) ; \
 	fi
   endif
@@ -777,7 +782,7 @@ sane-cacerts:
 ######################################################
 MOTIF_CHECK_FILE=$(MOTIF_INCLUDE)/Xm/AtomMgr.h
 sane-motif:
-ifneq ($(PLATFORM), windows)
+ifneq ($(filter-out windows os2,$(PLATFORM)),)
   ifeq ($(MOTIF_REQUIRED), true)
     ifeq ($(PLATFORM), solaris)
 	@if [ ! -r $(MOTIF_LIB)/libXm.so ]; then \
@@ -787,7 +792,7 @@ ifneq ($(PLATFORM), windows)
 	    "      and/or check your value of ALT_MOTIF_DIR. \n" \
 	    "" >> $(ERROR_FILE) ; \
 	fi
-    endif  
+    endif
     ifeq ($(PLATFORM), linux)
 	@if [ ! -r $(MOTIF_LIB)/libXm.a ]; then \
 	  $(ECHO) "ERROR: You do not have access to a valid Motif 2.1 library. \n" \
@@ -796,8 +801,8 @@ ifneq ($(PLATFORM), windows)
 	    "      and/or check your value of ALT_MOTIF_DIR. \n" \
 	    "" >> $(ERROR_FILE) ; \
 	fi
-    endif  
-  endif  
+    endif
+  endif
 	@if [ ! -r $(MOTIF_CHECK_FILE) ]; then \
 	  $(ECHO) "ERROR: You do not have access to valid Motif 2.1 header files. \n" \
 	    "      Please check your access to (for example) \n" \
@@ -832,7 +837,7 @@ sane-freetype:
 
 else
 #do nothing  (not OpenJDK)
-sane-freetype: 
+sane-freetype:
 endif
 
 ######################################################
@@ -1079,7 +1084,7 @@ ifeq ($(PLATFORM), windows)
 	    "        and/or check your value of ALT_HOTSPOT_SERVER_PATH. \n" \
 	    "" >> $(WARNING_FILE) ; \
 	fi
-endif	
+endif
 
 
 ######################################################
@@ -1105,7 +1110,7 @@ TMP_SDK_INCLUDE_GET_FULL_VERSION= $(TMP_SDK_INCLUDE_FIND_VERSION) | \
 		$(SED) -e 's@.*\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\).*@\1@'
 
 # Compare an interface file (Rule creates 2 temp files: %.h and %.h.IMPORT)
-#    Files jvm.h, jvm_md.h and jmm.h are special in that they are not publicly 
+#    Files jvm.h, jvm_md.h and jmm.h are special in that they are not publicly
 #    exported but do represent VM interfaces used by the rest of the jdk.
 #    So these 3 will not be found in a promoted build and can only
 #    be checked when this represents a full control build (i.e. the
@@ -1217,8 +1222,8 @@ sane-hotspot_import_include: $(TMP_SDK_INCLUDE_FILE_LIST) $(TMP_SDK_INCLUDE_FILE
 # See the Defs-<arch>.gmk files.
 
 ifeq ($(INCLUDE_SA), true)
-# Verify that hotspot Serviceability Agent files are present.  To keep 
-# it simple, we will just check for one of them.  The others have arch 
+# Verify that hotspot Serviceability Agent files are present.  To keep
+# it simple, we will just check for one of them.  The others have arch
 # dependent paths.
 
 sane-hotspot_import::
@@ -1326,14 +1331,14 @@ ifeq ($(PLATFORM), windows)
           "          $(UNICOWS_LIB_PATH)/unicows.lib \n" \
           "      and/or check your value of ALT_UNICOWS_LIB_PATH \n" \
 	  "" >> $(ERROR_FILE) ; \
-        fi 
+        fi
 	@if [ ! -r "$(UNICOWS_DLL_PATH)/unicows.dll" ]; then \
 	$(ECHO) "ERROR: You do not have access to the Microsoft Layer for Unicode (MSLU) runtime files.\n" \
 	  "      Please check your access to \n" \
           "          $(UNICOWS_DLL_PATH)/unicows.dll \n" \
           "      and/or check your value of ALT_UNICOWS_DLL_PATH \n" \
 	  "" >> $(ERROR_FILE) ; \
-        fi 
+        fi
   endif
 endif
 
@@ -1402,7 +1407,7 @@ ifndef OPENJDK
 endif
 
 ######################################################
-# Check that ALSA headers and libs are installed and 
+# Check that ALSA headers and libs are installed and
 # that the header has the right version. We only
 # need /usr/include/alsa/*.h and /usr/lib/libasound.so
 ######################################################
