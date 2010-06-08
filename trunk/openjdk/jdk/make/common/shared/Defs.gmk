@@ -58,7 +58,7 @@ define PwdPath
 $(shell cd $1 2> $(DEV_NULL) && pwd)
 endef
 
-# Checks an ALT value for spaces (should be one word), 
+# Checks an ALT value for spaces (should be one word),
 #       warns and returns Check_ALT_$1 if spaces
 define AltCheckSpaces
 $(if $(word 2,$($1)),$(warning "WARNING: Value of $1 contains a space: '$($1)', check or set ALT_$1")Check_ALT_$1,$($1))
@@ -115,7 +115,7 @@ endef
 
 # Given a line of text, get the major.minor version number from it
 define GetVersion
-$(shell echo $1 | sed -e 's@[^1-9]*\([1-9][0-9]*\.[0-9][0-9]*\).*@\1@' )
+$(shell echo $1 | sed -ne 's@[^1-9]*\([1-9][0-9]*\.[0-9][0-9]*\).*@\1@p')
 endef
 
 # Given a major.minor.micro version, return the major, minor, or micro number
@@ -290,9 +290,9 @@ POPT = $(_OPT$(ALT_OPT))$(ALT_OPT)
 #  to parallel.
 #
 #  Recommended setting: 2 seems to be ideal for single cpu machines,
-#                       2 times the number of CPU's is a basic formula, 
-#                       but probably not more than 4 if the machine is 
-#                       being shared by others, or the machine is limited 
+#                       2 times the number of CPU's is a basic formula,
+#                       but probably not more than 4 if the machine is
+#                       being shared by others, or the machine is limited
 #                       in RAM or swap.
 #
 ifdef ALT_PARALLEL_COMPILE_JOBS
@@ -410,8 +410,8 @@ ifdef ALT_PREVIOUS_RELEASE_IMAGE
   PREVIOUS_RELEASE_IMAGE :=$(call FullPath,$(ALT_PREVIOUS_RELEASE_IMAGE))
 endif
 
-# CACERTS_FILE: if OPENJDK is false and the internal version of the file 
-#		(that is, non-empty) is available, use it, otherwise use an 
+# CACERTS_FILE: if OPENJDK is false and the internal version of the file
+#		(that is, non-empty) is available, use it, otherwise use an
 #		empty keystore.
 #
 # We put this variable here for sanity checks and in case another
@@ -464,7 +464,7 @@ OUTPUTDIR:=$(call AltCheckValue,OUTPUTDIR)
 # Bin directory
 #   NOTE: ISA_DIR is usually empty, on Solaris it might be /sparcv9 or /amd64
 BINDIR      = $(OUTPUTDIR)/bin$(ISA_DIR)
-  
+
 # MOZILLA_HEADERS_PATH: path to mozilla header files for plugin
 ifdef ALT_MOZILLA_HEADERS_PATH
   MOZILLA_HEADERS_PATH :=$(call FullPath,$(ALT_MOZILLA_HEADERS_PATH))
@@ -480,7 +480,7 @@ JDK_CUPS_HEADERS_PATH=$(JDK_DEVTOOLS_DIR)/share/cups/include
   ifdef ALT_CUPS_HEADERS_PATH
      CUPS_HEADERS_PATH:=$(call FullPath,$(ALT_CUPS_HEADERS_PATH))
      CUPS_HEADERS_PATH:=$(call AltCheckValue,CUPS_HEADERS_PATH)
-  else 
+  else
     CUPS_HEADERS_PATH:= \
       $(shell if [ -d "$(JDK_CUPS_HEADERS_PATH)" ]; then \
         echo "$(JDK_CUPS_HEADERS_PATH)"; \
