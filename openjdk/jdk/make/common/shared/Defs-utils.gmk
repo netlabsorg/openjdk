@@ -31,7 +31,7 @@
 # These input UTILS_* variables can be defined at anytime, ideally once.
 #         Unix Commands: Normally /bin/, /usr/bin/. or C:/mksnt/mksnt/
 #            UTILS_COMMAND_PATH
-#         /usr/bin/ 
+#         /usr/bin/
 #            UTILS_USR_BIN_PATH
 #         /usr/ccs/bin/ (sccs, m4, lex, yacc, as, ar, strip, mcs)
 #            UTILS_CCS_BIN_PATH
@@ -60,7 +60,7 @@ ifeq ($(PLATFORM),solaris)
   UTILS_DEVTOOL_PATH=$(DEVTOOLS_PATH)
 endif
 
-ifeq ($(PLATFORM),windows)
+ifeq ($(filter-out windows os2,$(PLATFORM)),)
   UTILS_COMMAND_PATH=$(UNIXCOMMAND_PATH)
   UTILS_USR_BIN_PATH=$(UNIXCOMMAND_PATH)
   UTILS_CCS_BIN_PATH=$(UNIXCOMMAND_PATH)
@@ -169,6 +169,12 @@ ifeq ($(PLATFORM),windows)
   endif
   # Re-define some utilities
   LEX            =# override GNU Make intrinsic: no lex on windows
+endif
+
+# OS/2 specific
+ifeq ($(PLATFORM),os2)
+  ECHO   = $(UNIXCOMMAND_PATH)echo -e
+  NAWK   = $(UNIXCOMMAND_PATH)awk
 endif
 
 # Linux specific
