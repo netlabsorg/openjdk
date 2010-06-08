@@ -36,8 +36,6 @@
 # Get shared JDK settings
 include $(JDK_MAKE_SHARED_DIR)/Defs.gmk
 
-HPIS = os2
-
 # LIB_LOCATION, which for OS/2 identifies where .exe files go, may be
 # set by each GNUmakefile. The default is BINDIR.
 ifndef LIB_LOCATION
@@ -59,7 +57,24 @@ endif
 PLATFORM_INCLUDE_NAME = os2
 PLATFORM_INCLUDE      = $(INCLUDEDIR)/$(PLATFORM_INCLUDE_NAME)
 
-# C Compiler flag definitions
+# suffix used for make dependencies files.
+DEPEND_SUFFIX = dep
+# The suffix applied to the library name for FDLIBM
+FDDLIBM_SUFFIX = lib
+# The suffix applied to scripts (.bat for windows, nothing for unix)
+SCRIPT_SUFFIX = cmd
+# CC compiler object code output directive flag value
+CC_OBJECT_OUTPUT_FLAG = -o #trailing blank required!
+CC_PROGRAM_OUTPUT_FLAG = -o #trailing blank required!
+
+#
+# Default HPI libraries. Build will build only native, unless
+# overriden at the make command line. This makes it convenient for
+# people doing, say, a pthreads port -- they can create a posix
+# directory here, and say "gnumake HPIS=posix" at the top
+# level.
+#
+HPIS = os2
 
 #
 # Default optimization
@@ -98,12 +113,29 @@ ifeq ($(COMPILER_WARNINGS_FATAL),true)
 endif
 
 #
-# Preprocessor macro definitions
+# Misc compiler options
 #
+CFLAGS_COMMON   = $(GCC_WARNINGS) -march=i486 -mtune=generic
+CFLAGS_OPT      = -s $(POPT)
+CFLAGS_DBG      = -g
+
+CXXFLAGS_COMMON = -DCC_NOEX $(CFLAGS_COMMON)
+CXXFLAGS_OPT	= $(CFLAGS_OPT)
+CXXFLAGS_DBG	= $(CFLAGS_DBG)
 
 #
-# Output options (use specific filenames to avoid parallel compile errors)
+# Preprocessor macro definitions
 #
+CPPFLAGS_COMMON = -D$(ARCH) -DARCH='"$(ARCH)"' -DOS2 $(VERSION_DEFINES)
+CPPFLAGS_OPT    =
+CPPFLAGS_DBG    = -DDEBUG
+
+#
+# Linker options
+#
+LDFLAGS_COMMON  = -Zomf -Zstack 0x2000 -Zlinker "DISABLE 1121" -Zhigh-mem
+LDFLAGS_OPT     = -s
+LDFLAGS_DBG     =
 
 #
 # Path and option to link against the VM, if you have to.
