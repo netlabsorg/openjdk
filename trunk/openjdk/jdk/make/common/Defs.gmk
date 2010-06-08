@@ -134,18 +134,18 @@ endif
 #
 #   ALT_BINARY_PLUGS_JARFILE is probably rarely needed. It can be used
 #   to identify the exact jar file to be used for all closed classes..
-#  
+#
 #   ALT_BINARY_PLUGS_PATH points to a directory containing precisely the
-#   binaries needed to build. 
-#  
-#   ALT_BUILD_BINARY_PLUGS_PATH points to a directory containing binary plug dirs 
+#   binaries needed to build.
+#
+#   ALT_BUILD_BINARY_PLUGS_PATH points to a directory containing binary plug dirs
 #   multiple architectures named using the standard conventions
 #   This is useful for build scripts that need to build multiple architectures
 #   of the OpenJDK.
-#   
+#
 #   ALT_CLOSED_JDK_IMPORT_PATH points to the top-level of a specific platform
 #   JDK image.
-#  
+#
 #   The precedence is that
 #     1. ALT_BINARY_PLUGS_JARFILE overrides any other location of the classes
 #     2. ALT_BINARY_PLUGS_PATH overrides all locations of classes and libraries
@@ -209,7 +209,7 @@ ifeq ($(PLATFORM), linux)
   DEVTOOLS_FT_DIR=$(JDK_DEVTOOLS_DIR)/$(PLATFORM)/freetype-$(ARCH)
 endif
 ifeq ($(PLATFORM), solaris)
-  # historically for Solaris we have slightly different devtools 
+  # historically for Solaris we have slightly different devtools
   # naming conventions
   DEVTOOLS_FT_DIR=$(JDK_DEVTOOLS_DIR)/$(ARCH_FAMILY)/freetype-$(ARCH)
 endif
@@ -230,9 +230,9 @@ DEVTOOLS_FT_DIR_EXISTS = $(shell \
       FREETYPE_LIB_PATH = /usr/lib
       USING_SYSTEM_FT_LIB=true
     endif
-  endif 
+  endif
 
-  ifeq ($(PLATFORM), windows)
+  ifeq ($(filter-out windows os2,$(PLATFORM)),)
     FREETYPE_LIB = $(FREETYPE_LIB_PATH)/freetype.lib
   else
     FREETYPE_LIB = -L$(FREETYPE_LIB_PATH) -lfreetype
@@ -335,8 +335,8 @@ SAMPLEDIR           = $(OUTPUTDIR)/sample
 DOCSDIR             = $(OUTPUTDIR)/docs$(DOCSDIRSUFFIX)
 DOCSDIRSUFFIX       =
 
-# The MESSAGE, WARNING and ERROR files are used to store sanityck and 
-# SCCS check messages, warnings and errors. 
+# The MESSAGE, WARNING and ERROR files are used to store sanityck and
+# SCCS check messages, warnings and errors.
 ifndef ERROR_FILE
   ERROR_FILE   = $(OUTPUTDIR)/sanityCheckErrors.txt
 endif
@@ -355,10 +355,10 @@ DEMOSRCDIR          = $(SHARE_SRC)/demo
 
 # An attempt is made to generate unique enough directories for the
 # generated files to not have name collisisons. Most build units
-# defines PRODUCT (except Release.gmk), but then they may or may 
-# not define PACKAGE, THREADIR (only HPI uses this), PROGRAM, and 
-# LIBRARY. This code chunk attempts to generate a unique 
-# OBJDIR/CLASSHDRDIR for each build unit based on which of those 
+# defines PRODUCT (except Release.gmk), but then they may or may
+# not define PACKAGE, THREADIR (only HPI uses this), PROGRAM, and
+# LIBRARY. This code chunk attempts to generate a unique
+# OBJDIR/CLASSHDRDIR for each build unit based on which of those
 # values are set within each build unit.
 
 UNIQUE_LOCATION_STRING = tmp
@@ -387,7 +387,7 @@ ifneq ($(THREADDIR),)
   UNIQUE_LOCATION_STRING += /$(THREADDIR)
 endif
 
-# the use of += above makes a space separated list which we need to 
+# the use of += above makes a space separated list which we need to
 # remove for filespecs.
 #
 NULLSTRING :=
@@ -405,7 +405,7 @@ dummy1:=$(shell $(MKDIR) -p $(TEMPDIR))
 dummy2:=$(shell $(MKDIR) -p $(TEMP_DISK))
 
 # OBJDIRNAME is the name of the directory where the object code is to
-#   be placed. It's name depends on whether the data model architecture 
+#   be placed. It's name depends on whether the data model architecture
 #   is 32-bit or not.
 ifneq ($(ARCH_DATA_MODEL), 32)
   OBJDIRNAME  = obj$(ARCH_DATA_MODEL)$(OBJDIRNAME_SUFFIX)
@@ -460,7 +460,7 @@ vpath %.class $(CLASSBINDIR)
 vpath %.$(OBJECT_SUFFIX) $(OBJDIR)
 
 #
-# VPATH.h is used elsewhere to generate include flags.  By default, 
+# VPATH.h is used elsewhere to generate include flags.  By default,
 # anyone has access to the include files that the JVM area exports,
 # namely jni.h, jvm.h, and jni_utils.h, plus their platform-specific
 # relatives.
@@ -673,13 +673,13 @@ LINTFLAGS       = $(LINTFLAGS_$(VARIANT)) $(LINTFLAGS_COMMON) \
 
 VERSION_DEFINES = -DRELEASE='"$(RELEASE)"'
 
-# Note: As a rule, GNU Make rules should not appear in any of the 
+# Note: As a rule, GNU Make rules should not appear in any of the
 # Defs*.gmk files. These were added for Kestrel-Solaris and do address
 # a TeamWare bug. They should be moved elsewhere for Merlin.
-# 
+#
 #  Override gnumake built-in rules which do sccs get operations badly.
 #  (They put the checked out code in the current directory, not in the
-#  directory of the original file.) 
+#  directory of the original file.)
 # Since this is a symptom of a teamware failure, complain and die on the spot.
 
 # This message immediately goes to stdout and the build terminates.
