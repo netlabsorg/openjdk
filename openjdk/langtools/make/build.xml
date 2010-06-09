@@ -78,7 +78,10 @@
         <os family="unix"/>
     </condition>
     <condition property="java.marker" value="bin/java.exe">
-        <os family="windows"/>
+        <or>
+            <os family="windows"/>
+            <os family="os/2"/>
+        </or>
     </condition>
 
     <!-- Standard property values, if not overriden by earlier settings. -->
