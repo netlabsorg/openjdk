@@ -150,6 +150,13 @@ ifdef FINDBUGS_HOME
   ANT_OPTIONS += -Dfindbugs.home=$(FINDBUGS_HOME)
 endif
 
+ifeq ($(PLATFORM), os2)
+  # system classpath isn't necessary for the build but it's usually long (due to
+  # ant jars) and passing it to javac started through cmd.exe (as in case of
+  # fork=yes) causes cmd.exe to crash with SYS0008, so disable this
+  ANT_OPTIONS += -Dbuild.sysclasspath=ignore
+endif
+
 ifdef ANT_HOME
   ifeq ($(PLATFORM), windows)
     ANT = $(subst \,/,$(ANT_HOME))/bin/ant.bat
