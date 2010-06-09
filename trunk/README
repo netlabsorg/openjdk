@@ -1,0 +1,18 @@
+OpenJDK 6 for OS/2 and eCS
+
+Requirements (draft)
+
+1. GCC 4.4.2 + WLINK (ftp://ftp.netlabs.org/pub/qt4/gcc-4_4_2-complete-20091205.zip)
+2. Odin32 SDK (take from SVN at http://svn.netlabs.org/repos/odin32)
+3. Java 1.5.0 (so far, download link is to be clarified)
+4. Ant 1.8.1 and above (http://ant.apache.org/bindownload.cgi)
+
+Copy LocalEnv.tpl.cmd to LocalEnv.cmd and alter according to your environment
+and then use env.cmd to set it up.
+
+It is recommended to download ftp://ftp.netlabs.org/pub/qt4/tools/se11.zip to
+have env.cmd called automatically whenever you enter "se something" in any
+directory inside the project root.
+
+See http://svn.netlabs.org/java for more details.
+
