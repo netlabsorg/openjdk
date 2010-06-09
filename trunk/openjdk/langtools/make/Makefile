@@ -48,7 +48,7 @@ DEV_NULL = NUL
 USING_CYGWIN = true
 else
 DEV_NULL = /dev/null
-endif 
+endif
 endif
 
 ifdef USING_CYGWIN
@@ -75,11 +75,11 @@ endif
 
 ifdef JDK_VERSION
   ANT_OPTIONS += -Djdk.version=$(JDK_VERSION)
-endif 
+endif
 
 ifdef FULL_VERSION
   ANT_OPTIONS += -Dfull.version='$(FULL_VERSION)' # will contain spaces
-endif 
+endif
 
 ifdef MILESTONE
 ifneq ($(MILESTONE),fcs)
@@ -115,18 +115,18 @@ endif
 ifdef TARGET_CLASS_VERSION
   ANT_OPTIONS += -Djavac.target=$(TARGET_CLASS_VERSION)
 else
-  ifdef JAVAC_TARGET_ARG 
+  ifdef JAVAC_TARGET_ARG
     ANT_OPTIONS += -Djavac.target=$(JAVAC_TARGET_ARG)
   endif
-endif 
+endif
 
 ifdef SOURCE_LANGUAGE_VERSION
   ANT_OPTIONS += -Djavac.source=$(SOURCE_LANGUAGE_VERSION)
 else
-  ifdef JAVAC_SOURCE_ARG 
+  ifdef JAVAC_SOURCE_ARG
     ANT_OPTIONS += -Djavac.source=$(JAVAC_SOURCE_ARG)
   endif
-endif 
+endif
 
 ifdef ALT_BOOTDIR
   ANT_OPTIONS += -Dboot.java.home=$(ALT_BOOTDIR)
@@ -151,13 +151,21 @@ ifdef FINDBUGS_HOME
 endif
 
 ifdef ANT_HOME
-  ANT = $(ANT_HOME)/bin/ant
-  ifneq ($(shell test -x $(ANT) && echo OK), OK)
+  ifeq ($(PLATFORM), windows)
+    ANT = $(subst \,/,$(ANT_HOME))/bin/ant.bat
+  else
+  ifeq ($(PLATFORM), os2)
+    ANT = $(subst \,/,$(ANT_HOME))/bin/ant.cmd
+  else
+    ANT = $(ANT_HOME)/bin/ant
+  endif
+  endif
+  ifneq ($(shell test -x $(ANT); echo $$?), 0)
     $(error $(ANT) not found -- please update ANT_HOME)
   endif
 else
   ANT = ant
-  ifneq ($(shell test -x "`which $(ANT)`" && echo OK), OK)
+  ifneq ($(shell which $(ANT) > /dev/null; echo $$?), 0)
     $(error 'ant' not found -- please set ANT_HOME or put 'ant' on your PATH)
   endif
 endif
