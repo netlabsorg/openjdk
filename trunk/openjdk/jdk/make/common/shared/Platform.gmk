@@ -439,6 +439,8 @@ ifeq ($(SYSTEM_UNAME), OS/2)
   REQUIRED_FREE_SPACE=500000
   # How much RAM does this machine have:
   # @todo
+  # @todo We don't have JDK 1.6 yet so require 1.5
+  REQUIRED_BOOT_VER = 1.5
 endif
 
 # Machines with 512Mb or less of real memory are considered low memory
