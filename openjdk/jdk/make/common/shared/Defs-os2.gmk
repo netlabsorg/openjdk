@@ -87,6 +87,41 @@ else
 endif
 UNIXCOMMAND_PATH:=$(call AltCheckSpaces,UNIXCOMMAND_PATH)
 
+# SLASH_JAVA: location of all network accessable files
+ifdef ALT_SLASH_JAVA
+  xALT_SLASH_JAVA :="$(subst \,/,$(ALT_SLASH_JAVA))"
+  SLASH_JAVA      :=$(call FullPath,$(xALT_SLASH_JAVA))
+else
+  ifdef ALT_JDK_JAVA_DRIVE
+    SLASH_JAVA  =$(JDK_JAVA_DRIVE)
+  else
+    SLASH_JAVA  =J:
+  endif
+endif
+SLASH_JAVA:=$(call AltCheckSpaces,SLASH_JAVA)
+SLASH_JAVA:=$(call AltCheckValue,SLASH_JAVA)
+
+# JDK_DEVTOOLS_DIR: common path for all the java devtools
+ifdef ALT_JDK_DEVTOOLS_DIR
+  xALT_JDK_DEVTOOLS_DIR :="$(subst \,/,$(ALT_JDK_DEVTOOLS_DIR))"
+  JDK_DEVTOOLS_DIR      :=$(call FullPath,$(xALT_JDK_DEVTOOLS_DIR))
+else
+  JDK_DEVTOOLS_DIR =$(SLASH_JAVA)/devtools
+endif
+JDK_DEVTOOLS_DIR:=$(call AltCheckSpaces,JDK_DEVTOOLS_DIR)
+JDK_DEVTOOLS_DIR:=$(call AltCheckValue,JDK_DEVTOOLS_DIR)
+
+# COMPILER_PATH: path to where the compiler and tools are installed.
+#  NOTE: Must end with / so that it could be empty, allowing PATH usage.
+ifdef ALT_COMPILER_PATH
+  xALT_COMPILER_PATH  :="$(subst \,/,$(ALT_COMPILER_PATH))"
+  fxALT_COMPILER_PATH :=$(call FullPath,$(xALT_COMPILER_PATH))
+  COMPILER_PATH       :=$(call PrefixPath,$(fxALT_COMPILER_PATH))
+else
+  COMPILER_PATH :=$(call PrefixPath,$(_compiler_bin))
+endif
+COMPILER_PATH :=$(call AltCheckSpaces,COMPILER_PATH)
+
 # DEVTOOLS_PATH: for other tools required for building (such as zip, etc.)
 #  NOTE: Must end with / so that it could be empty, allowing PATH usage.
 ifdef ALT_DEVTOOLS_PATH
@@ -104,4 +139,65 @@ ifndef ALT_BOOTDIR
   _BOOTDIR1  =$(_system_drive)/jdk$(PREVIOUS_JDK_VERSION)
   _BOOTDIR2  =$(USRJDKINSTANCES_PATH)/jdk$(PREVIOUS_JDK_VERSION)
 endif
+
+# Import JDK images allow for partial builds, components not built are
+#    imported (or copied from) these import areas when needed.
+
+# BUILD_JDK_IMPORT_PATH: location of JDK install trees to import for
+#   multiple platforms, e.g. windows-i586, solaris-sparc, linux-586, etc.
+ifdef ALT_BUILD_JDK_IMPORT_PATH
+  BUILD_JDK_IMPORT_PATH  :=$(call FullPath,$(ALT_BUILD_JDK_IMPORT_PATH))
+else
+  BUILD_JDK_IMPORT_PATH   = $(PROMOTED_BUILD_BINARIES)
+endif
+BUILD_JDK_IMPORT_PATH:=$(call AltCheckSpaces,BUILD_JDK_IMPORT_PATH)
+BUILD_JDK_IMPORT_PATH:=$(call AltCheckValue,BUILD_JDK_IMPORT_PATH)
+
+# JDK_IMPORT_PATH: location of previously built JDK (this version) to import
+ifdef ALT_JDK_IMPORT_PATH
+  JDK_IMPORT_PATH  :=$(call FullPath,$(ALT_JDK_IMPORT_PATH))
+else
+  JDK_IMPORT_PATH   = $(BUILD_JDK_IMPORT_PATH)/$(PLATFORM)-$(ARCH)$(_JDK_IMPORT_VARIANT)
+endif
+JDK_IMPORT_PATH:=$(call AltCheckSpaces,JDK_IMPORT_PATH)
+JDK_IMPORT_PATH:=$(call AltCheckValue,JDK_IMPORT_PATH)
+
+# HOTSPOT_IMPORT_PATH: location of hotspot pre-built files
+ifdef ALT_HOTSPOT_IMPORT_PATH
+  HOTSPOT_IMPORT_PATH :=$(call FullPath,$(ALT_HOTSPOT_IMPORT_PATH))
+else
+  HOTSPOT_IMPORT_PATH =$(JDK_IMPORT_PATH)
+endif
+HOTSPOT_IMPORT_PATH:=$(call AltCheckSpaces,HOTSPOT_IMPORT_PATH)
+HOTSPOT_IMPORT_PATH:=$(call AltCheckValue,HOTSPOT_IMPORT_PATH)
+
+# HOTSPOT_CLIENT_PATH: location of client jvm library file.
+ifeq ($(ARCH_DATA_MODEL), 32)
+  ifdef ALT_HOTSPOT_CLIENT_PATH
+    HOTSPOT_CLIENT_PATH :=$(call FullPath,$(ALT_HOTSPOT_CLIENT_PATH))
+  else
+    HOTSPOT_CLIENT_PATH   =$(HOTSPOT_IMPORT_PATH)/$(ARCH_VM_SUBDIR)/client
+  endif
+  HOTSPOT_CLIENT_PATH:=$(call AltCheckSpaces,HOTSPOT_CLIENT_PATH)
+  HOTSPOT_CLIENT_PATH:=$(call AltCheckValue,HOTSPOT_CLIENT_PATH)
+endif
+
+# HOTSPOT_SERVER_PATH: location of server jvm library file.
+ifdef ALT_HOTSPOT_SERVER_PATH
+  HOTSPOT_SERVER_PATH :=$(call FullPath,$(ALT_HOTSPOT_SERVER_PATH))
+else
+  HOTSPOT_SERVER_PATH   =$(HOTSPOT_IMPORT_PATH)/$(ARCH_VM_SUBDIR)/server
+endif
+HOTSPOT_SERVER_PATH:=$(call AltCheckSpaces,HOTSPOT_SERVER_PATH)
+HOTSPOT_SERVER_PATH:=$(call AltCheckValue,HOTSPOT_SERVER_PATH)
+
+# HOTSPOT_LIB_PATH: location of jvm.lib file.
+ifdef ALT_HOTSPOT_LIB_PATH
+  xALT_HOTSPOT_LIB_PATH :="$(subst \,/,$(ALT_HOTSPOT_LIB_PATH))"
+  HOTSPOT_LIB_PATH      :=$(call FullPath,$(xALT_HOTSPOT_LIB_PATH))
+else
+  HOTSPOT_LIB_PATH  =$(HOTSPOT_IMPORT_PATH)/lib
+endif
+HOTSPOT_LIB_PATH:=$(call AltCheckSpaces,HOTSPOT_LIB_PATH)
+HOTSPOT_LIB_PATH:=$(call AltCheckValue,HOTSPOT_LIB_PATH)
 

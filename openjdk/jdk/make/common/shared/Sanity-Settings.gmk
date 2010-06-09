@@ -250,7 +250,7 @@ ALL_SETTINGS+=$(call addAltSetting,CACERTS_FILE)
 ifndef OPENJDK
   ALL_SETTINGS+=$(call addAltSetting,MOZILLA_HEADERS_PATH)
 endif
-ifneq ($(PLATFORM),windows)
+ifneq ($(filter-out windows os2,$(PLATFORM)),)
   ALL_SETTINGS+=$(call addAltSetting,CUPS_HEADERS_PATH)
 endif
 
