@@ -5,7 +5,8 @@ Requirements (draft)
 1. GCC 4.4.2 + WLINK (ftp://ftp.netlabs.org/pub/qt4/gcc-4_4_2-complete-20091205.zip)
 2. Odin32 SDK (take from SVN at http://svn.netlabs.org/repos/odin32)
 3. Java 1.5.0 (so far, download link is to be clarified)
-4. Ant 1.8.1 and above (http://ant.apache.org/bindownload.cgi)
+4. Ant 1.8.1 (http://ant.apache.org/bindownload.cgi)
+5. Patched ant.jar for Ant 1.8.1 (ftp://ftp.netlabs.org/pub/qt4/tmp/ant-1.8.1-patch-os2_cmd_line_length.zip)
 
 Copy LocalEnv.tpl.cmd to LocalEnv.cmd and alter according to your environment
 and then use env.cmd to set it up.
