@@ -140,6 +140,14 @@ ifndef ALT_BOOTDIR
   _BOOTDIR2  =$(USRJDKINSTANCES_PATH)/jdk$(PREVIOUS_JDK_VERSION)
 endif
 
+# ODINSDK_PATH: Path to the root directory of Odin32 SDK
+ifdef ALT_ODINSDK_PATH
+  xALT_ODINSDK_PATH :="$(subst \,/,$(ALT_ODINSDK_PATH))"
+  ODINSDK_PATH      :=$(call FullPath,$(xALT_ODINSDK_PATH))
+endif
+ODINSDK_PATH :=$(call AltCheckSpaces,ODINSDK_PATH)
+ODINSDK_PATH :=$(call AltCheckValue,ODINSDK_PATH)
+
 # Import JDK images allow for partial builds, components not built are
 #    imported (or copied from) these import areas when needed.
 

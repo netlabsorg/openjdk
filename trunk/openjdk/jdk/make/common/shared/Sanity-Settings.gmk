@@ -246,6 +246,9 @@ ifeq ($(PLATFORM),windows)
     ALL_SETTINGS+=$(call addAltSetting,MSIVAL2)
   endif
 endif
+ifeq ($(PLATFORM),os2)
+  ALL_SETTINGS+=$(call addAltSetting,ODINSDK_PATH)
+endif
 ALL_SETTINGS+=$(call addAltSetting,CACERTS_FILE)
 ifndef OPENJDK
   ALL_SETTINGS+=$(call addAltSetting,MOZILLA_HEADERS_PATH)

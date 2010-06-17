@@ -115,7 +115,7 @@ ifneq ($(SKIP_OPENJDK_BUILD), true)
 	@$(ECHO) " "
 endif
 
-build:: sanity 
+build:: sanity
 
 clobber::
 
@@ -140,7 +140,7 @@ ifeq ($(BUILD_JAXWS), true)
 endif
 
 ifeq ($(BUILD_HOTSPOT), true)
-  build:: $(HOTSPOT) 
+  build:: $(HOTSPOT)
   clobber:: hotspot-clobber
 endif
 
@@ -167,7 +167,7 @@ endif
 #   DEBUG_NAME is fastdebug or debug
 #   ALT_OUTPUTDIR is changed to have -debug or -fastdebug suffix
 #   The resulting j2sdk-image is used by the install makefiles to create a
-#     debug install bundle jdk-*-debug-** bundle (tar or zip) 
+#     debug install bundle jdk-*-debug-** bundle (tar or zip)
 #     which will install in the debug or fastdebug subdirectory of the
 #     normal product install area.
 #     The install process needs to know what the DEBUG_NAME is, so
@@ -280,7 +280,7 @@ openjdk_build:
 	@$(ECHO) " Binary Bundle: $(OPENJDK_BUILD_BINARY_ZIP)"
 	@$(ECHO) "================================================="
 	@$(ECHO) " "
-    
+
     endif
   endif
 endif
@@ -293,7 +293,7 @@ clobber::
 
 clean: clobber
 
-all:: 
+all::
 	@$(ECHO) Control build finished: `$(DATE) '+%y-%m-%d %H:%M'`
 
 #
@@ -383,6 +383,7 @@ CUPS_HEADERS_PATH.desc     = Include directory location for CUPS header files
 DXSDK_PATH.desc            = Root directory of DirectX SDK
 MSDEVTOOLS_PATH.desc       = Root directory of VC++ tools (e.g. rc.exe)
 MSVCRT_DLL_PATH.desc       = Directory containing mscvrt.dll
+ODINSDK_PATH.desc          = Root directory of Odin32 SDK (OS/2)
 
 # Make variables to print out (description and value)
 VARIABLE_PRINTVAL_LIST +=       \
@@ -401,7 +402,7 @@ VARIABLE_CHECKDIR_LIST +=       \
     BOOTDIR                     \
     JDK_IMPORT_PATH             \
     COMPILER_PATH               \
-    DEVTOOLS_PATH 
+    DEVTOOLS_PATH
 
 # Make variables that should refer to files that exist
 VARIABLE_CHECKFIL_LIST +=       \
@@ -419,6 +420,17 @@ VARIABLE_CHECKDIR_LIST +=       \
     DXSDK_PATH                  \
     MSDEVTOOLS_PATH             \
     MSVCRT_DLL_PATH
+
+endif
+
+# Some are OS/2 specific
+ifeq ($(PLATFORM), os2)
+
+VARIABLE_PRINTVAL_LIST +=       \
+    ODINSDK_PATH
+
+VARIABLE_CHECKDIR_LIST +=       \
+    ODINSDK_PATH
 
 endif
 
@@ -482,9 +494,9 @@ endif
 ################################################################
 # Cycle build. Build the jdk, use it to build the jdk again.
 ################################################################
-  
+
 ABS_BOOTDIR_OUTPUTDIR=$(ABS_OUTPUTDIR)/bootjdk
-  
+
 boot_cycle:
 	$(MAKE) ALT_OUTPUTDIR=$(ABS_BOOTDIR_OUTPUTDIR) product_build
 	$(MAKE) ALT_BOOTDIR=$(ABS_BOOTDIR_OUTPUTDIR)/j2sdk-image product_build

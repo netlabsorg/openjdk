@@ -39,7 +39,7 @@ include $(JDK_TOPDIR)/make/common/Classes.gmk
 #
 
 ifeq ($(LIBRARY), fdlibm)
-ifeq ($(PLATFORM),windows)
+ifeq ($(filter-out windows os2,$(PLATFORM)),)
 ACTUAL_LIBRARY_NAME = $(LIB_PREFIX)$(LIBRARY).$(FDDLIBM_SUFFIX)
 ACTUAL_LIBRARY_DIR = $(OBJDIR)
 else # PLATFORM
@@ -176,7 +176,7 @@ $(OBJDIR)/$(LIBRARY).lib:: $(OBJDIR)/$(LIBRARY).lcf
 	$(LIBEXE) -NODEFAULTLIB:MSVCRT -out:$@ -nologo \
 		@$(OBJDIR)/$(LIBRARY).lcf $(OTHER_LCF) $(LDLIBS_COMMON)
 else # LIBRARY
-# build it into $(OBJDIR) so that the other generated files get put 
+# build it into $(OBJDIR) so that the other generated files get put
 # there, then copy just the DLL (and MAP file) to the requested directory.
 #
 $(ACTUAL_LIBRARY):: $(OBJDIR)/$(LIBRARY).lcf
@@ -195,11 +195,11 @@ endif # LIBRARY
 $(OBJDIR)/$(LIBRARY).lcf: $(OBJDIR)/$(LIBRARY).res $(COMPILE_FILES_o) $(FILES_m)
 	@$(prep-target)
 	@$(MKDIR) -p $(TEMPDIR)
-	@$(ECHO) $(FILES_o) > $@ 
+	@$(ECHO) $(FILES_o) > $@
 ifndef LOCAL_RESOURCE_FILE
 	@$(ECHO) $(OBJDIR)/$(LIBRARY).res >> $@
 endif
-	@$(ECHO) Created $@ 
+	@$(ECHO) Created $@
 
 # J2SE name required here
 RC_FLAGS += /D "J2SE_FNAME=$(LIBRARY).dll" \
@@ -218,7 +218,7 @@ endif
 ifeq ($(INSTALL_DOT_LIB), true)
 $(ACTUAL_LIBRARY):: $(LIBDIR)/$(LIBRARY).lib
 
-clean:: 
+clean::
 	-$(RM) $(LIBDIR)/$(LIBRARY).lib
 
 $(LIBDIR)/$(LIBRARY).lib:: $(OBJDIR)/$(LIBRARY).lib
@@ -256,7 +256,7 @@ endif # PLATFORM
 #
 ifeq ($(PLATFORM),solaris)
 lint.errors : $(FILES_ln)
-	$(LINT.c) $(FILES_ln) $(LDLIBS) 
+	$(LINT.c) $(FILES_ln) $(LDLIBS)
 endif
 
 else  # COMPILE_IT
