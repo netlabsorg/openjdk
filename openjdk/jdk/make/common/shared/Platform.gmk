@@ -407,7 +407,7 @@ ifeq ($(SYSTEM_UNAME), OS/2)
   # Where is unwanted output to be delivered?
   DEV_NULL = nul
   # Classpath separator
-  CLASSPATH_SEPARATOR = ;
+  CLASSPATH_SEPARATOR = \;
   # The suffix used for object file (.o for unix .obj for windows)
   OBJECT_SUFFIX = obj
   # The suffix applied to executables (.exe for windows, nothing for solaris)
