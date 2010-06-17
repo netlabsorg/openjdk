@@ -43,7 +43,8 @@ ifndef LIB_LOCATION
 endif # LIB_LOCATION
 
 ifndef PLATFORM_SRC
-  PLATFORM_SRC  = $(BUILDDIR)/../src/os2
+  # We mostly reuse the windows code so far.
+  PLATFORM_SRC  = $(BUILDDIR)/../src/windows
 endif # PLATFORM_SRC
 
 # Platform specific closed sources
@@ -74,7 +75,7 @@ CC_PROGRAM_OUTPUT_FLAG = -o #trailing blank required!
 # directory here, and say "gnumake HPIS=posix" at the top
 # level.
 #
-HPIS = os2
+HPIS = windows
 
 #
 # Default optimization
@@ -133,9 +134,18 @@ CPPFLAGS_DBG    = -DDEBUG
 #
 # Linker options
 #
-LDFLAGS_COMMON  = -Zomf -Zstack 0x2000 -Zlinker "DISABLE 1121" -Zhigh-mem
+LDFLAGS_COMMON  = -Zomf -Zmap -Zstack 0x2000 -Zlinker "DISABLE 1121" -Zhigh-mem
 LDFLAGS_OPT     = -s
 LDFLAGS_DBG     =
+
+#
+# Additional libraries needed by all targets
+#
+
+CPPFLAGS_COMMON += -D__WIN32OS2__ -D__i386__
+CPPFLAGS_COMMON += -I$(ODINSDK_PATH)/include/Win -I$(ODINSDK_PATH)/include
+LDFLAGS_COMMON  += -L$(ODINSDK_PATH)/lib -L$(ODINSDK_PATH)/lib/Release
+EXTRA_LIBS      +=
 
 #
 # Path and option to link against the VM, if you have to.

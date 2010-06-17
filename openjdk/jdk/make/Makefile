@@ -105,6 +105,7 @@ MSDEVTOOLS_PATH.desc       = Root directory of VC++ tools (e.g. rc.exe)
 MSVCRT_DLL_PATH.desc       = Directory containing mscvrt.dll
 UNICOWS_DLL_PATH.desc      = Directory containing unicows.dll
 UNICOWS_LIB_PATH.desc      = Directory containing unicows.lib
+ODINSDK_PATH.desc          = Root directory of Odin32 SDK (OS/2)
 
 # Make variables to print out (description and value)
 VARIABLE_PRINTVAL_LIST +=       \
@@ -150,6 +151,17 @@ VARIABLE_CHECKDIR_LIST +=       \
     MSVCRT_DLL_PATH             \
     UNICOWS_DLL_PATH            \
     UNICOWS_LIB_PATH
+
+endif
+
+# Some are OS/2 specific
+ifeq ($(PLATFORM), os2)
+
+VARIABLE_PRINTVAL_LIST +=       \
+    ODINSDK_PATH
+
+VARIABLE_CHECKDIR_LIST +=       \
+    ODINSDK_PATH
 
 endif
 
@@ -212,7 +224,7 @@ examples_help:
 #
 # 'all' target intro
 #
-all:: 
+all::
 	@$(ECHO) $(PLATFORM) $(ARCH) $(RELEASE) build started: $(shell $(DATE) '+%y-%m-%d %H:%M')
 
 # Just in case anyone uses this old name, same as 'build'
@@ -282,7 +294,7 @@ $(OUTPUTDIR) $(TEMPDIR):
 # cleanup everything. If the workspace is not being built by the control
 # workspace, and if it is a Teamware workspace, then see if there are
 # any files which are not under SCCS control.
-clean clobber:: 
+clean clobber::
 ifndef EXTERNALSANITYCONTROL
 	@if [ -d $(TOPDIR)/Codemgr_wsdata ]; then \
 	  $(ECHO) '\nPerforming workspace scan for remnant files.\n' \
