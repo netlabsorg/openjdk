@@ -148,7 +148,8 @@ LDFLAGS_DBG     =
 # Additional libraries needed by all targets
 #
 
-CPPFLAGS_COMMON += -D__WIN32OS2__ -D__i386__
+CPPFLAGS_COMMON += -D__WIN32OS2__ -D__i386__ -DSTRICT -D_POSIX_SOURCE \
+                   -D_POSIX_C_SOURCE=200112
 CPPFLAGS_COMMON += -I$(ODINSDK_PATH)/include/Win -I$(ODINSDK_PATH)/include
 LDFLAGS_COMMON  += -L$(ODINSDK_PATH)/lib -L$(ODINSDK_PATH)/lib/Release
 EXTRA_LIBS      +=
