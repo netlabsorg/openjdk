@@ -59,7 +59,9 @@ struct sockaddr;
 #define FN_WSASENDDISCONNECT 23
 #define FN_SOCKETAVAILABLE 24
 
-static int (PASCAL FAR *sockfnptrs[])() =
+typedef int (PASCAL FAR *PSOCKFN)();
+
+static PSOCKFN sockfnptrs[] =
     {NULL, NULL, NULL, NULL, NULL,
      NULL, NULL, NULL, NULL, NULL,
      NULL, NULL, NULL, NULL, NULL,
@@ -116,7 +118,8 @@ static int IPPROTO_OPTIONS[] = {-1, 1, 9, 10, 11, 12, 13, 4, 3, 14};
 
 static void
 initSockFnTable() {
-    int (PASCAL FAR* WSAStartupPtr)(WORD, LPWSADATA);
+    typedef int (PASCAL FAR* WSAStartupPtr_t)(WORD, LPWSADATA);
+    WSAStartupPtr_t WSAStartupPtr;
     WSADATA wsadata;
     OSVERSIONINFO info;
 
@@ -140,67 +143,66 @@ initSockFnTable() {
         }
 
         /* If we loaded a DLL, then we might as well initialize it.  */
-        WSAStartupPtr = (int (PASCAL FAR *)(WORD, LPWSADATA))
-                            GetProcAddress(hWinsock, "WSAStartup");
+        WSAStartupPtr = (WSAStartupPtr_t)GetProcAddress(hWinsock, "WSAStartup");
         if (WSAStartupPtr(MAKEWORD(1,1), &wsadata) != 0) {
             VM_CALL(jio_fprintf)(stderr, "Could not initialize Winsock\n");
         }
 
         sockfnptrs[FN_RECV]
-            = (int (PASCAL FAR *)())GetProcAddress(hWinsock, "recv");
+            = (PSOCKFN)GetProcAddress(hWinsock, "recv");
         sockfnptrs[FN_SEND]
-            = (int (PASCAL FAR *)())GetProcAddress(hWinsock, "send");
+            = (PSOCKFN)GetProcAddress(hWinsock, "send");
         sockfnptrs[FN_LISTEN]
-            = (int (PASCAL FAR *)())GetProcAddress(hWinsock, "listen");
+            = (PSOCKFN)GetProcAddress(hWinsock, "listen");
         sockfnptrs[FN_BIND]
-            = (int (PASCAL FAR *)())GetProcAddress(hWinsock, "bind");
+            = (PSOCKFN)GetProcAddress(hWinsock, "bind");
         sockfnptrs[FN_ACCEPT]
-            = (int (PASCAL FAR *)())GetProcAddress(hWinsock, "accept");
+            = (PSOCKFN)GetProcAddress(hWinsock, "accept");
         sockfnptrs[FN_RECVFROM]
-            = (int (PASCAL FAR *)())GetProcAddress(hWinsock, "recvfrom");
+            = (PSOCKFN)GetProcAddress(hWinsock, "recvfrom");
         sockfnptrs[FN_SENDTO]
-            = (int (PASCAL FAR *)())GetProcAddress(hWinsock, "sendto");
+            = (PSOCKFN)GetProcAddress(hWinsock, "sendto");
         sockfnptrs[FN_SELECT]
-            = (int (PASCAL FAR *)())GetProcAddress(hWinsock, "select");
+            = (PSOCKFN)GetProcAddress(hWinsock, "select");
         sockfnptrs[FN_CONNECT]
-            = (int (PASCAL FAR *)())GetProcAddress(hWinsock, "connect");
+            = (PSOCKFN)GetProcAddress(hWinsock, "connect");
         sockfnptrs[FN_CLOSESOCKET]
-            = (int (PASCAL FAR *)())GetProcAddress(hWinsock, "closesocket");
+            = (PSOCKFN)GetProcAddress(hWinsock, "closesocket");
         /* we don't use this */
         sockfnptrs[FN_SHUTDOWN]
-            = (int (PASCAL FAR *)())GetProcAddress(hWinsock, "shutdown");
+            = (PSOCKFN)GetProcAddress(hWinsock, "shutdown");
         sockfnptrs[FN_GETHOSTNAME]
-            = (int (PASCAL FAR *)())GetProcAddress(hWinsock, "gethostname");
+            = (PSOCKFN)GetProcAddress(hWinsock, "gethostname");
         sockfnptrs[FN_GETHOSTBYADDR]
-            = (int (PASCAL FAR *)())GetProcAddress(hWinsock, "gethostbyaddr");
+            = (PSOCKFN)GetProcAddress(hWinsock, "gethostbyaddr");
         sockfnptrs[FN_GETHOSTBYNAME]
-            = (int (PASCAL FAR *)())GetProcAddress(hWinsock, "gethostbyname");
+            = (PSOCKFN)GetProcAddress(hWinsock, "gethostbyname");
         sockfnptrs[FN_HTONS]
-            = (int (PASCAL FAR *)())GetProcAddress(hWinsock, "htons");
+            = (PSOCKFN)GetProcAddress(hWinsock, "htons");
         sockfnptrs[FN_HTONL]
-            = (int (PASCAL FAR *)())GetProcAddress(hWinsock, "htonl");
+            = (PSOCKFN)GetProcAddress(hWinsock, "htonl");
         sockfnptrs[FN_NTOHS]
-            = (int (PASCAL FAR *)())GetProcAddress(hWinsock, "ntohs");
+            = (PSOCKFN)GetProcAddress(hWinsock, "ntohs");
         sockfnptrs[FN_NTOHL]
-            = (int (PASCAL FAR *)())GetProcAddress(hWinsock, "ntohl");
+            = (PSOCKFN)GetProcAddress(hWinsock, "ntohl");
         sockfnptrs[FN_GETSOCKOPT]
-            = (int (PASCAL FAR *)())GetProcAddress(hWinsock, "getsockopt");
+            = (PSOCKFN)GetProcAddress(hWinsock, "getsockopt");
         sockfnptrs[FN_SETSOCKOPT]
-            = (int (PASCAL FAR *)())GetProcAddress(hWinsock, "setsockopt");
+            = (PSOCKFN)GetProcAddress(hWinsock, "setsockopt");
         sockfnptrs[FN_GETPROTOBYNAME]
-            = (int (PASCAL FAR *)())GetProcAddress(hWinsock, "getprotobyname");
+            = (PSOCKFN)GetProcAddress(hWinsock, "getprotobyname");
         sockfnptrs[FN_GETSOCKNAME]
-            = (int (PASCAL FAR *)())GetProcAddress(hWinsock, "getsockname");
+            = (PSOCKFN)GetProcAddress(hWinsock, "getsockname");
 
         sockfnptrs[FN_SOCKET]
-            = (int (PASCAL FAR *)())GetProcAddress(hWinsock, "socket");
+            = (PSOCKFN)GetProcAddress(hWinsock, "socket");
         /* in winsock 1, this will simply be 0 */
         sockfnptrs[FN_WSASENDDISCONNECT]
-            = (int (PASCAL FAR *)())GetProcAddress(hWinsock,
-                                                   "WSASendDisconnect");
+            = (PSOCKFN)GetProcAddress(hWinsock,
+                                      "WSASendDisconnect");
         sockfnptrs[FN_SOCKETAVAILABLE]
-            = (int (PASCAL FAR *)())GetProcAddress(hWinsock,
-                                                   "ioctlsocket");
+            = (PSOCKFN)GetProcAddress(hWinsock,
+                                      "ioctlsocket");
     }
 
     sysAssert(sockfnptrs[FN_RECV] != NULL);
@@ -244,7 +246,7 @@ initSockFnTable() {
  */
 int
 sysListen(int fd, int count) {
-    int (PASCAL FAR *listenfn)();
+    PSOCKFN listenfn;
     if ((listenfn = sockfnptrs[FN_LISTEN]) == NULL) {
         initSockFnTable();
         listenfn = sockfnptrs[FN_LISTEN];
@@ -255,7 +257,7 @@ sysListen(int fd, int count) {
 
 int
 sysConnect(int fd, struct sockaddr *name, int namelen) {
-    int (PASCAL FAR *connectfn)();
+    PSOCKFN connectfn;
     if ((connectfn = sockfnptrs[FN_CONNECT]) == NULL) {
         initSockFnTable();
         connectfn = sockfnptrs[FN_CONNECT];
@@ -267,7 +269,7 @@ sysConnect(int fd, struct sockaddr *name, int namelen) {
 
 int
 sysBind(int fd, struct sockaddr *name, int namelen) {
-    int (PASCAL FAR *bindfn)();
+    PSOCKFN bindfn;
     if ((bindfn = sockfnptrs[FN_BIND]) == NULL) {
         initSockFnTable();
         bindfn = sockfnptrs[FN_BIND];
@@ -279,7 +281,7 @@ sysBind(int fd, struct sockaddr *name, int namelen) {
 
 int
 sysAccept(int fd, struct sockaddr *name, int *namelen) {
-    int (PASCAL FAR *acceptfn)();
+    PSOCKFN acceptfn;
     if ((acceptfn = sockfnptrs[FN_ACCEPT]) == NULL) {
         initSockFnTable();
         acceptfn = sockfnptrs[FN_ACCEPT];
@@ -291,7 +293,7 @@ sysAccept(int fd, struct sockaddr *name, int *namelen) {
 int
 sysRecvFrom(int fd, char *buf, int nBytes,
                   int flags, struct sockaddr *from, int *fromlen) {
-    int (PASCAL FAR *recvfromfn)();
+    PSOCKFN recvfromfn;
     if ((recvfromfn = sockfnptrs[FN_RECVFROM]) == NULL) {
         initSockFnTable();
         recvfromfn = sockfnptrs[FN_RECVFROM];
@@ -303,7 +305,7 @@ sysRecvFrom(int fd, char *buf, int nBytes,
 int
 sysSendTo(int fd, char *buf, int len,
                 int flags, struct sockaddr *to, int tolen) {
-    int (PASCAL FAR *sendtofn)();
+    PSOCKFN sendtofn;
     if ((sendtofn = sockfnptrs[FN_SENDTO]) == NULL) {
         initSockFnTable();
         sendtofn = sockfnptrs[FN_SENDTO];
@@ -314,7 +316,7 @@ sysSendTo(int fd, char *buf, int len,
 
 int
 sysRecv(int fd, char *buf, int nBytes, int flags) {
-    int (PASCAL FAR *recvfn)();
+    PSOCKFN recvfn;
     if ((recvfn = sockfnptrs[FN_RECV]) == NULL) {
         initSockFnTable();
         recvfn = sockfnptrs[FN_RECV];
@@ -325,7 +327,7 @@ sysRecv(int fd, char *buf, int nBytes, int flags) {
 
 int
 sysSend(int fd, char *buf, int nBytes, int flags) {
-    int (PASCAL FAR *sendfn)();
+    PSOCKFN sendfn;
     if ((sendfn = sockfnptrs[FN_SEND]) == NULL) {
         initSockFnTable();
         sendfn = sockfnptrs[FN_SEND];
@@ -337,7 +339,7 @@ sysSend(int fd, char *buf, int nBytes, int flags) {
 
 int
 sysGetHostName(char *hostname, int namelen) {
-    int (PASCAL FAR *fn)();
+    PSOCKFN fn;
     if ((fn = sockfnptrs[FN_GETHOSTNAME]) == NULL) {
         initSockFnTable();
         fn = sockfnptrs[FN_GETHOSTNAME];
@@ -348,10 +350,11 @@ sysGetHostName(char *hostname, int namelen) {
 
 struct hostent *
 sysGetHostByAddr(const char *hostname, int len, int type) {
-    struct hostent * (PASCAL FAR *fn)();
-    if ((fn = (struct hostent * (PASCAL FAR *)()) sockfnptrs[FN_GETHOSTBYADDR]) == NULL) {
+    typedef struct hostent * (PASCAL FAR *fn_t)();
+    fn_t fn;
+    if ((fn = (fn_t) sockfnptrs[FN_GETHOSTBYADDR]) == NULL) {
         initSockFnTable();
-        fn = (struct hostent * (PASCAL FAR *)()) sockfnptrs[FN_GETHOSTBYADDR];
+        fn = (fn_t) sockfnptrs[FN_GETHOSTBYADDR];
     }
     sysAssert(sockfnptrs_initialized == TRUE && fn != NULL);
     return (*fn)(hostname, len, type);
@@ -359,10 +362,11 @@ sysGetHostByAddr(const char *hostname, int len, int type) {
 
 struct hostent *
 sysGetHostByName(char *hostname) {
-    struct hostent * (PASCAL FAR *fn)();
-    if ((fn = (struct hostent * (PASCAL FAR *)()) sockfnptrs[FN_GETHOSTBYNAME]) == NULL) {
+    typedef struct hostent * (PASCAL FAR *fn_t)();
+    fn_t fn;
+    if ((fn = (fn_t) sockfnptrs[FN_GETHOSTBYNAME]) == NULL) {
         initSockFnTable();
-        fn = (struct hostent * (PASCAL FAR *)()) sockfnptrs[FN_GETHOSTBYNAME];
+        fn = (fn_t) sockfnptrs[FN_GETHOSTBYNAME];
     }
     sysAssert(sockfnptrs_initialized == TRUE && fn != NULL);
     return (*fn)(hostname);
@@ -371,7 +375,7 @@ sysGetHostByName(char *hostname) {
 int
 sysSocket(int domain, int type, int protocol) {
     int sock;
-    int (PASCAL FAR *socketfn)();
+    PSOCKFN socketfn;
     if ((socketfn = sockfnptrs[FN_SOCKET]) == NULL) {
         initSockFnTable();
         socketfn = sockfnptrs[FN_SOCKET];
@@ -386,7 +390,7 @@ sysSocket(int domain, int type, int protocol) {
 
 int sysSocketShutdown(int fd, int how)  {
     if (fd > 0) {
-        int (PASCAL FAR *shutdownfn)();
+        PSOCKFN shutdownfn;
         if ((shutdownfn = sockfnptrs[FN_SHUTDOWN]) == NULL) {
             initSockFnTable();
             shutdownfn = sockfnptrs[FN_SHUTDOWN];
@@ -406,8 +410,8 @@ return TRUE;
 int sysSocketClose(int fd) {
 
     if (fd > 0) {
-        int (PASCAL FAR *closesocketfn)();
-        int (PASCAL FAR *wsasenddisconnectfn)();
+        PSOCKFN closesocketfn;
+        PSOCKFN wsasenddisconnectfn;
         int dynamic_ref = -1;
 
         if ((closesocketfn = sockfnptrs[FN_CLOSESOCKET]) == NULL) {
@@ -444,7 +448,7 @@ sysTimeout(int fd, long timeout) {
     int res;
     fd_set tbl;
     struct timeval t;
-    int (PASCAL FAR *selectfn)();
+    PSOCKFN selectfn;
 
     t.tv_sec = timeout / 1000;
     t.tv_usec = (timeout % 1000) * 1000;
@@ -463,7 +467,7 @@ sysTimeout(int fd, long timeout) {
 long
 sysSocketAvailable(int fd, jint *pbytes)
 {
-    int (PASCAL FAR *socketfn)();
+    PSOCKFN socketfn;
     if ((socketfn = sockfnptrs[FN_SOCKETAVAILABLE]) == NULL) {
         initSockFnTable();
         socketfn = sockfnptrs[FN_SOCKETAVAILABLE];
@@ -474,7 +478,7 @@ sysSocketAvailable(int fd, jint *pbytes)
 
 int
 sysGetSockName(int fd, struct sockaddr *name, int *namelen) {
-    int (PASCAL FAR *getsocknamefn)();
+    PSOCKFN getsocknamefn;
     if ((getsocknamefn = sockfnptrs[FN_GETSOCKNAME]) == NULL) {
         initSockFnTable();
         getsocknamefn = sockfnptrs[FN_GETSOCKNAME];
@@ -486,7 +490,7 @@ sysGetSockName(int fd, struct sockaddr *name, int *namelen) {
 
 int
 sysGetSockOpt(int fd, int level, int optname, char *optval, int *optlen ) {
-    int (PASCAL FAR *getsockoptfn)();
+    PSOCKFN getsockoptfn;
     if ((getsockoptfn = sockfnptrs[FN_GETSOCKOPT]) == NULL) {
         initSockFnTable();
         getsockoptfn = sockfnptrs[FN_GETSOCKOPT];
@@ -506,7 +510,7 @@ sysGetSockOpt(int fd, int level, int optname, char *optval, int *optlen ) {
 
 int
 sysSetSockOpt(int fd, int level, int optname, const char *optval, int optlen ) {
-    int (PASCAL FAR *setsockoptfn)();
+    PSOCKFN setsockoptfn;
     if ((setsockoptfn = sockfnptrs[FN_SETSOCKOPT]) == NULL) {
         initSockFnTable();
         setsockoptfn = sockfnptrs[FN_SETSOCKOPT];
@@ -527,10 +531,11 @@ sysSetSockOpt(int fd, int level, int optname, const char *optval, int optlen ) {
 
 struct protoent *
 sysGetProtoByName(char *name) {
-    struct protoent * (PASCAL FAR *getprotobynamefn)();
-    if ((getprotobynamefn = (struct protoent * (PASCAL FAR *)()) sockfnptrs[FN_GETPROTOBYNAME]) == NULL) {
+    typedef struct protoent * (PASCAL FAR *getprotobynamefn_t)();
+    getprotobynamefn_t getprotobynamefn;
+    if ((getprotobynamefn = (getprotobynamefn_t) sockfnptrs[FN_GETPROTOBYNAME]) == NULL) {
         initSockFnTable();
-        getprotobynamefn = (struct protoent * (PASCAL FAR *)()) sockfnptrs[FN_GETPROTOBYNAME];
+        getprotobynamefn = (getprotobynamefn_t) sockfnptrs[FN_GETPROTOBYNAME];
     }
     sysAssert(sockfnptrs_initialized == TRUE);
     sysAssert(getprotobynamefn != NULL);
