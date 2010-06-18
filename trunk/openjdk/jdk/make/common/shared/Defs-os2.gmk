@@ -48,8 +48,9 @@ endif
 
 # Indication that we are doing an incremental build.
 #    This may trigger the creation of make depend files.
-#    (This may not be working on windows yet, always force to false.)
-override INCREMENTAL_BUILD = false
+ifndef INCREMENTAL_BUILD
+  INCREMENTAL_BUILD = false
+endif
 
 # FullPath just makes sure it never ends with a / and no duplicates
 define FullPath

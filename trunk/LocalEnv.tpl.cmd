@@ -42,6 +42,11 @@ G.PATH_LIB_ODIN32       = 'D:\Coding\odin32'
 G.LOG_FILE              = 'se.log' /* ScriptDir'se.log' */
 
 /**
+ * Generate include file dependencies for C/C++ sources.
+ */
+call EnvSet 'INCREMENTAL_BUILD', 'true'
+
+/**
  * Here you may put any additional environment variable definitions needed for
  * your local environment or for the OpenJDK make files using the form shown
  * below. These variables are passed to the environment without any
