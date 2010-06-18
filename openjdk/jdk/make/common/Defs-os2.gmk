@@ -42,6 +42,12 @@ ifndef LIB_LOCATION
   LIB_LOCATION = $(BINDIR)
 endif # LIB_LOCATION
 
+# Part of INCREMENTAL_BUILD mechanism.
+#   Compiler emits things like:  file.obj: file.c file.h...
+#   We want something like: obj_path/file.obj: file.c file.h...
+CC_DEPEND	 = -MM -MT $(@:$(suffix $@)=.$(OBJECT_SUFFIX))
+CC_DEPEND_FILTER =
+
 ifndef PLATFORM_SRC
   # We mostly reuse the windows code so far.
   PLATFORM_SRC  = $(BUILDDIR)/../src/windows
