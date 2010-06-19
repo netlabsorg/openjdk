@@ -103,7 +103,8 @@ static void initializeSemaphore(HANDLE *pSema)
  * thorough understanding of the system, compiler and call convention.
  */
 
-static int __fastcall sysMonitorEnter2(sys_thread_t *self, sys_mon_t *mid)
+static EMXONLY(inline) int EMXNOP(__fastcall)
+sysMonitorEnter2(sys_thread_t *self, sys_mon_t *mid)
 {
     if (mid->semaphore == NULL) {
         initializeSemaphore(&(mid->semaphore));
@@ -137,6 +138,35 @@ static int __fastcall sysMonitorEnter2(sys_thread_t *self, sys_mon_t *mid)
 int __cdecl
 sysMonitorEnter(sys_thread_t *self, sys_mon_t *mid)
 {
+#ifdef __EMX__
+    if (self == mid->monitor_owner) {
+        ++mid->entry_count;
+        return SYS_OK;
+    }
+
+    if (systemIsMP) {
+        register char isZero;
+        asm volatile (
+              "lock incl %0; sete %1"
+            : "=m" (mid->atomic_count), "=q" (isZero)
+            : "m" (mid->atomic_count)
+            : "memory"
+        );
+        if (isZero) {
+            mid->monitor_owner = self;
+            mid->entry_count = 1;
+            return SYS_OK;
+        }
+    } else {
+        if (!++mid->atomic_count) {
+            mid->monitor_owner = self;
+            mid->entry_count = 1;
+            return SYS_OK;
+        }
+    }
+
+    return sysMonitorEnter2(self, mid);
+#else /* __EMX__ */
     __asm
     {
         mov edx, dword ptr [esp+8]; // load mid
@@ -176,6 +206,7 @@ ACQUIRE_SEMAPHORE:
         /* The self is passed by ECX, mid is passed by EDX */
         jmp  sysMonitorEnter2;
     }
+#endif /* __EMX__ */
 }
 #else
 int __cdecl
@@ -212,7 +243,7 @@ sysMonitorEntered(sys_thread_t *self, sys_mon_t *mid)
  * thorough understanding of the system, compiler and call convention.
  */
 
-static int __fastcall
+static EMXONLY(inline) int EMXNOP(__fastcall)
 sysMonitorExit2(sys_thread_t *self, sys_mon_t *mid)
 {
     sysAssert(mid->entry_count == 0);
@@ -236,9 +267,35 @@ sysMonitorExit2(sys_thread_t *self, sys_mon_t *mid)
 }
 
 #ifndef _WIN64
-__declspec(naked) int __cdecl
+EMXNOP(__declspec(naked)) int EMXNOP(__cdecl)
 sysMonitorExit(sys_thread_t *self, sys_mon_t *mid)
 {
+#ifdef __EMX__
+    if (self != mid->monitor_owner)
+        return SYS_ERR;
+
+    if (--mid->entry_count)
+        return SYS_ERR;
+
+    mid->monitor_owner = 0;
+
+    if (systemIsMP) {
+        register char isLessThanZero;
+        asm volatile (
+              "lock decl %0; setge %1"
+            : "=m" (mid->atomic_count), "=q" (isLessThanZero)
+            : "m" (mid->atomic_count)
+            : "memory"
+        );
+        if (isLessThanZero)
+            return SYS_OK;
+    } else {
+        if (--mid->atomic_count < 0)
+            return SYS_OK;
+    }
+
+    return sysMonitorExit2(self, mid);
+#else /* __EMX__ */
     __asm
     {
         mov edx, dword ptr [esp+8]; /* load mid */
@@ -276,6 +333,7 @@ ERR_RET:
 RELEASE_SEMAPHORE:
         jmp sysMonitorExit2;        /* forwading call */
     }
+#endif /* __EMX__ */
 }
 #else
 int __cdecl
