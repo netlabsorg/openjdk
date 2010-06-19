@@ -145,6 +145,6 @@ sysNativePath(char *path)
 
 #ifdef DEBUG_PATH
     jio_fprintf(stderr, "sysNativePath: %s\n", path);
-#endif DEBUG_PATH
+#endif /* DEBUG_PATH */
     return path;
 }
