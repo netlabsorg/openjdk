@@ -37,13 +37,13 @@
 
 #define SYS_MID_NULL ((sys_mon_t *) 0)
 
-typedef struct sys_mon {
+EMXNOP(typedef) struct sys_mon {
     long            atomic_count;   /* Variable for atomic compare swap */
     HANDLE          semaphore;      /* Semaphore used for the contention */
     sys_thread_t   *monitor_owner;  /* Current owner of this monitor */
     long            entry_count;    /* Recursion depth */
     sys_thread_t   *monitor_waiter; /* Monitor waiting queue head */
     long            waiter_count;   /* For debugging purpose */
-} sys_mon_t;
+} EMXNOP(sys_mon_t);
 
 #endif /* !_JAVASOFT_WIN32_MONITOR_MD_H_ */

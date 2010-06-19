@@ -48,6 +48,10 @@
 #include <windows.h>
 #include <sys/types.h>
 
+#ifdef __EMX__
+#include <string.h>
+#endif /* __EMX__ */
+
 #include "hpi_impl.h"
 
 static size_t
