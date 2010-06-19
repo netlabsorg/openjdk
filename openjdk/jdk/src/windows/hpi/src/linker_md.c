@@ -83,11 +83,11 @@ sysBuildFunName(char *name, int nameMax, int args_size, int encodingIndex)
 void
 sysBuildLibName(char *holder, int holderlen, char *pname, char *fname)
 {
-    const int pnamelen = pname ? strlen(pname) : 0;
+    const size_t pnamelen = pname ? strlen(pname) : 0;
     const char c = (pnamelen > 0) ? pname[pnamelen-1] : 0;
 
     /* Quietly truncates on buffer overflow. Should be an error. */
-    if (pnamelen + strlen(fname) + 10 > holderlen) {
+    if (pnamelen + strlen(fname) + 10 > (size_t)holderlen) {
         *holder = '\0';
         return;
     }
@@ -104,7 +104,7 @@ sysBuildLibName(char *holder, int holderlen, char *pname, char *fname)
 void *
 sysLoadLibrary(const char * name, char *err_buf, int err_buflen)
 {
-    void *result = LoadLibrary(name);
+    void *result = (void *)LoadLibrary(name);
     if (result == NULL) {
         /* Error message is pretty lame, try to make a better guess. */
         long errcode = GetLastError();
@@ -120,10 +120,10 @@ sysLoadLibrary(const char * name, char *err_buf, int err_buflen)
 
 void sysUnloadLibrary(void *handle)
 {
-    FreeLibrary(handle);
+    FreeLibrary((HMODULE)handle);
 }
 
 void * sysFindLibraryEntry(void *handle, const char *name)
 {
-    return GetProcAddress(handle, name);
+    return GetProcAddress((HMODULE)handle, name);
 }

@@ -374,7 +374,7 @@ sysGetHostByName(char *hostname) {
 
 int
 sysSocket(int domain, int type, int protocol) {
-    int sock;
+    SOCKET sock;
     PSOCKFN socketfn;
     if ((socketfn = sockfnptrs[FN_SOCKET]) == NULL) {
         initSockFnTable();
