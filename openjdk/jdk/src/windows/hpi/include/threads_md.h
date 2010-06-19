@@ -55,7 +55,7 @@ struct sys_mon;
 /*
  * Machine dependent thread data structure
  */
-typedef struct sys_thread {
+EMXNOP(typedef) struct sys_thread {
     HANDLE handle;                  /* Win32 thread handle */
     unsigned long id;               /* Win32 thread id */
     long regs[N_TRACED_REGS];       /* Registers */
@@ -73,7 +73,7 @@ typedef struct sys_thread {
     void *stack_ptr;                /* Pointer into the stack segment */
     unsigned int last_sum;
     PNT_TIB nt_tib;                 /* Pointer to NT thread-local block */
-} sys_thread_t;
+} EMXNOP(sys_thread_t);
 
 #define MONITOR_WAIT_SUSPENDED 0x0001
 #define CONDVAR_WAIT_SUSPENDED 0x0002

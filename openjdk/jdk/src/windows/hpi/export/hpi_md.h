@@ -31,6 +31,16 @@
 #include "path_md.h"
 #include "byteorder_md.h"
 
+#ifdef __EMX__
+#define EMXNOP(expr)
+#define EMXONLY(expr) expr
+#define EMXNOEMX(expr_emx,expr_otherwise) expr_emx
+#else /* __EMX__ */
+#define EMXNOP(expr) expr
+#define EMXONLY(expr)
+#define EMXNOEMX(expr_emx,expr_otherwise) expr_otherwise
+#endif /* __EMX__ */
+
 #define HPI_TIMEOUT_INFINITY ((jlong)(-1))
 
 #endif /* !_JAVASOFT_HPI_MD_H_ */

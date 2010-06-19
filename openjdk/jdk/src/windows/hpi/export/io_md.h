@@ -30,6 +30,8 @@
 #ifndef _JAVASOFT_WIN32_IO_MD_H_
 #define _JAVASOFT_WIN32_IO_MD_H_
 
+#ifndef __EMX__
+
 #include <stdio.h>
 #include <io.h>                 /* For read(), lseek() etc. */
 #include <direct.h>             /* For mkdir() */
@@ -39,7 +41,11 @@
 #include <ctype.h>
 #include <stdlib.h>
 
+#endif /* __EMX__ */
+
 #include "jvm_md.h"
+
+#ifndef __EMX__
 
 #define R_OK    4
 #define W_OK    2
@@ -52,6 +58,8 @@
 #define S_ISCHR(mode)   (((mode) & _S_IFCHR) == _S_IFCHR)
 #define S_ISDIR(mode)   (((mode) & _S_IFDIR) == _S_IFDIR)
 #define S_ISREG(mode)   (((mode) & _S_IFREG) == _S_IFREG)
+
+#endif /* __EMX__ */
 
 #define LINE_SEPARATOR "\r\n"
 

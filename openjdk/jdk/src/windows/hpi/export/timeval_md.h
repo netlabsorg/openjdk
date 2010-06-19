@@ -26,6 +26,8 @@
 #ifndef _JAVASOFT_WIN32_TIMEVAL_H_
 #define _JAVASOFT_WIN32_TIMEVAL_H_
 
+#ifndef __EMX__
+
 typedef struct {
         long tv_sec;
         long tv_usec;
@@ -46,5 +48,7 @@ typedef struct {
 
 void timeradd(timeval_t*, timeval_t*);
 void timersub(timeval_t*, timeval_t*);
+
+#endif /* __EMX__ */
 
 #endif /* !_JAVASOFT_WIN32_TIMEVAL_H_ */

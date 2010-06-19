@@ -31,7 +31,11 @@
 #define JNICALL __stdcall
 
 typedef long jint;
+#ifdef __EMX__
+typedef int64_t jlong;
+#else
 typedef __int64 jlong;
+#endif
 typedef signed char jbyte;
 
 #endif /* !_JAVASOFT_JNI_MD_H_ */

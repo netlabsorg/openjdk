@@ -30,6 +30,8 @@
 #ifndef _JAVASOFT_WIN32_BYTEORDER_MD_H_
 #define _JAVASOFT_WIN32_BYTEORDER_MD_H_
 
+#ifndef __EMX__
+
 #ifdef  x86
 #define ntohl(x)        ((x << 24) |                            \
                           ((x & 0x0000ff00) << 8) |             \
@@ -44,5 +46,7 @@
 #define htonl(x)        (x)
 #define htons(x)        (x)
 #endif  /* x86 */
+
+#endif /* __EMX__ */
 
 #endif /* !_JAVASOFT_WIN32_BYTEORDER_MD_H_ */
