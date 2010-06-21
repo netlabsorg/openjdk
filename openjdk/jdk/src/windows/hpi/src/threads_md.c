@@ -829,8 +829,8 @@ void sysThreadProfResume(sys_thread_t *tid)
 bool_t sysThreadIsRunning(sys_thread_t *tid)
 {
 #ifndef _M_AMD64
-    unsigned int sum = 0;
-    unsigned int *p;
+    DWORD sum = 0;
+    DWORD *p;
     CONTEXT context;
 
     context.ContextFlags = CONTEXT_FULL;
