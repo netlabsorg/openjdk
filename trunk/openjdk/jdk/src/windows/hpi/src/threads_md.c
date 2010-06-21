@@ -67,10 +67,16 @@ static void RecordNTTIB(sys_thread_t *tid)
 {
 #ifndef _WIN64
     PNT_TIB nt_tib;
+#ifdef __EMX__
+    asm("movl %%fs:0x18, %%eax\n\t"
+        "mov %%eax, %0\n\t"
+        : "=m" (nt_tib) : : "%eax");
+#else /* __EMX__ */
     __asm {
         mov eax, dword ptr fs:[18h];
         mov nt_tib, eax;
     }
+#endif /* __EMX__ */
     tid->nt_tib = nt_tib;
 #else
     tid->nt_tib = 0;
@@ -215,10 +221,16 @@ sysThreadStackPointer(sys_thread_t *tid)
         return 0;
     }
 
+#ifdef __EMX__
+    asm("mov %%ss, %%ax\n\t"
+        "mov %%ax, %0\n\t"
+        : "=m" (__current_SS) : : "%ax");
+#else /* __EMX__ */
     __asm {
         mov ax, ss;
         mov __current_SS, ax;
     }
+#endif /* __EMX__ */
 
     if (context.SegSs == __current_SS &&
         context.Esp >= (uintptr_t)(tid->nt_tib->StackLimit) &&
@@ -316,7 +328,12 @@ _start(sys_thread_t *tid)
     tid->stack_ptr = &tid;
     tid->start_proc(tid->start_parm);
     sysThreadFree();
+#ifdef __EMX__
+    // @todo probably need to cause some per-thread LIBC termination routine
+    ExitThread(0);
+#else /* __EMX__ */
     _endthreadex(0);
+#endif /* __EMX__ */
     /* not reached */
     return 0;
 }
@@ -341,8 +358,15 @@ sysThreadCreate(sys_thread_t **tidP, long stack_size,
     /*
      * Start the new thread.
      */
+#ifdef __EMX__
+    // @todo probably need to cause some per-thread LIBC initialization routine
+    tid->handle = CreateThread(NULL, stack_size, (LPTHREAD_START_ROUTINE)_start,
+                               tid, CREATE_SUSPENDED, (LPDWORD)&tid->id);
+
+#else /* __EMX__ */
     tid->handle = (HANDLE)_beginthreadex(NULL, stack_size, _start, tid,
                                          CREATE_SUSPENDED, &tid->id);
+#endif /* __EMX__ */
     if (tid->handle == 0) {
         return SYS_NORESOURCE;  /* Will be treated as though SYS_NOMEM */
     }

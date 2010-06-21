@@ -31,6 +31,20 @@
 #include <sys/stat.h>
 #include <limits.h>
 
+#ifdef __EMX__
+
+#ifdef __WIN32OS2__
+#include <os2wrap2.h>
+#endif
+#include <windows.h>
+#include <wincon.h>
+
+#define _stati64 stat
+#define _fstati64 fstat
+#define _lseeki64 lseek
+
+#endif /* EMX */
+
 #include "hpi_impl.h"
 
 #include "path_md.h"
@@ -96,6 +110,19 @@ nonSeekAvailable(int fd, long *pbytes) {
      * Standard Input is a special case.
      *
      */
+#ifdef __WIN32OS2__
+    os2_AVAILDATA avail = { 0, 0 };
+    os2_ULONG pipeState;
+    os2_APIRET arc = DosPeekNPipe(0, NULL, 0, NULL, &avail, &pipeState);
+    // note that even if ERROR_INVALID_PARAMETER, it seems to return the
+    // correct values in avail and state (undocumented)
+    if (arc != NO_ERROR && arc != ERROR_INVALID_PARAMETER) {
+        *pbytes = avail.cbpipe;
+        return TRUE;
+    }
+
+    return FALSE;
+#else
     HANDLE han;
 
     if ((han = (HANDLE) _get_osfhandle(fd)) == (HANDLE)(-1)) {
@@ -115,6 +142,7 @@ nonSeekAvailable(int fd, long *pbytes) {
         *pbytes = 0;
     }
     return TRUE;
+#endif
 }
 
 static int
@@ -182,6 +210,9 @@ stdinAvailable(int fd, long *pbytes) {
 
 int
 sysSync(int fd) {
+#ifdef __EMX__
+    return fsync(fd);
+#else /* __EMX__ */
     /*
      * From the documentation:
      *
@@ -207,11 +238,15 @@ sysSync(int fd) {
         }
     }
     return 0;
+#endif /* __EMX__ */
 }
 
 
 int
 sysSetLength(int fd, jlong length) {
+#ifdef __EMX__
+    return ftruncate(fd, length);
+#else /* __EMX__ */
     HANDLE h = (HANDLE)_get_osfhandle(fd);
     long high = (long)(length >> 32);
     DWORD ret;
@@ -223,6 +258,7 @@ sysSetLength(int fd, jlong length) {
     }
     if (SetEndOfFile(h) == FALSE) return -1;
     return 0;
+#endif /* __EMX__ */
 }
 
 int
@@ -235,6 +271,7 @@ sysFileSizeFD(int fd, jlong *size)
     }
     (*size) = buf64.st_size;
 
+#ifndef __EMX__
     if (*size & 0xFFFFFFFF00000000) {
         /*
          * On Win98 accessing a non-local file we have observed a
@@ -265,6 +302,7 @@ sysFileSizeFD(int fd, jlong *size)
         (*size) = endpos;
 
     }
+#endif /* !__EMX__ */
     return 0;
 }
 
