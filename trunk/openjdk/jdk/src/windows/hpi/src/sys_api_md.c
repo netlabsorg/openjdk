@@ -49,7 +49,7 @@
 
 #include "path_md.h"
 
-static int MAX_INPUT_EVENTS = 2000;
+#define MAX_INPUT_EVENTS 2000
 
 int
 sysOpen(const char *path, int oflag, int mode)
@@ -79,7 +79,7 @@ sysAvailable(int fd, jlong *pbytes) {
         int mode = stbuf64.st_mode;
         if (S_ISCHR(mode) || S_ISFIFO(mode)) {
             int ret;
-            long lpbytes;
+            long lpbytes = 0;
             if (fd == 0) {
                 ret = stdinAvailable(fd, &lpbytes);
             } else {

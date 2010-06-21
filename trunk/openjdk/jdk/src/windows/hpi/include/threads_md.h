@@ -71,7 +71,7 @@ EMXNOP(typedef) struct sys_thread {
     void *start_parm;               /* Thread start routine parameter */
     struct sys_thread *next;        /* Next thread in active thread queue */
     void *stack_ptr;                /* Pointer into the stack segment */
-    unsigned int last_sum;
+    DWORD last_sum;
     PNT_TIB nt_tib;                 /* Pointer to NT thread-local block */
 } EMXNOP(sys_thread_t);
 
