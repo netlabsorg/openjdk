@@ -62,6 +62,9 @@ ifeq ($(PLATFORM), os2)
   CPP          = $(COMPILER_PATH)gcc -E
   CXX          = $(COMPILER_PATH)g++
   REQUIRED_CC_VER = 3.2
+  
+  # Option used to create a shared library
+  SHARED_LIBRARY_FLAG = -Zdll
 
 endif
 
