@@ -29,6 +29,11 @@
 #include <time.h>               /* For _tzset() and _ftime() */
 #include <errno.h>
 
+#ifdef __EMX__
+#include <io.h>
+#include <memory.h>
+#endif /* __EMX__ */
+
 #include "hpi_impl.h"
 
 #include "jni_md.h"
@@ -108,7 +113,11 @@ int sysThreadBootstrap(sys_thread_t **tidP, sys_mon_t **lockP, int nb)
      * See bug 4027374.  Should be the same values VC++ would set them
      * to, but by doing this here we ensure other dll's don't override.
      */
+#ifdef __EMX__
+    _control87(MCW_EM | RC_NEAR | PC_53, MCW_EM | MCW_RC | MCW_PC);
+#else
     _control87(_MCW_EM | _RC_NEAR | _PC_53, _MCW_EM | _MCW_RC | _MCW_PC);
+#endif /* __EMX__ */
 
     InitializeMem();
 
