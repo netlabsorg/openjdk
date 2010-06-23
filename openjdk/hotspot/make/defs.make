@@ -19,7 +19,7 @@
 # Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
 # CA 95054 USA or visit www.sun.com if you need additional information or
 # have any questions.
-#  
+#
 #
 
 # The common definitions for hotspot builds.
@@ -116,16 +116,25 @@ else
   endif
 endif
 
+# On eComStation, OS is "ecs", ignore it to let uname be used
+ifeq ($(OS),ecs)
+  OS :=
+endif
+
 # Windows should have OS predefined
 ifeq ($(OS),)
   OS   := $(shell uname -s)
   HOST := $(shell uname -n)
 endif
 
-# If not SunOS and not Linux, assume Windows
+# If not SunOS and not Linux and not OS/2, assume Windows
 ifneq ($(OS), Linux)
   ifneq ($(OS), SunOS)
-    OSNAME=windows
+	  ifneq ($(OS), OS/2)
+		OSNAME=windows
+	  else
+		OSNAME=os2
+	  endif
   else
     OSNAME=solaris
   endif
@@ -169,7 +178,7 @@ ifneq ($(ALT_BOOTDIR),)
   BOOTDIR=$(ALT_BOOTDIR)
 endif
 
-# The platform dependent defs.make defines platform specific variable such 
+# The platform dependent defs.make defines platform specific variable such
 # as ARCH, EXPORT_LIST etc. We must place the include here after BOOTDIR is defined.
 include $(GAMMADIR)/make/$(OSNAME)/makefiles/defs.make
 
@@ -177,7 +186,7 @@ include $(GAMMADIR)/make/$(OSNAME)/makefiles/defs.make
 # files to make/$(OSNAME)/makefiles dictory. However
 # some definitions are common for both linux and solaris,
 # so we put them here.
-ifneq ($(OSNAME),windows)
+ifneq ($(filter-out windows os2,$(OSNAME)),)
   ABS_OUTPUTDIR     := $(shell mkdir -p $(OUTPUTDIR); $(CD) $(OUTPUTDIR); $(PWD))
   ABS_BOOTDIR       := $(shell $(CD) $(BOOTDIR); $(PWD))
   ABS_GAMMADIR      := $(shell $(CD) $(GAMMADIR); $(PWD))
@@ -191,7 +200,7 @@ ifneq ($(OSNAME),windows)
   #   LIBARCH   - directory name in JDK/JRE
 
   # Use uname output for SRCARCH, but deal with platform differences. If ARCH
-  # is not explicitly listed below, it is treated as x86. 
+  # is not explicitly listed below, it is treated as x86.
   SRCARCH     = $(ARCH/$(filter sparc sparc64 ia64 amd64 x86_64 zero,$(ARCH)))
   ARCH/       = x86
   ARCH/sparc  = sparc
