@@ -19,7 +19,7 @@
 # Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
 # CA 95054 USA or visit www.sun.com if you need additional information or
 # have any questions.
-#  
+#
 #
 
 # Top level gnumake file for hotspot builds
@@ -106,8 +106,8 @@ world:         all create_jdk
 
 # Build or export docs
 docs:
-ifeq ($(OSNAME),windows)
-	@$(ECHO) "No docs ($(VM_TARGET)) for windows"
+ifeq ($(filter-out windows os2,$(OSNAME)),)
+	@$(ECHO) "No docs ($(VM_TARGET)) for windows/os2"
 else
 	$(CD) $(OUTPUTDIR); \
 	    $(MAKE) -f $(ABS_OS_MAKEFILE) \
@@ -134,7 +134,7 @@ $(ZERO_VM_TARGETS):
 # Build compiler1 (client) rule, different for platforms
 generic_build1:
 	$(MKDIR) -p $(OUTPUTDIR)
-ifeq ($(OSNAME),windows)
+ifeq ($(filter-out windows os2,$(OSNAME)),)
   ifeq ($(ARCH_DATA_MODEL), 32)
 	$(CD) $(OUTPUTDIR); \
 	    $(NMAKE) -f $(ABS_OS_MAKEFILE) \
@@ -159,7 +159,7 @@ endif
 # Build compiler2 (server) rule, different for platforms
 generic_build2:
 	$(MKDIR) -p $(OUTPUTDIR)
-ifeq ($(OSNAME),windows)
+ifeq ($(filter-out windows os2,$(OSNAME)),)
 	$(CD) $(OUTPUTDIR); \
 	    $(NMAKE) -f $(ABS_OS_MAKEFILE) \
 		      Variant=compiler2 \
@@ -175,7 +175,7 @@ endif
 
 generic_buildkernel:
 	$(MKDIR) -p $(OUTPUTDIR)
-ifeq ($(OSNAME),windows)
+ifeq ($(filter-out windows os2,$(OSNAME)),)
   ifeq ($(ARCH_DATA_MODEL), 32)
 	$(CD) $(OUTPUTDIR); \
 	    $(NMAKE) -f $(ABS_OS_MAKEFILE) \
@@ -247,48 +247,56 @@ else
 endif
 endif
 
-# Bin files (windows)
-ifeq ($(OSNAME),windows)
+# Bin files (windows, os2)
+ifeq ($(filter-out windows os2,$(OSNAME)),)
 
-# Get jvm.lib 
+# Get jvm.lib
 $(EXPORT_LIB_DIR)/%.lib:  $(MISC_DIR)/%.lib
 	$(install-file)
 
 # Other libraries (like SA)
 $(EXPORT_JRE_BIN_DIR)/%.dll: $(MISC_DIR)/%.dll
 	$(install-file)
+  ifeq ($(OSNAME),os2)
 $(EXPORT_JRE_BIN_DIR)/%.pdb: $(MISC_DIR)/%.pdb
 	$(install-file)
+  endif
 $(EXPORT_JRE_BIN_DIR)/%.map: $(MISC_DIR)/%.map
 	$(install-file)
 
 # Client files always come from C1 area
 $(EXPORT_CLIENT_DIR)/%.dll:  $(C1_DIR)/%.dll
 	$(install-file)
+  ifeq ($(OSNAME),os2)
 $(EXPORT_CLIENT_DIR)/%.pdb:  $(C1_DIR)/%.pdb
 	$(install-file)
+  endif
 $(EXPORT_CLIENT_DIR)/%.map:  $(C1_DIR)/%.map
 	$(install-file)
 
 # Server files always come from C2 area
 $(EXPORT_SERVER_DIR)/%.dll:  $(C2_DIR)/%.dll
 	$(install-file)
+  ifeq ($(OSNAME),os2)
 $(EXPORT_SERVER_DIR)/%.pdb:  $(C2_DIR)/%.pdb
 	$(install-file)
+  endif
 $(EXPORT_SERVER_DIR)/%.map:  $(C2_DIR)/%.map
 	$(install-file)
 
 # Kernel files always come from kernel area
 $(EXPORT_KERNEL_DIR)/%.dll:  $(KERNEL_DIR)/%.dll
 	$(install-file)
+  ifeq ($(OSNAME),os2)
 $(EXPORT_KERNEL_DIR)/%.pdb:  $(KERNEL_DIR)/%.pdb
 	$(install-file)
+  endif
 $(EXPORT_KERNEL_DIR)/%.map:  $(KERNEL_DIR)/%.map
 	$(install-file)
 endif
 
 # Shared Library
-ifneq ($(OSNAME),windows)
+ifneq ($(filter-out windows os2,$(OSNAME)),)
   ifeq ($(ZERO_BUILD), true)
 $(EXPORT_JRE_LIB_ARCH_DIR)/%.so: $(ZERO_DIR)/%.so
 	$(install-file)
@@ -427,7 +435,7 @@ help: intro_help target_help variable_help notes_help examples_help
 # Intro help message
 intro_help:
 	@$(ECHO) \
-"Makefile for the Hotspot workspace." 
+"Makefile for the Hotspot workspace."
 	@$(ECHO) \
 "Default behavior is to build and create an export area for the j2se builds."
 
@@ -529,7 +537,7 @@ examples_help:
 	@$(ECHO) \
 "  $(MAKE) world"
 	@$(ECHO) \
-"  $(MAKE) ALT_BOOTDIR=/opt/java/jdk$(PREVIOUS_JDK_VERSION)" 
+"  $(MAKE) ALT_BOOTDIR=/opt/java/jdk$(PREVIOUS_JDK_VERSION)"
 	@$(ECHO) \
 "  $(MAKE) ALT_JDK_IMPORT_PATH=/opt/java/jdk$(JDK_VERSION)"
 
