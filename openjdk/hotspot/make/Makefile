@@ -257,7 +257,7 @@ $(EXPORT_LIB_DIR)/%.lib:  $(MISC_DIR)/%.lib
 # Other libraries (like SA)
 $(EXPORT_JRE_BIN_DIR)/%.dll: $(MISC_DIR)/%.dll
 	$(install-file)
-  ifeq ($(OSNAME),os2)
+  ifneq ($(OSNAME),os2)
 $(EXPORT_JRE_BIN_DIR)/%.pdb: $(MISC_DIR)/%.pdb
 	$(install-file)
   endif
@@ -267,7 +267,7 @@ $(EXPORT_JRE_BIN_DIR)/%.map: $(MISC_DIR)/%.map
 # Client files always come from C1 area
 $(EXPORT_CLIENT_DIR)/%.dll:  $(C1_DIR)/%.dll
 	$(install-file)
-  ifeq ($(OSNAME),os2)
+  ifneq ($(OSNAME),os2)
 $(EXPORT_CLIENT_DIR)/%.pdb:  $(C1_DIR)/%.pdb
 	$(install-file)
   endif
@@ -277,7 +277,7 @@ $(EXPORT_CLIENT_DIR)/%.map:  $(C1_DIR)/%.map
 # Server files always come from C2 area
 $(EXPORT_SERVER_DIR)/%.dll:  $(C2_DIR)/%.dll
 	$(install-file)
-  ifeq ($(OSNAME),os2)
+  ifneq ($(OSNAME),os2)
 $(EXPORT_SERVER_DIR)/%.pdb:  $(C2_DIR)/%.pdb
 	$(install-file)
   endif
@@ -287,7 +287,7 @@ $(EXPORT_SERVER_DIR)/%.map:  $(C2_DIR)/%.map
 # Kernel files always come from kernel area
 $(EXPORT_KERNEL_DIR)/%.dll:  $(KERNEL_DIR)/%.dll
 	$(install-file)
-  ifeq ($(OSNAME),os2)
+  ifneq ($(OSNAME),os2)
 $(EXPORT_KERNEL_DIR)/%.pdb:  $(KERNEL_DIR)/%.pdb
 	$(install-file)
   endif
