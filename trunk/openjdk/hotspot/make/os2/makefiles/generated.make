@@ -80,14 +80,14 @@ endif
 
 includeDB.current Dependencies: classes/MakeDeps.class $(IncludeDBs)
 	cat $(IncludeDBs) > includeDB
-	if [ -d incls ]; then rmdir -fr incls; fi
+	if [ -d incls ]; then rm -rf incls; fi
 	mkdir -p incls
-	$(RUN_JAVA) -Djava.class.path=classes MakeDeps WinGammaPlatform$(VcVersion) $(WorkSpace)/make/windows/platform_$(BUILDARCH) includeDB $(MakeDepsOptions)
+	$(RUN_JAVA) -Djava.class.path=classes MakeDeps OS2Platform $(WorkSpace)/make/os2/platform_$(BUILDARCH) includeDB $(MakeDepsOptions)
 	rm -f includeDB.current
 	cp includeDB includeDB.current
 
 classes/MakeDeps.class: $(MakeDepsSources)
-	if [ -d classes ]; then rmdir -fr classes; fi
+	if [ -d classes ]; then rm -rf classes; fi
 	mkdir -p classes
 	$(COMPILE_JAVAC) -classpath $(WorkSpace)/src/share/tools/MakeDeps -d classes $(MakeDepsSources)
 
