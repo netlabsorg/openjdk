@@ -32,22 +32,22 @@ else
 ADLC=adlc
 endif
 
-CXX_INCLUDE_DIRS=\
-  -I "../generated"                          \
-  -I "$(WorkSpace)/src/share/vm/compiler"    \
-  -I "$(WorkSpace)/src/share/vm/code"        \
-  -I "$(WorkSpace)/src/share/vm/interpreter" \
-  -I "$(WorkSpace)/src/share/vm/classfile"   \
-  -I "$(WorkSpace)/src/share/vm/asm"         \
-  -I "$(WorkSpace)/src/share/vm/memory"      \
-  -I "$(WorkSpace)/src/share/vm/oops"        \
-  -I "$(WorkSpace)/src/share/vm/prims"       \
-  -I "$(WorkSpace)/src/share/vm/runtime"     \
-  -I "$(WorkSpace)/src/share/vm/utilities"   \
-  -I "$(WorkSpace)/src/share/vm/libadt"      \
-  -I "$(WorkSpace)/src/share/vm/opto"        \
-  -I "$(WorkSpace)/src/os/windows/vm"          \
-  -I "$(WorkSpace)/src/cpu/$(Platform_arch)/vm"
+CPP_INCLUDE_DIRS=\
+  -I'../generated'                          \
+  -I'$(WorkSpace)/src/share/vm/compiler'    \
+  -I'$(WorkSpace)/src/share/vm/code'        \
+  -I'$(WorkSpace)/src/share/vm/interpreter' \
+  -I'$(WorkSpace)/src/share/vm/classfile'   \
+  -I'$(WorkSpace)/src/share/vm/asm'         \
+  -I'$(WorkSpace)/src/share/vm/memory'      \
+  -I'$(WorkSpace)/src/share/vm/oops'        \
+  -I'$(WorkSpace)/src/share/vm/prims'       \
+  -I'$(WorkSpace)/src/share/vm/runtime'     \
+  -I'$(WorkSpace)/src/share/vm/utilities'   \
+  -I'$(WorkSpace)/src/share/vm/libadt'      \
+  -I'$(WorkSpace)/src/share/vm/opto'        \
+  -I'$(WorkSpace)/src/os/windows/vm'          \
+  -I'$(WorkSpace)/src/cpu/$(Platform_arch)/vm'
 
 # NOTE! If you add any files here, you must also update GENERATED_NAMES_IN_INCL
 # and MakeDepsIDEOptions in makedeps.make.
@@ -70,7 +70,7 @@ GENERATED_NAMES_IN_INCL=$(GENERATED_NAMES:%=incls/%)
 VPATH += $(WorkSpace)/src/share/vm/adlc;$(WorkSpace)/src/share/vm/opto
 
 %.obj: %.cpp
-	$(CXX) $(CXX_FLAGS) $(CXX_INCLUDE_DIRS) -c $< -o $@
+	$(CXX) $(CPP_INCLUDE_DIRS) $(CXX_FLAGS) -c $< -o $@
 
 adlc.exe: main.obj adlparse.obj archDesc.obj arena.obj dfa.obj dict2.obj filebuff.obj \
           forms.obj formsopt.obj formssel.obj opcodes.obj output_c.obj output_h.obj
