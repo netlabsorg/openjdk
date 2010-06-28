@@ -1,5 +1,5 @@
 #
-# Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -19,47 +19,41 @@
 # Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
 # CA 95054 USA or visit www.sun.com if you need additional information or
 # have any questions.
-#  
+#
 #
 
-DEFAULTACTIONS=clean post_update create
+HS_INTERNAL_NAME = jvm
+HS_FNAME = $(HS_INTERNAL_NAME).dll
+AOUT = $(HS_FNAME)
+GENERATED = ../generated
 
-default:: $(SUBDIRS)
+default:: _build_pch_file.obj $(AOUT) checkAndBuildSA
 
-ifndef DIR
-DIR=.
+include ../local.make
+include $(WorkSpace)/make/os2/makefiles/compile.make
+
+CXX_FLAGS += $(PRODUCT_OPT_OPTION)
+
+RELEASE =
+
+include $(WorkSpace)/make/os2/makefiles/vm.make
+include local.make
+
+include $(GENERATED)/Dependencies
+
+HS_BUILD_ID = $(HS_BUILD_VER)
+
+# Kernel doesn't need exported vtbl symbols.
+ifeq ($(Variant), kernel)
+$(AOUT): $(Res_Files) $(Obj_Files) $(Def_File)
+	$(LINK) -o $@ $(Obj_Files) $(Res_Files)
+	$(IMPLIB) -o $(basaename $@).lib $@
+else
+$(AOUT): $(Res_Files) $(Obj_Files)
+	sh $(WorkSpace)/make/os2/build_vm_def.sh
+	$(LINK) -o $@ vm.def $(Obj_Files) $(Res_Files)
+	$(IMPLIB) -o $(basename $@).lib $@
 endif
 
-ifdef SUBDIRS
-$(SUBDIRS): FORCE
-	@if [ ! -d $@ ]; then mkdir -p $@; fi; \
-	if [ ! -r $@/local.make ]; then echo \# Empty > $@/local.make; fi; \
-	echo $(MAKE) $(ACTION) in $(DIR)/$@; \
-	cd $@; $(MAKE) -f $(WorkSpace)/make/os2/makefiles/$@.make $(ACTION) DIR=$(DIR)/$@ BUILD_FLAVOR=$(BUILD_FLAVOR)
-endif
-
-# Creates the needed directory
-create::
-ifneq ($(DIR),.)
-	@echo mkdir $(DIR)
-endif
-
-# Epilog to update for generating derived files
-post_update::
-
-# Removes scrap files
-clean:: FORCE
-	-@rm -f *.OLD *.publish
-
-# Remove all scrap files and all generated files
-pure:: clean
-	-@rm -f *.OLD *.publish
-
-$(DEFAULTACTIONS) $(ACTIONS)::
-ifdef SUBDIRS
-	@$(MAKE) ACTION=$@ DIR=$(DIR)
-endif
-
-MAKEFILE := $(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST))
-
-FORCE:
+include $(WorkSpace)/make/os2/makefiles/shared.make
+include $(WorkSpace)/make/os2/makefiles/sa.make

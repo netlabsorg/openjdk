@@ -25,11 +25,11 @@
 # Generic compiler settings
 CXX = g++
 
-CXX_FLAGS = -Zomf -march=i486 -mtune=generic
+CXX_FLAGS = $(CPP_FLAGS) -Zomf -march=i486 -mtune=generic
 
 # Based on BUILDARCH we add some flags and select the default compiler name
 ifeq ($(BUILDARCH),i486)
-CXX_FLAGS += -DIA32
+CPP_FLAGS += -DIA32
 endif
 
 # Compile for space above time.
@@ -58,3 +58,13 @@ LINK_FLAGS = \
  #kernel32.lib user32.lib gdi32.lib winspool.lib \
  #comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib \
  #uuid.lib Wsock32.lib winmm.lib
+
+IMPLIB = emximp
+
+# Odin SDK
+
+CPP_FLAGS += -D__WIN32OS2__ -D__i386__ -DSTRICT
+CPP_FLAGS += -I$(ALT_ODINSDK_PATH)/include/Win -I$(ALT_ODINSDK_PATH)/include
+
+LINK_FLAGS  += -L$(ALT_ODINSDK_PATH)/lib -L$(ALT_ODINSDK_PATH)/lib/Release \
+			   -lkernel32.lib -luser32.lib
