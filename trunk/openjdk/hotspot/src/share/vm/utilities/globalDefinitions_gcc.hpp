@@ -50,7 +50,9 @@
 #include <time.h>
 #include <fcntl.h>
 #include <dlfcn.h>
+#ifndef OS2
 #include <pthread.h>
+#endif
 
 #ifdef SOLARIS
 #include <thread.h>
@@ -228,7 +230,7 @@ inline int g_isnan(float  f) { return isnanf(f); }
 inline int g_isnan(float  f) { return isnand(f); }
 #endif
 inline int g_isnan(double f) { return isnand(f); }
-#elif LINUX
+#elif defined(LINUX) || defined(OS2)
 inline int g_isnan(float  f) { return isnanf(f); }
 inline int g_isnan(double f) { return isnan(f); }
 #else

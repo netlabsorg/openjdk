@@ -45,7 +45,11 @@
   #define JNICALL __stdcall
 
   typedef int jint;
+#ifdef __EMX__
+  typedef __int64_t jlong;
+#else
   typedef __int64 jlong;
+#endif
 #endif
 
 typedef signed char jbyte;
