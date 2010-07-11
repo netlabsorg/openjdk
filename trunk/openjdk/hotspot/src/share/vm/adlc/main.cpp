@@ -337,6 +337,7 @@ void ArchDesc::close_files(int delete_out)
   close_file(delete_out, _CPP_MISC_file);
   close_file(delete_out, _CPP_PEEPHOLE_file);
   close_file(delete_out, _CPP_PIPELINE_file);
+  close_file(delete_out, _VM_file);
   close_file(delete_out, _HPP_file);
   close_file(delete_out, _DFA_file);
   close_file(delete_out, _bug_file);
