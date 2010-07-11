@@ -22,7 +22,14 @@
  *
  */
 
+#ifdef __EMX__
+#include <endian.h>
+#define bswap_16 bswap16
+#define bswap_32 bswap32
+#define bswap_64 bswap64
+#else
 #include <byteswap.h>
+#endif
 
 // Efficient swapping of data bytes from Java byte
 // ordering to native byte ordering and vice versa.
