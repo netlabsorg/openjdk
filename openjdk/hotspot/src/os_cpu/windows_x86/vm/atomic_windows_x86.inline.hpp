@@ -22,6 +22,12 @@
  *
  */
 
+#ifdef __EMX__
+
+#include "../../linux_x86/vm/atomic_linux_x86.inline.hpp"
+
+#else // __EMX__
+
 // The following alternative implementations are needed because
 // Windows 95 doesn't support (some of) the corresponding Windows NT
 // calls. Furthermore, these versions allow inlining in the caller.
@@ -249,3 +255,5 @@ inline void*    Atomic::cmpxchg_ptr(void*    exchange_value, volatile void*     
 #endif // AMD64
 
 #pragma warning(default: 4035) // Enables warnings reporting missing return statement
+
+#endif // __EMX__

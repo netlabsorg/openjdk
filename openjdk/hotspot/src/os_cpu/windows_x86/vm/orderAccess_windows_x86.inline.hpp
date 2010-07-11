@@ -22,6 +22,12 @@
  *
  */
 
+#ifdef __EMX__
+
+#include "../../linux_x86/vm/orderAccess_linux_x86.inline.hpp"
+
+#else // __EMX__
+
 #pragma warning(disable: 4035) // Disables warnings reporting missing return statement
 
 // Implementation of class OrderAccess.
@@ -208,3 +214,5 @@ inline void     OrderAccess::release_store_ptr_fence(volatile void*     p, void*
 }
 
 #pragma warning(default: 4035) // Enables warnings reporting missing return statement
+
+#endif // __EMX__
