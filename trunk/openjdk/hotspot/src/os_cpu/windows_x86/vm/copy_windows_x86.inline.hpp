@@ -22,6 +22,12 @@
  *
  */
 
+#ifdef __EMX__
+
+#include "../../linux_x86/vm/copy_linux_x86.inline.hpp"
+
+#else // __EMX__
+
 static void pd_conjoint_words(HeapWord* from, HeapWord* to, size_t count) {
   (void)memmove(to, from, count * HeapWordSize);
 }
@@ -164,3 +170,5 @@ static void pd_arrayof_conjoint_jlongs(HeapWord* from, HeapWord* to, size_t coun
 static void pd_arrayof_conjoint_oops(HeapWord* from, HeapWord* to, size_t count) {
   pd_conjoint_oops_atomic((oop*)from, (oop*)to, count);
 }
+
+#endif // __EMX__
