@@ -147,13 +147,17 @@ class Win32AttachOperation: public AttachOperation {
   }
 
  public:
+#ifdef __EMX__
+  void complete(jint result, bufferedStream* result_stream);
+#else
   void Win32AttachOperation::complete(jint result, bufferedStream* result_stream);
+#endif
 };
 
 
 // preallocate the required number of operations
 int Win32AttachListener::init() {
-  _mutex = (void*)::CreateMutex(NULL, FALSE, NULL);
+  _mutex = ::CreateMutex(NULL, FALSE, NULL);
   guarantee(_mutex != (HANDLE)NULL, "mutex creation failed");
 
   _wakeup = ::CreateSemaphore(NULL, 0, 1, NULL);
