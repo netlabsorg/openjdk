@@ -127,7 +127,7 @@ Src_Dirs = \
   $(WorkSpace)/src/share/vm/libadt      \
   $(WorkSpace)/src/share/vm/opto        \
   $(WorkSpace)/src/os/windows/vm          \
-  $(WorkSpace)/src/os_cpu/windows_$(Platform_arch)\vm \
+  $(WorkSpace)/src/os_cpu/windows_$(Platform_arch)/vm \
   $(WorkSpace)/src/cpu/$(Platform_arch)/vm \
   $(WorkSpace)/src/share/vm/opto
 
@@ -143,14 +143,14 @@ VPATH += $(Src_Dirs:%=%;)
 # Special case files not using precompiled header files.
 
 c1_RInfo_$(Platform_arch).obj: $(WorkSpace)/src/cpu/$(Platform_arch)/vm/c1_RInfo_$(Platform_arch).cpp
-os_windows.obj: $(WorkSpace)\src\os\windows\vm\os_windows.cpp
-os_windows_$(Platform_arch).obj: $(WorkSpace)\src\os_cpu\windows_$(Platform_arch)\vm\os_windows_$(Platform_arch).cpp
-osThread_windows.obj: $(WorkSpace)\src\os\windows\vm\osThread_windows.cpp
-conditionVar_windows.obj: $(WorkSpace)\src\os\windows\vm\conditionVar_windows.cpp
-getThread_windows_$(Platform_arch).obj: $(WorkSpace)\src\os_cpu\windows_$(Platform_arch)\vm\getThread_windows_$(Platform_arch).cpp
-opcodes.obj: $(WorkSpace)\src\share\vm\opto\opcodes.cpp
-bytecodeInterpreter.obj: $(WorkSpace)\src\share\vm\interpreter\bytecodeInterpreter.cpp
-bytecodeInterpreterWithChecks.obj: ..\generated\jvmtifiles\bytecodeInterpreterWithChecks.cpp
+os_windows.obj: $(WorkSpace)/src/os/windows/vm/os_windows.cpp
+os_windows_$(Platform_arch).obj: $(WorkSpace)/src/os_cpu/windows_$(Platform_arch)/vm/os_windows_$(Platform_arch).cpp
+osThread_windows.obj: $(WorkSpace)/src/os/windows/vm/osThread_windows.cpp
+conditionVar_windows.obj: $(WorkSpace)/src/os/windows/vm/conditionVar_windows.cpp
+getThread_windows_$(Platform_arch).obj: $(WorkSpace)/src/os_cpu/windows_$(Platform_arch)/vm/getThread_windows_$(Platform_arch).cpp
+opcodes.obj: $(WorkSpace)/src/share/vm/opto/opcodes.cpp
+bytecodeInterpreter.obj: $(WorkSpace)/src/share/vm/interpreter/bytecodeInterpreter.cpp
+bytecodeInterpreterWithChecks.obj: ../generated/jvmtifiles/bytecodeInterpreterWithChecks.cpp
 
 # Default rules for the Virtual Machine
 %.obj: %.cpp
