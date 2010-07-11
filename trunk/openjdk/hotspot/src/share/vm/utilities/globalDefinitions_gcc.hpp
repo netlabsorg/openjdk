@@ -80,6 +80,13 @@
 #include <sys/time.h>
 #endif // LINUX
 
+#ifdef OS2
+#ifdef __WIN32OS2__
+#include <excpt.h>
+#include <io.h>
+#endif
+#endif // OS2
+
 // 4810578: varargs unsafe on 32-bit integer/64-bit pointer architectures
 // When __cplusplus is defined, NULL is defined as 0 (32-bit constant) in
 // system header files.  On 32-bit architectures, there is no problem.
