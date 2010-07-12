@@ -63,9 +63,7 @@ IMPLIB = emximp
 
 # Odin SDK
 
-# Note: No -DSTRICT as it makes HANDLE and HFILE non-polymorphic in C++ code
-# which breaks things like HANDLE file = CreateFile()
-CPP_FLAGS += -D__WIN32OS2__ -D__i386__
+CPP_FLAGS += -D__WIN32OS2__ -D__i386__ -DSTRICT
 CPP_FLAGS += -I$(ALT_ODINSDK_PATH)/include/Win -I$(ALT_ODINSDK_PATH)/include
 
 LINK_FLAGS  += -L$(ALT_ODINSDK_PATH)/lib -L$(ALT_ODINSDK_PATH)/lib/Release \
