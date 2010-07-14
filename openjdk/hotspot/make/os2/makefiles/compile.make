@@ -52,19 +52,18 @@ endif
 # Generic linker settings
 LINK = g++
 LINK_FLAGS = \
- -Zomf -Zmap -Zstack 0x2000 -Zlinker "DISABLE 1121" -Zhigh-mem \
-
- # @todo
- #kernel32.lib user32.lib gdi32.lib winspool.lib \
- #comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib \
- #uuid.lib Wsock32.lib winmm.lib
+ -Zomf -Zmap -Zstack 0x2000 -Zlinker "DISABLE 1121" -Zhigh-mem
 
 IMPLIB = emximp
 
 # Odin SDK
 
-CPP_FLAGS += -D__WIN32OS2__ -D__i386__ -DSTRICT
+CPP_FLAGS += -D__WIN32OS2__ -D__i386__ -DSTRICT -D_POSIX_SOURCE \
+             -D_POSIX_C_SOURCE=200112 -D_EMX_SOURCE -D_XOPEN_SOURCE=600 \
+        	 -D_SVID_SOURCE
 CPP_FLAGS += -I$(ALT_ODINSDK_PATH)/include/Win -I$(ALT_ODINSDK_PATH)/include
 
 LINK_FLAGS  += -L$(ALT_ODINSDK_PATH)/lib -L$(ALT_ODINSDK_PATH)/lib/Release \
-			   -lkernel32.lib -luser32.lib
+			   -lkernel32.lib -luser32.lib -lgdi32.lib -lwinspool.lib \
+               -lcomdlg32.lib -ladvapi32.lib -lshell32.lib -lole32.lib \
+               -loleaut32.lib -lWsock32.lib -lwinmm.lib
