@@ -37,7 +37,7 @@ ifeq ($(Variant),kernel)
 PRODUCT_OPT_OPTION   = -s -Os
 FASTDEBUG_OPT_OPTION = -s -Os
 DEBUG_OPT_OPTION     = -g
-ese
+else
 PRODUCT_OPT_OPTION   = -s -O3
 FASTDEBUG_OPT_OPTION = -s -O3
 DEBUG_OPT_OPTION     = -g
