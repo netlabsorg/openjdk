@@ -19,10 +19,17 @@
 G.PATH_TOOL_BOOT_JDK    = 'D:\Dev\java150'
 
 /**
- * Path to GCC 4.4.2. Leave empty if you have it already available
- * in your environment.
+ * Path to GCC 4 environment script (+ possible arguments). If you use
+ * the GCC 4 distribution recommended in README, the path will look like:
+ *
+ *   X:\path_to_gcc4\gcc4xx.cmd
+ *
+ * Otherwise you will have to play with GCC's gccenv.cmd on your own.
+ *
+ * Leave this empty if you have GCC 4 already available in your
+ * environment.
  */
-G.PATH_TOOL_GCC442      = 'D:\Dev\gcc442'
+G.PATH_TOOL_GCC4_ENV    = 'D:\Dev\gcc444\gcc444.cmd'
 
 /**
  * Path to Apache Ant. Leave empty if you have it already available
