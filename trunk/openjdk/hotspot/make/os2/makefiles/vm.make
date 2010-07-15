@@ -128,6 +128,7 @@ Src_Dirs = \
   $(WorkSpace)/src/share/vm/opto        \
   $(WorkSpace)/src/os/windows/vm          \
   $(WorkSpace)/src/os_cpu/windows_$(Platform_arch)/vm \
+  $(WorkSpace)/src/os_cpu/os2_$(Platform_arch)/vm \
   $(WorkSpace)/src/cpu/$(Platform_arch)/vm \
   $(WorkSpace)/src/share/vm/opto
 
@@ -154,6 +155,9 @@ bytecodeInterpreterWithChecks.obj: ../generated/jvmtifiles/bytecodeInterpreterWi
 
 # Default rules for the Virtual Machine
 %.obj: %.cpp
+	$(CXX) $(CXX_FLAGS) -c $< -o $@
+
+%.obj: %.s
 	$(CXX) $(CXX_FLAGS) -c $< -o $@
 
 default::

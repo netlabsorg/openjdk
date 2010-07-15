@@ -41,19 +41,15 @@ include local.make
 
 include $(GENERATED)/Dependencies
 
+# _Copy functions, assembled from .s file
+# Not included in includeDB because it has no dependencies
+Obj_Files += os2_x86_32.obj
+
 HS_BUILD_ID = $(HS_BUILD_VER)
 
-# Kernel doesn't need exported vtbl symbols.
-ifeq ($(Variant), kernel)
 $(AOUT): $(Res_Files) $(Obj_Files) $(Def_File)
-	$(LINK) -o $@ $(Obj_Files) $(Res_Files)
+	$(LINK) $(LINK_FLAGS) -o $@ $(Obj_Files) $(Res_Files)
 	$(IMPLIB) -o $(basaename $@).lib $@
-else
-$(AOUT): $(Res_Files) $(Obj_Files)
-	sh $(WorkSpace)/make/os2/build_vm_def.sh
-	$(LINK) -o $@ vm.def $(Obj_Files) $(Res_Files)
-	$(IMPLIB) -o $(basename $@).lib $@
-endif
 
 include $(WorkSpace)/make/os2/makefiles/shared.make
 include $(WorkSpace)/make/os2/makefiles/sa.make
