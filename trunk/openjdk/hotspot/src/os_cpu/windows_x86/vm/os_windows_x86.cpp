@@ -57,11 +57,18 @@ void os::os_exception_wrapper(java_call_t f, JavaValue* value, methodHandle* met
 
     if ( ThreadLocalStorage::get_thread_ptr_offset() == 0 ) {
       int thread_ptr_offset;
+#ifdef __EMX__
+      __asm__("leal %1, %%eax; "
+              "subl %%fs:0, %%eax; "
+              "movl %%eax, %0; "
+              : "=m"(thread_ptr_offset) : "m"(wrapperthread) : "%eax");
+#else
       __asm {
         lea eax, dword ptr wrapperthread;
         sub eax, dword ptr FS:[0H];
         mov thread_ptr_offset, eax
       };
+#endif      
       ThreadLocalStorage::set_thread_ptr_offset(thread_ptr_offset);
     }
 #ifdef ASSERT
@@ -70,11 +77,18 @@ void os::os_exception_wrapper(java_call_t f, JavaValue* value, methodHandle* met
     // inlined version of this routine.
     else {
       int test_thread_ptr_offset;
+#ifdef __EMX__
+      __asm__("leal %1, %%eax; "
+              "subl %%fs:0, %%eax; "
+              "movl %%eax, %0; "
+              : "=m"(test_thread_ptr_offset) : "m"(wrapperthread) : "%eax");
+#else
       __asm {
         lea eax, dword ptr wrapperthread;
         sub eax, dword ptr FS:[0H];
         mov test_thread_ptr_offset, eax
       };
+#endif
       assert(test_thread_ptr_offset == ThreadLocalStorage::get_thread_ptr_offset(),
              "thread pointer offset from SEH changed");
     }
@@ -339,9 +353,13 @@ frame os::get_sender_for_C_frame(frame* fr) {
 #ifndef AMD64
 intptr_t* _get_previous_fp() {
   intptr_t **frameptr;
+#ifdef __EMX__
+  __asm("movl %%ebp, %0" : "=m"(frameptr));
+#else
   __asm {
     mov frameptr, ebp
   };
+#endif  
   return *frameptr;
 }
 #endif // !AMD64
@@ -422,7 +440,7 @@ void os::print_context(outputStream *st, void *context) {
 
 extern "C" int SafeFetch32 (int * adr, int Err) {
    int rv = Err ;
-   _try {
+   __try {
        rv = *((volatile int *) adr) ;
    } __except(EXCEPTION_EXECUTE_HANDLER) {
    }
@@ -431,7 +449,7 @@ extern "C" int SafeFetch32 (int * adr, int Err) {
 
 extern "C" intptr_t SafeFetchN (intptr_t * adr, intptr_t Err) {
    intptr_t rv = Err ;
-   _try {
+   __try {
        rv = *((volatile intptr_t *) adr) ;
    } __except(EXCEPTION_EXECUTE_HANDLER) {
    }
@@ -445,9 +463,13 @@ extern "C" int SpinPause () {
    // pause == rep:nop
    // On systems that don't support pause a rep:nop
    // is executed as a nop.  The rep: prefix is ignored.
+#ifdef __EMX__
+   __asm__("pause; ");
+#else
    _asm {
       pause ;
    };
+#endif
    return 1 ;
 #endif // AMD64
 }
@@ -456,6 +478,10 @@ extern "C" int SpinPause () {
 void os::setup_fpu() {
 #ifndef AMD64
   int fpu_cntrl_word = StubRoutines::fpu_cntrl_wrd_std();
+#ifdef __EMX__
+  __asm__("fldcw %0; " : : "m"(fpu_cntrl_word));
+#else  
   __asm fldcw fpu_cntrl_word;
+#endif  
 #endif // !AMD64
 }

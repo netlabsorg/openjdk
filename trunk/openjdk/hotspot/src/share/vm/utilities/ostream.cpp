@@ -834,6 +834,10 @@ bufferedStream::~bufferedStream() {
 #include <arpa/inet.h>
 #endif
 
+#ifdef __WIN32OS2__
+#include <winsock.h>
+#endif
+
 // Network access
 networkStream::networkStream() : bufferedStream(1024*10, 1024*10) {
 

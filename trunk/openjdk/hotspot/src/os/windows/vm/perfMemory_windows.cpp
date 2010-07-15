@@ -217,6 +217,7 @@ static bool is_directory_secure(const char* path) {
     }
   }
 
+#ifndef __WIN32OS2__
   if (fa & FILE_ATTRIBUTE_REPARSE_POINT) {
     // we don't accept any redirection for the user specific directory
     // so declare the path insecure. This may be too conservative,
@@ -228,6 +229,7 @@ static bool is_directory_secure(const char* path) {
     }
     return false;
   }
+#endif
 
   if (fa & FILE_ATTRIBUTE_DIRECTORY) {
     // this is the expected case. Since windows supports symbolic
@@ -565,6 +567,7 @@ static bool is_filesystem_secure(const char* path) {
     return false;
   }
 
+#ifndef __WIN32OS2__
   if ((flags & FS_PERSISTENT_ACLS) == 0) {
     // file system doesn't support ACLs, declare file system unsafe
     if (PrintMiscellaneous && Verbose) {
@@ -582,6 +585,7 @@ static bool is_filesystem_secure(const char* path) {
     }
     return false;
   }
+#endif
 
   return true;
 }
@@ -743,7 +747,7 @@ static void free_security_attr(LPSECURITY_ATTRIBUTES lpSA) {
 
   if (lpSA != NULL) {
     // free the contained security descriptor and the ACL
-    free_security_desc(lpSA->lpSecurityDescriptor);
+    free_security_desc((PSECURITY_DESCRIPTOR)lpSA->lpSecurityDescriptor);
     lpSA->lpSecurityDescriptor = NULL;
 
     // free the security attributes structure
@@ -800,7 +804,7 @@ static PSID get_user_sid(HANDLE hProcess) {
   }
 
   DWORD nbytes = GetLengthSid(token_buf->User.Sid);
-  PSID pSID = NEW_C_HEAP_ARRAY(char, nbytes);
+  PSID pSID = (PSID)NEW_C_HEAP_ARRAY(char, nbytes);
 
   if (!CopySid(nbytes, pSID, token_buf->User.Sid)) {
     if (PrintMiscellaneous && Verbose) {
@@ -925,7 +929,7 @@ static bool add_allow_aces(PSECURITY_DESCRIPTOR pSD,
       // for which we plan to set ACEs.
       int matches = 0;
       for (int i = 0; i < ace_count; i++) {
-        if (EqualSid(aces[i].pSid, &(((ACCESS_ALLOWED_ACE *)ace)->SidStart))) {
+        if (EqualSid(aces[i].pSid, (PSID)&(((ACCESS_ALLOWED_ACE *)ace)->SidStart))) {
           matches++;
           break;
         }
@@ -994,6 +998,7 @@ static bool add_allow_aces(PSECURITY_DESCRIPTOR pSD,
     return false;
   }
 
+#ifndef __WIN32OS2__
   // if running on windows 2000 or later, set the automatic inheritance
   // control flags.
   SetSecurityDescriptorControlFnPtr _SetSecurityDescriptorControl;
@@ -1014,6 +1019,7 @@ static bool add_allow_aces(PSECURITY_DESCRIPTOR pSD,
       return false;
     }
   }
+#endif  
    // Note, the security descriptor maintains a reference to the newACL, not
    // a copy of it. Therefore, the newACL is not freed here. It is freed when
    // the security descriptor containing its reference is freed.
@@ -1225,7 +1231,8 @@ static bool make_user_tmp_dir(const char* dirname) {
       // So add full permission to the administrator. Also setting new
       // DACLs might fix the corrupted the DACLs.
       SECURITY_INFORMATION secInfo = DACL_SECURITY_INFORMATION;
-      if (!SetFileSecurity(dirname, secInfo, pDirSA->lpSecurityDescriptor)) {
+      if (!SetFileSecurity(dirname, secInfo,
+                          (PSECURITY_DESCRIPTOR)pDirSA->lpSecurityDescriptor)) {
         if (PrintMiscellaneous && Verbose) {
           lasterror = GetLastError();
           warning("SetFileSecurity failed for %s directory.  lasterror %d \n",
