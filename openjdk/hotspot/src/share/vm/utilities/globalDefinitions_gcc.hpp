@@ -81,9 +81,41 @@
 #endif // LINUX
 
 #ifdef OS2
+#include <sys/types.h>
 #ifdef __WIN32OS2__
 #include <excpt.h>
+// compiler's select() would conflict with Winsock
+#define select __io_select
 #include <io.h>
+#undef select
+#ifdef __EMX__
+// we disable BSD visibility for the compiler so define these manually
+int	finite(double) __pure2;
+int	isnanf(float) __pure2;
+#define S_IREAD     S_IRUSR
+#define S_IWRITE    S_IWUSR
+#define S_IEXEC     S_IXUSR
+#include <alloca.h> // <stdlib.h> defines alloca only in BSD mode
+#endif
+#else // __WIN32OS2__
+#include <io.h>
+#endif // __WIN32OS2__
+#ifdef __EMX__
+#include <strings.h> // strcasecmp()
+// EMX doesn't provide some ANSI declarations
+#define _alloca     alloca
+#define _fileno     fileno
+#define _O_BINARY   O_BINARY
+#define _O_TEXT     O_TEXT
+#define _O_CREAT    O_CREAT
+#define _O_TRUNC    O_TRUNC
+#define _O_EXCL     O_TRUNC
+#define _O_WRONLY   O_WRONLY
+#define _O_RDONLY   O_RDONLY
+#define _O_RDWR     O_RDWR
+#define _S_IREAD    S_IREAD
+#define _S_IWRITE   S_IWRITE
+#define _S_IEXEC    S_IEXEC
 #endif
 #endif // OS2
 

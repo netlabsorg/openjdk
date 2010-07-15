@@ -55,6 +55,14 @@
 #include <tlhelp32.h>
 #include <vdmdbg.h>
 
+#ifdef __WIN32OS2__
+#include <mmsystem.h>
+#include <wincon.h>
+#include <basetsd.h>
+#define _M_IX86
+#define _lseeki64 lseek
+#endif
+
 // for timer info max values which include all bits
 #define ALL_64_BITS CONST64(0xFFFFFFFFFFFFFFFF)
 
@@ -530,22 +538,42 @@ bool os::create_thread(Thread* thread, ThreadType thr_type, size_t stack_size) {
 #endif
 
   HANDLE thread_handle =
+#ifdef __WIN32OS2__
+    // @todo probably need to cause some per-thread LIBC initialization routine
+    CreateThread(NULL,
+                 stack_size,
+                 (LPTHREAD_START_ROUTINE) java_start,
+                 thread,
+                 CREATE_SUSPENDED | STACK_SIZE_PARAM_IS_A_RESERVATION,
+                 (LPDWORD)&thread_id);
+#else
     (HANDLE)_beginthreadex(NULL,
                            (unsigned)stack_size,
                            (unsigned (__stdcall *)(void*)) java_start,
                            thread,
                            CREATE_SUSPENDED | STACK_SIZE_PARAM_IS_A_RESERVATION,
-                           &thread_id);
+                           (PDWORD)&thread_id);
+#endif  
   if (thread_handle == NULL) {
     // perhaps STACK_SIZE_PARAM_IS_A_RESERVATION is not supported, try again
     // without the flag.
     thread_handle =
+#ifdef __WIN32OS2__
+    // @todo probably need to cause some per-thread LIBC initialization routine
+    CreateThread(NULL,
+                 stack_size,
+                 (LPTHREAD_START_ROUTINE) java_start,
+                 thread,
+                 CREATE_SUSPENDED,
+                 (LPDWORD)&thread_id);
+#else
     (HANDLE)_beginthreadex(NULL,
                            (unsigned)stack_size,
                            (unsigned (__stdcall *)(void*)) java_start,
                            thread,
                            CREATE_SUSPENDED,
                            &thread_id);
+#endif  
   }
   if (thread_handle == NULL) {
     // Need to clean up stuff we've allocated so far
@@ -620,6 +648,13 @@ julong os::available_memory() {
 }
 
 julong os::win32::available_memory() {
+#ifdef __WIN32OS2__
+  MEMORYSTATUS ms;
+  ms.dwLength = sizeof(ms);
+  GlobalMemoryStatus(&ms);
+
+  return ms.dwAvailPhys;
+#else    
   // Use GlobalMemoryStatusEx() because GlobalMemoryStatus() may return incorrect
   // value if total memory is larger than 4GB
   MEMORYSTATUSEX ms;
@@ -627,6 +662,7 @@ julong os::win32::available_memory() {
   GlobalMemoryStatusEx(&ms);
 
   return (julong)ms.ullAvailPhys;
+#endif
 }
 
 julong os::physical_memory() {
@@ -643,8 +679,10 @@ julong os::allocatable_physical_memory(julong size) {
 }
 
 // VC6 lacks DWORD_PTR
+#ifndef __WIN32OS2__
 #if _MSC_VER < 1300
 typedef UINT_PTR DWORD_PTR;
+#endif
 #endif
 
 int os::active_processor_count() {
@@ -702,7 +740,7 @@ double os::elapsedTime() {
 //   Java standards require the number of milliseconds since 1/1/1970
 
 // Constant offset - calculated using offset()
-static jlong  _offset   = 116444736000000000;
+static jlong  _offset   = 116444736000000000LL;
 // Fake time counter for reproducible results when debugging
 static jlong  fake_time = 0;
 
@@ -1330,7 +1368,7 @@ bool os::dll_address_to_function_name(address addr, char *buf,
 }
 
 void* os::dll_lookup(void* handle, const char* name) {
-  return GetProcAddress((HMODULE)handle, name);
+  return CAST_FROM_FN_PTR(void *, GetProcAddress((HMODULE)handle, name));
 }
 
 // save the start and end address of jvm.dll into param[0] and param[1]
@@ -1445,8 +1483,10 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen)
 
   static const arch_t arch_array[]={
     {IMAGE_FILE_MACHINE_I386,      (char*)"IA 32"},
+#ifndef __WIN32OS2__
     {IMAGE_FILE_MACHINE_AMD64,     (char*)"AMD 64"},
-    {IMAGE_FILE_MACHINE_IA64,      (char*)"IA 64"}
+    {IMAGE_FILE_MACHINE_IA64,      (char*)"IA 64"},
+#endif
   };
   #if   (defined _M_IA64)
     static const uint16_t running_arch=IMAGE_FILE_MACHINE_IA64;
@@ -1529,6 +1569,7 @@ void os::print_os_info(outputStream* st) {
     case 4000: st->print(" Windows NT 4.0"); break;
     case 5000: st->print(" Windows 2000"); break;
     case 5001: st->print(" Windows XP"); break;
+#ifndef __WIN32OS2__      
     case 5002:
     case 6000:
     case 6001: {
@@ -1572,6 +1613,7 @@ void os::print_os_info(outputStream* st) {
       }
       break;
     }
+#endif
     default: // future windows, print out its major and minor versions
       st->print(" Windows NT %d.%d", osvi.dwMajorVersion, osvi.dwMinorVersion);
     }
@@ -1593,17 +1635,28 @@ void os::print_memory_info(outputStream* st) {
   st->print("Memory:");
   st->print(" %dk page", os::vm_page_size()>>10);
 
+#ifdef __WIN32OS2__
+  MEMORYSTATUS ms;
+  ms.dwLength = sizeof(ms);
+  GlobalMemoryStatus(&ms);
+#else    
   // Use GlobalMemoryStatusEx() because GlobalMemoryStatus() may return incorrect
   // value if total memory is larger than 4GB
   MEMORYSTATUSEX ms;
   ms.dwLength = sizeof(ms);
   GlobalMemoryStatusEx(&ms);
+#endif
 
   st->print(", physical %uk", os::physical_memory() >> 10);
   st->print("(%uk free)", os::available_memory() >> 10);
 
+#ifdef __WIN32OS2__
+  st->print(", swap %uk", ms.dwTotalPageFile >> 10);
+  st->print("(%uk free)", ms.dwAvailPageFile >> 10);
+#else    
   st->print(", swap %uk", ms.ullTotalPageFile >> 10);
   st->print("(%uk free)", ms.ullAvailPageFile >> 10);
+#endif
   st->cr();
 }
 
@@ -2449,6 +2502,8 @@ int os::vm_allocation_granularity() {
   return os::win32::vm_allocation_granularity();
 }
 
+#ifndef __WIN32OS2__
+
 // Windows large page support is available on Windows 2003. In order to use
 // large page memory, the administrator must first assign additional privilege
 // to the user:
@@ -2554,6 +2609,8 @@ static void cleanup_after_large_page_init() {
   _hToken = NULL;
 }
 
+#endif // ifndef __WIN32OS2__
+
 bool os::large_page_init() {
   if (!UseLargePages) return false;
 
@@ -2563,6 +2620,10 @@ bool os::large_page_init() {
   bool success = false;
 
 # define WARN(msg) if (warn_on_failure) { warning(msg); }
+
+#ifdef __WIN32OS2__
+    WARN("Large page is not supported by the operating system.");
+#else
   if (resolve_functions_for_large_page_init()) {
     if (request_lock_memory_privilege()) {
       size_t s = _GetLargePageMinimum();
@@ -2600,6 +2661,8 @@ bool os::large_page_init() {
   }
 
   cleanup_after_large_page_init();
+#endif // ifdef __WIN32OS2__
+
   return success;
 }
 
@@ -2638,7 +2701,11 @@ char* os::attempt_reserve_memory_at(size_t bytes, char* requested_addr) {
 }
 
 size_t os::large_page_size() {
+#ifdef __WIN32OS2__
+  return 0;
+#else
   return _large_page_size;
+#endif
 }
 
 bool os::can_commit_large_page_memory() {
@@ -2656,6 +2723,7 @@ char* os::reserve_memory_special(size_t bytes, char* addr, bool exec) {
 
   const DWORD prot = exec ? PAGE_EXECUTE_READWRITE : PAGE_READWRITE;
 
+#ifndef __WIN32OS2__
   if (UseLargePagesIndividualAllocation) {
     if (TracePageSizes && Verbose) {
        tty->print_cr("Reserving large pages individually.");
@@ -2750,6 +2818,12 @@ char* os::reserve_memory_special(size_t bytes, char* addr, bool exec) {
     char * res = (char *)VirtualAlloc(NULL, bytes, flag, prot);
     return res;
   }
+#else // ifndef __WIN32OS2__
+  // normal policy just allocate it all at once
+  DWORD flag = MEM_RESERVE | MEM_COMMIT;
+  char * res = (char *)VirtualAlloc(NULL, bytes, flag, prot);
+  return res;
+#endif // ifndef __WIN32OS2__
 }
 
 bool os::release_memory_special(char* base, size_t bytes) {
@@ -3157,6 +3231,13 @@ void os::win32::initialize_system_info() {
   _processor_level = si.wProcessorLevel;
   _processor_count = si.dwNumberOfProcessors;
 
+#ifdef __WIN32OS2__
+  MEMORYSTATUS ms;
+  ms.dwLength = sizeof(ms);
+
+  GlobalMemoryStatus(&ms);
+  _physical_memory = ms.dwTotalPhys;
+#else    
   MEMORYSTATUSEX ms;
   ms.dwLength = sizeof(ms);
 
@@ -3164,6 +3245,7 @@ void os::win32::initialize_system_info() {
   // dwMemoryLoad (% of memory in use)
   GlobalMemoryStatusEx(&ms);
   _physical_memory = ms.ullTotalPhys;
+#endif
 
   OSVERSIONINFO oi;
   oi.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
@@ -3252,7 +3334,11 @@ void nx_check_protection() {
   char code[] = { (char)0xC3 }; // ret
   void *code_ptr = (void *)code;
   __try {
+#ifdef __EMX__
+    __asm__("call *%0" : : "m"(code_ptr));
+#else
     __asm call code_ptr
+#endif
   } __except(nx_exception_filter((_EXCEPTION_POINTERS*)_exception_info())) {
     tty->print_raw_cr("NX protection detected.");
   }
@@ -3282,7 +3368,7 @@ void os::init(void) {
 
   // Initialize main_process and main_thread
   main_process = GetCurrentProcess();  // Remember main_process is a pseudo handle
- if (!DuplicateHandle(main_process, GetCurrentThread(), main_process,
+  if (!DuplicateHandle(main_process, GetCurrentThread(), main_process,
                        &main_thread, THREAD_ALL_ACCESS, false, 0)) {
     fatal("DuplicateHandle failed\n");
   }
@@ -3348,7 +3434,11 @@ jint os::init_2(void) {
   if (ForceFloatExceptions) {
 #ifndef  _WIN64
     static long fp_control_word = 0;
+#ifdef __EMX__
+    __asm__("fstcw %0" : "=m"(fp_control_word));
+#else
     __asm { fstcw fp_control_word }
+#endif    
     // see Intel PPro Manual, Vol. 2, p 7-16
     const long precision = 0x20;
     const long underflow = 0x10;
@@ -3357,7 +3447,11 @@ jint os::init_2(void) {
     const long denorm    = 0x02;
     const long invalid   = 0x01;
     fp_control_word |= invalid;
+#ifdef __EMX__
+    __asm__("fldcw %0" : : "m"(fp_control_word));
+#else
     __asm { fldcw fp_control_word }
+#endif
 #endif
   }
 
