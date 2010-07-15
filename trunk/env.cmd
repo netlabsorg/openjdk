@@ -47,8 +47,8 @@ interpret LocalEnv
 /*
  * setup GCC
  */
-if (G.PATH_TOOL_GCC442 \== '') then do
-    cmdline = 'call' G.PATH_TOOL_GCC442'\gcc442.cmd @'
+if (G.PATH_TOOL_GCC4_ENV \== '') then do
+    cmdline = 'call' G.PATH_TOOL_GCC4_ENV
     cmdline
     drop cmdline
 end
