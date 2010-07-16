@@ -126,7 +126,8 @@ Src_Dirs = \
   $(WorkSpace)/src/share/vm/utilities   \
   $(WorkSpace)/src/share/vm/libadt      \
   $(WorkSpace)/src/share/vm/opto        \
-  $(WorkSpace)/src/os/windows/vm          \
+  $(WorkSpace)/src/os/windows/vm        \
+  $(WorkSpace)/src/os/os2/vm            \
   $(WorkSpace)/src/os_cpu/windows_$(Platform_arch)/vm \
   $(WorkSpace)/src/os_cpu/os2_$(Platform_arch)/vm \
   $(WorkSpace)/src/cpu/$(Platform_arch)/vm \
