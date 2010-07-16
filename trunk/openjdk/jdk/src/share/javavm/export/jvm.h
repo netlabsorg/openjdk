@@ -1259,7 +1259,7 @@ JVM_SetSockOpt(jint fd, int level, int optname, const char *optval, int optlen);
  * These routines are only reentrant on Windows
  */
 
-#ifdef WIN32
+#if defined(WIN32) || defined(__WIN32OS2__)
 
 JNIEXPORT struct protoent * JNICALL
 JVM_GetProtoByName(char* name);

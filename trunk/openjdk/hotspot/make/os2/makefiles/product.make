@@ -53,7 +53,7 @@ Obj_Files += os_os2.obj
 HS_BUILD_ID = $(HS_BUILD_VER)
 
 $(AOUT): $(Res_Files) $(Obj_Files) $(Def_File)
-	$(LINK) $(LINK_FLAGS) -o $@ $(Obj_Files) $(Res_Files)
+	$(LINK) $(LINK_FLAGS) -o $@ $(Def_File) $(Obj_Files) $(Res_Files)
 	$(IMPLIB) -o $(basename $@).lib $@
 
 include $(WorkSpace)/make/os2/makefiles/shared.make
