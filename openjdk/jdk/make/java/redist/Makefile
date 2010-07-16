@@ -28,11 +28,11 @@
 #   location into the OUTPUTDIR, and also primes the OUTPUTDIR with files
 #   that are provided inside this workspace.
 #
-# IMPORT_LIST contains the list of destination files that are copied 
+# IMPORT_LIST contains the list of destination files that are copied
 #     from external places (outside this workspace).
 #
 # INTERNAL_IMPORT_LIST is the list of destination files from BUILDDIR.
-# 
+#
 
 BUILDDIR = ../..
 PRODUCT  = java
@@ -43,7 +43,7 @@ CLIENT_LOCATION = client
 
 DB_SUFFIX = _db
 
-ifeq ($(PLATFORM), windows)
+ifeq ($(filter-out windows,os2 $(PLATFORM)),)
   LIB_LOCATION = $(BINDIR)
 else
   LIB_LOCATION = $(LIBDIR)/$(LIBARCH)
@@ -53,6 +53,7 @@ JVM_NAME               = $(LIB_PREFIX)jvm.$(LIBRARY_SUFFIX)
 JVMLIB_NAME            = $(LIB_PREFIX)jvm.$(LIB_SUFFIX)
 JVMMAP_NAME            = $(LIB_PREFIX)jvm.map
 JVMPDB_NAME            = $(LIB_PREFIX)jvm.pdb
+JVMSYM_NAME            = $(LIB_PREFIX)jvm.sym
 LIBJSIG_NAME           = $(LIB_PREFIX)jsig.$(LIBRARY_SUFFIX)
 JVMDB_NAME             = $(LIB_PREFIX)jvm$(DB_SUFFIX).$(LIBRARY_SUFFIX)
 
@@ -73,7 +74,7 @@ IMPORT_LIST = $(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVM_NAME) \
 # INCLUDE_SA is false on platforms where SA is not supported.
 # On platforms where it is supported, we want to allow it to
 # not be present, at least temporarily.  So,
-# if the SA files (well, just sa-jdi.jar) do not exist 
+# if the SA files (well, just sa-jdi.jar) do not exist
 # in the HOTSPOT_IMPORT_PATH, then we won't build SA.
 SA_EXISTS := $(shell if [ -r $(HOTSPOT_IMPORT_PATH)/lib/sa-jdi.jar ] ; then \
                           $(ECHO) true; \
@@ -88,7 +89,7 @@ endif
 ifeq ($(INCLUDE_SA), true)
   IMPORT_LIST += $(LIBDIR)/sa-jdi.jar \
                  $(LIB_LOCATION)/$(SALIB_NAME)
-  ifeq ($(PLATFORM), windows)
+  ifeq ($(filter-out windows,os2 $(PLATFORM)),)
     IMPORT_LIST += $(LIB_LOCATION)/$(SAMAP_NAME) \
                    $(LIB_LOCATION)/$(SAPDB_NAME)
   endif
@@ -133,7 +134,7 @@ endif
 $(LIBDIR)/$(JVMLIB_NAME): $(HOTSPOT_LIB_PATH)/$(JVMLIB_NAME)
 	$(install-import-file)
 
-# it is OK for the .map and .pdb files to not exist, so do not force a 
+# it is OK for the .map and .pdb files to not exist, so do not force a
 # dependency on them from the bootstrap location, and allow the copy to fail.
 $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(JVMMAP_NAME):
 	@$(prep-target)
@@ -147,12 +148,51 @@ $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(JVMPDB_NAME):
 	@$(prep-target)
 	-$(CP) $(HOTSPOT_CLIENT_PATH)/$(JVMPDB_NAME)  $@
 
-$(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVMPDB_NAME): 
+$(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVMPDB_NAME):
 	@$(prep-target)
 	-$(CP) $(HOTSPOT_SERVER_PATH)/$(JVMPDB_NAME) $@
 
 #  Windows     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  Windows
-else # PLATFORM
+else # PLATFORM == windows
+ifeq ($(PLATFORM), os2)
+#  OS/2        vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv  OS/2
+
+# Get the hotspot .map and .sym files for client and server
+IMPORT_LIST += \
+	$(LIBDIR)/$(JVMLIB_NAME) \
+	$(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVMMAP_NAME) \
+	$(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVMSYM_NAME)
+
+# Hotspot client is only available on 32-bit builds
+ifeq ($(ARCH_DATA_MODEL), 32)
+  IMPORT_LIST += $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(JVMMAP_NAME) \
+                 $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(JVMSYM_NAME)
+endif
+
+$(LIBDIR)/$(JVMLIB_NAME): $(HOTSPOT_LIB_PATH)/$(JVMLIB_NAME)
+	$(install-import-file)
+
+# it is OK for the .map and .sym files to not exist, so do not force a
+# dependency on them from the bootstrap location, and allow the copy to fail.
+$(LIB_LOCATION)/$(CLIENT_LOCATION)/$(JVMMAP_NAME):
+	@$(prep-target)
+	-$(CP) $(HOTSPOT_CLIENT_PATH)/$(JVMMAP_NAME)  $@
+
+$(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVMMAP_NAME):
+	@$(prep-target)
+	-$(CP) $(HOTSPOT_SERVER_PATH)/$(JVMMAP_NAME) $@
+
+$(LIB_LOCATION)/$(CLIENT_LOCATION)/$(JVMSYM_NAME):
+	@$(prep-target)
+	-$(CP) $(HOTSPOT_CLIENT_PATH)/$(JVMSYM_NAME)  $@
+
+$(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVMSYM_NAME):
+	@$(prep-target)
+	-$(CP) $(HOTSPOT_SERVER_PATH)/$(JVMSYM_NAME) $@
+
+#  OS/2        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  OS/2
+
+else
 #  NOT Windows vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv  NOT Windows
 
 IMPORT_LIST += \
@@ -161,7 +201,7 @@ IMPORT_LIST += \
 
 ifeq ($(PLATFORM), solaris)
   IMPORT_LIST += $(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVMDB_NAME)
-endif 
+endif
 
 ifneq ($(ZERO_BUILD), true)
 ifeq ($(ARCH_DATA_MODEL), 32)
@@ -198,7 +238,8 @@ endif # ZERO_BUILD
 
 #  NOT Windows ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ NOT Windows
 
-endif # PLATFORM
+endif # PLATFORM == os2
+endif # PLATFORM == windows
 
 $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(JVM_NAME): $(HOTSPOT_CLIENT_PATH)/$(JVM_NAME)
 	$(install-import-file)
@@ -245,7 +286,7 @@ $(LIBDIR)/sa-jdi.jar: $(HOTSPOT_IMPORT_PATH)/lib/sa-jdi.jar
 $(LIB_LOCATION)/$(SALIB_NAME): $(HOTSPOT_SALIB_PATH)/$(SALIB_NAME)
 	$(install-import-file)
 
-ifeq ($(PLATFORM), windows)
+ifeq ($(filter-out windows,os2 $(PLATFORM)),)
 $(LIB_LOCATION)/$(SAPDB_NAME): $(HOTSPOT_SALIB_PATH)/$(SAPDB_NAME)
 	$(install-import-file)
 
@@ -305,9 +346,9 @@ include FILES.gmk
 FONTFILES = $(SHARED_FONTFILES)
 FONTSDIR  = $(LIBDIR)/fonts
 FONTSDIRFILE  = $(FONTSDIR)/fonts.dir
-INTERNAL_IMPORT_LIST += $(FONTFILES) 
+INTERNAL_IMPORT_LIST += $(FONTFILES)
 
-ifneq ($(PLATFORM), windows)
+ifneq ($(filter-out windows,os2 $(PLATFORM)),)
   INTERNAL_IMPORT_LIST += $(FONTSDIRFILE)
 endif
 
