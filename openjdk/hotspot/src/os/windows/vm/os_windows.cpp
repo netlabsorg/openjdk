@@ -97,6 +97,9 @@ PVOID  topLevelVectoredExceptionHandler = NULL;
 HINSTANCE vm_lib_handle;
 static int getLastErrorString(char *buf, size_t len);
 
+#ifdef __WIN32OS2__
+extern "C"
+#endif
 BOOL WINAPI DllMain(HINSTANCE hinst, DWORD reason, LPVOID reserved) {
   switch (reason) {
     case DLL_PROCESS_ATTACH:
@@ -553,7 +556,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type, size_t stack_size) {
                            thread,
                            CREATE_SUSPENDED | STACK_SIZE_PARAM_IS_A_RESERVATION,
                            (PDWORD)&thread_id);
-#endif  
+#endif
   if (thread_handle == NULL) {
     // perhaps STACK_SIZE_PARAM_IS_A_RESERVATION is not supported, try again
     // without the flag.
@@ -573,7 +576,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type, size_t stack_size) {
                            thread,
                            CREATE_SUSPENDED,
                            &thread_id);
-#endif  
+#endif
   }
   if (thread_handle == NULL) {
     // Need to clean up stuff we've allocated so far
@@ -654,7 +657,7 @@ julong os::win32::available_memory() {
   GlobalMemoryStatus(&ms);
 
   return ms.dwAvailPhys;
-#else    
+#else
   // Use GlobalMemoryStatusEx() because GlobalMemoryStatus() may return incorrect
   // value if total memory is larger than 4GB
   MEMORYSTATUSEX ms;
@@ -1569,7 +1572,7 @@ void os::print_os_info(outputStream* st) {
     case 4000: st->print(" Windows NT 4.0"); break;
     case 5000: st->print(" Windows 2000"); break;
     case 5001: st->print(" Windows XP"); break;
-#ifndef __WIN32OS2__      
+#ifndef __WIN32OS2__
     case 5002:
     case 6000:
     case 6001: {
@@ -1639,7 +1642,7 @@ void os::print_memory_info(outputStream* st) {
   MEMORYSTATUS ms;
   ms.dwLength = sizeof(ms);
   GlobalMemoryStatus(&ms);
-#else    
+#else
   // Use GlobalMemoryStatusEx() because GlobalMemoryStatus() may return incorrect
   // value if total memory is larger than 4GB
   MEMORYSTATUSEX ms;
@@ -1653,7 +1656,7 @@ void os::print_memory_info(outputStream* st) {
 #ifdef __WIN32OS2__
   st->print(", swap %uk", ms.dwTotalPageFile >> 10);
   st->print("(%uk free)", ms.dwAvailPageFile >> 10);
-#else    
+#else
   st->print(", swap %uk", ms.ullTotalPageFile >> 10);
   st->print("(%uk free)", ms.ullAvailPageFile >> 10);
 #endif
@@ -3237,7 +3240,7 @@ void os::win32::initialize_system_info() {
 
   GlobalMemoryStatus(&ms);
   _physical_memory = ms.dwTotalPhys;
-#else    
+#else
   MEMORYSTATUSEX ms;
   ms.dwLength = sizeof(ms);
 
@@ -3438,7 +3441,7 @@ jint os::init_2(void) {
     __asm__("fstcw %0" : "=m"(fp_control_word));
 #else
     __asm { fstcw fp_control_word }
-#endif    
+#endif
     // see Intel PPro Manual, Vol. 2, p 7-16
     const long precision = 0x20;
     const long underflow = 0x10;
