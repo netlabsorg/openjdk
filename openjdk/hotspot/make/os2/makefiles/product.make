@@ -45,6 +45,11 @@ include $(GENERATED)/Dependencies
 # Not included in includeDB because it has no dependencies
 Obj_Files += os2_x86_32.obj
 
+# Various OS/2 specific sources
+# Not included in includeDB because they don't match the logic of that file
+# (it expects only one platform at a time which is windows for now)
+Obj_Files += os_os2.obj
+
 HS_BUILD_ID = $(HS_BUILD_VER)
 
 $(AOUT): $(Res_Files) $(Obj_Files) $(Def_File)
