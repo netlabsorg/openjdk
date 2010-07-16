@@ -68,7 +68,7 @@ JTG_DOCS            = $(JDK_TOPDIR)/src/solaris/doc
 jdkversion := $(JDK_MAJOR_VERSION).$(JDK_MINOR_VERSION).$(JDK_MICRO_VERSION)
 
 # Text documents on windows use this suffix
-ifeq ($(PLATFORM), windows)
+ifeq ($(filter-out windows,os2 $(PLATFORM)),)
   TEXT_SUFFIX = .txt
 endif
 
@@ -91,7 +91,7 @@ else
   ifeq ($(MILESTONE), fcs)
     LICENSE_VERSION=.fcs
   endif
-  ifeq ($(PLATFORM), windows)
+  ifeq ($(filter-out windows,os2 $(PLATFORM)),)
     LICENSE_DOCLIST_JDK = $(subst $(LICENSE_VERSION),,\
 		   $(shell $(CD) $(SHARE_JDK_DOC_SRC) && \
  		           $(LS) *LICENSE*$(LICENSE_VERSION)))
@@ -397,7 +397,7 @@ TOOLS = \
 	sun/tools/jstack        \
 	sun/tools/jinfo         \
 	sun/tools/jmap
-	
+
 # classes that go into jsse.jar
 JSSE_CLASSES_DIRS = \
 	sun/security/provider/Sun.class \
@@ -515,7 +515,7 @@ $(JDK_IMAGE_DIR)/%64: $(SHARE_JDK_DOC_SRC)/%
 	$(process-doc-file)
 endif
 
-# JRE files 
+# JRE files
 $(JRE_IMAGE_DIR)/%: $(SHARE_JRE_DOC_SRC)/%
 	$(process-doc-file)
 # Add $(TEXT_SUFFIX) suffix
@@ -785,15 +785,14 @@ initial-image-jre:: initial-image-jre-setup \
 	    $(BOOT_JAVA_CMD) -jar $(BUILDMETAINDEX_JARFILE) \
 		-o meta-index *.jar
 	@$(CD) $(JRE_IMAGE_DIR)/lib/ext && $(java-vm-cleanup)
-ifeq ($(PLATFORM), windows)
+ifeq ($(filter-out windows,os2 $(PLATFORM)),)
 	@# Remove certain *.lib files
 	$(CD) $(JRE_IMAGE_DIR)/lib && \
             $(RM) java.$(LIB_SUFFIX) jvm.$(LIB_SUFFIX) \
                   hpi.$(LIB_SUFFIX) awt.$(LIB_SUFFIX) jawt.$(LIB_SUFFIX)
-endif # Windows
-ifneq ($(PLATFORM), windows)
+else
 	$(call copy-man-pages,$(JRE_IMAGE_DIR),$(JRE_MAN_PAGES))
-endif # !windows
+endif # windows || OS/2
 
 # Trim out any extra files not for the jre shipment but wanted in the jdk jre.
 #   (Note the jdk WILL want the jre image before this trimming)
@@ -821,7 +820,7 @@ endif # PLATFORM
 # Get list of all Elf files in the jre
 JRE_ELF_LIST=$(TEMPDIR)/jre-elf-files.list
 $(JRE_ELF_LIST):
-ifneq ($(PLATFORM), windows)
+ifneq ($(filter-out windows,os2 $(PLATFORM)),)
 	$(RM) $@
 	$(FIND) $(JRE_IMAGE_DIR)/lib -type f -name \*.$(LIB_SUFFIX) >> $@
 	$(FILE) `$(FIND) $(JRE_IMAGE_DIR)/bin -type f -name \*$(EXE_SUFFIX)` \
@@ -906,7 +905,7 @@ initial-image-jdk:: initial-image-jdk-setup \
 	        $(CP) $(LIBDIR)/$$l $(JDK_IMAGE_DIR)/lib; \
 	    fi; \
 	done
-  ifeq ($(PLATFORM), windows)
+  ifeq ($(filter-out windows,os2 $(PLATFORM)),)
 	@#
 	@# lib/
 	@#
@@ -1044,7 +1043,7 @@ initial-image-jdk:: initial-image-jdk-setup \
 	@# Swing BeanInfo generation
 	@#
 	$(CD) javax/swing/beaninfo && $(MAKE) swing-1.2-beans
-ifneq ($(PLATFORM), windows)
+ifneq ($(filter-out windows,os2 $(PLATFORM)),)
 	$(call copy-man-pages,$(JDK_IMAGE_DIR),$(JDK_MAN_PAGES))
 endif # !windows
 
@@ -1059,7 +1058,7 @@ trim-image-jdk::
 # Get list of Elf files in the jdk
 JDK_ELF_LIST=$(TEMPDIR)/jdk-elf-files.list
 $(JDK_ELF_LIST):
-ifneq ($(PLATFORM), windows)
+ifneq ($(filter-out windows,os2 $(PLATFORM)),)
 	$(RM) $@
 	$(FIND) $(JDK_IMAGE_DIR)/jre/lib -type f -name \*.$(LIB_SUFFIX) >> $@
 	$(FILE) `$(FIND) $(JDK_IMAGE_DIR)/jre/bin -type f -name \*$(EXE_SUFFIX)` \
@@ -1222,7 +1221,7 @@ endif
 ifeq ($(PLATFORM), linux)
 	$(RM) -r $(OUTPUTDIR)/$(ARCH)
 endif
-ifeq ($(PLATFORM), windows)
+ifeq ($(filter-out windows,os2 $(PLATFORM)),)
 	$(RM) $(TEMPDIR)/rebase.input
 endif
 	$(RM) -r $(JDK_IMAGE_DIR)
