@@ -80,23 +80,26 @@ else
 AGCT_EXPORT=AsyncGetCallTrace
 endif
 
+MAKEFILE = $(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST))
+
 Def_File = vm.def
 $(Def_File): $(MAKEFILE)
-	@echo 'EXPORTS ;$(MAKEFILE)     \
-  JNI_GetDefaultJavaVMInitArgs      \
-  JNI_CreateJavaVM                  \
-  JVM_FindClassFromBootLoader       \
-  JNI_GetCreatedJavaVMs             \
-  jio_snprintf                      \
-  jio_printf                        \
-  jio_fprintf                       \
-  jio_vfprintf                      \
-  jio_vsnprintf                     \
-  $(AGCT_EXPORT)                    \
-  JVM_GetVersionInfo                \
-  JVM_GetThreadStateNames           \
-  JVM_GetThreadStateValues          \
-  JVM_InitAgentProperties           \
+	@echo -e 'EXPORTS \n \
+  JNI_GetDefaultJavaVMInitArgs = "_JNI_GetDefaultJavaVMInitArgs@4" \n \
+  JNI_CreateJavaVM = "_JNI_CreateJavaVM@12" \n \
+  JNI_GetCreatedJavaVMs = "_JNI_GetCreatedJavaVMs@12" \n \
+  _jio_snprintf \n \
+  _jio_printf \n \
+  _jio_fprintf \n \
+  _jio_vfprintf \n \
+  _jio_vsnprintf \n \
+  _$(AGCT_EXPORT) \n \
+  $(AGCT_EXPORT) = _$(AGCT_EXPORT) \n \
+  JVM_GetVersionInfo = "_JVM_GetVersionInfo@12" \n \
+  JVM_GetThreadStateNames = "_JVM_GetThreadStateNames@12" \n \
+  JVM_GetThreadStateValues = "_JVM_GetThreadStateValues@8" \n \
+  JVM_InitAgentProperties = "_JVM_InitAgentProperties@8" \n \
+  JVM_FindClassFromBootLoader = "_JVM_FindClassFromBootLoader@8" \n \
 ' > $(Def_File)
 
 LINK_FLAGS += -Zdll
