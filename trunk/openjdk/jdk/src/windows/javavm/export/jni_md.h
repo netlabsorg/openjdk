@@ -32,7 +32,7 @@
 
 typedef long jint;
 #ifdef __EMX__
-typedef int64_t jlong;
+typedef __int64_t jlong;
 #else
 typedef __int64 jlong;
 #endif
