@@ -77,7 +77,7 @@ CPP_FLAGS += -D_JNI_IMPLEMENTATION_
 ifeq ($(Variant), kernel)
 AGCT_EXPORT=
 else
-AGCT_EXPORT=AsyncGetCallTrace
+AGCT_EXPORT=_AsyncGetCallTrace \n  AsyncGetCallTrace = _AsyncGetCallTrace \n
 endif
 
 MAKEFILE = $(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST))
@@ -93,8 +93,7 @@ $(Def_File): $(MAKEFILE)
   _jio_fprintf \n \
   _jio_vfprintf \n \
   _jio_vsnprintf \n \
-  _$(AGCT_EXPORT) \n \
-  $(AGCT_EXPORT) = _$(AGCT_EXPORT) \n \
+  $(AGCT_EXPORT) \
   JVM_GetVersionInfo = "_JVM_GetVersionInfo@12" \n \
   JVM_GetThreadStateNames = "_JVM_GetThreadStateNames@12" \n \
   JVM_GetThreadStateValues = "_JVM_GetThreadStateValues@8" \n \
