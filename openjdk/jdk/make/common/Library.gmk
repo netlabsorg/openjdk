@@ -229,7 +229,41 @@ $(LIBDIR)/$(LIBRARY).dll:: $(OBJDIR)/$(LIBRARY).dll
 
 endif # INSTALL_DOT_LIB
 
-else # PLATFORM
+else # PLATFORM == windows
+
+ifeq ($(PLATFORM), os2)
+
+$(ACTUAL_LIBRARY):: $(COMPILE_FILES_o) $(FILES_m) $(FILES_reorder) $(DEF_FILE)
+	@$(prep-target)
+	@$(ECHO) "STATS: LIBRARY=$(LIBRARY), PRODUCT=$(PRODUCT), _OPT=$(_OPT)"
+	@$(ECHO) "Rebuilding $@ because of $?"
+ifeq ($(LIBRARY), fdlibm)
+	$(AR) -r $@ $(FILES_o)
+else # LIBRARY
+	$(LINKER) $(SHARED_LIBRARY_FLAG) -o $@ $(FILES_o) $(LDLIBS) $(DEF_FILE)
+	$(IMPLIB) -o $(OBJDIR)/$(LIBRARY).lib $@
+endif # LIBRARY
+
+#
+# Install a .lib file if required.
+#
+ifeq ($(INSTALL_DOT_LIB), true)
+
+$(ACTUAL_LIBRARY):: $(LIBDIR)/$(LIBRARY).lib
+
+clean::
+	-$(RM) $(LIBDIR)/$(LIBRARY).lib
+	-$(RM) $(LIBDIR)/$(LIBRARY).dll
+
+$(LIBDIR)/$(LIBRARY).lib:: $(OBJDIR)/$(LIBRARY).lib
+	$(install-file)
+
+$(LIBDIR)/$(LIBRARY).dll:: $(ACTUAL_LIBRARY)
+	$(install-file)
+
+endif # INSTALL_DOT_LIB
+
+else # PLATFORM == os2
 
 #
 # On Solaris, use mcs to write the version into the comment section of
@@ -249,7 +283,9 @@ ifeq ($(WRITE_LIBVERSION),true)
 endif # WRITE_LIBVERSION
 endif # LIBRARY
 
-endif # PLATFORM
+endif # PLATFORM == os2
+
+endif # PLATFORM == windows
 
 #
 # Cross check all linted files against each other

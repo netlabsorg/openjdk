@@ -63,9 +63,15 @@ ifeq ($(PLATFORM), os2)
   CXX          = $(COMPILER_PATH)g++
   REQUIRED_CC_VER = 3.2
   
+  AR           = emxomfar
+  IMPLIB       = emximp
+
   # Option used to create a shared library
   SHARED_LIBRARY_FLAG = -Zdll
-
+  
+  # current makefile reference (assumes GNU make)
+  MAKEFILE = $(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST))
+  
 endif
 
 ifeq ($(PLATFORM), linux)
