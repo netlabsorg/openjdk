@@ -45,10 +45,29 @@ ifeq ($(PLATFORM),windows)
   OTHER_LCF = -export:winFileHandleOpen -export:handleLseek
 endif
 
+ifeq ($(PLATFORM),os2)
+
+# build directly into BINDIR...
+LIB_LOCATION = $(BINDIR)
+
+# exports live in .def file
+DEF_FILE = $(OBJDIR)/$(LIBRARY).def
+
+$(DEF_FILE): $(MAKEFILE)
+	$(ECHO) -e 'EXPORTS ; $(MAKEFILE)\n \
+  _winFileHandleOpen \n \
+  _handleLseek \n \
+' > $@
+
+clean::
+	-$(RM) $(DEF_FILE)
+
+endif
+
 OTHER_CFLAGS += -DJDK_MAJOR_VERSION='"$(JDK_MAJOR_VERSION)"' \
                 -DJDK_MINOR_VERSION='"$(JDK_MINOR_VERSION)"' \
                 -DJDK_MICRO_VERSION='"$(JDK_MICRO_VERSION)"' \
-                -DJDK_BUILD_NUMBER='"$(JDK_BUILD_NUMBER)"' 
+                -DJDK_BUILD_NUMBER='"$(JDK_BUILD_NUMBER)"'
 
 ifdef JDK_UPDATE_VERSION
 OTHER_CFLAGS += -DJDK_UPDATE_VERSION='"$(JDK_UPDATE_VERSION)"'
@@ -62,7 +81,7 @@ include FILES_c.gmk
 include FILES_java.gmk
 include Exportedfiles.gmk
 
-ifeq ($(PLATFORM),windows)
+ifeq ($(filter-out windows os2, $(PLATFORM)),)
 FILES_java += 	java/io/Win32FileSystem.java \
 		java/io/WinNTFileSystem.java \
 		java/util/prefs/WindowsPreferences.java \
@@ -166,7 +185,7 @@ OTHER_INCLUDES += -I$(PLATFORM_SRC)/native/java/util
 #
 # Is the altzone extern documented in ctime(3C) available?
 #
-ifneq ($(PLATFORM), windows)
+ifneq ($(filter-out windows os2, $(PLATFORM)),)
 HAVE_ALTZONE=true
 endif
 
@@ -205,8 +224,13 @@ ifeq ($(PLATFORM),windows)
 OTHER_LDLIBS += $(JVMLIB) -libpath:$(OBJDIR)/../../../fdlibm/$(OBJDIRNAME) fdlibm.lib \
 		       -libpath:$(OBJDIR)/../../../verify/$(OBJDIRNAME) verify.lib
 else
+ifeq ($(PLATFORM),os2)
+OTHER_LDLIBS += $(JVMLIB) -L$(OBJDIR)/../../../fdlibm/$(OBJDIRNAME) fdlibm.lib \
+		       -L$(OBJDIR)/../../../verify/$(OBJDIRNAME) verify.lib
+else
 OTHER_LDLIBS += $(JVMLIB) -lverify $(LIBSOCKET) -lnsl -ldl \
 		-L$(OBJDIR)/../../../fdlibm/$(OBJDIRNAME) -lfdlibm.$(ARCH)
+endif
 endif
 
 #
@@ -236,7 +260,7 @@ ifeq ($(PLATFORM), solaris)
   endif
 endif
 
-ifneq ($(PLATFORM),windows)
+ifneq ($(filter-out windows os2, $(PLATFORM)),)
 
 # UNIXProcess.java is different for solaris and linux. We need to copy
 # the correct UNIXProcess.java over to $(GENSRCDIR)/java/lang/.
@@ -245,7 +269,7 @@ $(GENSRCDIR)/java/lang/UNIXProcess.java: \
     $(PLATFORM_SRC)/classes/java/lang/UNIXProcess.java.$(PLATFORM)
 	$(install-file)
 
-clean:: 
+clean::
 	$(RM) $(GENSRCDIR)/java/lang/UNIXProcess.java
 
 endif
@@ -259,10 +283,10 @@ JAVALIB =
 #
 # Special rules.
 #
-clean:: 
+clean::
 	$(RM) -r $(CLASSHDRDIR)
 
-clobber:: 
+clobber::
 	$(RM) -r $(CLASSBINDIR)/java/io $(CLASSBINDIR)/java/lang \
 		$(CLASSBINDIR)/java/security $(CLASSBINDIR)/java/util \
 		$(CLASSBINDIR)/sun/misc
@@ -281,7 +305,7 @@ CAL_PROPS = calendars.properties
 #
 # Rule to copy tzmappings file on Windows
 #
-ifeq ($(PLATFORM), windows)
+ifeq ($(filter-out windows os2, $(PLATFORM)),)
 TZMAP = $(LIBDIR)/tzmappings
 TZMAPFILE = $(PLATFORM_SRC)/lib/tzmappings
 
@@ -298,7 +322,7 @@ $(LIBDIR)/$(PROPS): $(PLATFORM_SRC)/lib/$(PROPS)
 $(LIBDIR)/$(CAL_PROPS): $(SHARE_SRC)/lib/$(CAL_PROPS)
 	$(install-file)
 
-clean:: 
+clean::
 	$(RM) -r $(LIBDIR)/$(PROPS) $(TZMAP)
 
 #
@@ -319,12 +343,12 @@ $(CURDATA): \
 	$(MV) $@.temp $@
 	$(CHMOD) 444 $@
 
-clean:: 
+clean::
 	$(RM) $(CURDATA)
 
 
 #
-# Rules to create $(GENSRCDIR)/sun/lang/CharacterData*.java 
+# Rules to create $(GENSRCDIR)/sun/lang/CharacterData*.java
 #
 CHARACTERDATA = $(BUILDDIR)/tools/GenerateCharacter
 UNICODEDATA   = $(BUILDDIR)/tools/UnicodeData
@@ -374,12 +398,12 @@ $(GENSRCDIR)/java/lang/%.java : $(CHARACTERDATA)/%.java.template
 	$(install-file)
 
 clean::
-	$(RM) $(GENSRCDIR)/java/lang/CharacterDataLatin1.java 
+	$(RM) $(GENSRCDIR)/java/lang/CharacterDataLatin1.java
 	$(RM) $(GENSRCDIR)/java/lang/CharacterData00.java
-	$(RM) $(GENSRCDIR)/java/lang/CharacterData01.java 
+	$(RM) $(GENSRCDIR)/java/lang/CharacterData01.java
 	$(RM) $(GENSRCDIR)/java/lang/CharacterData02.java
 	$(RM) $(GENSRCDIR)/java/lang/CharacterData0E.java
-	$(RM) $(GENSRCDIR)/java/lang/CharacterDataUndefined.java 
+	$(RM) $(GENSRCDIR)/java/lang/CharacterDataUndefined.java
 	$(RM) $(GENSRCDIR)/java/lang/CharacterDataPrivateUse.java
 
 #
@@ -387,15 +411,15 @@ clean::
 #
 
 #
-# Rule to precompile CoreResourceBundleControl.java 
+# Rule to precompile CoreResourceBundleControl.java
 #
 LOCALES_GEN_SH = localelist.sh
 
 $(GENSRCDIR)/sun/util/CoreResourceBundleControl.java: \
 	$(SHARE_SRC)/classes/sun/util/CoreResourceBundleControl-XLocales.java $(LOCALES_GEN_SH)
-	@$(prep-target) 
+	@$(prep-target)
 	NAWK="$(NAWK)" SED="$(SED)" $(SH) $(LOCALES_GEN_SH) "$(JRE_NONEXIST_LOCALES)" \
-		$< $@ 
+		$< $@
 clean::
 	$(RM) $(GENSRCDIR)/sun/util/CoreResourceBundleControl.java
 
