@@ -43,7 +43,7 @@ $(MAKE) -f Makefile.launcher \
 endef
 
 # Run MAKE $@ for all launchers
-ifeq ($(PLATFORM),windows)
+ifeq ($(filter-out windows os2, $(PLATFORM)),)
 # Run MAKE $@ for all platform specific launchers
 define make-platform-specific-launchers
 $(call make-launcher, kinit, sun.security.krb5.internal.tools.Kinit, , )

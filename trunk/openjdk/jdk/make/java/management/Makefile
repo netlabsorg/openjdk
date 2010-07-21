@@ -52,7 +52,7 @@ AUTO_FILES_JAVA_DIRS = java/lang/management com/sun/management sun/management
 
 include Exportedfiles.gmk
 
-ifeq ($(PLATFORM),windows)
+ifeq ($(filter-out windows os2, $(PLATFORM)),) 
 
 FILES_c     +=  OperatingSystem_md.c
 
@@ -85,7 +85,7 @@ vpath %.c $(PLATFORM_SRC)/native/com/sun/management
 OTHER_INCLUDES += \
   -I$(SHARE_SRC)/native/sun/management 
 
-ifeq ($(PLATFORM),windows)
+ifeq ($(filter-out windows os2, $(PLATFORM)),) 
   OTHER_LDLIBS += $(JVMLIB)
 endif
 

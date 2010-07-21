@@ -62,7 +62,7 @@ FILES_export = \
     sun/font/StrikeCache.java \
     sun/font/T2KFontScaler.java 
 
-ifeq ($(PLATFORM), windows)
+ifeq ($(filter-out windows os2, $(PLATFORM)),)
 
   # Files built here do not compile with warning level 3 if warnings are fatal
   COMPILER_WARNINGS_FATAL=false
@@ -98,7 +98,7 @@ vpath %.cpp   $(CLOSED_SRC)/share/native/$(PKGDIR)
 # Libraries to link, and other C flags.
 #
 # setup the list of libraries to link in...
-ifneq ($(PLATFORM), windows)
+ifneq ($(filter-out windows os2, $(PLATFORM)),)
   OTHER_LDLIBS  +=  $(LIBM) $(LIBCXX) -lfontmanager
   ifeq ($(PLATFORM), linux)
     ifeq ("$(CC_VER_MAJOR)", "3")

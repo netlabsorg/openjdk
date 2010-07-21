@@ -121,6 +121,6 @@ FILES_java = \
 	sun/net/idn/StringPrep.java \
 	sun/net/www/protocol/http/InMemoryCookieStore.java
 
-ifeq ($(PLATFORM), windows)
+ifeq ($(filter-out windows os2, $(PLATFORM)),)
     FILES_java += sun/net/www/protocol/http/NTLMAuthSequence.java 
 endif

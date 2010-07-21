@@ -48,7 +48,7 @@ OTHER_INCLUDES = -I$(SHARE_SRC)/transport/export \
                  -I$(PLATFORM_SRC)/back \
                  -I$(GENNATIVESRCDIR)/jdwp
 
-ifneq ($(PLATFORM), windows)
+ifneq ($(filter-out windows os2, $(PLATFORM)),)
   OTHER_LDLIBS += -ldl
 endif # PLATFORM
 
@@ -118,7 +118,7 @@ JAVALIB=
 #
 # Add to ambient vpath so we pick up the library files
 #
-ifeq ($(PLATFORM), windows)
+ifeq ($(filter-out windows os2, $(PLATFORM)),)
 vpath %.c $(SHARE_SRC)/back:$(SHARE_SRC)/back
 endif # PLATFORM
 vpath %.c $(SHARE_SRC)/back:$(PLATFORM_SRC)/back

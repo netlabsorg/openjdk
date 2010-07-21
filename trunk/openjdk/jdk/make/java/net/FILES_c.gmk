@@ -43,7 +43,7 @@ ifeq ($(PLATFORM), linux)
     FILES_c += linux_close.c
 endif
 
-ifeq ($(PLATFORM), windows)
+ifeq ($(filter-out windows os2, $(PLATFORM)),) 
     FILES_c += TwoStacksPlainSocketImpl.c
     FILES_c += DualStackPlainSocketImpl.c
     FILES_c += TwoStacksPlainDatagramSocketImpl.c

@@ -27,7 +27,7 @@
 # These are the names of Java classes for which we will make .h files.
 #
 
-ifeq ($(PLATFORM), windows)
+ifeq ($(filter-out windows os2,$(PLATFORM)),)
 FILES_export = \
         sun/tools/attach/WindowsAttachProvider.java \
 	sun/tools/attach/WindowsVirtualMachine.java

@@ -54,7 +54,7 @@ include $(BUILDDIR)/common/Library.gmk
 #
 vpath %.c   $(PLATFORM_SRC)/native/$(PKGDIR)
 
-ifneq ($(PLATFORM), windows)
+ifneq ($(filter-out windows os2, $(PLATFORM)),)
   LDLIBS =  -ldga -lX11 -ldl -lc
 
   CPPFLAGS += \

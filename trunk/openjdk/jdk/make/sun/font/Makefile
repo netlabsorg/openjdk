@@ -74,7 +74,7 @@ FILES_export = \
     sun/java2d/loops/DrawGlyphListLCD.java \
     sun/java2d/loops/GraphicsPrimitive.java
 
-ifeq ($(PLATFORM), windows)
+ifeq ($(filter-out windows os2, $(PLATFORM)),)
 
   # Files built here do not compile with warning level 3 if warnings are fatal
   COMPILER_WARNINGS_FATAL=false
@@ -130,7 +130,7 @@ FILES_m=mapfile-vers.openjdk
 library:: $(LIB_LOCATION)/$(LIB_PREFIX)freetype.$(LIBRARY_SUFFIX)
 
 $(LIB_LOCATION)/$(LIB_PREFIX)freetype.$(LIBRARY_SUFFIX):
-ifeq ($(PLATFORM), windows)
+ifeq ($(filter-out windows os2, $(PLATFORM)),)
 	$(CP) $(FREETYPE_LIB_PATH)/$(LIB_PREFIX)freetype.$(LIBRARY_SUFFIX) $@
 else 
   ifeq ($(USING_SYSTEM_FT_LIB), false)
@@ -168,7 +168,7 @@ else
   OTHER_LDLIBS += $(FREETYPE_LIB)
 endif
 
-ifeq ($(PLATFORM), windows)
+ifeq ($(filter-out windows os2, $(PLATFORM)),)
 vpath %.cpp   $(PLATFORM_SRC)/native/sun/windows
 vpath %.cpp   $(PLATFORM_SRC)/native/sun/java2d/d3d
 else # PLATFORM
@@ -204,7 +204,7 @@ CPPFLAGS += -I$(SHARE_SRC)/native/$(PKGDIR) \
 	    -I$(SHARE_SRC)/native/sun/java2d \
 	    -I$(TEMPDIR)/../../sun.awt/awt/CClassHeaders
 
-ifeq ($(PLATFORM), windows)
+ifeq ($(filter-out windows os2, $(PLATFORM)),)
 CPPFLAGS += -I$(PLATFORM_SRC)/native/sun/windows \
 	    -I$(PLATFORM_SRC)/native/sun/java2d/d3d
 endif

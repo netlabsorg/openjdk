@@ -32,7 +32,7 @@ include $(BUILDDIR)/common/Defs.gmk
 #
 # Files
 #
-ifeq ($(PLATFORM), windows)
+ifeq ($(filter-out windows os2, $(PLATFORM)),)
 include FILES_c_windows.gmk
 else # PLATFORM
 include FILES_c_unix.gmk
@@ -84,7 +84,7 @@ clean clobber::
 #
 vpath %.c   $(CLOSED_SRC)/share/native/$(PKGDIR)
 
-ifeq ($(PLATFORM), windows)
+ifeq ($(filter-out windows os2, $(PLATFORM)),)
 
 OTHER_LDLIBS = user32.lib version.lib
 

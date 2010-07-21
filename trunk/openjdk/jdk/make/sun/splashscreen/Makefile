@@ -61,7 +61,7 @@ JAVALIB=
 
 CFLAGS += -DSPLASHSCREEN
 
-ifneq ($(PLATFORM), windows)
+ifneq ($(filter-out windows os2, $(PLATFORM)),)
   CFLAGS += -DWITH_X11
   CPPFLAGS += -I$(OPENWIN_HOME)/include -I$(OPENWIN_HOME)/include/X11/extensions
   OTHER_LDLIBS += -L$(OPENWIN_LIB) -lX11 -lXext $(LIBM) -lpthread

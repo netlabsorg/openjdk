@@ -70,7 +70,7 @@ FILES_export += \
 	sun/nio/ch/NativeThread.java
 endif # PLATFORM = solaris
 
-ifeq ($(PLATFORM), windows)
+ifeq ($(filter-out windows os2, $(PLATFORM)),) 
 FILES_java += \
         sun/nio/ch/WindowsSelectorImpl.java \
         sun/nio/ch/WindowsSelectorProvider.java
@@ -80,7 +80,7 @@ FILES_c += \
 
 FILES_export += \
 	sun/nio/ch/WindowsSelectorImpl.java
-endif # PLATFORM = windows
+endif # PLATFORM = windows or os2
 
 ifeq ($(PLATFORM), linux)
 FILES_java += \
@@ -129,6 +129,13 @@ OTHER_INCLUDES += \
 ifeq ($(PLATFORM),windows)
   OTHER_LDLIBS += $(JVMLIB) ws2_32.lib \
      -libpath:$(LIBDIR) java.lib \
+     $(OBJDIR)/../../../../sun/java.net/net/$(OBJDIRNAME)/net.lib \
+     $(OBJDIR)/../../../java.lang/java/$(OBJDIRNAME)/io_util.obj \
+     $(OBJDIR)/../../../java.lang/java/$(OBJDIRNAME)/FileDescriptor_md.obj
+endif
+ifeq ($(PLATFORM),os2)
+  OTHER_LDLIBS += $(JVMLIB) ws2_32.lib \
+     -L$(LIBDIR) java.lib \
      $(OBJDIR)/../../../../sun/java.net/net/$(OBJDIRNAME)/net.lib \
      $(OBJDIR)/../../../java.lang/java/$(OBJDIRNAME)/io_util.obj \
      $(OBJDIR)/../../../java.lang/java/$(OBJDIRNAME)/FileDescriptor_md.obj
