@@ -43,7 +43,7 @@ CLIENT_LOCATION = client
 
 DB_SUFFIX = _db
 
-ifeq ($(filter-out windows,os2 $(PLATFORM)),)
+ifeq ($(filter-out windows os2, $(PLATFORM)),)
   LIB_LOCATION = $(BINDIR)
 else
   LIB_LOCATION = $(LIBDIR)/$(LIBARCH)
@@ -89,7 +89,7 @@ endif
 ifeq ($(INCLUDE_SA), true)
   IMPORT_LIST += $(LIBDIR)/sa-jdi.jar \
                  $(LIB_LOCATION)/$(SALIB_NAME)
-  ifeq ($(filter-out windows,os2 $(PLATFORM)),)
+  ifeq ($(filter-out windows os2,$(PLATFORM)),)
     IMPORT_LIST += $(LIB_LOCATION)/$(SAMAP_NAME) \
                    $(LIB_LOCATION)/$(SAPDB_NAME)
   endif
@@ -286,7 +286,7 @@ $(LIBDIR)/sa-jdi.jar: $(HOTSPOT_IMPORT_PATH)/lib/sa-jdi.jar
 $(LIB_LOCATION)/$(SALIB_NAME): $(HOTSPOT_SALIB_PATH)/$(SALIB_NAME)
 	$(install-import-file)
 
-ifeq ($(filter-out windows,os2 $(PLATFORM)),)
+ifeq ($(filter-out windows os2, $(PLATFORM)),)
 $(LIB_LOCATION)/$(SAPDB_NAME): $(HOTSPOT_SALIB_PATH)/$(SAPDB_NAME)
 	$(install-import-file)
 
@@ -348,7 +348,7 @@ FONTSDIR  = $(LIBDIR)/fonts
 FONTSDIRFILE  = $(FONTSDIR)/fonts.dir
 INTERNAL_IMPORT_LIST += $(FONTFILES)
 
-ifneq ($(filter-out windows,os2 $(PLATFORM)),)
+ifneq ($(filter-out windows os2, $(PLATFORM)),)
   INTERNAL_IMPORT_LIST += $(FONTSDIRFILE)
 endif
 
