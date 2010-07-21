@@ -60,10 +60,10 @@ endif
 ifdef SOURCE_LANGUAGE_VERSION
   ANT_OPTIONS += -Djavac.source=$(SOURCE_LANGUAGE_VERSION)
 else
-  ifdef JAVAC_SOURCE_ARG 
+  ifdef JAVAC_SOURCE_ARG
     ANT_OPTIONS += -Djavac.source=$(JAVAC_SOURCE_ARG)
   endif
-endif 
+endif
 
 # Figure out the platform we are using
 _SYSTEM_UNAME := $(shell uname)
@@ -74,12 +74,15 @@ endif
 ifneq (,$(findstring CYGWIN,$(_SYSTEM_UNAME)))
   _PLATFORM_KIND = windows
 endif
+ifeq ($(_SYSTEM_UNAME), OS/2)
+  _PLATFORM_KIND = os2
+endif
 
 # Where is /java in case we need it
 ifdef ALT_SLASH_JAVA
   _SLASHJAVA = $(ALT_SLASH_JAVA)
 else
-  ifeq ($(_PLATFORM_KIND), windows)
+  ifeq ($(filter-out windows os2, $(_PLATFORM_KIND)),)
     _SLASHJAVA=J:/
   else
     _SLASHJAVA=/java
@@ -124,14 +127,22 @@ else
 endif
 
 ifdef ANT_HOME
-  ANT = $(ANT_HOME)/bin/ant
+  ifeq ($(PLATFORM), windows)
+    ANT = $(subst \,/,$(ANT_HOME))/bin/ant.bat
+  else
+  ifeq ($(PLATFORM), os2)
+    ANT = $(subst \,/,$(ANT_HOME))/bin/ant.cmd
+  else
+    ANT = $(ANT_HOME)/bin/ant
+  endif
+  endif
   ifneq ($(shell test -x $(ANT); echo $$?), 0)
-    $(error "$(ANT) not found; please update ANT_HOME")
+    $(error $(ANT) not found -- please update ANT_HOME)
   endif
 else
   ANT = ant
   ifneq ($(shell which $(ANT) > /dev/null; echo $$?), 0)
-    $(error "\"ant\" not found; please set ANT_HOME or put \"ant\" on your PATH")
+    $(error 'ant' not found -- please set ANT_HOME or put 'ant' on your PATH)
   endif
 endif
 
