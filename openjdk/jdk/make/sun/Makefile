@@ -38,7 +38,7 @@ ifneq ("$(ORG_EXISTS)", "")
 endif
 
 # Non windows subdirs
-ifneq ($(PLATFORM), windows)
+ifneq ($(filter-out windows os2, $(PLATFORM)),)
   ifndef OPENJDK
     ifeq ($(PLATFORM), solaris)
       ifneq ($(ARCH), amd64)

@@ -23,7 +23,7 @@
 # have any questions.
 #
 
-ifeq ($(PLATFORM),windows)
+ifeq ($(filter-out windows os2,$(PLATFORM)),)
 FILES_c = \
         WindowsAttachProvider.c \
 	WindowsVirtualMachine.c

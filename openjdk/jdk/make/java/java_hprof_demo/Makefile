@@ -80,7 +80,7 @@ OTHER_INCLUDES = -I$(SRCDIR) \
 	         -I$(PLATFORM_SRC)/npt \
 	         -I$(SHARE_SRC)/demo/jvmti/java_crw_demo
 
-ifeq ($(PLATFORM), windows)
+ifeq ($(filter-out windows os2, $(PLATFORM)),)
   OTHER_LDLIBS += wsock32.lib winmm.lib
 else
   OTHER_LDLIBS += $(LIBSOCKET) -lnsl -ldl

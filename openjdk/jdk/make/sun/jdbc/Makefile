@@ -52,7 +52,7 @@ FILES_export = \
 
 # Use fake libraries on Solaris and Linux just so the library we create has
 #   a dependency on these two library names. (which are not part of the jdk)
-ifneq ($(PLATFORM), windows)
+ifneq ($(filter-out windows os2, $(PLATFORM)),)
   # In jdk5 and jdk6, and on Solaris 32bit, we would have required that
   #    these two libraries exist at: $(ALT_ODBCDIR)/ISLIodbc/2.11/lib
   #    In jdk7, we just fake them out like we did on Linux in jdk5 and jdk6.
@@ -82,7 +82,7 @@ include $(BUILDDIR)/common/Library.gmk
 #
 # The UNIX define specifies conditional compilation for UNIX
 #
-ifeq ($(PLATFORM), windows)
+ifeq ($(filter-out windows os2, $(PLATFORM)),)
   LDLIBS += odbc32.lib odbccp32.lib
 else
   CFLAGS += -DUNIX

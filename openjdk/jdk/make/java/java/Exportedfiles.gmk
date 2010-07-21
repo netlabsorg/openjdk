@@ -26,7 +26,7 @@
 #
 # These are the names of JAVA classes for which we will make .h files.
 #
-ifneq ($(PLATFORM), windows)
+ifneq ($(filter-out windows os2, $(PLATFORM)),)
 FILES_export = \
     java/lang/Object.java \
     java/lang/Class.java \

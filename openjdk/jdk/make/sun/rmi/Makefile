@@ -39,7 +39,7 @@ include $(BUILDDIR)/common/Defs.gmk
 SUBDIRS = oldtools rmic
 
 SUBDIRS += rmi registry rmid
-ifeq ($(PLATFORM), windows)
+ifeq ($(filter-out windows os2, $(PLATFORM)),)
     SUBDIRS += cgi
 endif # PLATFORM
 

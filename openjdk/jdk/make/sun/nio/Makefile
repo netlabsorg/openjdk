@@ -45,7 +45,7 @@ include FILES_java.gmk
 AUTO_FILES_JAVA_DIRS = sun/nio/cs/ext
 
 # Exclude a few sources on windows
-ifeq ($(PLATFORM), windows)
+ifeq ($(filter-out windows os2, $(PLATFORM)),)
   AUTO_JAVA_PRUNE = sun/nio/cs/ext/COMPOUND_TEXT.java         \
                     sun/nio/cs/ext/COMPOUND_TEXT_Decoder.java \
                     sun/nio/cs/ext/COMPOUND_TEXT_Encoder.java \

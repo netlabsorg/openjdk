@@ -68,7 +68,7 @@ properties.clean :
 CURSORSRC     = $(TOPDIR)/src/share/lib/images/cursors
 CURSORDIR     = $(LIBDIR)/images/cursors
 
-ifeq ($(PLATFORM), windows)
+ifeq ($(filter-out windows os2, $(PLATFORM)),)
 CURSORPROPSRC = $(TOPDIR)/src/windows/lib/images/cursors
 CURSORS   = $(CURSORDIR)/win32_CopyDrop32x32.gif      \
             $(CURSORDIR)/win32_MoveDrop32x32.gif      \

@@ -36,7 +36,7 @@ include $(BUILDDIR)/common/Defs.gmk
 OUTDIR = $(OUTPUTDIR)/reorder
 PRELOAD_DIR = $(ABS_OUTPUTDIR)/reorder/$(ARCH)
 
-ifeq ($(PLATFORM), windows)
+ifeq ($(filter-out windows os2, $(PLATFORM)),)
 SEP = \\
 else
 SEP = /

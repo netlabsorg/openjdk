@@ -155,7 +155,7 @@ include $(BUILDDIR)/common/Library.gmk
 #
 # Libraries to link
 #
-ifeq ($(PLATFORM), windows)
+ifeq ($(filter-out windows os2, $(PLATFORM)),)
   OTHER_LDLIBS = $(JVMLIB)
 else
   OTHER_LDLIBS = -ldl $(JVMLIB)

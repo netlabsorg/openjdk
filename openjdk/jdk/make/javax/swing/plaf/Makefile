@@ -38,8 +38,8 @@ include $(BUILDDIR)/common/Defs.gmk
 include FILES.gmk
 AUTO_FILES_JAVA_DIRS = javax/swing/plaf sun/swing com/sun/java/swing/plaf
 
-ifeq ($(PLATFORM), windows)
-    # Don't build GTK L&F on Windows
+ifeq ($(filter-out windows os2, $(PLATFORM)),)
+    # Don't build GTK L&F on Windows or OS/2
     AUTO_JAVA_PRUNE = gtk
 endif
 
@@ -48,7 +48,7 @@ ifdef DISABLE_NIMBUS
 endif
 
 MISC_FILES = $(MISC_SWING_FILES)
-ifneq ($(PLATFORM), windows)
+ifneq ($(filter-out windows os2, $(PLATFORM)),)
     # Only include GTK icons on Solaris/Linux
     MISC_FILES += $(MISC_SWING_FILES_UNIX)
 endif
@@ -69,7 +69,7 @@ RESOURCE_BUNDLES_COMPILED_PROPERTIES = \
 	com/sun/swing/internal/plaf/synth/resources/synth.properties \
 	com/sun/java/swing/plaf/motif/resources/motif.properties \
         com/sun/java/swing/plaf/windows/resources/windows.properties
-ifneq ($(PLATFORM), windows)
+ifneq ($(filter-out windows os2, $(PLATFORM)),)
     # Only compile GTK resource bundles on Solaris/Linux
     RESOURCE_BUNDLES_COMPILED_PROPERTIES += \
         com/sun/java/swing/plaf/gtk/resources/gtk.properties

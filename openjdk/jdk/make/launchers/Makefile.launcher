@@ -141,7 +141,7 @@ endif
 ifeq ($(PROGRAM),jconsole)
   JCONSOLE_CLASSPATH = { "/lib/jconsole.jar", "/lib/tools.jar", "/classes" }
   OTHER_CPPFLAGS += -DAPP_CLASSPATH='$(JCONSOLE_CLASSPATH)'
-  ifeq ($(PLATFORM), windows)
+  ifeq ($(filter-out windows os2, $(PLATFORM)),)
     OTHER_CPPFLAGS += -DJAVAW
     LDLIBS_COMMON  += user32.lib
     MAIN_JAVA_ARGS += -J-Djconsole.showOutputViewer
@@ -150,7 +150,7 @@ endif
 
 # GUI tools
 ifeq ($(GUI_TOOL),true)
-  ifneq ($(PLATFORM), windows)
+  ifeq ($(filter-out windows os2, $(PLATFORM)),)
     # Anything with a GUI needs X11 to be linked in.
     OTHER_LDLIBS += -L$(OPENWIN_LIB) -lX11
   endif

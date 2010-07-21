@@ -33,7 +33,7 @@ include $(BUILDDIR)/common/Defs.gmk
 #
 # Files
 #
-ifeq ($(PLATFORM), windows)
+ifeq ($(filter-out windows os2, $(PLATFORM)),)
 FILES_cpp = jawt.cpp
 else # PLATFORM
 FILES_c = jawt.c
@@ -49,7 +49,7 @@ FILES_m = mapfile-vers
 include $(BUILDDIR)/common/Mapfile-vers.gmk
 
 
-ifeq ($(PLATFORM), windows)
+ifeq ($(filter-out windows os2, $(PLATFORM)),)
 #
 # Extra C flags.
 #
@@ -141,7 +141,7 @@ include $(BUILDDIR)/common/Library.gmk
 
 build: $(FILES_h)
 
-ifeq ($(PLATFORM), windows)
+ifeq ($(filter-out windows os2, $(PLATFORM)),)
 include make.depend
 endif
 

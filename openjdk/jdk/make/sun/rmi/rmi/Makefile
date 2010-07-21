@@ -85,7 +85,7 @@ REMOTE_impls = \
 	sun.rmi.registry.RegistryImpl \
 	sun.rmi.transport.DGCImpl
 
-ifeq ($(PLATFORM), windows)
+ifeq ($(filter-out windows os2, $(PLATFORM)),)
 build: stubs
 else # PLATFORM
 ifneq ($(ARCH_DATA_MODEL), 32)

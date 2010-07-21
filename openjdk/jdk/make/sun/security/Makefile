@@ -38,7 +38,7 @@ include $(BUILDDIR)/common/Defs.gmk
 
 # build sun/security/jgss/wrapper on non-windows platform
 JGSS_WRAPPER =
-ifneq ($(PLATFORM), windows)
+ifneq ($(filter-out windows os2, $(PLATFORM)),)
     JGSS_WRAPPER = jgss/wrapper
 endif
 
@@ -47,14 +47,14 @@ endif
 # 64-bit PKCS#11 implementations to test with on that platform.
 PKCS11 = pkcs11
 ifeq ($(ARCH_DATA_MODEL), 64)
-  ifeq ($(PLATFORM), windows)
+  ifeq ($(filter-out windows os2, $(PLATFORM)),)
     PKCS11 =
   endif
 endif
 
 # Build Microsoft CryptoAPI provider only on (non-64-bit) Windows platform.
 MSCAPI =
-ifeq ($(PLATFORM), windows)
+ifeq ($(filter-out windows os2, $(PLATFORM)),)
   ifneq ($(ARCH_DATA_MODEL), 64)
     MSCAPI = mscapi
   endif

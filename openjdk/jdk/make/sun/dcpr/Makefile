@@ -81,7 +81,7 @@ vpath %.c   $(CLOSED_SRC)/share/native/$(PKGDIR)/pr
 vpath %.c   $(CLOSED_SRC)/share/native/$(PKGDIR)/util
 vpath %.c   $(SHARE_SRC)/native/sun/java2d/pipe
 
-ifneq ($(PLATFORM), windows)
+ifneq ($(filter-out windows os2, $(PLATFORM)),)
   OTHER_LDLIBS = $(LIBM)
 endif # PLATFORM
 

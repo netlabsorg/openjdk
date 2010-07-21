@@ -112,7 +112,7 @@ FILES_cpp_shared = \
         FontInstanceAdapter.cpp
 
 
-ifeq ($(PLATFORM),windows)
+ifeq ($(filter-out windows os2,$(PLATFORM)),)
 FILES_c_platform = fontpath.c
 FILES_cpp_platform = D3DTextRenderer.cpp
 else
