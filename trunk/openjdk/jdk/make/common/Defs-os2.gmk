@@ -122,7 +122,7 @@ endif
 #
 # Misc compiler options
 #
-CFLAGS_COMMON   = $(GCC_WARNINGS) -march=i486 -mtune=generic
+CFLAGS_COMMON   = $(GCC_WARNINGS) -march=i486 -mtune=generic -Zomf
 CFLAGS_OPT      = -s $(POPT)
 CFLAGS_DBG      = -g
 
