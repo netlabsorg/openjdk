@@ -8,6 +8,7 @@ Requirements (draft)
 3b. JAXB 2.1 (https://jaxb.dev.java.net/2.1/JAXB2_20061211.jar)
 4a. Ant 1.8.1 (http://ant.apache.org/bindownload.cgi)
 4b. Patched ant.jar for Ant 1.8.1 (ftp://ftp.netlabs.org/pub/qt4/tmp/ant-1.8.1-patch-os2_cmd_line_length.zip)
+5.  Object REXX (can bue turned on system-wide with the standard SWITCHRX.CMD script)
 
 Copy LocalEnv.tpl.cmd to LocalEnv.cmd and alter according to your environment
 and then use env.cmd to set it up.
