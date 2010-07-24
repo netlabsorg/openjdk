@@ -54,7 +54,7 @@ LIB_LOCATION = $(BINDIR)
 DEF_FILE = $(OBJDIR)/$(LIBRARY).def
 
 $(DEF_FILE): $(MAKEFILE)
-	$(ECHO) -e 'EXPORTS ; $(MAKEFILE)\n \
+	@$(ECHO) 'EXPORTS \n \
   _winFileHandleOpen \n \
   _handleLseek \n \
 ' > $@
