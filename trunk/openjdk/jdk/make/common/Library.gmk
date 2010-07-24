@@ -238,7 +238,7 @@ $(ACTUAL_LIBRARY):: $(COMPILE_FILES_o) $(FILES_m) $(FILES_reorder) $(DEF_FILE)
 	@$(ECHO) "STATS: LIBRARY=$(LIBRARY), PRODUCT=$(PRODUCT), _OPT=$(_OPT)"
 	@$(ECHO) "Rebuilding $@ because of $?"
 ifeq ($(LIBRARY), fdlibm)
-	$(AR) -r $@ $(FILES_o)
+	$(AR) r $@ $(FILES_o)
 else # LIBRARY
 	$(LINKER) $(SHARED_LIBRARY_FLAG) -o $@ $(FILES_o) $(LDLIBS) $(DEF_FILE)
 	$(IMPLIB) -o $(OBJDIR)/$(LIBRARY).lib $@
