@@ -80,7 +80,7 @@ else
 AGCT_EXPORT=_AsyncGetCallTrace \n  AsyncGetCallTrace = _AsyncGetCallTrace \n
 endif
 
-MAKEFILE = $(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST))
+MAKEFILE = $(word 1,$(MAKEFILE_LIST))
 
 Def_File = vm.def
 $(Def_File): $(MAKEFILE)
