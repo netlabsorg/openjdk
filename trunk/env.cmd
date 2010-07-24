@@ -87,6 +87,7 @@ call EnvSetIfEmtpy 'ALT_BOOTDIR', UnixSlashes(G.PATH_TOOL_BOOT_JDK)
 call EnvSetIfEmtpy 'ALT_ODINSDK_PATH', UnixSlashes(G.PATH_LIB_ODIN32)
 call EnvSetIfEmtpy 'ALT_FREETYPE_HEADERS_PATH', UnixSlashes(ScriptDir'libs\freetype\include')
 call EnvSetIfEmtpy 'ALT_FREETYPE_LIB_PATH', UnixSlashes(ScriptDir'libs\freetype\lib')
+call EnvSetIfEmpty 'ALT_JDK_IMPORT_PATH', UnixSlashes(G.PATH_JDK_IMPORT)
 
 /*
  * @todo temporarily disable some components

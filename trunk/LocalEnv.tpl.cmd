@@ -43,6 +43,12 @@ G.PATH_TOOL_ANT         = 'D:\Dev\java\apache-ant-1.8.1'
 G.PATH_LIB_ODIN32       = 'D:\Coding\odin32'
 
 /**
+ * Path to the previous Java SDK where components not built from the
+ * current source tree will be imported from. So far, must be set.
+ */
+G.PATH_JDK_IMPORT       = 'J:\Coding\openjdk\openjdk6\build\windows-i586\j2sdk-image'
+
+/**
  * Log file to save all console output of the build process (only works when
  * using the SE script). Leave it empty to disable logging.
  */
