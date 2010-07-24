@@ -83,10 +83,10 @@ call EnvSet 'JAVA_HOME', ''
 /*
  * various variables for OpenJDK make files
  */
-call EnvSetIfEmtpy 'ALT_BOOTDIR', UnixSlashes(G.PATH_TOOL_BOOT_JDK)
-call EnvSetIfEmtpy 'ALT_ODINSDK_PATH', UnixSlashes(G.PATH_LIB_ODIN32)
-call EnvSetIfEmtpy 'ALT_FREETYPE_HEADERS_PATH', UnixSlashes(ScriptDir'libs\freetype\include')
-call EnvSetIfEmtpy 'ALT_FREETYPE_LIB_PATH', UnixSlashes(ScriptDir'libs\freetype\lib')
+call EnvSetIfEmpty 'ALT_BOOTDIR', UnixSlashes(G.PATH_TOOL_BOOT_JDK)
+call EnvSetIfEmpty 'ALT_ODINSDK_PATH', UnixSlashes(G.PATH_LIB_ODIN32)
+call EnvSetIfEmpty 'ALT_FREETYPE_HEADERS_PATH', UnixSlashes(ScriptDir'libs\freetype\include')
+call EnvSetIfEmpty 'ALT_FREETYPE_LIB_PATH', UnixSlashes(ScriptDir'libs\freetype\lib')
 call EnvSetIfEmpty 'ALT_JDK_IMPORT_PATH', UnixSlashes(G.PATH_JDK_IMPORT)
 
 /*
@@ -293,7 +293,7 @@ EnvGet: procedure
  * Sets sEnvVar to sValue if sEnvVar is not currently set (empty), otherwise
  * leaves it as is.
  */
-EnvSetIfEmtpy: procedure
+EnvSetIfEmpty: procedure
     parse arg sEnvVar, sValue
     if (EnvGet(sEnvVar) == '') then call EnvSet sEnvVar, sValue
     return
