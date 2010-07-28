@@ -47,10 +47,12 @@
 #define __LOp(x) *(1+(int*)x)
 #endif
 
+#ifndef __P
 #ifdef __STDC__
 #define __P(p)  p
 #else
 #define __P(p)  ()
+#endif
 #endif
 
 /*
