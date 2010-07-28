@@ -29,8 +29,10 @@
 extern jfieldID IO_fd_fdID;
 extern jfieldID IO_handle_fdID;
 
-#if !defined(O_DSYNC) || !defined(O_SYNC)
+#if !defined(O_SYNC)
 #define O_SYNC  (0x0800)
+#endif
+#if !defined(O_DSYNC)
 #define O_DSYNC (0x2000)
 #endif
 
