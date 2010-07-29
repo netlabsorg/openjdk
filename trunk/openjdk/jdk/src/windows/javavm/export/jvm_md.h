@@ -77,6 +77,25 @@ JVM_GetThreadInterruptEvent();
 
 /* O Flags */
 
+#ifndef O_TEMPORARY
+#ifdef __EMX__
+#define O_TEMPORARY 0x80000000
+#endif
+#endif
+
+#ifndef _O_RDONLY
+#define _O_RDONLY       O_RDONLY
+#define _O_WRONLY       O_WRONLY
+#define _O_RDWR         O_RDWR
+#define _O_APPEND       O_APPEND
+#define _O_CREAT        O_CREAT
+#define _O_EXCL         O_EXCL
+#define _O_TEMPORARY    O_TEMPORARY
+#define _O_TRUNC        O_TRUNC
+#define _O_BINARY       O_BINARY
+#define _O_TEXT         O_TEXT
+#endif
+
 #define JVM_O_RDONLY     O_RDONLY
 #define JVM_O_WRONLY     O_WRONLY
 #define JVM_O_RDWR       O_RDWR
