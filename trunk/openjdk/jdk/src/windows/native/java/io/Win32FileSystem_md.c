@@ -31,6 +31,10 @@
 #include <windows.h>
 #include <io.h>
 
+#ifdef __EMX__
+#include <string.h>
+#endif
+
 #include "jvm.h"
 #include "jni.h"
 #include "jni_util.h"
@@ -234,8 +238,8 @@ Java_java_io_Win32FileSystem_getLastModifiedTime(JNIEnv *env, jobject this,
         FindClose(h);
         modTime.LowPart = (DWORD) fd.ftLastWriteTime.dwLowDateTime;
         modTime.HighPart = (LONG) fd.ftLastWriteTime.dwHighDateTime;
-        rv = modTime.QuadPart / 10000;
-        rv -= 11644473600000;
+        rv = modTime.QuadPart / 10000LL;
+        rv -= 11644473600000LL;
     }
     } END_NATIVE_PATH(env, path);
     return rv;
@@ -248,10 +252,17 @@ Java_java_io_Win32FileSystem_getLength(JNIEnv *env, jobject this,
     jlong rv = 0;
 
     WITH_NATIVE_PATH(env, file, ids.path, path) {
+#ifdef __EMX__
+        struct stat sb;
+        if (stat(path, &sb) == 0) {
+            rv = sb.st_size;
+        }
+#else
         struct _stati64 sb;
         if (_stati64(path, &sb) == 0) {
             rv = sb.st_size;
         }
+#endif
     } END_NATIVE_PATH(env, path);
     return rv;
 }
@@ -390,9 +401,15 @@ Java_java_io_Win32FileSystem_createDirectory(JNIEnv *env, jobject this,
     jboolean rv = JNI_FALSE;
 
     WITH_NATIVE_PATH(env, file, ids.path, path) {
+#ifdef __EMX__
+        if (mkdir(path, 0777) == 0) {
+            rv = JNI_TRUE;
+        }
+#else
         if (mkdir(path) == 0) {
             rv = JNI_TRUE;
         }
+#endif
     } END_NATIVE_PATH(env, path);
     return rv;
 }
@@ -428,7 +445,7 @@ Java_java_io_Win32FileSystem_setLastModifiedTime(JNIEnv *env, jobject this,
         if (h != INVALID_HANDLE_VALUE) {
             LARGE_INTEGER modTime;
             FILETIME t;
-            modTime.QuadPart = (time + 11644473600000L) * 10000L;
+            modTime.QuadPart = (time + 11644473600000LL) * 10000LL;
             t.dwLowDateTime = (DWORD)modTime.LowPart;
             t.dwHighDateTime = (DWORD)modTime.HighPart;
             if (SetFileTime(h, NULL, NULL, &t)) {

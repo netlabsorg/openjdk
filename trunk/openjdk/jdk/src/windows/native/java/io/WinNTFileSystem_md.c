@@ -36,6 +36,15 @@
 #include <windows.h>
 #include <io.h>
 
+#ifdef __EMX__
+#include <wchar.h>
+#include <wctype.h>
+#include <ctype.h>
+#endif
+#ifdef __WIN32OS2__
+#include <minivcrt.h>
+#endif
+
 #include "jvm.h"
 #include "jni.h"
 #include "jni_util.h"
@@ -310,8 +319,8 @@ Java_java_io_WinNTFileSystem_getLastModifiedTime(JNIEnv *env, jobject this,
         CloseHandle(h);
         modTime.LowPart = (DWORD) t.dwLowDateTime;
         modTime.HighPart = (LONG) t.dwHighDateTime;
-        rv = modTime.QuadPart / 10000;
-        rv -= 11644473600000;
+        rv = modTime.QuadPart / 10000LL;
+        rv -= 11644473600000LL;
     }
     free(pathbuf);
     return rv;
@@ -334,11 +343,18 @@ Java_java_io_WinNTFileSystem_getLength(JNIEnv *env, jobject this, jobject file)
             /* The error is "share violation", which means the file/dir
                must exists. Try _wstati64, we know this at least works
                for pagefile.sys and hiberfil.sys.
-            */
+           */
+#ifdef __EMX__
+            struct _stat sb;
+            if (_wstat(pathbuf, &sb) == 0) {
+                rv = sb.st_size;
+            }
+#else
             struct _stati64 sb;
             if (_wstati64(pathbuf, &sb) == 0) {
                 rv = sb.st_size;
             }
+#endif
         }
     }
     free(pathbuf);
@@ -579,7 +595,7 @@ Java_java_io_WinNTFileSystem_setLastModifiedTime(JNIEnv *env, jobject this,
     if (h != INVALID_HANDLE_VALUE) {
         LARGE_INTEGER modTime;
         FILETIME t;
-        modTime.QuadPart = (time + 11644473600000L) * 10000L;
+        modTime.QuadPart = (time + 11644473600000LL) * 10000LL;
         t.dwLowDateTime = (DWORD)modTime.LowPart;
         t.dwHighDateTime = (DWORD)modTime.HighPart;
         if (SetFileTime(h, NULL, NULL, &t)) {

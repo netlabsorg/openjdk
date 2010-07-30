@@ -28,6 +28,11 @@
 #include <stdlib.h>
 #include "TimeZone_md.h"
 
+#ifdef __EMX__
+#include <wchar.h>
+#include <string.h>
+#endif
+
 #define VALUE_UNKNOWN           0
 #define VALUE_KEY               1
 #define VALUE_MAPID             2

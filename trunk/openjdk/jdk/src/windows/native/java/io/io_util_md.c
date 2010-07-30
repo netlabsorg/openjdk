@@ -40,6 +40,11 @@
 #include <limits.h>
 #include <wincon.h>
 
+#ifdef __WIN32OS2__
+#include <minivcrt.h>
+#include <winerror.h>
+#endif
+
 extern jboolean onNT = JNI_FALSE;
 
 static int MAX_INPUT_EVENTS = 2000;
