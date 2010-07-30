@@ -151,9 +151,11 @@ LDFLAGS_DBG     =
 CPPFLAGS_COMMON += -D__WIN32OS2__ -D__i386__ -DSTRICT -D_POSIX_SOURCE \
                    -D_POSIX_C_SOURCE=200112 -D_EMX_SOURCE -D_XOPEN_SOURCE=600 \
 				   -D_SVID_SOURCE
-CPPFLAGS_COMMON += -I$(ODINSDK_PATH)/include/Win -I$(ODINSDK_PATH)/include
+CPPFLAGS_COMMON += -I$(ODINSDK_PATH)/include/Win -I$(ODINSDK_PATH)/include \
+                   -DWINE_LARGE_INTEGER
 LDFLAGS_COMMON  += -L$(ODINSDK_PATH)/lib -L$(ODINSDK_PATH)/lib/Release \
-				   -lkernel32.lib -luser32.lib
+				   -lkernel32.lib -luser32.lib -ladvapi32.lib \
+				   -lminivcrt.lib -lntdll.lib
 
 #
 # Path and option to link against the VM, if you have to.
