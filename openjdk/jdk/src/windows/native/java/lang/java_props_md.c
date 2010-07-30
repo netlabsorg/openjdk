@@ -34,6 +34,10 @@
 #include "locale_str.h"
 #include "java_props.h"
 
+#ifdef __EMX__
+#define boolean int
+#endif
+
 #ifndef VER_PLATFORM_WIN32_WINDOWS
 #define VER_PLATFORM_WIN32_WINDOWS 1
 #endif
@@ -623,6 +627,7 @@ cpu_isalist(void)
 {
     SYSTEM_INFO info;
     GetSystemInfo(&info);
+#ifndef __WIN32OS2__
     switch (info.wProcessorArchitecture) {
 #ifdef PROCESSOR_ARCHITECTURE_IA64
     case PROCESSOR_ARCHITECTURE_IA64: return "ia64";
@@ -631,6 +636,9 @@ cpu_isalist(void)
     case PROCESSOR_ARCHITECTURE_AMD64: return "amd64";
 #endif
     case PROCESSOR_ARCHITECTURE_INTEL:
+#else /* !__WIN32OS2__ */
+    {
+#endif /* !__WIN32OS2__ */
         switch (info.wProcessorLevel) {
         case 6: return haveMMX()
             ? "pentium_pro+mmx pentium_pro pentium+mmx pentium i486 i386 i86"
@@ -747,6 +755,7 @@ GetJavaProperties(JNIEnv* env)
                 case  0: sprops.os_name = "Windows 2000";         break;
                 case  1: sprops.os_name = "Windows XP";           break;
                 case  2:
+#ifndef __WIN32OS2__
                     /*
                     * From MSDN OSVERSIONINFOEX and SYSTEM_INFO documentation:
                     *
@@ -765,8 +774,13 @@ GetJavaProperties(JNIEnv* env)
                             sprops.os_name = "Windows 2003";
                          }
                          break;
+#else /* !__WIN32OS2__ */
+                         sprops.os_name = "Windows 2003";
+                         break;
+#endif /* !__WIN32OS2__ */
                 default: sprops.os_name = "Windows NT (unknown)"; break;
                 }
+#ifndef __WIN32OS2__
             } else if (ver.dwMajorVersion == 6) {
                 /*
                  * From MSDN OSVERSIONINFOEX documentation:
@@ -791,6 +805,7 @@ GetJavaProperties(JNIEnv* env)
                     default: sprops.os_name = "Windows NT (unknown)";
                     }
                 }
+#endif /* !__WIN32OS2__ */
             } else {
                 sprops.os_name = "Windows NT (unknown)";
             }

@@ -39,6 +39,15 @@
 #include <errno.h>
 #include "io_util_md.h"
 
+#ifdef __EMX__
+#include <wchar.h>
+#include <wctype.h>
+#include <ctype.h>
+#endif
+#ifdef __WIN32OS2__
+#include <minivcrt.h>
+#endif
+
 #undef DEBUG_PATH        /* Define this to debug path code */
 
 #define isfilesep(c) ((c) == '/' || (c) == '\\')
