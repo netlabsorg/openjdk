@@ -225,8 +225,8 @@ OTHER_LDLIBS += $(JVMLIB) -libpath:$(OBJDIR)/../../../fdlibm/$(OBJDIRNAME) fdlib
 		       -libpath:$(OBJDIR)/../../../verify/$(OBJDIRNAME) verify.lib
 else
 ifeq ($(PLATFORM),os2)
-OTHER_LDLIBS += $(JVMLIB) -L$(OBJDIR)/../../../fdlibm/$(OBJDIRNAME) fdlibm.lib \
-		       -L$(OBJDIR)/../../../verify/$(OBJDIRNAME) verify.lib
+OTHER_LDLIBS += $(JVMLIB) -L$(OBJDIR)/../../../fdlibm/$(OBJDIRNAME) -lfdlibm.lib \
+		       -L$(OBJDIR)/../../../verify/$(OBJDIRNAME) -lverify.lib
 else
 OTHER_LDLIBS += $(JVMLIB) -lverify $(LIBSOCKET) -lnsl -ldl \
 		-L$(OBJDIR)/../../../fdlibm/$(OBJDIRNAME) -lfdlibm.$(ARCH)
