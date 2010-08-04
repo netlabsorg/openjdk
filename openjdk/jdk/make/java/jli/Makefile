@@ -157,7 +157,7 @@ $(STATIC_LIBRARY_DIR): $(OBJDIR)
 	@$(prep-target)
 	@$(MKDIR) $(STATIC_LIBRARY_DIR)
 
-$(STATIC_LIBRARY): $(STATIC_LIBRARY_DIR)
+$(STATIC_LIBRARY): $(STATIC_LIBRARY_DIR) $(FILES_o)
 	@$(prep-target)
 ifeq ($(PLATFORM), windows)
 	$(LIBEXE) -nologo -out:$@ $(FILES_o)
