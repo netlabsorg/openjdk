@@ -99,6 +99,14 @@ ifeq ($(PLATFORM), windows)
 	endif
 	OTHER_LDLIBS += jli.lib
 endif
+ifeq ($(PLATFORM), os2)
+	ifdef STATIC_JLI
+	    LDFLAGS += -L$(OUTPUTDIR)/tmp/java/jli/$(OBJDIRNAME)/static
+	else
+	    LDFLAGS += -L$(OUTPUTDIR)/tmp/java/jli/$(OBJDIRNAME)
+	endif
+	OTHER_LDLIBS += -ljli.lib
+endif
 
 #
 # Launcher specific files.
@@ -137,12 +145,12 @@ endif
 
 $(OBJDIR)/$(PROGRAM).lcf: $(OBJDIR)/$(PROGRAM).res $(FILES_o)
 	@$(prep-target)
-	@$(ECHO) $(FILES_o) > $@ 
+	@$(ECHO) $(FILES_o) > $@
   ifndef LOCAL_RESOURCE_FILE
 	@$(ECHO) $(OBJDIR)/$(PROGRAM).res >> $@
   endif
 	@$(ECHO) setargv.obj >> $@
-	@$(ECHO) Created $@ 
+	@$(ECHO) Created $@
 
 $(ACTUAL_PROGRAM):: $(OBJDIR)/$(PROGRAM)$(EXE_SUFFIX)
 	@$(install-file)
@@ -162,7 +170,20 @@ $(OBJDIR)/$(PROGRAM)$(EXE_SUFFIX):: $(OBJDIR)/$(PROGRAM).lcf $(FILES_o)
 	    -map:$(OBJDIR)/$(PROGRAM).map $(LFLAGS) $(LDFLAGS) \
 	    @$(OBJDIR)/$(PROGRAM).lcf $(LDLIBS)
 
-else # PLATFORM
+else # PLATFORM == windows
+
+ifeq ($(PLATFORM), os2)
+
+$(ACTUAL_PROGRAM):: $(OBJDIR)/$(PROGRAM)$(EXE_SUFFIX)
+	@$(install-file)
+
+$(OBJDIR)/$(PROGRAM)$(EXE_SUFFIX):: $(FILES_o)
+	@$(prep-target)
+	@set -- $?; \
+	    $(ECHO) Rebuilding $@ because of $$1 $$2 $$3 $$4 $$5 $$6 $${7:+...};
+	$(LINK) $(LDFLAGS) -Zstack 0x2000 -o $@ $(FILES_o) $(LDLIBS)
+
+else # PLATFORM == os2
 
 #
 # Note that we have to link -lthread even when USE_PTHREADS is true.
@@ -186,7 +207,9 @@ $(ACTUAL_PROGRAM):: $(FILES_o)
 	$(LINK_PRE_CMD) $(CC) $(SERVERCLASS) $(CC_OBJECT_OUTPUT_FLAG)$@ $(LDFLAGS) \
 	    $(FILES_o) $(THREADLIBS) $(LDLIBS)
 
-endif # PLATFORM
+endif # PLATFORM == os2
+
+endif # PLATFORM == windows
 
 else  # COMPILE_IT
 
@@ -201,7 +224,7 @@ $(ACTUAL_PROGRAM_DIR)/%: $(JDK_IMPORT_PATH)/bin/%
 endif # COMPILE_IT
 
 
-clean:: 
+clean::
 ifeq ($(PLATFORM), windows)
 	$(RM) $(OBJDIR)/$(PROGRAM).rc
 	$(RM) $(OBJDIR)/$(PROGRAM).ico
@@ -213,9 +236,17 @@ ifeq ($(PLATFORM), windows)
 	$(RM) $(OBJDIR)/$(PROGRAM).ilk
 	$(RM) *.pdb
 endif
+ifeq ($(PLATFORM), os2)
+	$(RM) $(OBJDIR)/$(PROGRAM).rc
+	$(RM) $(OBJDIR)/$(PROGRAM).ico
+	$(RM) $(OBJDIR)/$(PROGRAM).map
+	$(RM) $(OBJDIR)/$(PROGRAM).lib
+	$(RM) $(OBJDIR)/$(PROGRAM)$(EXE_SUFFIX)
+	$(RM) *.sym
+endif
 
 
-clobber:: 
+clobber::
 	$(RM) $(ACTUAL_PROGRAM)
 
 #
@@ -235,14 +266,14 @@ OTHER_CPPFLAGS += -DJAVA_ARGS='$(JAVA_ARGS)'
 OTHER_CPPFLAGS += -DLAUNCHER_NAME='"$(LAUNCHER_NAME)"'
 endif
 
-ifeq ($(PLATFORM), windows)
+ifeq ($(filter-out windows os2, $(PLATFORM)),)
 ifdef RELEASE
 OTHER_CPPFLAGS += -DVERSION='"$(RELEASE)"'
 endif
 endif
 
 
-ifneq ($(PLATFORM), windows)
+ifneq ($(filter-out windows os2, $(PLATFORM)),)
 HAVE_GETHRTIME=true
 endif
 
@@ -280,7 +311,7 @@ $(OBJDIR)/%.$(OBJECT_SUFFIX): $(LAUNCHER_SHARE_SRC)/bin/%.c
 	$(COMPILE.c) $(CC_OBJECT_OUTPUT_FLAG)$@ $(VERSION_DEFINES) $<
 
 #
-# How to install jvm.cfg. 
+# How to install jvm.cfg.
 #
 ifeq ($(ZERO_BUILD), true)
 JVMCFG_ARCH = zero
@@ -288,7 +319,7 @@ else
 JVMCFG_ARCH = $(ARCH)
 endif
 
-$(JVMCFG): $(LAUNCHER_PLATFORM_SRC)/bin/$(JVMCFG_ARCH)/jvm.cfg 
+$(JVMCFG): $(LAUNCHER_PLATFORM_SRC)/bin/$(JVMCFG_ARCH)/jvm.cfg
 	$(install-file)
 
 #
