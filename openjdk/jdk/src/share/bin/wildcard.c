@@ -93,8 +93,14 @@
 #include "java.h"       /* Strictly for PATH_SEPARATOR/FILE_SEPARATOR */
 #include "jli_util.h"
 
-#ifdef _WIN32
+#if defined(_WIN32)
 #include <windows.h>
+#elif defined(__WIN32OS2__)
+#include <windows.h>
+#ifdef __EMX__
+#include <unistd.h>
+#include <dirent.h>
+#endif
 #else /* Unix */
 #include <unistd.h>
 #include <dirent.h>

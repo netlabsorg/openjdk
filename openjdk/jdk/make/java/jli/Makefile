@@ -96,6 +96,35 @@ ifeq ($(PLATFORM), windows)
 	COMPILER_WARNINGS_FATAL=false
 endif
 
+ifeq ($(PLATFORM), os2)
+
+EXTRA_LIBS =
+JAVALIB =
+
+# exports live in .def file
+DEF_FILE = $(OBJDIR)/$(LIBRARY).def
+$(DEF_FILE): $(MAKEFILE)
+	@$(ECHO) 'EXPORTS \n \
+  JLI_ParseManifest = _JLI_ParseManifest \n \
+  JLI_JarUnpackFile = _JLI_JarUnpackFile \n \
+  JLI_FreeManifest = _JLI_FreeManifest \n \
+  JLI_ManifestIterate = _JLI_ManifestIterate \n \
+  JLI_ExactVersionId = _JLI_ExactVersionId \n \
+  JLI_PrefixVersionId = _JLI_PrefixVersionId \n \
+  JLI_AcceptableRelease = _JLI_AcceptableRelease \n \
+  JLI_ValidVersionString = _JLI_ValidVersionString \n \
+  JLI_WildcardExpandClasspath = _JLI_WildcardExpandClasspath \n \
+  JLI_MemAlloc = _JLI_MemAlloc \n \
+  JLI_MemRealloc = _JLI_MemRealloc \n \
+  JLI_StringDup = _JLI_StringDup \n \
+  JLI_MemFree = _JLI_MemFree \n \
+' > $@
+
+clean::
+	-$(RM) $(DEF_FILE)
+
+endif
+
 OTHER_INCLUDES += -I$(LAUNCHER_SHARE_SRC)
 OTHER_INCLUDES += -I$(LAUNCHER_PLATFORM_SRC)
 OTHER_INCLUDES += -I$(ZIP_SRC)
@@ -116,9 +145,9 @@ include $(BUILDDIR)/common/Library.gmk
 # is not delivered as part of the product, but is only needed as part of
 # the build process.  The import library is built by the standard rules
 # in Library.gmk.  The additional rules which follow build the standard
-# library.
+# library.  The same thing should be done on OS/2.
 #
-ifeq ($(PLATFORM), windows)
+ifeq ($(filter-out windows os2, $(PLATFORM)),)
 
 STATIC_LIBRARY_DIR = $(OBJDIR)/static
 STATIC_LIBRARY_NAME = $(LIBPREFIX)$(LIBRARY).lib
@@ -130,7 +159,11 @@ $(STATIC_LIBRARY_DIR): $(OBJDIR)
 
 $(STATIC_LIBRARY): $(STATIC_LIBRARY_DIR)
 	@$(prep-target)
+ifeq ($(PLATFORM), windows)
 	$(LIBEXE) -nologo -out:$@ $(FILES_o)
+else
+	$(AR) r $@ $(FILES_o)
+endif
 
 library:: $(STATIC_LIBRARY)
 

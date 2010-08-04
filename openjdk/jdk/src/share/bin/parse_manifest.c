@@ -34,9 +34,15 @@
  * If Windows is POSIX compliant, why isn't the prototype for lseek where
  * POSIX says it should be?
  */
-#ifdef _WIN32
+#if defined(_WIN32)
 #include <windows.h>
 #include <io.h>
+#elif defined(__WIN32OS2__)
+#include <windows.h>
+#ifdef __EMX__
+#include <unistd.h>
+#include <strings.h>
+#endif
 #else   /* Unix */
 #include <unistd.h>
 #endif  /* Unix */
