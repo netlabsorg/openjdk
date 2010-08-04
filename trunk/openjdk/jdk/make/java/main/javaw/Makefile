@@ -46,7 +46,13 @@ STATIC_JLI = true
 include $(BUILDDIR)/common/Defs.gmk
 
 OTHER_CPPFLAGS += -DJAVAW
+ifeq ($(PLATFORM), windows)
 LDLIBS_COMMON +=  user32.lib
+endif
+
+ifeq ($(PLATFORM), os2)
+LDFLAGS += -Zlinker /PM:PM
+endif
 
 # Override the default version info with our own resource file (see 5106536)
 ifeq ($(PLATFORM), windows)
