@@ -36,6 +36,10 @@
 #include "java.h"
 #include "version_comp.h"
 
+#ifdef __WIN32OS2__
+#include <odinlx.h>
+#endif
+
 #define JVM_DLL "jvm.dll"
 #define JAVA_DLL "java.dll"
 #define CRT_DLL "msvcr71.dll"
@@ -254,6 +258,33 @@ GetApplicationHome(char *buf, jint bufsize)
     return JNI_TRUE;
 }
 
+#ifdef __WIN32OS2__
+
+static int main_argc = 0;
+static char **main_argv = NULL;
+
+int WIN32API WinMain(HINSTANCE hInstance,
+                     HINSTANCE hPrevInstance,
+                     LPSTR     lpCmdLine,
+                     int       nCmdShow)
+{
+    return java_main(main_argc, main_argv); /* defined in shared/bin/java.c */
+}
+
+#undef main
+
+int
+main(int argc, char ** argv)
+{
+    main_argc = argc;
+    main_argv = argv;
+
+    EnableSEH();
+    return RegisterLxExe(WinMain, NULL);
+}
+
+#else /* __WIN32OS2__ */
+
 #ifdef JAVAW
 __declspec(dllimport) char **__initenv;
 
@@ -268,6 +299,8 @@ WinMain(HINSTANCE inst, HINSTANCE previnst, LPSTR cmdline, int cmdshow)
     return ret;
 }
 #endif
+
+#endif /* __WIN32OS2__ */
 
 /*
  * Helpers to look in the registry for a public JRE.
@@ -1035,20 +1068,40 @@ ContinueInNewThread(int (JNICALL *continuation)(void *), jlong stack_size, void 
      * source (os_win32.cpp) for details.
      */
     HANDLE thread_handle =
+#ifdef __WIN32OS2__
+      // @todo probably need to cause some per-thread LIBC initialization routine
+      CreateThread(NULL,
+                   stack_size,
+                   (LPTHREAD_START_ROUTINE)continuation,
+                   args,
+                   STACK_SIZE_PARAM_IS_A_RESERVATION,
+                   (LPDWORD)&thread_id);
+#else
       (HANDLE)_beginthreadex(NULL,
                              (unsigned)stack_size,
                              continuation,
                              args,
                              STACK_SIZE_PARAM_IS_A_RESERVATION,
                              &thread_id);
+#endif
     if (thread_handle == NULL) {
       thread_handle =
+#ifdef __WIN32OS2__
+      // @todo probably need to cause some per-thread LIBC initialization routine
+      CreateThread(NULL,
+                   stack_size,
+                   (LPTHREAD_START_ROUTINE)continuation,
+                   args,
+                   0,
+                   (LPDWORD)&thread_id);
+#else
       (HANDLE)_beginthreadex(NULL,
                              (unsigned)stack_size,
                              continuation,
                              args,
                              0,
                              &thread_id);
+#endif
     }
     if (thread_handle) {
       WaitForSingleObject(thread_handle, INFINITE);

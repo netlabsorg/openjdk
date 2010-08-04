@@ -56,10 +56,19 @@
 extern jlong CounterGet(void);
 extern jlong Counter2Micros(jlong counts);
 
+#ifdef __WIN32OS2__
+
+#define main java_main
+extern int java_main(int argc, char **argv);
+
+#else /* __WIN32OS2__ */
+
 #ifdef JAVAW
 #define main _main
 extern int _main(int argc, char **argv);
 #endif
+
+#endif /* __WIN32OS2__ */
 
 /*
  * Function prototypes.
