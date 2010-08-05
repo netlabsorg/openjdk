@@ -59,7 +59,7 @@ unsigned long SYSTEM _DLL_InitTerm(unsigned long hModule, unsigned long ulFlag)
   case 0 :
 #ifdef __EMX__
     // initialize the C library
-    if (!_CRT_init())
+    if (_CRT_init())
       break;
     // initialize C++ statics
     __ctordtorInit();
