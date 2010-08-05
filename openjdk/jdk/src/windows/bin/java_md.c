@@ -23,6 +23,11 @@
  * have any questions.
  */
 
+#ifdef __WIN32OS2__
+#define INCL_DOSMISC
+#include <os2wrap2.h>
+#endif
+
 #include <windows.h>
 #include <io.h>
 #include <process.h>
@@ -224,6 +229,19 @@ LoadJavaVM(const char *jvmpath, InvocationFunctions *ifn)
         ReportErrorMessage2("Error loading: %s", (char *)jvmpath, JNI_TRUE);
         return JNI_FALSE;
     }
+
+#if __WIN32OS2__
+    /*
+     * Make sure that other DLLs statically linked to the Java VM DLL (so that
+     * they refer to it as 'JVM' instead of the full path) are able to find it.
+     */
+    strcpy(crtpath, jvmpath);
+    char *sep = strrchr(crtpath, '\\');
+    if (sep) {
+        *sep = '\0';
+        DosSetExtLIBPATH(crtpath, BEGIN_LIBPATH);
+    }
+#endif
 
     /* Now get the function addresses */
     ifn->CreateJavaVM =
