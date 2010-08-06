@@ -54,9 +54,25 @@ FILES_c = \
 
 JVMLIB = 
 JAVALIB =
-OTHER_LCF = -export:DLL_Initialize
 EXTRA_LIBS =
 
+ifeq ($(PLATFORM),windows)
+OTHER_LCF = -export:DLL_Initialize
+endif
+
+ifeq ($(PLATFORM),os2)
+
+# exports live in .def file
+DEF_FILE = $(OBJDIR)/$(LIBRARY).def
+$(DEF_FILE): $(MAKEFILE)
+	@$(ECHO) 'EXPORTS \n \
+  DLL_Initialize = "_DLL_Initialize@8" \n \
+' > $@
+
+clean::
+	-$(RM) $(DEF_FILE)
+
+endif
 
 #
 # Other files/flags shared between the HPIs.
