@@ -148,6 +148,14 @@
 #define NOT_WINDOWS(code) code
 #endif
 
+#ifdef __OS2__
+#define OS2_ONLY(code) code
+#define NOT_OS2(code)
+#else
+#define OS2_ONLY(code)
+#define NOT_OS2(code) code
+#endif
+
 #if defined(IA32) || defined(AMD64)
 #define X86
 #define X86_ONLY(code) code

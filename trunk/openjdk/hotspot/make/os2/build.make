@@ -83,6 +83,68 @@ VARIANT_TEXT=Kernel
   endif
 endif
 
+#########################################################################
+# Parameters for VERSIONINFO resource for jvm[_g].dll.
+# These can be overridden via the nmake.exe command line.
+# They are overridden by RE during the control builds.
+#
+
+include $(WorkSpace)/make/hotspot_version
+
+# Define HOTSPOT_VM_DISTRO based on settings in make/openjdk_distro.
+ifndef HOTSPOT_VM_DISTRO
+include $(WorkSpace)/make/openjdk_distro
+endif
+
+# Following the Web Start / Plugin model here....
+# We can have update versions like "01a", but Windows requires
+# we use only integers in the file version field.  So:
+# JDK_UPDATE_VER = JDK_UPDATE_VERSION * 10 + EXCEPTION_VERSION
+#
+JDK_UPDATE_VER=0
+JDK_BUILD_NUMBER=0
+
+HS_FILEDESC=$(HOTSPOT_VM_DISTRO) $(ARCH_TEXT) $(VARIANT_TEXT) VM
+
+# JDK ProductVersion:
+# 1.5.0_<wx>-b<yz> will have DLL version 5.0.wx*10.yz
+# Thus, 1.5.0_10-b04  will be 5.0.100.4
+#       1.6.0-b01     will be 6.0.0.1
+#       1.6.0_01a-b02 will be 6.0.11.2
+#
+# JDK_* variables are defined in make/hotspot_version or on command line
+#
+JDK_VER=$(JDK_MINOR_VER),$(JDK_MICRO_VER),$(JDK_UPDATE_VER),$(JDK_BUILD_NUMBER)
+JDK_DOTVER=$(JDK_MINOR_VER).$(JDK_MICRO_VER).$(JDK_UPDATE_VER).$(JDK_BUILD_NUMBER)
+ifeq ($(JRE_RELEASE_VERSION),)
+JRE_RELEASE_VER=$(JDK_MAJOR_VER).$(JDK_MINOR_VER).$(JDK_MICRO_VER)
+else
+JRE_RELEASE_VER=$(JRE_RELEASE_VERSION)
+endif
+ifeq ($(JDK_MKTG_VERSION),)
+JDK_MKTG_VERSION=$(JDK_MINOR_VER).$(JDK_MICRO_VER)
+endif
+
+# Hotspot Express VM FileVersion:
+# 10.0-b<yz> will have DLL version 10.0.0.yz (need 4 numbers).
+#
+# HS_* variables are defined in make/hotspot_version
+#
+HS_VER=$(HS_MAJOR_VER),$(HS_MINOR_VER),0,$(HS_BUILD_NUMBER)
+HS_DOTVER=$(HS_MAJOR_VER).$(HS_MINOR_VER).0.$(HS_BUILD_NUMBER)
+
+ifeq ($(HOTSPOT_RELEASE_VERSION),)
+HOTSPOT_RELEASE_VERSION=$(HS_MAJOR_VER).$(HS_MINOR_VER)-b$(HS_BUILD_NUMBER)
+endif
+
+ifeq ($(HOTSPOT_BUILD_VERSION),)
+HS_BUILD_VER=$(HOTSPOT_RELEASE_VERSION)
+else
+HS_BUILD_VER=$(HOTSPOT_RELEASE_VERSION)-$(HOTSPOT_BUILD_VERSION)
+endif
+
+# End VERSIONINFO parameters
+
 checkSA::
 
 ifneq ($(BUILD_OS2_SA),1)
@@ -148,7 +210,7 @@ $(variantDir)/local.make: checks
 	@ echo HS_COPYRIGHT=$(HOTSPOT_VM_COPYRIGHT)		>> $@
 	@ echo HS_NAME=$(PRODUCT_NAME) $(JDK_MKTG_VERSION)	>> $@
 	@ echo HS_BUILD_VER=$(HS_BUILD_VER)			>> $@
-	@ echo BUILD_WIN_SA=$(BUILD_WIN_SA)    			>> $@
+	@ echo BUILD_OS2_SA=$(BUILD_OS2_SA)    			>> $@
 	@ echo SA_BUILD_VERSION=$(HS_BUILD_VER)                 >> $@
 	@ echo SA_INCLUDE=$(SA_INCLUDE)      			>> $@
 	@ echo SA_LIB=$(SA_LIB)         			>> $@
