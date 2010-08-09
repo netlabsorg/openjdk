@@ -47,9 +47,10 @@ FILES_export = \
 	java/util/zip/ZipEntry.java \
 	java/util/jar/JarFile.java
 
-ifneq ($(PLATFORM), windows)
+ifneq ($(filter-out windows os2, $(PLATFORM)),)
 OTHER_CFLAGS += -DUSE_MMAP
-else
+endif
+ifeq ($(PLATFORM), windows)
   # Files built here do not compile with warning level 3 if warnings are fatal
   COMPILER_WARNINGS_FATAL=false
 endif
@@ -62,15 +63,31 @@ ifeq ($(PLATFORM), solaris)
     FILES_reorder += reorder-$(ARCH)
   endif
 endif
-include $(BUILDDIR)/common/Mapfile-vers.gmk
-include $(BUILDDIR)/common/Library.gmk
 
 ifeq ($(PLATFORM), windows)
 OTHER_LCF = -export:ZIP_Open -export:ZIP_Close -export:ZIP_FindEntry \
             -export:ZIP_ReadEntry -export:ZIP_GetNextEntry
 else
+ifeq ($(PLATFORM), os2)
+# exports live in .def file
+DEF_FILE = $(OBJDIR)/$(LIBRARY).def
+$(DEF_FILE): $(MAKEFILE)
+	@$(ECHO) 'EXPORTS \n \
+  ZIP_Open = "_ZIP_Open@8" \n \
+  ZIP_Close = "_ZIP_Close@4" \n \
+  ZIP_FindEntry = "_ZIP_FindEntry@16" \n \
+  ZIP_ReadEntry = "_ZIP_ReadEntry@16" \n \
+  ZIP_GetNextEntry = "_ZIP_GetNextEntry@8" \n \
+' > $@
+clean::
+	-$(RM) $(DEF_FILE)
+else
 CPPFLAGS += -UDEBUG 
 endif
+endif
+
+include $(BUILDDIR)/common/Mapfile-vers.gmk
+include $(BUILDDIR)/common/Library.gmk
 
 CPPFLAGS += -I$(SHARE_SRC)/native/java/util/zip/zlib-$(ZLIB_VERSION)
 CPPFLAGS += -I$(SHARE_SRC)/native/java/io

@@ -142,7 +142,7 @@ ZFILE_Lseek(ZFILE zfd, off_t offset, int whence) {
 
 static int
 ZFILE_read(ZFILE zfd, char *buf, jint nbytes) {
-#ifdef WIN32
+#if defined(WIN32) || defined(__OS2__)
     return (int) IO_Read(zfd, buf, nbytes);
 #else
     /*
