@@ -57,11 +57,6 @@ OTHER_INCLUDES = -I$(SRCDIR) -I$(PSRCDIR)
 #
 CPPFLAGS_OPT += -DNDEBUG
 
-#
-# Library to compile.
-#
-include $(BUILDDIR)/common/Library.gmk
-
 # We don't want to link against -ljava
 JAVALIB=
 
@@ -70,8 +65,28 @@ ifeq ($(PLATFORM), windows)
   OTHER_LCF += -export:nptInitialize -export:nptTerminate
 endif
 
+ifeq ($(PLATFORM), os2)
+
+# exports live in .def file
+DEF_FILE = $(OBJDIR)/$(LIBRARY).def
+$(DEF_FILE): $(MAKEFILE)
+	@$(ECHO) 'EXPORTS \n \
+  nptInitialize = "_nptInitialize@12" \n \
+  nptTerminate = "_nptTerminate@8" \n \
+' > $@
+
+clean::
+	-$(RM) $(DEF_FILE)
+
+endif
+
+#
+# Library to compile.
+#
+include $(BUILDDIR)/common/Library.gmk
+
 #
 # Add to ambient vpath so we pick up the library files
 #
-vpath %.c $(SRCDIR):$(PSRCDIR)
+vpath %.c $(SRCDIR) $(PSRCDIR)
 
