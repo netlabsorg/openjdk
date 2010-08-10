@@ -80,10 +80,14 @@ OTHER_INCLUDES = -I$(SRCDIR) \
 	         -I$(PLATFORM_SRC)/npt \
 	         -I$(SHARE_SRC)/demo/jvmti/java_crw_demo
 
-ifeq ($(filter-out windows os2, $(PLATFORM)),)
+ifeq ($(PLATFORM), windows)
   OTHER_LDLIBS += wsock32.lib winmm.lib
 else
+ifeq ($(PLATFORM), os2)
+  OTHER_LDLIBS += -lwsock32.lib -lwinmm.lib
+else
   OTHER_LDLIBS += $(LIBSOCKET) -lnsl -ldl
+endif
 endif
 
 #
@@ -112,7 +116,7 @@ JAVALIB=
 #
 # Add to ambient vpath so we pick up the library files
 #
-vpath %.c $(SRCDIR):$(PSRCDIR)
+vpath %.c $(SRCDIR) $(PSRCDIR)
 
 #
 # Install the hprof prelude

@@ -30,7 +30,9 @@
  */
 
 #include <windows.h>
+#ifndef __WIN32OS2__
 #include <io.h>
+#endif
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <mmsystem.h>
@@ -40,6 +42,14 @@
 
 #include "jni.h"
 #include "hprof.h"
+
+#ifdef __EMX__
+#include <unistd.h>
+#define _S_IREAD    S_IRUSR
+#define _S_IWRITE   S_IWUSR
+#define _S_IEXEC    S_IXUSR
+#define _lseeki64   lseek
+#endif
 
 int
 md_getpid(void)
