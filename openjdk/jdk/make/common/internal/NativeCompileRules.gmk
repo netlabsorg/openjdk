@@ -46,7 +46,7 @@ $(OBJDIR)/%.$(DEPEND_SUFFIX): %.c
 	@$(prep-target)
 	@$(ECHO) "Creating $@"
 	@$(RM) $@.temp
-	@$(CC) $(CC_DEPEND) $(CPPFLAGS) $< 2> $(DEV_NULL) \
+	@$(CC) $(CC_DEPEND) $(CPPFLAGS) $< \
 	    $(if $(CC_DEPEND_FILTER), | $(CC_DEPEND_FILTER)) \
 	    > $@.temp
 	@$(MV) $@.temp $@
@@ -55,7 +55,7 @@ $(OBJDIR)/%.$(DEPEND_SUFFIX): %.cpp
 	@$(prep-target)
 	@$(ECHO) "Creating $@"
 	@$(RM) $@.temp
-	@$(CXX) $(CC_DEPEND) $(CPPFLAGS) $(CXXFLAGS) $< 2> $(DEV_NULL) \
+	@$(CXX) $(CC_DEPEND) $(CPPFLAGS) $(CXXFLAGS) $< \
 	    $(if $(CC_DEPEND_FILTER), | $(CC_DEPEND_FILTER)) \
 	    > $@.temp
 	@$(MV) $@.temp $@
