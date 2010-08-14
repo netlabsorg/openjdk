@@ -158,10 +158,10 @@ NET_SockaddrToInetAddress(JNIEnv *env, struct sockaddr *him, int *port) {
 jint
 NET_SockaddrEqualsInetAddress(JNIEnv *env, struct sockaddr *him, jobject iaObj)
 {
+#ifdef AF_INET6
     jint family = (*env)->GetIntField(env, iaObj, ia_familyID) == IPv4?
         AF_INET : AF_INET6;
 
-#ifdef AF_INET6
     if (him->sa_family == AF_INET6) {
 #ifdef WIN32
         struct SOCKADDR_IN6 *him6 = (struct SOCKADDR_IN6 *)him;
@@ -200,6 +200,8 @@ NET_SockaddrEqualsInetAddress(JNIEnv *env, struct sockaddr *him, jobject iaObj)
             }
         }
     } else
+#else /* AF_INET6 */
+    jint family = AF_INET;
 #endif /* AF_INET6 */
         {
             struct sockaddr_in *him4 = (struct sockaddr_in *)him;

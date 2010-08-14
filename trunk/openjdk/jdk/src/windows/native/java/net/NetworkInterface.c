@@ -29,6 +29,11 @@
 #include <iprtrmib.h>
 #include <assert.h>
 
+#ifdef __EMX__
+#include <wchar.h>
+#include <string.h>
+#endif
+
 #include "java_net_NetworkInterface.h"
 #include "jni_util.h"
 
@@ -227,7 +232,7 @@ int enumInterfaces_win(JNIEnv *env, netif **netifPP)
         if (tableP != NULL)
             free(tableP);
 
-#ifndef _WIN64
+#if !defined(_WIN64) && !defined(__WIN32OS2__)
         if (isW9x && ret == ERROR_NOT_SUPPORTED) {
             /*
              * If ERROR_NOT_SUPPORTED is returned on Windows 98 it means that
@@ -526,7 +531,7 @@ Java_java_net_NetworkInterface_init(JNIEnv *env, jclass cls)
         GetIfTable_fn == NULL ||
         GetFriendlyIfIndex_fn == NULL) {
 
-#ifndef _WIN64
+#if !defined(_WIN64) && !defined(__WIN32OS2__)
         if (isW9x) {
             /* Use Windows 9x registry approach which requires initialization */
             enumInterfaces_fn = enumInterfaces_win9x;
@@ -637,7 +642,9 @@ jobject createNetworkInterface(JNIEnv *env, netif *ifs, int netaddrCount, netadd
     while (addrs != NULL) {
         jobject iaObj, ia2Obj;
         jobject ibObj = NULL;
+#ifdef AF_INET6
         if (addrs->addr.him.sa_family == AF_INET) {
+#endif /* AF_INET6 */
             iaObj = (*env)->NewObject(env, ni_ia4cls, ni_ia4Ctor);
             if (iaObj == NULL) {
                 free_netaddr(netaddrP);
@@ -664,6 +671,7 @@ jobject createNetworkInterface(JNIEnv *env, netif *ifs, int netaddrCount, netadd
               (*env)->SetShortField(env, ibObj, ni_ibmaskID, addrs->mask);
               (*env)->SetObjectArrayElement(env, bindsArr, bind_index++, ibObj);
             }
+#ifdef AF_INET6
         } else /* AF_INET6 */ {
             int scope;
             iaObj = (*env)->NewObject(env, ni_ia6cls, ni_ia6ctrID);
@@ -691,6 +699,7 @@ jobject createNetworkInterface(JNIEnv *env, netif *ifs, int netaddrCount, netadd
                 (*env)->SetObjectArrayElement(env, bindsArr, bind_index++, ibObj);
             }
         }
+#endif /* AF_INET6 */
         (*env)->SetObjectArrayElement(env, addrArr, addr_index, iaObj);
         addrs = addrs->next;
         addr_index++;
@@ -727,9 +736,11 @@ JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByName0
     const char *name_utf;
     jobject netifObj = NULL;
 
+#ifdef AF_INET6
     if (os_supports_ipv6 && ipv6_available()) {
         return Java_java_net_NetworkInterface_getByName0_XP (env, cls, name);
     }
+#endif /* AF_INET6 */
 
     /* get the list of interfaces */
     if ((*enumInterfaces_fn)(env, &ifList) < 0) {
@@ -773,9 +784,11 @@ JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByIndex
     netif *ifList, *curr;
     jobject netifObj = NULL;
 
+#ifdef AF_INET6
     if (os_supports_ipv6 && ipv6_available()) {
         return Java_java_net_NetworkInterface_getByIndex_XP (env, cls, index);
     }
+#endif /* AF_INET6 */
 
     /* get the list of interfaces */
     if ((*enumInterfaces_fn)(env, &ifList) < 0) {
@@ -814,9 +827,11 @@ JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByInetAddress0
     jint addr = (*env)->GetIntField(env, iaObj, ni_iaAddr);
     jobject netifObj = NULL;
 
+#ifdef AF_INET6
     if (os_supports_ipv6 && ipv6_available()) {
         return Java_java_net_NetworkInterface_getByInetAddress0_XP (env, cls, iaObj);
     }
+#endif /* AF_INET6 */
 
     /* get the list of interfaces */
     if ((*enumInterfaces_fn)(env, &ifList) < 0) {
@@ -883,9 +898,11 @@ JNIEXPORT jobjectArray JNICALL Java_java_net_NetworkInterface_getAll
     jobjectArray netIFArr;
     jint arr_index;
 
+#ifdef AF_INET6
     if (os_supports_ipv6 && ipv6_available()) {
         return Java_java_net_NetworkInterface_getAll_XP (env, cls);
     }
+#endif /* AF_INET6 */
 
     /*
      * Get list of interfaces
@@ -936,9 +953,12 @@ JNIEXPORT jboolean JNICALL Java_java_net_NetworkInterface_isUp0
     (JNIEnv *env, jclass cls, jstring name, jint index) {
   jboolean ret = JNI_FALSE;
 
+#ifdef AF_INET6
   if (os_supports_ipv6 && ipv6_available()) {
     return Java_java_net_NetworkInterface_isUp0_XP(env, cls, name, index);
-  } else {
+  } else
+#endif /* AF_INET6 */
+  {
     MIB_IFROW *ifRowP;
     ifRowP = getIF(index);
     if (ifRowP != NULL) {
@@ -958,9 +978,12 @@ JNIEXPORT jboolean JNICALL Java_java_net_NetworkInterface_isP2P0(JNIEnv *env, jc
   MIB_IFROW *ifRowP;
   jboolean ret = JNI_FALSE;
 
+#ifdef AF_INET6
   if (os_supports_ipv6 && ipv6_available()) {
     return Java_java_net_NetworkInterface_isP2P0_XP(env, cls, name, index);
-  } else {
+  } else
+#endif /* AF_INET6 */
+  {
     ifRowP = getIF(index);
     if (ifRowP != NULL) {
       switch(ifRowP->dwType) {
@@ -985,9 +1008,12 @@ JNIEXPORT jboolean JNICALL Java_java_net_NetworkInterface_isLoopback0
   MIB_IFROW *ifRowP;
   jboolean ret = JNI_FALSE;
 
+#ifdef AF_INET6
   if (os_supports_ipv6 && ipv6_available()) {
     return Java_java_net_NetworkInterface_isLoopback0_XP(env, cls, name, index);
-  } else {
+  } else
+#endif /* AF_INET6 */
+  {
     ifRowP = getIF(index);
     if (ifRowP != NULL) {
       if (ifRowP->dwType == MIB_IF_TYPE_LOOPBACK)
@@ -1008,12 +1034,14 @@ JNIEXPORT jboolean JNICALL Java_java_net_NetworkInterface_supportsMulticast0
   MIB_IFROW *ifRowP;
   jboolean ret = JNI_TRUE;
 
+#ifdef AF_INET6
   // Let's try to use the newer API (XP & 2003 only)
   if (GetAdaptersAddresses_fn != NULL) {
     ret = Java_java_net_NetworkInterface_supportsMulticast0_XP(env, cls,
                                                                name, index);
     return ret;
   }
+#endif /* AF_INET6 */
   ifRowP = getIF(index);
   if (ifRowP != NULL) {
     if (ifRowP->dwType == MIB_IF_TYPE_LOOPBACK)
@@ -1033,9 +1061,12 @@ JNIEXPORT jbyteArray JNICALL Java_java_net_NetworkInterface_getMacAddr0(JNIEnv *
   int len;
   MIB_IFROW *ifRowP;
 
+#ifdef AF_INET6
   if (os_supports_ipv6 && ipv6_available()) {
     return Java_java_net_NetworkInterface_getMacAddr0_XP(env, class, name, index);
-  } else {
+  } else
+#endif /* AF_INET6 */
+  {
     ifRowP = getIF(index);
     if (ifRowP != NULL) {
       switch(ifRowP->dwType) {
@@ -1064,9 +1095,12 @@ JNIEXPORT jint JNICALL Java_java_net_NetworkInterface_getMTU0(JNIEnv *env, jclas
   jint ret = -1;
   MIB_IFROW *ifRowP;
 
+#ifdef AF_INET6
   if (os_supports_ipv6 && ipv6_available()) {
     return Java_java_net_NetworkInterface_getMTU0_XP(env, class, name, index);
-  } else {
+  } else
+#endif /* AF_INET6 */
+  {
     ifRowP = getIF(index);
     if (ifRowP != NULL) {
       ret = ifRowP->dwMtu;

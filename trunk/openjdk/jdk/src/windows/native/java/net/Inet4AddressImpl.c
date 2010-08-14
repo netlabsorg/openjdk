@@ -31,6 +31,12 @@
 #include <malloc.h>
 #include <sys/types.h>
 
+#ifdef __EMX__
+#include <unistd.h>
+#include <wchar.h>
+#include <string.h>
+#endif
+
 #include "java_net_InetAddress.h"
 #include "java_net_Inet4AddressImpl.h"
 #include "net_util.h"

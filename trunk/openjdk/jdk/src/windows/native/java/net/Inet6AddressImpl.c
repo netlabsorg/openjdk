@@ -31,6 +31,12 @@
 #include <malloc.h>
 #include <sys/types.h>
 
+#ifdef __EMX__
+#include <unistd.h>
+#include <wchar.h>
+#include <string.h>
+#endif
+
 #include "java_net_InetAddress.h"
 #include "java_net_Inet4AddressImpl.h"
 #include "java_net_Inet6AddressImpl.h"
@@ -85,6 +91,7 @@ static int initialized = 0;
 JNIEXPORT jobjectArray JNICALL
 Java_java_net_Inet6AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
                                                 jstring host) {
+#ifdef AF_INET6
     const char *hostname;
     jobject name;
     jobjectArray ret = 0;
@@ -301,6 +308,9 @@ cleanupAndReturn:
         (*freeaddrinfo_ptr)(res);
 
     return ret;
+#else /* AF_INET6 */
+    return 0;
+#endif /* AF_INET6 */
 }
 
 /*
@@ -313,6 +323,7 @@ Java_java_net_Inet6AddressImpl_getHostByAddr(JNIEnv *env, jobject this,
                                             jbyteArray addrArray) {
     jstring ret = NULL;
 
+#ifdef AF_INET6
     char host[NI_MAXHOST+1];
     jfieldID fid;
     int error = 0;
@@ -364,6 +375,7 @@ Java_java_net_Inet6AddressImpl_getHostByAddr(JNIEnv *env, jobject this,
     if (ret == NULL) {
         JNU_ThrowByName(env, JNU_JAVANETPKG "UnknownHostException", NULL);
     }
+#endif /* AF_INET6 */
 
     return ret;
 }
