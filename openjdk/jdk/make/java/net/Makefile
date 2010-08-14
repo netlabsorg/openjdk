@@ -36,13 +36,17 @@ include FILES_c.gmk
 
 AUTO_FILES_JAVA_DIRS = java/net
 
-ifeq ($(filter-out windows os2, $(PLATFORM)),) 
+ifeq ($(PLATFORM), windows) 
     # Windows 9x module only needed on 32-bit build
     ifeq ($(ARCH_DATA_MODEL), 32)
 	FILES_c += NetworkInterface_win9x.c
     endif
     FILES_c += NTLMAuthSequence.c
     FILES_c += NetworkInterface_winXP.c
+endif
+
+ifeq ($(PLATFORM), os2) 
+    FILES_c += NTLMAuthSequence.c
 endif
 
 FILES_export = \
@@ -71,13 +75,18 @@ FILES_export = \
     java/net/ProtocolException.java \
     sun/net/spi/DefaultProxySelector.java
 
-ifeq ($(filter-out windows os2, $(PLATFORM)),) 
+ifeq ($(PLATFORM), windows) 
     FILES_export += java/net/TwoStacksPlainSocketImpl.java
     FILES_export += java/net/DualStackPlainSocketImpl.java
     FILES_export += java/net/TwoStacksPlainDatagramSocketImpl.java
     FILES_export += java/net/DualStackPlainDatagramSocketImpl.java
 else
+ifeq ($(PLATFORM), os2) 
+    FILES_export += java/net/TwoStacksPlainSocketImpl.java
+    FILES_export += java/net/TwoStacksPlainDatagramSocketImpl.java
+else
     FILES_export += java/net/PlainDatagramSocketImpl.java
+endif
 endif
 
 #
@@ -92,12 +101,16 @@ include $(BUILDDIR)/common/Mapfile-vers.gmk
 
 include $(BUILDDIR)/common/Library.gmk
 
-ifeq ($(filter-out windows os2, $(PLATFORM)),) 
+ifeq ($(PLATFORM), windows) 
   OTHER_LDLIBS = ws2_32.lib $(JVMLIB)
   # Will not compile at warning level 3 if warnings are fatal
   COMPILER_WARNINGS_FATAL=false
 else
+ifeq ($(PLATFORM), os2) 
+  OTHER_LDLIBS = -lws2_32.lib $(JVMLIB)
+else
   OTHER_LDLIBS = $(LIBSOCKET) -lnsl -ldl $(JVMLIB)
+endif
 endif
 ifeq ($(PLATFORM), linux)
   OTHER_LDLIBS += -lpthread

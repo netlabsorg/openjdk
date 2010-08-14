@@ -43,13 +43,18 @@ ifeq ($(PLATFORM), linux)
     FILES_c += linux_close.c
 endif
 
-ifeq ($(filter-out windows os2, $(PLATFORM)),) 
+ifeq ($(PLATFORM), windows) 
     FILES_c += TwoStacksPlainSocketImpl.c
     FILES_c += DualStackPlainSocketImpl.c
     FILES_c += TwoStacksPlainDatagramSocketImpl.c
     FILES_c += DualStackPlainDatagramSocketImpl.c
 else
+ifeq ($(PLATFORM), os2) 
+    FILES_c += TwoStacksPlainSocketImpl.c
+    FILES_c += TwoStacksPlainDatagramSocketImpl.c
+else
     FILES_c += PlainSocketImpl.c
     FILES_c += PlainDatagramSocketImpl.c
+endif
 endif
 

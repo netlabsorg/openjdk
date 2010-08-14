@@ -86,6 +86,9 @@ extern jfieldID ni_ibaddressID;     /* InterfaceAddress.address */
 extern jfieldID ni_ibbroadcastID;   /* InterfaceAddress.broadcast */
 extern jfieldID ni_ibmaskID;        /* InterfaceAddress.maskLength */
 
+
+#ifndef __WIN32OS2__
+
 /*
  * Following includes come from iptypes.h
  */
@@ -408,5 +411,7 @@ typedef struct ip_interface_name_info {
 #ifndef IF_TYPE_TUNNEL
 #define IF_TYPE_TUNNEL 131
 #endif
+
+#endif /* !__WIN32OS2__ */
 
 #endif

@@ -38,7 +38,9 @@
 
 #define SECURITY_WIN32
 #include "sspi.h"
+#ifndef __WIN32OS2__
 #include "issperr.h"
+#endif
 
 
 /*

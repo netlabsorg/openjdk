@@ -249,7 +249,9 @@ int NET_GetDefaultTOS(void);
 typedef union {
     struct sockaddr     him;
     struct sockaddr_in  him4;
+#ifdef AF_INET6
     struct SOCKADDR_IN6 him6;
+#endif /* AF_INET6 */
 } SOCKETADDRESS;
 
 /*
@@ -259,8 +261,12 @@ typedef union {
 struct ipv6bind {
     SOCKETADDRESS       *addr;
     SOCKET               ipv4_fd;
+#ifdef AF_INET6
     SOCKET               ipv6_fd;
+#endif /* AF_INET6 */
 };
+
+#ifdef AF_INET6
 
 #define SOCKETADDRESS_LEN(X)    \
         (((X)->him.sa_family==AF_INET6)? sizeof(struct SOCKADDR_IN6) : \
@@ -290,6 +296,26 @@ struct ipv6bind {
         (IN6ADDR_ISLOOPBACK (x)) \
 )
 
+#else /* AF_INET6 */
+
+#define SOCKETADDRESS_LEN(X) sizeof(struct sockaddr_in)
+
+#define SOCKETADDRESS_COPY(DST,SRC) {                       \
+    memcpy ((DST), (SRC), sizeof (struct sockaddr_in));     \
+}
+
+#define SET_PORT(X,Y) {                     \
+    (X)->him4.sin_port = (Y);               \
+}
+
+#define GET_PORT(X) ((X)->him4.sin_port)
+
+#define IS_LOOPBACK_ADDRESS(x) ( \
+    (ntohl((x)->him4.sin_addr.s_addr)==INADDR_LOOPBACK) \
+)
+
+#endif /* AF_INET6 */
+
 JNIEXPORT int JNICALL NET_SocketClose(int fd);
 
 JNIEXPORT int JNICALL NET_Timeout(int fd, long timeout);
@@ -314,6 +340,9 @@ JNIEXPORT int JNICALL NET_BindV6(struct ipv6bind* b);
 #define NET_WAIT_CONNECT        0x04
 
 extern jint NET_Wait(JNIEnv *env, jint fd, jint flags, jint timeout);
+extern int NET_Socket (int domain, int type, int protocol);
+extern void NET_ThrowByNameWithLastError(JNIEnv *env, const char *name,
+                                         const char *defaultDetail);
 
 /* XP versions of the native routines */
 

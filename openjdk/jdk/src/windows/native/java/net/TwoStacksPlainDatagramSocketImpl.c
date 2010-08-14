@@ -32,6 +32,10 @@
 #include <malloc.h>
 #include <sys/types.h>
 
+#ifdef __EMX__
+#include <string.h>
+#endif
+
 #ifndef IPTOS_TOS_MASK
 #define IPTOS_TOS_MASK 0x1e
 #endif
@@ -459,6 +463,7 @@ Java_java_net_TwoStacksPlainDatagramSocketImpl_bind0(JNIEnv *env, jobject this,
       return;
     }
 
+#ifdef AF_INET6
     if (ipv6_supported) {
         struct ipv6bind v6bind;
         v6bind.addr = &lcladdr;
@@ -490,7 +495,9 @@ Java_java_net_TwoStacksPlainDatagramSocketImpl_bind0(JNIEnv *env, jobject this,
             NET_ThrowCurrent (env, "Cannot bind");
             return;
         }
-    } else {
+    } else
+#endif /* AF_INET6 */
+    {
         if (bind(fd, (struct sockaddr *)&lcladdr, lcladdrlen) == -1) {
             if (WSAGetLastError() == WSAEACCES) {
                 WSASetLastError(WSAEADDRINUSE);
@@ -1505,6 +1512,7 @@ Java_java_net_TwoStacksPlainDatagramSocketImpl_datagramSocketCreate(JNIEnv *env,
     (*env)->SetIntField(env, fdObj, IO_fd_fdID, fd);
     NET_SetSockOpt(fd, SOL_SOCKET, SO_BROADCAST, (char*)&t, sizeof(BOOL));
 
+#ifdef AF_INET6
     if (ipv6_supported) {
         /* SIO_UDP_CONNRESET fixes a bug introduced in Windows 2000, which
          * returns connection reset errors un connected UDP sockets (as well
@@ -1524,7 +1532,9 @@ Java_java_net_TwoStacksPlainDatagramSocketImpl_datagramSocketCreate(JNIEnv *env,
         WSAIoctl(fd1,SIO_UDP_CONNRESET,&t,sizeof(t),&x1,sizeof(x1),&x2,0,0);
         (*env)->SetIntField(env, fd1Obj, IO_fd_fdID, fd1);
         SetHandleInformation((HANDLE)(UINT_PTR)fd1, HANDLE_FLAG_INHERIT, FALSE);
-    } else {
+    } else
+#endif /* AF_INET6 */
+    {
         /* drop the second fd */
         (*env)->SetObjectField(env, this, pdsi_fd1ID, NULL);
     }
@@ -2291,12 +2301,14 @@ Java_java_net_TwoStacksPlainDatagramSocketImpl_setTimeToLive(JNIEnv *env, jobjec
       }
     }
 
+#ifdef AF_INET6
     if (fd1 >= 0) {
       if (NET_SetSockOpt(fd1, IPPROTO_IPV6, IPV6_MULTICAST_HOPS, (char *)&ittl,
                          sizeof(ittl)) <0) {
         NET_ThrowCurrent(env, "set IPV6_MULTICAST_HOPS failed");
       }
     }
+#endif /* AF_INET6 */
 }
 
 /*
@@ -2345,6 +2357,7 @@ Java_java_net_TwoStacksPlainDatagramSocketImpl_getTimeToLive(JNIEnv *env, jobjec
       }
       return (jint)ttl;
     }
+#ifdef AF_INET6
     if (fd1 >= 0) {
       if (NET_GetSockOpt(fd1, IPPROTO_IPV6, IPV6_MULTICAST_HOPS, (char*)&ttl, &len) < 0) {
         NET_ThrowCurrent(env, "get IP_MULTICAST_TTL failed");
@@ -2352,6 +2365,7 @@ Java_java_net_TwoStacksPlainDatagramSocketImpl_getTimeToLive(JNIEnv *env, jobjec
       }
       return (jint)ttl;
     }
+#endif /* AF_INET6 */
     return -1;
 }
 
@@ -2415,7 +2429,9 @@ static void mcast_join_leave(JNIEnv *env, jobject this,
      */
     family = name.him.sa_family;
 
+#ifdef AF_INET6
     if (family == AF_INET) {
+#endif /* AF_INET6 */
         int address = name.him4.sin_addr.s_addr;
         if (!IN_MULTICAST(ntohl(address))) {
             JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "not in multicast");
@@ -2452,6 +2468,7 @@ static void mcast_join_leave(JNIEnv *env, jobject this,
                 JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException","error setting options");
             }
         }
+#ifdef AF_INET6
     } else /* AF_INET6 */ {
         if (ipv6_supported) {
             struct in6_addr *address;
@@ -2495,6 +2512,7 @@ static void mcast_join_leave(JNIEnv *env, jobject this,
             }
         }
     }
+#endif /* AF_INET6 */
 
     return;
 }

@@ -234,6 +234,7 @@ NET_GetFileDescriptorID(JNIEnv *env)
 
 jint  IPv6_supported()
 {
+#ifdef AF_INET6
     HMODULE lib;
     int fd = socket(AF_INET6, SOCK_STREAM, 0) ;
     if (fd < 0) {
@@ -259,6 +260,9 @@ jint  IPv6_supported()
     FreeLibrary(lib);
 
     return JNI_TRUE;
+#else /* AF_INET6 */
+    return JNI_FALSE;
+#endif /* AF_INET6 */
 }
 
 jboolean NET_addrtransAvailable() {
@@ -606,6 +610,8 @@ void dumpAddr (char *str, void *addr) {
  * and returns SOCKET_ERROR. Used in NET_BindV6 only.
  */
 
+#ifdef AF_INET6
+
 #define CLOSE_SOCKETS_AND_RETURN {      \
     if (fd != -1) {                     \
         closesocket (fd);               \
@@ -626,6 +632,31 @@ void dumpAddr (char *str, void *addr) {
     b->ipv4_fd = b->ipv6_fd = -1;       \
     return SOCKET_ERROR;                \
 }
+
+#else /* AF_INET6 */
+
+#define CLOSE_SOCKETS_AND_RETURN {      \
+    if (fd != -1) {                     \
+        closesocket (fd);               \
+        fd = -1;                        \
+    }                                   \
+    if (ofd != -1) {                    \
+        closesocket (ofd);              \
+        ofd = -1;                       \
+    }                                   \
+    if (close_fd != -1) {               \
+        closesocket (close_fd);         \
+        close_fd = -1;                  \
+    }                                   \
+    if (close_ofd != -1) {              \
+        closesocket (close_ofd);        \
+        close_ofd = -1;                 \
+    }                                   \
+    b->ipv4_fd = -1;                    \
+    return SOCKET_ERROR;                \
+}
+
+#endif /* AF_INET6 */
 
 /*
  * if ipv6 is available, call NET_BindV6 to bind to the required address/port.
@@ -670,10 +701,13 @@ NET_BindV6(struct ipv6bind* b) {
         if (ret == SOCKET_ERROR) {
             CLOSE_SOCKETS_AND_RETURN;
         }
+#ifdef AF_INET6
         closesocket (b->ipv6_fd);
         b->ipv6_fd = -1;
+#endif /* AF_INET6 */
         return 0;
     }
+#ifdef AF_INET6
     if (family == AF_INET6 && (!IN6_IS_ADDR_ANY(&b->addr->him6.sin6_addr))) {
         /* bind to v6 only */
         int ret;
@@ -788,7 +822,12 @@ NET_BindV6(struct ipv6bind* b) {
         CLOSE_SOCKETS_AND_RETURN;
     }
     return 0;
+#else /* AF_INET6 */
+    CLOSE_SOCKETS_AND_RETURN;
+#endif /* AF_INET6 */
 }
+
+#ifdef AF_INET6
 
 /*
  * Determine the default interface for an IPv6 address.
@@ -821,6 +860,8 @@ jint getDefaultIPv6Interface(JNIEnv *env, struct SOCKADDR_IN6 *target_addr)
     }
 }
 
+#endif /* AF_INET6 */
+
 /* If address types is IPv6, then IPv6 must be available. Otherwise
  * no address can be generated. In the case of an IPv4 Inetaddress this
  * method will return an IPv4 mapped address where IPv6 is available and
@@ -832,6 +873,7 @@ NET_InetAddressToSockaddr(JNIEnv *env, jobject iaObj, int port, struct sockaddr 
                           int *len, jboolean v4MappedAddress) {
     jint family, iafam;
     iafam = (*env)->GetIntField(env, iaObj, ia_familyID);
+#ifdef AF_INET6
     family = (iafam == IPv4)? AF_INET : AF_INET6;
     if (ipv6_available() && !(family == AF_INET && v4MappedAddress == JNI_FALSE)) {
         struct SOCKADDR_IN6 *him6 = (struct SOCKADDR_IN6 *)him;
@@ -873,7 +915,11 @@ NET_InetAddressToSockaddr(JNIEnv *env, jobject iaObj, int port, struct sockaddr 
         }
         him6->sin6_scope_id = scopeid != 0 ? scopeid : cached_scope_id;
         *len = sizeof(struct SOCKADDR_IN6) ;
-    } else {
+    } else
+#else /* AF_INET6 */
+    family = AF_INET;
+#endif /* AF_INET6 */
+    {
         struct sockaddr_in *him4 = (struct sockaddr_in*)him;
         jint address;
         if (family != AF_INET) {
@@ -892,9 +938,12 @@ NET_InetAddressToSockaddr(JNIEnv *env, jobject iaObj, int port, struct sockaddr 
 
 jint
 NET_GetPortFromSockaddr(struct sockaddr *him) {
+#ifdef AF_INET6
     if (him->sa_family == AF_INET6) {
         return ntohs(((struct sockaddr_in6*)him)->sin6_port);
-    } else {
+    } else
+#endif /* AF_INET6 */
+    {
         return ntohs(((struct sockaddr_in*)him)->sin_port);
     }
 }
