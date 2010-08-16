@@ -31,6 +31,10 @@
 #include <malloc.h>
 #include <sys/types.h>
 
+#ifdef __EMX__
+#include <string.h>
+#endif
+
 #include "jni.h"
 #include "jni_util.h"
 #include "jvm.h"
@@ -46,10 +50,10 @@
 static jfieldID fd_fdID;        /* java.io.FileDescriptor.fd */
 static jclass isa_class;        /* java.net.InetSocketAddress */
 static jmethodID isa_ctorID;    /* InetSocketAddress(InetAddress, int) */
-static jclass ia_class;         /* java.net.InetAddress */
-static jmethodID ia_ctorID;     /* InetAddress() */
-static jfieldID ia_addrID;      /* java.net.InetAddress.address */
-static jfieldID ia_famID;       /* java.net.InetAddress.family */
+static jclass i4a_class;        /* java.net.Inet4Address */
+static jmethodID i4a_ctorID;    /* Inet4Address() */
+static jfieldID i4a_addrID;     /* java.net.Inet4Address.address */
+static jfieldID i4a_famID;      /* java.net.Inet4Address.family */
 
 
 /**************************************************************
@@ -68,10 +72,10 @@ Java_sun_nio_ch_ServerSocketChannelImpl_initIDs(JNIEnv *env, jclass cls)
                                      "(Ljava/net/InetAddress;I)V");
 
     cls = (*env)->FindClass(env, "java/net/Inet4Address");
-    ia_class = (*env)->NewGlobalRef(env, cls);
-    ia_ctorID = (*env)->GetMethodID(env, cls, "<init>","()V");
-    ia_addrID = (*env)->GetFieldID(env, cls, "address", "I");
-    ia_famID = (*env)->GetFieldID(env, cls, "family", "I");
+    i4a_class = (*env)->NewGlobalRef(env, cls);
+    i4a_ctorID = (*env)->GetMethodID(env, cls, "<init>","()V");
+    i4a_addrID = (*env)->GetFieldID(env, cls, "address", "I");
+    i4a_famID = (*env)->GetFieldID(env, cls, "family", "I");
 }
 
 JNIEXPORT void JNICALL
@@ -108,9 +112,9 @@ Java_sun_nio_ch_ServerSocketChannelImpl_accept0(JNIEnv *env, jobject this,
     }
     (*env)->SetIntField(env, newfdo, fd_fdID, newfd);
 
-    ia = (*env)->NewObject(env, ia_class, ia_ctorID);
-    (*env)->SetIntField(env, ia, ia_addrID, ntohl(sa.sin_addr.s_addr));
-    (*env)->SetIntField(env, ia, ia_famID, sa.sin_family);
+    ia = (*env)->NewObject(env, i4a_class, i4a_ctorID);
+    (*env)->SetIntField(env, ia, i4a_addrID, ntohl(sa.sin_addr.s_addr));
+    (*env)->SetIntField(env, ia, i4a_famID, sa.sin_family);
 
     isa = (*env)->NewObject(env, isa_class, isa_ctorID, ia,
                             ntohs(sa.sin_port));
