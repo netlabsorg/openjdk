@@ -27,10 +27,15 @@
 #include "jni_util.h"
 #include "jvm.h"
 #include "jlong.h"
+#ifndef __WIN32OS2__
 #include <io.h>
+#endif
 #include "nio.h"
 #include "nio_util.h"
 #include "sun_nio_ch_FileChannelImpl.h"
+#ifdef __WIN32OS2__
+#include <winerror.h>
+#endif
 
 static jfieldID chan_fd; /* id for jobject 'fd' in java.io.FileChannel */
 

@@ -27,24 +27,29 @@
 #include "jni_util.h"
 #include "jvm.h"
 #include "jlong.h"
+#ifndef __WIN32OS2__
 #include <io.h>
+#endif
 #include "sun_nio_ch_DatagramChannelImpl.h"
 #include "nio.h"
 #include "nio_util.h"
 #include "net_util.h"
 #include <winsock2.h>
+#ifdef __EMX__
+#include <string.h>
+#endif
 
 static jfieldID isa_addrID;     /* address in java.net.InetSocketAddress */
 static jfieldID isa_portID;     /* port in java.net.InetSocketAddress */
 static jfieldID dci_senderID;   /* sender in sun.nio.ch.DatagramChannelImpl */
 static jfieldID dci_senderAddrID; /* sender InetAddress in sun.nio.ch.DatagramChannelImpl */
 static jfieldID dci_senderPortID; /* sender port in sun.nio.ch.DatagramChannelImpl */
-static jfieldID ia_addrID;
-static jfieldID ia_famID;
+static jfieldID i4a_addrID;
+static jfieldID i4a_famID;
 static jclass isa_class;        /* java.net.InetSocketAddress */
-static jclass ia_class;
+static jclass i4a_class;
 static jmethodID isa_ctorID;    /*   .InetSocketAddress(InetAddress, int) */
-static jmethodID ia_ctorID;
+static jmethodID i4a_ctorID;
 
 /*
  * Returns JNI_TRUE if DatagramChannelImpl has already cached an
@@ -66,7 +71,7 @@ static jboolean isSenderCached(JNIEnv *env, jobject this, struct sockaddr_in *sa
         return JNI_FALSE;
     }
     if ((jint)ntohl(sa->sin_addr.s_addr) !=
-        (*env)->GetIntField(env, senderAddr, ia_addrID)) {
+        (*env)->GetIntField(env, senderAddr, i4a_addrID)) {
         return JNI_FALSE;
     }
 
@@ -100,10 +105,10 @@ Java_sun_nio_ch_DatagramChannelImpl_initIDs(JNIEnv *env, jclass clazz)
     dci_senderPortID = (*env)->GetFieldID(env, clazz,
                                           "cachedSenderPort", "I");
     clazz = (*env)->FindClass(env, "java/net/Inet4Address");
-    ia_class = (*env)->NewGlobalRef(env, clazz);
-    ia_addrID = (*env)->GetFieldID(env, clazz, "address", "I");
-    ia_famID = (*env)->GetFieldID(env, clazz, "family", "I");
-    ia_ctorID = (*env)->GetMethodID(env, clazz, "<init>", "()V");
+    i4a_class = (*env)->NewGlobalRef(env, clazz);
+    i4a_addrID = (*env)->GetFieldID(env, clazz, "address", "I");
+    i4a_famID = (*env)->GetFieldID(env, clazz, "family", "I");
+    i4a_ctorID = (*env)->GetMethodID(env, clazz, "<init>", "()V");
 }
 
 /*
@@ -235,7 +240,7 @@ Java_sun_nio_ch_DatagramChannelImpl_receive0(JNIEnv *env, jobject this,
 
     if (!isSenderCached(env, this, &psa)) {
         int port = ntohs(psa.sin_port);
-        jobject ia = (*env)->NewObject(env, ia_class, ia_ctorID);
+        jobject ia = (*env)->NewObject(env, i4a_class, i4a_ctorID);
         jobject isa = NULL;
 
         if (psa.sin_family != AF_INET) {
@@ -245,7 +250,7 @@ Java_sun_nio_ch_DatagramChannelImpl_receive0(JNIEnv *env, jobject this,
 
         if (ia != NULL) {
             // populate InetAddress (assumes AF_INET)
-            (*env)->SetIntField(env, ia, ia_addrID, ntohl(psa.sin_addr.s_addr));
+            (*env)->SetIntField(env, ia, i4a_addrID, ntohl(psa.sin_addr.s_addr));
 
             // create InetSocketAddress
             isa = (*env)->NewObject(env, isa_class, isa_ctorID, ia, port);

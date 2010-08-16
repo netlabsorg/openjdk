@@ -25,7 +25,9 @@
 
 #include <windows.h>
 #include <winsock2.h>
+#ifndef __WIN32OS2__
 #include <io.h>
+#endif
 #include "jni.h"
 #include "jni_util.h"
 #include "jvm.h"
@@ -156,6 +158,7 @@ Java_sun_nio_ch_IOUtil_configureBlocking(JNIEnv *env, jclass clazz,
 JNIEXPORT jboolean JNICALL
 Java_sun_nio_ch_IOUtil_drain(JNIEnv *env, jclass cl, jint fd)
 {
+#ifndef __WIN32OS2__
     DWORD read = 0;
     int totalRead = 0;
     BOOL result = 0;
@@ -189,6 +192,10 @@ Java_sun_nio_ch_IOUtil_drain(JNIEnv *env, jclass cl, jint fd)
         }
     }
     return (totalRead > 0) ? JNI_TRUE : JNI_FALSE;
+#else /* __WIN32OS2__ */
+    JNU_ThrowIOExceptionWithLastError(env, "Drain");
+    return JNI_FALSE;
+#endif /* __WIN32OS2__ */
 }
 
 /* Note: This function returns the int fd value from file descriptor.
