@@ -134,9 +134,9 @@ ifeq ($(PLATFORM),windows)
      $(OBJDIR)/../../../java.lang/java/$(OBJDIRNAME)/FileDescriptor_md.obj
 endif
 ifeq ($(PLATFORM),os2)
-  OTHER_LDLIBS += $(JVMLIB) ws2_32.lib \
-     -L$(LIBDIR) java.lib \
-     $(OBJDIR)/../../../../sun/java.net/net/$(OBJDIRNAME)/net.lib \
+  OTHER_LDLIBS += $(JVMLIB) -lws2_32.lib \
+     -L$(LIBDIR) -ljava.lib \
+     -l$(OBJDIR)/../../../../sun/java.net/net/$(OBJDIRNAME)/net.lib \
      $(OBJDIR)/../../../java.lang/java/$(OBJDIRNAME)/io_util.obj \
      $(OBJDIR)/../../../java.lang/java/$(OBJDIRNAME)/FileDescriptor_md.obj
 endif

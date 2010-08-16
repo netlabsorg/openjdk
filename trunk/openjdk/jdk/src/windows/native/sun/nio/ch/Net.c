@@ -37,10 +37,10 @@
 #include "sun_nio_ch_Net.h"
 
 
-static jfieldID ia_addrID;
-static jclass ia_class;
-static jmethodID ia_ctorID;
-static jfieldID ia_famID;
+static jfieldID i4a_addrID;
+static jclass i4a_class;
+static jmethodID i4a_ctorID;
+static jfieldID i4a_famID;
 
 /**************************************************************
  * static method to store field IDs in initializers
@@ -50,10 +50,10 @@ JNIEXPORT void JNICALL
 Java_sun_nio_ch_Net_initIDs(JNIEnv *env, jclass clazz)
 {
     clazz = (*env)->FindClass(env, "java/net/Inet4Address");
-    ia_class = (*env)->NewGlobalRef(env, clazz);
-    ia_addrID = (*env)->GetFieldID(env, clazz, "address", "I");
-    ia_famID = (*env)->GetFieldID(env, clazz, "family", "I");
-    ia_ctorID = (*env)->GetMethodID(env, clazz, "<init>", "()V");
+    i4a_class = (*env)->NewGlobalRef(env, clazz);
+    i4a_addrID = (*env)->GetFieldID(env, clazz, "address", "I");
+    i4a_famID = (*env)->GetFieldID(env, clazz, "family", "I");
+    i4a_ctorID = (*env)->GetMethodID(env, clazz, "<init>", "()V");
 }
 
 
@@ -142,11 +142,11 @@ Java_sun_nio_ch_Net_localInetAddress(JNIEnv *env, jclass clazz, jobject fdo)
         return NULL;
     }
 
-    iao = (*env)->NewObject(env, ia_class, ia_ctorID);
+    iao = (*env)->NewObject(env, i4a_class, i4a_ctorID);
     if (iao == NULL) {
         JNU_ThrowOutOfMemoryError(env, "heap allocation failure");
     } else {
-        (*env)->SetIntField(env, iao, ia_addrID, ntohl(sa.sin_addr.s_addr));
+        (*env)->SetIntField(env, iao, i4a_addrID, ntohl(sa.sin_addr.s_addr));
     }
 
     return iao;

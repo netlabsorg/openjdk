@@ -29,6 +29,9 @@
 #include "jlong.h"
 #include "java_nio_MappedByteBuffer.h"
 #include <stdlib.h>
+#ifdef __WIN32OS2__
+#include <winerror.h>
+#endif
 
 JNIEXPORT jboolean JNICALL
 Java_java_nio_MappedByteBuffer_isLoaded0(JNIEnv *env, jobject obj,
