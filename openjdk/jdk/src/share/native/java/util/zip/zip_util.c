@@ -87,7 +87,7 @@ static jint INITIAL_META_COUNT = 2;   /* initial number of entries in meta name 
  */
 static ZFILE
 ZFILE_Open(const char *fname, int flags) {
-#ifdef WIN32
+#if defined(WIN32) || defined (__WIN32OS2__)
     const DWORD access =
         (flags & O_RDWR)   ? (GENERIC_WRITE | GENERIC_READ) :
         (flags & O_WRONLY) ?  GENERIC_WRITE :
@@ -128,7 +128,7 @@ ZFILE_Open(const char *fname, int flags) {
  */
 static void
 ZFILE_Close(ZFILE zfd) {
-#ifdef WIN32
+#if defined(WIN32) || defined (__WIN32OS2__)
     CloseHandle((HANDLE) zfd);
 #else
     JVM_Close(zfd);
@@ -142,7 +142,7 @@ ZFILE_Lseek(ZFILE zfd, off_t offset, int whence) {
 
 static int
 ZFILE_read(ZFILE zfd, char *buf, jint nbytes) {
-#if defined(WIN32) || defined(__OS2__)
+#if defined(WIN32) || defined (__WIN32OS2__)
     return (int) IO_Read(zfd, buf, nbytes);
 #else
     /*
