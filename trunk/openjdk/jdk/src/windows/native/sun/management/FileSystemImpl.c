@@ -81,6 +81,7 @@ static int isNT;
  * returns false).
  */
 static jboolean isSecuritySupported(JNIEnv* env, const char* path) {
+#ifndef __WIN32OS2__
     char* root;
     char* p;
     BOOL res;
@@ -153,6 +154,9 @@ static jboolean isSecuritySupported(JNIEnv* env, const char* path) {
 
     free(root);
     return (dwFlags & FS_PERSISTENT_ACLS) ? JNI_TRUE : JNI_FALSE;
+#else /* __WIN32OS2__ */
+    return JNI_FALSE;
+#endif /* __WIN32OS2__ */
 }
 
 
