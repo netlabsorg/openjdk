@@ -47,6 +47,10 @@ typedef unsigned int     uint_t;
 typedef unsigned __int32 uint32_t;
 typedef unsigned __int64 uint64_t;
 
+#else /* EMX */
+
+#include <types.h>
+
 #endif /* EMX */
 
 /* Make sure that we have the intptr_t and uintptr_t definitions */

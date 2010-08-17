@@ -102,9 +102,12 @@ ifeq ($(PLATFORM), windows)
   # equivalent of strcasecmp is stricmp on Windows
   CPPFLAGS_COMMON += -Dstrcasecmp=stricmp
 else
+ifeq ($(PLATFORM), os2)
+  OTHER_LDLIBS += -l$(OUTPUTDIR)/tmp/java/jli/$(OBJDIRNAME)/static/jli.lib
+else
   LDFLAGS += -L $(LIBDIR)/$(LIBARCH)/jli
   OTHER_LDLIBS += -ljli
-  OTHER_LDLIBS += -ldl 
+  OTHER_LDLIBS += -ldl
   ifeq ($(PLATFORM), solaris)
     LDFLAGS += -R \$$ORIGIN/jli
   endif
@@ -113,6 +116,18 @@ else
     LDFLAGS += -Wl,--allow-shlib-undefined
     LDFLAGS += -Wl,-rpath -Wl,\$$ORIGIN/jli
   endif
+endif
+endif
+
+ifeq ($(PLATFORM), os2)
+# exports live in .def file
+DEF_FILE = $(OBJDIR)/$(LIBRARY).def
+$(DEF_FILE): $(MAKEFILE)
+	@$(ECHO) 'EXPORTS \n \
+  Agent_OnAttach = "_Agent_OnAttach@12" \n \
+' > $@
+clean::
+	-$(RM) $(DEF_FILE)
 endif
 
 #
