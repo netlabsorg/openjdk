@@ -174,14 +174,14 @@ product release optimized: checks $(variantDir) $(variantDir)/local.make sanity
 # The debug or jvmg (all the same thing) is an optional build
 debug jvmg: checks $(variantDir) $(variantDir)/local.make sanity
 	cd $(variantDir); \
-	$(MAKE) -f $(WorkSpace)/make/windows/makefiles/top.make BUILD_FLAVOR=debug ARCH=$(ARCH)
+	$(MAKE) -f $(WorkSpace)/make/os2/makefiles/top.make BUILD_FLAVOR=debug ARCH=$(ARCH)
 fastdebug: checks $(variantDir) $(variantDir)/local.make sanity
 	cd $(variantDir); \
-	$(MAKE) -f $(WorkSpace)/make/windows/makefiles/top.make BUILD_FLAVOR=fastdebug ARCH=$(ARCH)
+	$(MAKE) -f $(WorkSpace)/make/os2/makefiles/top.make BUILD_FLAVOR=fastdebug ARCH=$(ARCH)
 
 develop: checks $(variantDir) $(variantDir)/local.make sanity
 	cd $(variantDir); \
-	$(MAKE) -f $(WorkSpace)/make/windows/makefiles/top.make BUILD_FLAVOR=product DEVELOP=1 ARCH=$(ARCH)
+	$(MAKE) -f $(WorkSpace)/make/os2/makefiles/top.make BUILD_FLAVOR=product DEVELOP=1 ARCH=$(ARCH)
 
 sanity:
 	@ echo; \
