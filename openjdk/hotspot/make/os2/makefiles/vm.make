@@ -104,7 +104,6 @@ $(Def_File): $(MAKEFILE)
 LINK_FLAGS += -Zdll
 
 Src_Dirs = \
-  ../generated                          \
   ../generated/incls                    \
   ../generated/jvmtifiles               \
   $(WorkSpace)/src/share/vm/c1          \
@@ -139,7 +138,7 @@ Src_Dirs = \
 CPP_FLAGS += # PCH output: "vm.pch" PCH sources: "incls/_precompiled.incl"
 
 # Where to find the include files for the virtual machine
-CPP_FLAGS += $(Src_Dirs:%=-I'%')
+CPP_FLAGS += -I../generated $(Src_Dirs:%=-I'%')
 
 # Where to find the source code for the virtual machine
 VPATH += $(Src_Dirs:%=%;)
