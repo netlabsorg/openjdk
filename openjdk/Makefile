@@ -66,6 +66,10 @@ include $(JDK_MAKE_SHARED_DIR)/Defs-control.gmk
 
 include ./make/Defs-internal.gmk
 
+ifndef TARGETS
+  TARGETS:=setup build
+endif
+
 all::
 	@$(ECHO) $(PLATFORM) $(ARCH) $(RELEASE) build started: `$(DATE) '+%y-%m-%d %H:%M'`
 	$(MKDIR) -p $(OUTPUTDIR)
@@ -94,7 +98,7 @@ include ./make/install-rules.gmk
 include ./make/sponsors-rules.gmk
 include ./make/deploy-rules.gmk
 
-all:: setup build
+all:: $(TARGETS)
 
 setup: openjdk_check
 	$(MKDIR) -p $(OUTPUTDIR)/j2sdk-image
@@ -186,14 +190,14 @@ product_build: setup
 
 generic_debug_build:
 	@$(ECHO) $@ build started: `$(DATE) '+%y-%m-%d %H:%M'`
-	$(MAKE) $(COMMON_DEBUG_FLAGS) setup build
+	$(MAKE) $(COMMON_DEBUG_FLAGS) $(TARGETS)
 	@$(ECHO) $@ build finished: `$(DATE) '+%y-%m-%d %H:%M'`
 
 debug_build: setup
-	$(MAKE) DEBUG_NAME=debug generic_debug_build
+	$(MAKE) DEBUG_NAME=debug TARGETS=$(TARGETS) generic_debug_build
 
 fastdebug_build: setup
-	$(MAKE) DEBUG_NAME=fastdebug generic_debug_build
+	$(MAKE) DEBUG_NAME=fastdebug TARGETS=$(TARGERS) generic_debug_build
 
 ifeq ($(SKIP_FASTDEBUG_BUILD), false)
   all:: fastdebug_build
