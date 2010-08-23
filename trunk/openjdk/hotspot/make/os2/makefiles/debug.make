@@ -47,7 +47,7 @@ Obj_Files += os2_x86_32.obj
 # Various OS/2 specific sources
 # Not included in includeDB because they don't match the logic of that file
 # (it expects only one platform at a time which is windows for now)
-Obj_Files += os_os2.obj
+Obj_Files += os_os2_init.obj os_os2.obj
 
 HS_BUILD_ID = $(HS_BUILD_VER)-debug
 
