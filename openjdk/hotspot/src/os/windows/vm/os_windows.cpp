@@ -1113,6 +1113,8 @@ const char* os::get_current_directory(char *buf, int buflen) {
   return _getcwd(buf, buflen);
 }
 
+#ifndef __WIN32OS2__
+
 //-----------------------------------------------------------
 // Helper functions for fatal error handler
 
@@ -1359,6 +1361,8 @@ bool os::dll_address_to_library_name(address addr, char* buf,
    }
 }
 
+#endif /* __WIN32OS2__ */
+
 bool os::dll_address_to_function_name(address addr, char *buf,
                                       int buflen, int *offset) {
   // Unimplemented on Windows - in order to use SymGetSymFromAddr(),
@@ -1373,6 +1377,8 @@ bool os::dll_address_to_function_name(address addr, char *buf,
 void* os::dll_lookup(void* handle, const char* name) {
   return CAST_FROM_FN_PTR(void *, GetProcAddress((HMODULE)handle, name));
 }
+
+#ifndef __WIN32OS2__
 
 // save the start and end address of jvm.dll into param[0] and param[1]
 static int _locate_jvm_dll(int pid, char* mod_fname, address base_addr,
@@ -1414,6 +1420,8 @@ static int _print_module(int pid, char* fname, address base,
    st->print(PTR_FORMAT " - " PTR_FORMAT " \t%s\n", base, end_addr, fname);
    return 0;
 }
+
+#endif /* __WIN32OS2__ */
 
 // Loads .dll/.so and
 // in case of error it checks if .dll/.so was built for the
@@ -1542,12 +1550,15 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen)
   return NULL;
 }
 
+#ifndef __WIN32OS2__
 
 void os::print_dll_info(outputStream *st) {
    int pid = os::current_process_id();
    st->print_cr("Dynamic libraries:");
    enumerate_modules(pid, _print_module, (void *)st);
 }
+
+#endif /* __WIN32OS2__ */
 
 // function pointer to Windows API "GetNativeSystemInfo".
 typedef void (WINAPI *GetNativeSystemInfo_func_type)(LPSYSTEM_INFO);
@@ -3507,9 +3518,11 @@ jint os::init_2(void) {
     }
   }
 
+#ifndef __WIN32OS2__
   // initialize PSAPI or ToolHelp for fatal error handler
   if (win32::is_nt()) _init_psapi();
   else _init_toolhelp();
+#endif
 
 #ifndef _WIN64
   // Print something if NX is enabled (win32 on AMD64)
