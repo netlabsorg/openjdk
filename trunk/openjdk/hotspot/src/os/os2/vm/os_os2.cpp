@@ -77,33 +77,57 @@ bool os::address_is_in_vm(address addr) {
     return hmod == jvmHmod;
 }
 
+static void find_and_print_module_info(os2_QSPTRREC *pPtrRec, USHORT hmte,
+                                       outputStream *st) {
+    os2_QSLREC *pLibRec = pPtrRec->pLibRec;
+    while (pLibRec) {
+        if (pLibRec->hmte == hmte) {
+            // mark as already walked
+            pLibRec->hmte = os2_NULLHANDLE;
+            st->print("  %s\n", pLibRec->pName);
+            // It happens that for some modules ctObj is > 0 but
+            // pbjInfo is NULL. I have no idea why.
+            if (pLibRec->pObjInfo && pLibRec->fFlat) {
+                for (ULONG i = 0; i < pLibRec->ctObj; ++i) {
+                    if (pLibRec->pObjInfo[i].oaddr)
+                        st->print("    " PTR_FORMAT " - " PTR_FORMAT "\n",
+                                  pLibRec->pObjInfo[i].oaddr,
+                                  pLibRec->pObjInfo[i].oaddr +
+                                  pLibRec->pObjInfo[i].osize);
+                }
+            }
+            // Print imported modules of this module
+            USHORT *pImpMods = (USHORT *)(((ULONG) pLibRec) + sizeof(*pLibRec));
+            for (ULONG i = 0; i < pLibRec->ctImpMod; ++i) {
+                find_and_print_module_info(pPtrRec, pImpMods[i], st);
+            }
+        }
+        pLibRec = (os2_QSLREC *)pLibRec->pNextRec;
+    }
+}
+
 void os::print_dll_info(outputStream *st) {
     int pid = os::current_process_id();
     char *buf = (char *)malloc(64 * 1024);
-    os2_APIRET arc = DosQuerySysState(os2_QS_PROCESS | os2_QS_MTE, 0, pid, 0,
-                                      buf, 64 * 1024);
+    os2_APIRET arc = DosQuerySysState(os2_QS_PROCESS | os2_QS_MTE, os2_QS_MTE,
+                                      pid, 0, buf, 64 * 1024);
     if (arc != NO_ERROR) {
         assert(false, "DosQuerySysState() failed.");
         return;
     }
 
-    os2_QSPTRREC *pPtrRec = (os2_QSPTRREC *)buf;
-    os2_QSLREC *pLibRec = pPtrRec->pLibRec;
     st->print_cr("Dynamic libraries:");
-    while (pLibRec) {
-        for (ULONG i = 0; i < pLibRec->ctObj; ++i) {
-            if (!i)
-                st->print(PTR_FORMAT " - " PTR_FORMAT " \t%s\n",
-                          pLibRec->pObjInfo[i].oaddr,
-                          pLibRec->pObjInfo[i].oaddr + pLibRec->pObjInfo[i].osize,
-                          pLibRec->pName);
-            else
-                st->print(PTR_FORMAT " - " PTR_FORMAT,
-                          pLibRec->pObjInfo[i].oaddr,
-                          pLibRec->pObjInfo[i].oaddr + pLibRec->pObjInfo[i].osize);
+
+    os2_QSPTRREC *pPtrRec = (os2_QSPTRREC *)buf;
+    os2_QSPREC *pProcRec = pPtrRec->pProcRec;
+    find_and_print_module_info(pPtrRec, pProcRec->hMte, st);
+    if (pProcRec->pLibRec) {
+        for (USHORT i = 0; i < pProcRec->cLib; ++i) {
+            USHORT hmte = pProcRec->pLibRec[i];
+            find_and_print_module_info(pPtrRec, hmte, st);
         }
-        pLibRec = (os2_QSLREC *)pLibRec->pNextRec;
     }
+
     free(buf);
 }
 
