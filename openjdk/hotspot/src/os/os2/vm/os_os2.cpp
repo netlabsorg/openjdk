@@ -81,23 +81,23 @@ static void find_and_print_module_info(os2_QSPTRREC *pPtrRec, USHORT hmte,
                                        outputStream *st) {
     os2_QSLREC *pLibRec = pPtrRec->pLibRec;
     while (pLibRec) {
+        // It happens that for some modules ctObj is > 0 but pbjInfo is
+        // NULL. This seems to be an OS/2 FP13 bug. Here is the solution I
+        // found in the Odin32 sources (kernel32/winimagepe2lx.cpp):
+        if (pLibRec->ctObj > 0 && pLibRec->pObjInfo == NULL) {
+            pLibRec->pObjInfo = (os2_QSLOBJREC *)
+                ((char*) pLibRec
+                 + ((sizeof(os2_QSLREC)                         /* size of the lib record */
+                     + pLibRec->ctImpMod * sizeof(os2_USHORT)   /* size of the array of imported modules */
+                     + strlen((char*)pLibRec->pName) + 1        /* size of the filename */
+                     + 3) & ~3));                               /* the size is align on 4 bytes boundrary */
+            pLibRec->pNextRec = (os2_PVOID *)((char *)pLibRec->pObjInfo
+                                              + sizeof(os2_QSLOBJREC) * pLibRec->ctObj);
+        }
         if (pLibRec->hmte == hmte) {
             // mark as already walked
             pLibRec->hmte = os2_NULLHANDLE;
             st->print("  %s\n", pLibRec->pName);
-            // It happens that for some modules ctObj is > 0 but pbjInfo is
-            // NULL. This seems to be an OS/2 FP13 bug. Here is the solution I
-            // found in the Odin32 sources (kernel32/winimagepe2lx.cpp):
-            if (pLibRec->ctObj > 0 && pLibRec->pObjInfo == NULL) {
-                pLibRec->pObjInfo = (os2_QSLOBJREC *)
-                    ((char*) pLibRec
-                     + ((sizeof(os2_QSLREC)                         /* size of the lib record */
-                         + pLibRec->ctImpMod * sizeof(os2_USHORT)   /* size of the array of imported modules */
-                         + strlen((char*)pLibRec->pName) + 1        /* size of the filename */
-                         + 3) & ~3));                               /* the size is align on 4 bytes boundrary */
-                pLibRec->pNextRec = (os2_PVOID *)((char *)pLibRec->pObjInfo
-                                                  + sizeof(os2_QSLOBJREC) * pLibRec->ctObj);
-            }
             for (ULONG i = 0; i < pLibRec->ctObj; ++i) {
                 if (pLibRec->pObjInfo[i].oaddr)
                     st->print("    " PTR_FORMAT " - " PTR_FORMAT "\n",
