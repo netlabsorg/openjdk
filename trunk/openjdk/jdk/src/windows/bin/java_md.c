@@ -235,12 +235,15 @@ LoadJavaVM(const char *jvmpath, InvocationFunctions *ifn)
      * Make sure that other DLLs statically linked to the Java VM DLL (so that
      * they refer to it as 'JVM' instead of the full path) are able to find it.
      */
-    strcpy(crtpath, jvmpath);
-    char *sep = strrchr(crtpath, '\\');
+    char *jvmdir = (char *)malloc(strlen(jvmpath) + 1 + 32);
+    strcpy(jvmdir, jvmpath);
+    char *sep = strrchr(jvmdir, '\\');
     if (sep) {
         *sep = '\0';
-        DosSetExtLIBPATH(crtpath, BEGIN_LIBPATH);
+        strcpy(sep, ";%BEGINLIBPATH%");
+        DosSetExtLIBPATH(jvmdir, BEGIN_LIBPATH);
     }
+    free(jvmdir);
 #endif
 
     /* Now get the function addresses */
