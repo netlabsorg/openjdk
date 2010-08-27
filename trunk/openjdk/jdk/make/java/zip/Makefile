@@ -73,6 +73,7 @@ ifeq ($(PLATFORM), os2)
 DEF_FILE = $(OBJDIR)/$(LIBRARY).def
 $(DEF_FILE): $(MAKEFILE)
 	@$(ECHO) 'EXPORTS \n \
+  ZIP_CRC32 = _ZIP_CRC32 \n \
   ZIP_Open = "_ZIP_Open@8" \n \
   ZIP_Close = "_ZIP_Close@4" \n \
   ZIP_FindEntry = "_ZIP_FindEntry@16" \n \
