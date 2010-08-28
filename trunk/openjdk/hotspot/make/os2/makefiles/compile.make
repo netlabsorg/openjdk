@@ -52,7 +52,7 @@ endif
 # Generic linker settings
 LINK = g++
 LINK_FLAGS = \
- -Zomf -Zmap -Zstack 0x2000 -Zlinker "DISABLE 1121" -Zhigh-mem
+ -Zomf -Zmap -Zstack 0x2000 -Zlinker "DISABLE 1121" -Zhigh-mem -Zno-fork -Zno-unix
 
 IMPLIB = emximp
 
