@@ -140,7 +140,7 @@ CPPFLAGS_DBG    = -DDEBUG
 #
 # Linker options
 #
-LDFLAGS_COMMON  = -Zomf -Zmap -Zstack 0x2000 -Zlinker "DISABLE 1121" -Zhigh-mem
+LDFLAGS_COMMON  = -Zomf -Zmap -Zstack 0x2000 -Zlinker "DISABLE 1121" -Zhigh-mem -Zno-fork -Zno-unix
 LDFLAGS_OPT     = -s
 LDFLAGS_DBG     =
 
