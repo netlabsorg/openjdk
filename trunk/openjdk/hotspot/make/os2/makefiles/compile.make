@@ -32,14 +32,17 @@ ifeq ($(BUILDARCH),i486)
 CPP_FLAGS += -DIA32
 endif
 
+# Hotspot uses very unstrict aliasing turn this optimization off
+OPT_CFLAGS = -fno-strict-aliasing
+
 # Compile for space above time.
 ifeq ($(Variant),kernel)
-PRODUCT_OPT_OPTION   = -s -Os
-FASTDEBUG_OPT_OPTION = -s -Os
+PRODUCT_OPT_OPTION   = -s -Os $(OPT_CFLAGS)
+FASTDEBUG_OPT_OPTION = -s -Os $(OPT_CFLAGS)
 DEBUG_OPT_OPTION     = -g
 else
-PRODUCT_OPT_OPTION   = -s -O3
-FASTDEBUG_OPT_OPTION = -s -O3
+PRODUCT_OPT_OPTION   = -s -O3 $(OPT_CFLAGS)
+FASTDEBUG_OPT_OPTION = -s -O3 $(OPT_CFLAGS)
 DEBUG_OPT_OPTION     = -g
 endif
 
