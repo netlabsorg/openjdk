@@ -144,6 +144,17 @@ call EnvSetIfEmpty 'ALT_JDK_IMPORT_PATH', UnixSlashes(G.PATH_JDK_IMPORT)
  */
 call EnvSetIfEmpty 'INCREMENTAL_BUILD', 'true'
 
+if (\fRelease) then do
+    /* disable generation of installation bundles and similar stuff */
+    call EnvSet 'DEV_ONLY', 'true'
+    /* cause the optimized build of hotspot JVM to contain assert() calls */
+    call EnvSet 'DEVELOP', '1'
+end
+else do
+    call EnvSet 'DEV_ONLY'
+    call EnvSet 'DEVELOP'
+end
+
 if (fJavaDebug & \fMake) then call EnvSet '_JAVA_LAUNCHER_DEBUG', '1'
 
 /*
