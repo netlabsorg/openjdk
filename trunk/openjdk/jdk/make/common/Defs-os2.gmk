@@ -112,6 +112,9 @@ GCC_INHIBIT	= -Wno-unused -Wno-parentheses
 GCC_STYLE	=
 GCC_WARNINGS	= -W -Wall $(GCC_STYLE) $(GCC_INHIBIT)
 
+# We compile a lot of MSVC code which seems to silently tolerate this
+GCC_WARNINGS += -Wno-sign-compare -Wno-pointer-to-int-cast -Wno-int-to-pointer-cast
+
 #
 # Treat compiler warnings as errors, if warnings not allowed
 #
