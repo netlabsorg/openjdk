@@ -164,10 +164,18 @@ end
 else do
     call EnvAddFront 'PATH', G.PATH_LIB_ODIN32'\bin\Debug;'G.PATH_LIB_ODIN32'\bin'
     call EnvAddFront 'BEGINLIBPATH', G.PATH_LIB_ODIN32'\bin\Debug;'G.PATH_LIB_ODIN32'\bin'
+    call EnvSet 'WIN32.DEBUGBREAK', '1'
 end
 
 if (fOdinLog) then call EnvSet 'WIN32LOG_ENABLED', '1'
 else call EnvSet 'WIN32LOG_ENABLED', ''
+
+/*
+ * Various Java runtime settings
+ */
+if (\fRelease) then do
+    call EnvSet 'JAVA_TOOL_OPTIONS', '-XX:+UseOSErrorReporting'
+end
 
 /*
  * finally, start the command
