@@ -3297,9 +3297,13 @@ void os::win32::initialize_system_info() {
 
 
 void os::win32::setmode_streams() {
+  // On OS/2, the console requires "\r\n" to start a new line so avoid setting
+  // O_BINARY there. Let's assume this does not break anything in Java for now.
+#ifndef __WIN32OS2__
   _setmode(_fileno(stdin), _O_BINARY);
   _setmode(_fileno(stdout), _O_BINARY);
   _setmode(_fileno(stderr), _O_BINARY);
+#endif
 }
 
 
