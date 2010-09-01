@@ -152,6 +152,7 @@ if (fJavaDebug & \fMake) then call EnvSet '_JAVA_LAUNCHER_DEBUG', '1'
 call EnvSet 'BUILD_CORBA', 'false'
 call EnvSet 'BUILD_JAXP', 'false'
 call EnvSet 'BUILD_JAXWS', 'false'
+call EnvSet 'OS2_TEMP', 'true'
 
 /*
  * set up Odin32 runtime
@@ -179,10 +180,10 @@ if (\UnderSE) then do
         /* Start the program */
         prg = translate(word(aArgs, 1))
         isCmd = 0
-        realPrg = SysSearchPath(PATH, prg)
-        if (realPrg == '') then realPrg = SysSearchPath(PATH, prg'.EXE')
-        if (realPrg == '') then realPrg = SysSearchPath(PATH, prg'.COM')
-        if (realPrg == '') then realPrg = SysSearchPath(PATH, prg'.CMD')
+        realPrg = SysSearchPath('PATH', prg)
+        if (realPrg == '') then realPrg = SysSearchPath('PATH', prg'.EXE')
+        if (realPrg == '') then realPrg = SysSearchPath('PATH', prg'.COM')
+        if (realPrg == '') then realPrg = SysSearchPath('PATH', prg'.CMD')
         if (realPrg \== '') then do
             if (right(realPrg, 4) == '.CMD') then isCmd = 1
         end
