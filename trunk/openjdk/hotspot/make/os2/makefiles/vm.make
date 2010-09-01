@@ -24,12 +24,12 @@
 
 ifdef RELEASE
 ifdef DEVELOP
-CPP_FLAGS += -DDEBUG
+CPP_FLAGS += -DASSERT
 else
 CPP_FLAGS += -DPRODUCT
 endif
 else
-CPP_FLAGS += -DASSERT
+CPP_FLAGS += -DASSERT -DDEBUG -D_DEBUG
 endif
 
 ifeq ($(Variant), core)
