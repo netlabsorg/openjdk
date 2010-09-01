@@ -38,7 +38,7 @@
 #include "jni.h"
 #include "jni_util.h"
 #include "zip_util.h"
-#ifdef WIN32
+#if defined(WIN32) || defined (__WIN32OS2__)
 #include "io_util_md.h"
 #endif
 
@@ -94,7 +94,7 @@ Java_java_util_zip_ZipFile_open(JNIEnv *env, jclass cls, jstring name,
         zip = ZIP_Get_From_Cache(path, &msg, lastModified);
         if (zip == 0 && msg == 0) {
             ZFILE zfd = 0;
-#ifdef WIN32
+#if defined(WIN32) || defined (__WIN32OS2__)
             zfd = winFileHandleOpen(env, name, flag);
             if (zfd == -1) {
                 /* Exception already pending. */
