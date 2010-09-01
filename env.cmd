@@ -173,7 +173,7 @@ else call EnvSet 'WIN32LOG_ENABLED', ''
 /*
  * Various Java runtime settings
  */
-if (\fRelease) then do
+if (\fRelease & \fMake) then do
     call EnvSet 'JAVA_TOOL_OPTIONS', '-XX:+UseOSErrorReporting'
 end
 
