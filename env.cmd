@@ -90,13 +90,13 @@ if (G.PATH_TOOL_GCC4_ENV \== '') then do
 end
 
 if (\fMake) then do
-    if (G.PATH_TOOL_KLIBC_DEBUG \== '' & \fLibcDebug) then do
+    if (G.PATH_TOOL_KLIBC_DEBUG \== '' & fLibcDebug) then do
         address 'cmd' 'set LIBPATHSTRICT=T'
         call EnvAddFront 'BEGINLIBPATH', G.PATH_TOOL_KLIBC_DEBUG
         call EnvSet 'LIBC_STRICT_DISABLED', '1'
     end
     else
-    if (G.PATH_TOOL_KLIBC_LOGCHK \== '' & \fLibcLogChk) then do
+    if (G.PATH_TOOL_KLIBC_LOGCHK \== '' & fLibcLogChk) then do
         address 'cmd' 'set LIBPATHSTRICT=T'
         call EnvAddFront 'BEGINLIBPATH', G.PATH_TOOL_KLIBC_LOGCHK
         call EnvSet 'LIBC_STRICT_DISABLED', '1'
