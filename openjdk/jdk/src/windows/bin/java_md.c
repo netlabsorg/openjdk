@@ -232,15 +232,35 @@ LoadJavaVM(const char *jvmpath, InvocationFunctions *ifn)
 
 #if __WIN32OS2__
     /*
-     * Make sure that other DLLs statically linked to the Java VM DLL (so that
-     * they refer to it as 'JVM' instead of the full path) are able to find it.
+     * Add the JRE bin path to BEGINLIBPATH to make sure that other DLLs
+     * statically linked to the various JRE DLLs (so that they refer to them by
+     * name in the import tables) are able to find it. This is necessary because
+     * on OS/2, loading a DLL by full path does NOT make it available for other
+     * DLLs by name -- a normal procedure of searching it in LIBPATH and
+     * BEGINLIBPATH/ENDLIBPATH is always performed in this case.
+     */
+    if (GetJREPath(crtpath, MAXPATHLEN)) {
+        char *dir = (char *)malloc(strlen(crtpath) + 4 + 32);
+        strcpy(dir, crtpath);
+        strcat(dir, "\\bin;%BEGINLIBPATH%");
+        if (_launcher_debug) {
+             printf("Adding %s to BEGINLIBPATH\n", dir);
+        }
+        DosSetExtLIBPATH(dir, BEGIN_LIBPATH);
+        free(dir);
+    }
+
+    /*
+     * Do the same for the Java VM DLL which is located in a separate directory.
      */
     char *jvmdir = (char *)malloc(strlen(jvmpath) + 1 + 32);
     strcpy(jvmdir, jvmpath);
     char *sep = strrchr(jvmdir, '\\');
     if (sep) {
-        *sep = '\0';
         strcpy(sep, ";%BEGINLIBPATH%");
+        if (_launcher_debug) {
+             printf("Adding %s to BEGINLIBPATH\n", jvmdir);
+        }
         DosSetExtLIBPATH(jvmdir, BEGIN_LIBPATH);
     }
     free(jvmdir);
