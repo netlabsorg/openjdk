@@ -113,7 +113,9 @@ GCC_STYLE	=
 GCC_WARNINGS	= -W -Wall $(GCC_STYLE) $(GCC_INHIBIT)
 
 # We compile a lot of MSVC code which seems to silently tolerate this
-GCC_WARNINGS += -Wno-sign-compare -Wno-pointer-to-int-cast -Wno-int-to-pointer-cast
+GCC_WARNINGS += -Wno-sign-compare
+GCC_WARNINGS_C += -Wno-pointer-to-int-cast -Wno-int-to-pointer-cast
+GCC_WARNINGS_CXX += -Wno-write-strings
 
 #
 # Treat compiler warnings as errors, if warnings not allowed
@@ -125,11 +127,11 @@ endif
 #
 # Misc compiler options
 #
-CFLAGS_COMMON   = $(GCC_WARNINGS) -march=i486 -mtune=generic -Zomf
+CFLAGS_COMMON   = $(GCC_WARNINGS) $(GCC_WARNINGS_C) -march=i486 -mtune=generic -Zomf
 CFLAGS_OPT      = -s $(POPT)
 CFLAGS_DBG      = -g
 
-CXXFLAGS_COMMON = -DCC_NOEX $(CFLAGS_COMMON)
+CXXFLAGS_COMMON = -DCC_NOEX $(GCC_WARNINGS) $(GCC_WARNINGS_CXX) -march=i486 -mtune=generic -Zomf
 CXXFLAGS_OPT	= $(CFLAGS_OPT)
 CXXFLAGS_DBG	= $(CFLAGS_DBG)
 
