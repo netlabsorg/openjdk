@@ -30,7 +30,7 @@
 // do not include precompiled header file
 # include "incls/_os_windows.cpp.incl"
 
-#ifdef _DEBUG
+#if defined(_DEBUG) && !defined(__WIN32OS2__)
 #include <crtdbg.h>
 #endif
 
