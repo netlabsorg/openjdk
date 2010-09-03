@@ -50,9 +50,11 @@ typedef DWORD (WINAPI *GetModuleFileNameExFunc) ( HANDLE, HMODULE, LPTSTR, DWORD
 typedef jint (WINAPI* EnqueueOperationFunc)
     (const char* cmd, const char* arg1, const char* arg2, const char* arg3, const char* pipename);
 
+#ifndef __WIN32OS2__
 /* OpenProcess with SE_DEBUG_NAME privilege */
 static HANDLE
 doPrivilegedOpenProcess(DWORD dwDesiredAccess, BOOL bInheritHandle, DWORD dwProcessId);
+#endif /* __WIN32OS2__ */
 
 /* convert jstring to C string */
 static void jstring_to_cstring(JNIEnv* env, jstring jstr, char* cstr, int len);
@@ -90,7 +92,9 @@ typedef struct {
 /*
  * Code copied to target process
  */
+#ifdef _MSC_VER
 #pragma check_stack (off)
+#endif
 static DWORD WINAPI thread_func(DataBlock *pData)
 {
     HINSTANCE h;
@@ -120,7 +124,9 @@ static DWORD WINAPI thread_func(DataBlock *pData)
 /* This function marks the end of thread_func. */
 static void thread_end (void) {
 }
+#ifdef _MSC_VER
 #pragma check_stack
+#endif
 
 
 /*
@@ -180,9 +186,11 @@ JNIEXPORT jlong JNICALL Java_sun_tools_attach_WindowsVirtualMachine_openProcess
      * SE_DEBUG_NAME privilege and retry.
      */
     hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, (DWORD)pid);
+#ifndef __WIN32OS2__
     if (hProcess == NULL && GetLastError() == ERROR_ACCESS_DENIED) {
         hProcess = doPrivilegedOpenProcess(PROCESS_ALL_ACCESS, FALSE, (DWORD)pid);
     }
+#endif /* __WIN32OS2__ */
 
     if (hProcess == NULL) {
         if (GetLastError() == ERROR_INVALID_PARAMETER) {
@@ -458,6 +466,8 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_WindowsVirtualMachine_enqueue
     VirtualFreeEx(hProcess, pData, 0, MEM_RELEASE);
 }
 
+#ifndef __WIN32OS2__
+
 /*
  * Attempts to enable the SE_DEBUG_NAME privilege and open the given process.
  */
@@ -555,6 +565,8 @@ doPrivilegedOpenProcess(DWORD dwDesiredAccess, BOOL bInheritHandle, DWORD dwProc
 
     return hProcess;
 }
+
+#endif /* __WIN32OS2__ */
 
 /* convert jstring to C string */
 static void jstring_to_cstring(JNIEnv* env, jstring jstr, char* cstr, int len) {
