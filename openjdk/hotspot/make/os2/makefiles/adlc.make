@@ -24,6 +24,11 @@
 
 include $(WorkSpace)/make/os2/makefiles/compile.make
 
+# adlc is an internal tool, always generate the debug version with assert()
+CXX_FLAGS += -DASSERT
+CXX_FLAGS += $(DEBUG_OPT_OPTION)
+LINK_FLAGS += $(DEBUG_LINK_FLAGS)
+
 # Rules for building adlc.exe
 
 ifdef ALT_ADLC_PATH
