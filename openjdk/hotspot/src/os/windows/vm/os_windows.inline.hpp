@@ -26,8 +26,13 @@ inline const char* os::file_separator()                { return "\\"; }
 inline const char* os::line_separator()                { return "\r\n"; }
 inline const char* os::path_separator()                { return ";"; }
 
+#ifdef __EMX__
+inline const char* os::jlong_format_specifier()        { return "%lld"; }
+inline const char* os::julong_format_specifier()       { return "%llu"; }
+#else
 inline const char* os::jlong_format_specifier()        { return "%I64d"; }
 inline const char* os::julong_format_specifier()       { return "%I64u"; }
+#endif
 
 // File names are case-insensitive on windows only
 inline int os::file_name_strcmp(const char* s, const char* t) {
