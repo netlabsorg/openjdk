@@ -50,6 +50,7 @@ if (verify(aFlags, 'Hh?', 'M')) then do
     say ' -L    Use log check version of LIBC DLL'
     say ' -j    Enable java launcher debug output'
     say ' -o    Enable Odin extended logging'
+    say ' -R    Start commands in PRODUCT RELEASE environment'
 
     if (UnderSE) then call EnvSet 'SE_CMD_ARGS', 'exit'
     exit
@@ -60,6 +61,9 @@ fLibcDebug      = pos('l', aFlags) \= 0
 fLibcLogChk     = pos('L', aFlags) \= 0
 fJavaDebug      = pos('j', aFlags) \= 0
 fOdinLog        = pos('o', aFlags) \= 0
+fProductRelease = pos('R', aFlags) \= 0
+
+if (fProductRelease) then fRelease = 1
 
 /* running make? */
 fMake = word(aArgs, 1) == 'make'
@@ -153,6 +157,10 @@ end
 else do
     call EnvSet 'DEV_ONLY'
     call EnvSet 'DEVELOP'
+end
+
+if (fProductRelease) then do
+    call EnvSet 'ALT_OUTPUTDIR', UnixSlashes(ScriptDir'\openjdk\build-product-release')
 end
 
 if (fJavaDebug & \fMake) then call EnvSet '_JAVA_LAUNCHER_DEBUG', '1'
