@@ -87,12 +87,18 @@ FILES_java = \
 	sun/net/www/protocol/http/NegotiateAuthentication.java \
 	sun/net/www/protocol/http/NegotiatorImpl.java \
 	sun/net/www/protocol/http/NegotiateCallbackHandler.java \
+
+ifndef OS2_TEMP # security
+FILES_java += \
 	sun/net/www/protocol/https/AbstractDelegateHttpsURLConnection.java \
 	sun/net/www/protocol/https/HttpsClient.java \
 	sun/net/www/protocol/https/DefaultHostnameVerifier.java \
 	sun/net/www/protocol/https/HttpsURLConnectionImpl.java \
 	sun/net/www/protocol/https/DelegateHttpsURLConnection.java \
 	sun/net/www/protocol/https/Handler.java \
+
+endif
+FILES_java += \
 	sun/net/www/protocol/jar/Handler.java \
 	sun/net/www/protocol/jar/URLJarFile.java \
 	sun/net/www/protocol/jar/JarFileFactory.java \
