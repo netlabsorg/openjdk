@@ -105,6 +105,19 @@ JAVALIB =
 DEF_FILE = $(OBJDIR)/$(LIBRARY).def
 $(DEF_FILE): $(MAKEFILE)
 	@$(ECHO) 'EXPORTS \n \
+  _JLI_ParseManifest \n \
+  _JLI_JarUnpackFile \n \
+  _JLI_FreeManifest \n \
+  _JLI_ManifestIterate \n \
+  _JLI_ExactVersionId \n \
+  _JLI_PrefixVersionId \n \
+  _JLI_AcceptableRelease \n \
+  _JLI_ValidVersionString \n \
+  _JLI_WildcardExpandClasspath \n \
+  _JLI_MemAlloc \n \
+  _JLI_MemRealloc \n \
+  _JLI_StringDup \n \
+  _JLI_MemFree \n \
   JLI_ParseManifest = _JLI_ParseManifest \n \
   JLI_JarUnpackFile = _JLI_JarUnpackFile \n \
   JLI_FreeManifest = _JLI_FreeManifest \n \
