@@ -2477,11 +2477,12 @@ LONG WINAPI fastJNIAccessorExceptionFilter(struct _EXCEPTION_POINTERS* exception
 
 #define DEFINE_FAST_GETFIELD(Return,Fieldname,Result) \
 Return JNICALL jni_fast_Get##Result##Field_wrapper(JNIEnv *env, jobject obj, jfieldID fieldID) { \
+  Return ret = 0; \
   __try { \
-    return (*JNI_FastGetField::jni_fast_Get##Result##Field_fp)(env, obj, fieldID); \
+    ret = (*JNI_FastGetField::jni_fast_Get##Result##Field_fp)(env, obj, fieldID); \
   } __except(fastJNIAccessorExceptionFilter((_EXCEPTION_POINTERS*)_exception_info())) { \
   } \
-  return 0; \
+  return ret; \
 }
 
 DEFINE_FAST_GETFIELD(jboolean, bool,   Boolean)
