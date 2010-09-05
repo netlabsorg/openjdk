@@ -983,7 +983,17 @@ GetJavaProperties(JNIEnv* env)
                 sprops.language = lang;
                 sprops.country = ctry;
                 sprops.variant = variant;
+#ifdef __WIN32OS2__
+                {
+                    static char encoding[16];
+                    os2_ULONG cp[3], len;
+                    DosQueryCp(sizeof(cp), &cp, &len);
+                    sprintf(encoding, "Cp%lu", cp[0]);
+                    sprops.encoding =  encoding;
+                }
+#else
                 sprops.encoding = getEncodingInternal(index);
+#endif
             }
             index = getLocaleEntryIndex(sysLangID);
             if (index == -1) {
