@@ -23,6 +23,11 @@
  * have any questions.
  */
 
+#ifdef __WIN32OS2__
+#define INCL_DOSMISC
+#include <os2wrap2.h>
+#endif
+
 #include <windows.h>
 #include <shlobj.h>
 #include <objidl.h>
@@ -686,6 +691,26 @@ GetJavaProperties(JNIEnv* env)
 
     /* OS properties */
     {
+#ifdef __WIN32OS2__
+        /* When reporting the OS name and version, we omit the fact that we run
+         * under Odin (that would report itself as a Windows system) and return
+         * the actual OS/2 values which makes more sense. */
+
+        char buf[100];
+
+        sprops.os_name = "OS/2";
+
+        os2_ULONG ver[3];
+        DosQuerySysInfo(os2_QSV_VERSION_MAJOR, os2_QSV_VERSION_REVISION,
+                        &ver, sizeof(ver));
+        sprintf(buf, "%lu.%lu", ver[0], ver[1]);
+        sprops.os_version = strdup(buf);
+        sprintf(buf, "%lu", ver[3]);
+        sprops.patch_level = strdup(buf);
+
+        sprops.os_arch = "x86";
+        sprops.desktop = "pm";
+#else /* __WIN32OS2__ */
         char buf[100];
         OSVERSIONINFOEX ver;
         SYSTEM_INFO si;
@@ -829,6 +854,7 @@ GetJavaProperties(JNIEnv* env)
         sprops.patch_level = strdup(ver.szCSDVersion);
 
         sprops.desktop = "windows";
+#endif /* __WIN32OS2__ */
     }
 
     /* Endianness of platform */
