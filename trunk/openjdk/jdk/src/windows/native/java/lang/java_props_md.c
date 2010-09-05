@@ -905,13 +905,23 @@ GetJavaProperties(JNIEnv* env)
      *     On single-user Win95, user.home gets set to c:\windows.
      */
     {
-        char *homep = getHomeFromRegistry();
+        char *homep;
+#ifdef __WIN32OS2__
+        /* On OS/2, using %HOME% (if defined) makes much more senese than going
+         * the Windows way */
+        homep = getenv("HOME");
+        if (homep == NULL) {
+#endif
+        homep = getHomeFromRegistry();
         if (homep == NULL) {
             homep = getHomeFromShell32();
             if (homep == NULL) {
                 homep = "C:\\";
             }
         }
+#ifdef __WIN32OS2__
+        }
+#endif
         sprops.user_home = homep;
     }
 
