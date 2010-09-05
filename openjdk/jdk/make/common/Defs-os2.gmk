@@ -162,7 +162,8 @@ CPPFLAGS_COMMON += -I$(ODINSDK_PATH)/include/Win -I$(ODINSDK_PATH)/include \
 LDFLAGS_OPT     += -L$(ODINSDK_PATH)/lib/Release -L$(ODINSDK_PATH)/lib
 LDFLAGS_DBG     += -L$(ODINSDK_PATH)/lib/Debug -L$(ODINSDK_PATH)/lib
 LDFLAGS_COMMON  += -lkernel32.lib -luser32.lib -ladvapi32.lib \
-				   -lminivcrt.lib -lntdll.lib
+				   -lminivcrt.lib -lntdll.lib \
+				   -lemxlibwrap0.lib -lemxlibwrap1.lib
 
 #
 # Path and option to link against the VM, if you have to.
