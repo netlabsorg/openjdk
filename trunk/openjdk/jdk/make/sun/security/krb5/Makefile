@@ -33,7 +33,7 @@ include $(BUILDDIR)/common/Defs.gmk
 #
 AUTO_FILES_JAVA_DIRS = sun/security/krb5
 
-ifeq ($(filter-out windows os2, $(PLATFORM)),)
+ifeq ($(PLATFORM), windows)
 #
 # Java files that define native methods
 #
@@ -61,7 +61,7 @@ JGSS_NATIVE_DIR_EXISTS := $(shell if [ -d $(JGSS_NATIVE_SRC) ] ; then echo true;
 #
 # Rules
 #
-ifeq ($(filter-out windows os2, $(PLATFORM)),)
+ifeq ($(PLATFORM), windows)
   ifeq ($(JGSS_NATIVE_DIR_EXISTS), true)
     include $(BUILDDIR)/common/Library.gmk
   endif
