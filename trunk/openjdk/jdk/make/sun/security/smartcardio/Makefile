@@ -32,7 +32,9 @@ include $(BUILDDIR)/common/Defs.gmk
 #
 # C and Java Files
 #
+ifneq ($(PLATFORM), os2)
 include FILES_c.gmk
+endif
 
 AUTO_FILES_JAVA_DIRS = sun/security/smartcardio
 
@@ -67,14 +69,22 @@ OTHER_INCLUDES += \
 
 include $(BUILDDIR)/common/Mapfile-vers.gmk
 
+ifneq ($(PLATFORM), os2)
+
 include $(BUILDDIR)/common/Library.gmk
 
 #
 # Libraries to link
 #
-ifeq ($(filter-out windows os2, $(PLATFORM)),)
+ifeq ($(PLATFORM), windows)
   OTHER_LDLIBS = $(JVMLIB) winscard.lib
 else
   OTHER_LDLIBS = -ldl $(JVMLIB)
   OTHER_CFLAGS = -D__sun_jdk
 endif
+
+else # PLATFORM != os2
+
+include $(BUILDDIR)/common/Classes.gmk
+
+endif # PLATFORM != os2
