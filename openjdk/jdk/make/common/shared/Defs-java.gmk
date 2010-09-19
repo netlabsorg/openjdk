@@ -124,7 +124,8 @@ JAVACFLAGS  += "-Xbootclasspath:$(CLASSBINDIR)"
 JAVACFLAGS  += $(OTHER_JAVACFLAGS)
 
 # Needed for javah
-JAVAHFLAGS += -bootclasspath $(CLASSBINDIR)
+JAVAHFLAGS += -bootclasspath $(if $(filter $(CLASSBINDIR),$(CLASSDESTDIR)),\
+	$(CLASSBINDIR),$(CLASSDESTDIR)$(CLASSPATH_SEPARATOR)$(CLASSBINDIR))
 
 # Needed for JAVADOC and BOOT_JAVACFLAGS
 NO_PROPRIETARY_API_WARNINGS = -XDignore.symbol.file=true
