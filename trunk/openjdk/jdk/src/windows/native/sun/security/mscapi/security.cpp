@@ -34,7 +34,9 @@
 #include <BaseTsd.h>
 #include <wincrypt.h>
 #include <stdio.h>
-
+#ifdef __WIN32OS2__
+#include <excpt.h>
+#endif
 
 #define OID_EKU_ANY         "2.5.29.37.0"
 
@@ -842,7 +844,7 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_KeyStore_storeCertificate
             // Convert to a wide char string
             pwszContainerName = new WCHAR[dwDataLen];
 
-            if (mbstowcs(pwszContainerName, pszContainerName, dwDataLen) == 0) {
+            if (mbstowcs((wchar_t*)pwszContainerName, pszContainerName, dwDataLen) == 0) {
                 ThrowException(env, KEYSTORE_EXCEPTION, GetLastError());
                 __leave;
             }
@@ -879,7 +881,7 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_KeyStore_storeCertificate
             // Convert to a wide char string
             pwszProviderName = new WCHAR[dwDataLen];
 
-            if (mbstowcs(pwszProviderName, pszProviderName, dwDataLen) == 0) {
+            if (mbstowcs((wchar_t*)pwszProviderName, pszProviderName, dwDataLen) == 0) {
                 ThrowException(env, KEYSTORE_EXCEPTION, GetLastError());
                 __leave;
             }
