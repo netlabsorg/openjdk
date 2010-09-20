@@ -61,7 +61,7 @@ ifdef OPENJDK
 else
   RENDER_SUBDIR = dcpr
 endif
-ifndef OS2_TEMP # security, GUI stuff
+ifndef OS2_TEMP # GUI stuff
 SUBDIRS = jar security javazic misc net audio $(RENDER_SUBDIR) image \
 	  awt splashscreen $(XAWT_SUBDIR) $(MOTIF_SUBDIRS) \
           $(HEADLESS_SUBDIR) $(DGA_SUBDIR) \
