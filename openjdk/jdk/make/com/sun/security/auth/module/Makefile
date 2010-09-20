@@ -60,6 +60,14 @@ LIBRARY = jaas_nt
   endif # ARCH_DATA_MODEL
 endif # windows
 
+ifeq ($(PLATFORM), os2)
+  LIBRARY = jaas_nt
+  include FILES_export_windows.gmk
+  include FILES_c_windows.gmk
+  # We need some extra libs
+  EXTRA_LIBS += -lnetapi32.lib -ladvapi32.lib -lmpr.lib
+endif # os2
+
 ifeq ($(PLATFORM), solaris)
   LIBRARY = jaas_unix
   FILES_m = mapfile-vers

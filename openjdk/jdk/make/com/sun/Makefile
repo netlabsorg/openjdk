@@ -39,14 +39,14 @@ ifndef OPENJDK
 endif
 
 # Omit mirror since it's built with the apt tool.
-ifndef OS2_TEMP # security
+ifndef OS2_TEMP # GUI stuff
 SUBDIRS = $(SCRIPT_SUBDIR) image security crypto/provider jndi jmx \
     java inputmethods org rowset net/httpserver net/ssl demo \
     tools jarsigner
 else
-SUBDIRS = $(SCRIPT_SUBDIR) jndi jmx \
-    java org rowset net/httpserver demo \
-    jarsigner
+SUBDIRS = $(SCRIPT_SUBDIR) security crypto/provider jndi jmx \
+    java org rowset net/httpserver net/ssl demo \
+    tools jarsigner
 endif
 
 all build clean clobber::
