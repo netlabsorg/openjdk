@@ -34,7 +34,11 @@ include $(BUILDDIR)/common/Defs.gmk
 
 AUTO_FILES_JAVA_DIRS = com/sun/tools/extcheck
 
+ifndef OS2_TEMP
 SUBDIRS = attach
+else # disable com.sun.tools.attach (see ticket:18)
+SUBDIRS =
+endif
 all build:
 	$(SUBDIRS-loop)
 clean clobber::

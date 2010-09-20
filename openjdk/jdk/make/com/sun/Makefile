@@ -43,10 +43,10 @@ ifndef OS2_TEMP
 SUBDIRS = $(SCRIPT_SUBDIR) image security crypto/provider jndi jmx \
     java inputmethods org rowset net/httpserver net/ssl demo \
     tools jarsigner
-else # disable GUI stuff and tools.attach (see ticket:18)
+else # disable GUI stuff
 SUBDIRS = $(SCRIPT_SUBDIR) security crypto/provider jndi jmx \
     java org rowset net/httpserver net/ssl demo \
-    jarsigner
+    tools jarsigner
 endif
 
 all build clean clobber::
