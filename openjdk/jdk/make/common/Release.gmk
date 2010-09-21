@@ -337,7 +337,7 @@ SOURCE_FILES_filter = $(SOURCE_FILTERs:%=-name % -prune -o)
 #
 TOOLS = \
 
-ifndef OS2_TEMP # security
+ifndef OS2_TEMP # JPDA
 TOOLS += \
 	META-INF/services/com.sun.jdi.connect.Connector \
 	META-INF/services/com.sun.jdi.connect.spi.TransportService \
@@ -356,9 +356,6 @@ TOOLS += \
 	sun/tools/serialver	\
 	sun/tools/tree		\
 	sun/tools/util		\
-
-ifndef OS2_TEMP # security
-TOOLS += \
 	sun/security/tools/JarBASE64Encoder.class \
 	sun/security/tools/JarSigner.class \
 	sun/security/tools/JarSignerParameters.class \
@@ -368,9 +365,6 @@ TOOLS += \
 	sun/security/tools/SignatureFile\$$Block.class \
 	sun/security/tools/SignatureFile.class \
 	sun/security/tools/TimestampedSigner.class \
-
-endif
-TOOLS += \
 	sun/rmi/rmic		\
 	sun/applet		\
 	sun/jvmstat		\
@@ -422,7 +416,7 @@ endif
 TOOLS += \
 	com/sun/tools/script/shell	\
 
-ifndef OS2_TEMP # com.sun.tools.attach
+ifndef OS2_TEMP # disable com.sun.tools.attach (see ticket:18)
 TOOLS += \
 	META-INF/services/com.sun.tools.attach.spi.AttachProvider \
 	com/sun/tools/attach	\
@@ -695,7 +689,6 @@ $(RESOURCES_JAR): $(RES_JAR_ARGLIST) $(JAR_MANIFEST_FILE)
 	    @$(RES_JAR_ARGLIST) $(JAR_JFLAGS)
 	@$(java-vm-cleanup)
 
-ifndef OS2_TEMP # security
 # Create jsse.jar containing SunJSSE implementation classes
 JSSE_JAR=$(TEMPDIR)/jsse-orig.jar
 $(JSSE_JAR): $(JAR_MANIFEST_FILE)
@@ -704,7 +697,6 @@ $(JSSE_JAR): $(JAR_MANIFEST_FILE)
 		$(JSSE_CLASSES_DIRS:%=-C $(CLASSBINDIR) %) \
 		$(JAR_JFLAGS)
 	@$(java-vm-cleanup)
-endif
 
 # Create sec-bin.zip
 SEC_FILES_ZIP=$(ABS_TEMPDIR)/sec-bin.zip
@@ -813,9 +805,7 @@ initial-image-jre:: initial-image-jre-setup \
 	@# Copy in rt.jar & resources.jar file
 	$(CP) $(RT_JAR) $(JRE_IMAGE_DIR)/lib/rt.jar
 	$(CP) $(RESOURCES_JAR) $(JRE_IMAGE_DIR)/lib/resources.jar
-ifndef OS2_TEMP # security	
 	$(CP) $(JSSE_JAR) $(JRE_IMAGE_DIR)/lib/jsse.jar
-endif
 	@# Generate meta-index to make boot and extension class loaders lazier
 	$(CD) $(JRE_IMAGE_DIR)/lib && \
 	    $(BOOT_JAVA_CMD) -jar $(BUILDMETAINDEX_JARFILE) \
@@ -950,7 +940,7 @@ initial-image-jdk:: initial-image-jdk-setup \
 	@# lib/
 	@#
 	$(CP) $(LIBDIR)/$(LIB_PREFIX)jvm.$(LIB_SUFFIX) $(JDK_IMAGE_DIR)/lib
-ifndef OS2_TEMP
+ifndef OS2_TEMP # GUI stuff
 	$(CP) $(LIBDIR)/$(LIB_PREFIX)jawt.$(LIB_SUFFIX) $(JDK_IMAGE_DIR)/lib
 endif
 	@#
@@ -1078,10 +1068,12 @@ endif
 	@#
 	@# demo, include
 	@#
-ifndef OS2_TEMP
+ifndef OS2_TEMP # later
 	$(CP) -r -f $(DEMODIR) $(JDK_IMAGE_DIR)
 	$(CP) -r -f $(SAMPLEDIR) $(JDK_IMAGE_DIR)
+endif	
 	$(CP) -r $(INCLUDEDIR) $(JDK_IMAGE_DIR)
+ifndef OS2_TEMP # GUI stuff
 	@#
 	@# Swing BeanInfo generation
 	@#
