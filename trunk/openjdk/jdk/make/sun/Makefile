@@ -61,14 +61,14 @@ ifdef OPENJDK
 else
   RENDER_SUBDIR = dcpr
 endif
-ifndef OS2_TEMP # GUI stuff
+ifndef OS2_TEMP
 SUBDIRS = jar security javazic misc net audio $(RENDER_SUBDIR) image \
 	  awt splashscreen $(XAWT_SUBDIR) $(MOTIF_SUBDIRS) \
           $(HEADLESS_SUBDIR) $(DGA_SUBDIR) \
 	  font jpeg cmm applet rmi beans $(JDBC_SUBDIR) \
 	  jawt text nio launcher management $(ORG_SUBDIR) \
           native2ascii serialver tools jconsole
-else
+else # disable GUI stuff
 SUBDIRS = jar security javazic misc net \
 	  rmi beans $(JDBC_SUBDIR) \
 	  text nio launcher management $(ORG_SUBDIR) \
