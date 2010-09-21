@@ -1,12 +1,14 @@
 /*
- * Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * Copyright 2010 netlabs.org. OS/2 Parts.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Sun designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Sun in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,7 +23,6 @@
  * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
- *
  */
 
 // This code redirects the OS/2 DLL initialization/termination calls to
@@ -32,20 +33,11 @@
 #include <misc.h>
 
 #include <types.h>
-#ifdef __EMX__
-#include <emx/startup.h>
-#endif
 
-extern "C" BOOL WINAPI DllMain(HINSTANCE hinst, DWORD reason, LPVOID reserved);
+extern BOOL WINAPI DllMain(HINSTANCE hinst, DWORD reason, LPVOID reserved);
 
 static HMODULE dllHandle = 0;
 
-// _DLL_InitTerm is the function that gets called by the operating system
-// loader when it loads and frees this DLL for each process that accesses
-// this DLL.  However, it only gets called the first time the DLL is loaded
-// and the last time it is freed for a particular process.  The system
-// linkage convention MUST be used because the operating system loader is
-// calling this function.
 unsigned long SYSTEM _DLL_InitTerm(unsigned long hModule, unsigned long ulFlag)
 {
     size_t i;
@@ -55,46 +47,28 @@ unsigned long SYSTEM _DLL_InitTerm(unsigned long hModule, unsigned long ulFlag)
     // be performed.  If ulFlag is 1 then the DLL is being freed so termination
     // should be performed. A non-zero value must be returned to indicate success.
 
+    // Note that we don't perform CRT initialization and things because this
+    // is done in os_os2_init.cpp of JVM.DLL that is already loaded
+
     switch (ulFlag) {
-    case 0 :
-#ifdef __EMX__
-        // initialize the C library
-        if (_CRT_init())
-          break;
-        // initialize C++ statics
-        __ctordtorInit();
-#else
-#  error "Add code to initialize C/C++ library of this compiler!"
-#endif
+        case 0 :
+            dllHandle = RegisterLxDll(hModule, DllMain, NULL,
+                                      ODINNT_MAJOR_VERSION,
+                                      ODINNT_MINOR_VERSION,
+                                      IMAGE_SUBSYSTEM_WINDOWS_CUI);
+            if (dllHandle == 0)
+              break;
 
-        // check that the runtime Odin version matches the compile time version
-        // (this will issue a message box and abort the process on mismatch)
-        CheckVersionFromHMOD(PE2LX_VERSION, hModule);
+            return 1;
 
-        // enable __try/__except support
-        EnableSEH();
+        case 1 :
+            if (dllHandle) {
+              UnregisterLxDll(dllHandle);
+            }
+            return 0;
 
-        dllHandle = RegisterLxDll(hModule, DllMain, NULL);
-        if (dllHandle == 0)
-          break;
-
-        return 1;
-
-    case 1 :
-        if (dllHandle) {
-          UnregisterLxDll(dllHandle);
-        }
-#ifdef __EMX__
-        // destroy C++ statics
-        __ctordtorTerm();
-        _CRT_term();
-#else
-#  error "Add code to initialize C/C++ library of this compiler!"
-#endif
-        return 0;
-
-    default:
-        break;
+        default:
+            break;
     }
 
     // failure
