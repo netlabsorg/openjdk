@@ -52,6 +52,7 @@ else
 ifeq ($(PLATFORM), os2) 
     FILES_c += TwoStacksPlainSocketImpl.c
     FILES_c += TwoStacksPlainDatagramSocketImpl.c
+    FILES_c += net_util_md_init.c
 else
     FILES_c += PlainSocketImpl.c
     FILES_c += PlainDatagramSocketImpl.c
