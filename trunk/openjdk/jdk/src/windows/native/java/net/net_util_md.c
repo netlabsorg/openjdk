@@ -25,6 +25,7 @@
 
 #include <winsock2.h>
 #include <ws2tcpip.h>
+#include <memory.h>
 
 #include "net_util.h"
 #include "jni.h"
