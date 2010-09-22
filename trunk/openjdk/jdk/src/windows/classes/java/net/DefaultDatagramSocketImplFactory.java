@@ -47,7 +47,10 @@ class DefaultDatagramSocketImplFactory
 {
     static Class prefixImplClass = null;
 
-    /* the windows version. */
+    /* the OS name (OS/2 or windows). */
+    private static String osName;
+
+    /* the OS version. */
     private static float version;
 
     /* java.net.preferIPv4Stack */
@@ -62,6 +65,7 @@ class DefaultDatagramSocketImplFactory
                 public Object run() {
                     version = 0;
                     try {
+                        osName = System.getProperties().getProperty("os.name");
                         version = Float.parseFloat(System.getProperties().getProperty("os.version"));
                         preferIPv4Stack = Boolean.parseBoolean(
                                           System.getProperties().getProperty("java.net.preferIPv4Stack"));
@@ -71,9 +75,11 @@ class DefaultDatagramSocketImplFactory
                     return null; // nothing to return
                 } });
 
-        // (version >= 6.0) implies Vista or greater.
-        if (version >= 6.0 && !preferIPv4Stack) {
-            useDualStackImpl = true;
+        if (!osName.equals("OS/2")) {
+            // (version >= 6.0) implies Vista or greater.
+            if (version >= 6.0 && !preferIPv4Stack) {
+                useDualStackImpl = true;
+            }
         }
 
         // impl.prefix
