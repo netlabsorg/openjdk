@@ -691,7 +691,9 @@ $(RESOURCES_JAR): $(RES_JAR_ARGLIST) $(JAR_MANIFEST_FILE)
 
 # Create jsse.jar containing SunJSSE implementation classes
 JSSE_JAR=$(TEMPDIR)/jsse-orig.jar
-$(JSSE_JAR): $(JAR_MANIFEST_FILE)
+$(JSSE_JAR): $(JSSE_CLASSES_DIRS:%=$(CLASSBINDIR)/%) \
+             $(wildcard $(JSSE_CLASSES_DIRS:%=$(CLASSBINDIR)/%/*)) \
+			 $(JAR_MANIFEST_FILE)
 	$(prep-target)
 	$(BOOT_JAR_CMD) c0mf $(JAR_MANIFEST_FILE) $@ \
 		$(JSSE_CLASSES_DIRS:%=-C $(CLASSBINDIR) %) \
@@ -1071,7 +1073,7 @@ endif
 ifndef OS2_TEMP # later
 	$(CP) -r -f $(DEMODIR) $(JDK_IMAGE_DIR)
 	$(CP) -r -f $(SAMPLEDIR) $(JDK_IMAGE_DIR)
-endif	
+endif
 	$(CP) -r $(INCLUDEDIR) $(JDK_IMAGE_DIR)
 ifndef OS2_TEMP # GUI stuff
 	@#
