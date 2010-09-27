@@ -50,6 +50,12 @@ ifeq ($(PLATFORM),windows)
   COMPILER_WARNINGS_FATAL=false
 endif
 
+# os/2 compiler flags
+ifeq ($(PLATFORM), os2)
+  # math functions use very unstrict aliasing, turn this optimization off
+  CPPFLAGS_COMMON += -fno-strict-aliasing
+endif
+
 #
 # Include path.
 #
