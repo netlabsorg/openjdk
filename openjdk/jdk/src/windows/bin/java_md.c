@@ -301,15 +301,12 @@ GetApplicationHome(char *buf, jint bufsize)
 
 #ifdef __WIN32OS2__
 
-static int main_argc = 0;
-static char **main_argv = NULL;
-
 int WIN32API WinMain(HINSTANCE hInstance,
                      HINSTANCE hPrevInstance,
                      LPSTR     lpCmdLine,
                      int       nCmdShow)
 {
-    return java_main(main_argc, main_argv); /* defined in shared/bin/java.c */
+    return java_main(__argcA, __argvA); /* defined in shared/bin/java.c */
 }
 
 #undef main
@@ -317,9 +314,6 @@ int WIN32API WinMain(HINSTANCE hInstance,
 int
 main(int argc, char ** argv)
 {
-    main_argc = argc;
-    main_argv = argv;
-
     EnableSEH();
     return RegisterLxExe(WinMain, NULL);
 }
