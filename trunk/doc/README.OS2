@@ -35,13 +35,18 @@ In order to use this version of OpenJDK, you will need the following:
 
 INSTALLATION
 
-  The OpenJDK product is distributed in two packages: the SDK and the JRE. 
-  Simply take a needed package and unzip it to some directory. You will need
-  to add the \bin subdirectory inside this directory to PATH and BEGINLIBPATH
-  to allow for starting Java executables from an arbitrary location:
+  The OpenJDK product is distributed in two packages: the JRE and the SDK
+  (which includes a copy of JRE). Simply take a necessary package and unzip it
+  to a directory of your choice. You will need to add the \bin subdirectory
+  inside this directory to PATH and BEGINLIBPATH to allow for starting Java
+  executables from an arbitrary location:
 
     set PATH=<directory>\bin;%PATH%
     set BEGINLIBPATH=<directory>\bin;%BEGINLIBPATH%
+
+  Alternatively, you may add this subdirectory to PATH and LIBPATH statements
+  of your CONFIG.SYS (and reboot) to make the given Java installation the
+  default one.
 
 
 
