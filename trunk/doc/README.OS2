@@ -44,6 +44,10 @@ INSTALLATION
     set PATH=<directory>\bin;%PATH%
     set BEGINLIBPATH=<directory>\bin;%BEGINLIBPATH%
 
+  Also make sure there are no traces of other Java installations in the
+  environment because this is known to make problems (this in particular means
+  that the CLASSPATH environment variable should not be set).
+
   Alternatively, you may add this subdirectory to PATH and LIBPATH statements
   of your CONFIG.SYS (and reboot) to make the given Java installation the
   default one.
