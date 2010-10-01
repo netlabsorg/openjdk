@@ -1,0 +1,81 @@
+OpenJDK 6 Alpha for OS/2 and eCS
+
+Version 1.6.0 Build 13 Alpha (2010-10-01)
+
+This is an alpha build intended for testing purposes.
+
+
+
+INTRODUCTION
+
+This document contains a brief information on the OS/2 version of the 
+OpenJDK 6 product. Please read it carefully before starting your work.
+You may also visit the project page at
+
+  http://svn.netlabs.org/java/wiki
+
+to get more information and the latest news and also to report bugs.
+
+To get a brief list of OS/2-specific changes from release to release
+please see the CHANGES.OS2 file included in this distribution.
+
+
+
+REQUIREMENTS
+
+In order to use this version of OpenJDK, you will need the following:
+
+  - A OS/2 Warp 4 Fixpack 16+, OS/2 Warp 4.5 or eComStation operating system.
+
+  - Odin32 library version 0.6.21470 (2010-10-01) or above:
+  
+    ftp://ftp.netlabs.org/pub/odin/odin32bin-20101001-release.wpi
+
+    
+
+INSTALLATION
+
+  The OpenJDK product is distributed in two packages: the SDK and the JRE. 
+  Simply take a needed package and unzip it to some directory. You will need
+  to add the \bin subdirectory inside this directory to PATH and BEGINLIBPATH
+  to allow for starting Java executables from an arbitrary location:
+
+    set PATH=<directory>\bin;%PATH%
+    set BEGINLIBPATH=<directory>\bin;%BEGINLIBPATH%
+
+
+
+CURRENT LIMITATIONS
+
+  1. Only console Java applications will work! No AWT, no Swing so far.
+     This will come in a Beta.
+
+  See the project roadmap for more information on the current progress and
+  future plans:
+
+    http://svn.netlabs.org/java/roadmap
+
+  Feel free to request new features and report bugs using the project bug
+  tracker abaialble at:
+
+    http://svn.netlabs.org/java/report
+
+
+
+CREDITS
+
+Dmitry A. Kuminov (development)
+Silvan Scherrer (management)
+
+netlabs.org (hosting & support)
+
+Oracle Corporation (original OpenJDK product)
+
+We also want to THANK all individuals and organizations who made the donations
+to this project and helped to make it happen.
+
+
+Oracle and Java are registered trademarks of Oracle and/or its affiliates.
+OS/2 and OS/2 Warp are trademarks of the IBM Corporation and/or its subsidiary(-ies).
+eComStation is a trademark of Serenity Systems International and/or its subsidiary(-ies).
+Other names may be trademarks of their respective owners.
