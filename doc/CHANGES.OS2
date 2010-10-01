@@ -1,0 +1,10 @@
+This document contains a brief list of the most important OS/2-specific changes
+in the OpenJDK product from release to release.
+
+
+CHANGES
+
+
+1.6.0 Build 13 Alpha (2010-10-01)
+
+  - First public release.
