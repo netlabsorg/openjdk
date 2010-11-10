@@ -187,11 +187,12 @@ clobber: clean
 ANT_TARGETS = build clean sanity post-sanity diagnostics # for now
 
 # Create diagnostics log (careful, ant 1.8.0 -diagnostics always does an exit 1)
+# ant 1.8.1 -version does exit 666 here, ignore this
 $(OUTPUTDIR)/build/ant-diagnostics.log:
 	@mkdir -p $(OUTPUTDIR)/build $(ANT_TMPDIR)
 	@$(RM) $@
-	$(ANT_JAVA_HOME) $(ANT_OPTS) $(ANT) -diagnostics > $@ ; \
-	  $(ANT_JAVA_HOME) $(ANT_OPTS) $(ANT) -version >> $@
+	$(ANT_JAVA_HOME) $(ANT_OPTS) $(ANT) -diagnostics > $@
+	-$(ANT_JAVA_HOME) $(ANT_OPTS) $(ANT) -version >> $@
 
 # Create a make target for each
 $(ANT_TARGETS): $(OUTPUTDIR)/build/ant-diagnostics.log
