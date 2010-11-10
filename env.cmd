@@ -111,7 +111,7 @@ end
  * setup Ant
  */
 if (G.PATH_TOOL_ANT \== '') then do
-    call EnvSet 'ANT_HOME', G.PATH_TOOL_ANT
+    call EnvSet 'ANT_HOME', UnixSlashes(G.PATH_TOOL_ANT)
     call EnvSet 'antenv', G.PATH_TOOL_ANT'\bin\antenv.cmd'
     call EnvSet 'runrc', ScriptDir'antrc.cmd'
     call EnvAddFront 'PATH', G.PATH_TOOL_ANT'\bin'
