@@ -183,7 +183,7 @@ COMMON_DEBUG_FLAGS= \
 	ALT_OUTPUTDIR=$(ABS_OUTPUTDIR)-$(DEBUG_NAME) \
 	NO_DOCS=true
 
-product_build: setup
+product_build:
 	@$(ECHO) $@ build started: `$(DATE) '+%y-%m-%d %H:%M'`
 	$(MAKE) SKIP_FASTDEBUG_BUILD=true SKIP_DEBUG_BUILD=true all
 	@$(ECHO) $@ build finished: `$(DATE) '+%y-%m-%d %H:%M'`
@@ -193,11 +193,11 @@ generic_debug_build:
 	$(MAKE) $(COMMON_DEBUG_FLAGS) $(TARGETS)
 	@$(ECHO) $@ build finished: `$(DATE) '+%y-%m-%d %H:%M'`
 
-debug_build: setup
-	$(MAKE) DEBUG_NAME=debug TARGETS=$(TARGETS) generic_debug_build
+debug_build:
+	$(MAKE) DEBUG_NAME=debug TARGETS="$(TARGETS)" generic_debug_build
 
-fastdebug_build: setup
-	$(MAKE) DEBUG_NAME=fastdebug TARGETS=$(TARGERS) generic_debug_build
+fastdebug_build:
+	$(MAKE) DEBUG_NAME=fastdebug TARGETS="$(TARGERS)" generic_debug_build
 
 ifeq ($(SKIP_FASTDEBUG_BUILD), false)
   all:: fastdebug_build
