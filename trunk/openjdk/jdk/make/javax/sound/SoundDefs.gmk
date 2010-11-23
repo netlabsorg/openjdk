@@ -36,6 +36,11 @@ ifeq ($(PLATFORM), windows)
   CPPFLAGS += -DX_PLATFORM=X_WINDOWS
 endif # PLATFORM windows
 
+ifeq ($(PLATFORM), os2)
+  # we reuse most of the Windows code
+  CPPFLAGS += -DX_PLATFORM=X_WINDOWS
+endif # PLATFORM os2
+
 ifeq ($(PLATFORM), linux)
   CPPFLAGS += -DX_PLATFORM=X_LINUX
 endif # PLATFORM linux
