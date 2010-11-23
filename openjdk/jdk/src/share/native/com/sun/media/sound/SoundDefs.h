@@ -116,7 +116,9 @@ typedef char            SBYTE;
 
 #if X_PLATFORM == X_WINDOWS
 #include <stdlib.h>
+#ifndef INLINE
 #define INLINE          _inline
+#endif
 #endif
 
 
