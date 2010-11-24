@@ -39,5 +39,8 @@ typedef unsigned char   jubyte;
 typedef unsigned short  jushort;
 typedef unsigned long   juint;
 
+#ifdef __WIN32OS2__
+#include <sys/types.h> /* intptr_t */
+#endif
 
 #endif /* j2d_md_h_Included */

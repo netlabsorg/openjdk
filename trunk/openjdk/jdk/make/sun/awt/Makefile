@@ -80,7 +80,27 @@ endif
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ WINDOWS
 endif # PLATFORM
 
-ifneq ($(PLATFORM), windows)
+ifeq ($(PLATFORM), os2)
+# vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv OS/2
+
+#
+# Files
+#
+include FILES_c_windows.gmk
+include FILES_export_windows.gmk
+
+#
+# Prune files that are currently unused on Windows (but still used on
+# Solaris/Linux).
+#
+AUTO_JAVA_PRUNE += RemoteOffScreenImage.java
+
+OTHER_CXXFLAGS += -DD3D_OVERLOADS
+
+# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ OS/2
+endif # PLATFORM
+
+ifneq ($(filter-out windows os2, $(PLATFORM)),)
 # vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv SOLARIS/LINUX
 
 #
@@ -162,7 +182,7 @@ endif
 # Resources
 #
 LOCALE_SET_DEFINITION = jre
-ifeq ($(PLATFORM), windows)
+ifeq ($(filter-out windows os2, $(PLATFORM)),)
   RESOURCE_BUNDLES_COMPILED_PROPERTIES += \
 	sun/awt/windows/awtLocalization.properties
 endif
@@ -198,7 +218,22 @@ include make.depend
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ WINDOWS
 endif # PLATFORM
 
-ifneq ($(PLATFORM), windows)
+ifeq ($(PLATFORM), os2)
+# vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv OS/2
+#
+# Additional dependencies.
+#
+# If make.depend is not working correctly, then it can be omitted
+# if you always build from a clean workspace. 
+
+include make.depend.gmk
+
+# required additional rules:
+
+# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ OS/2
+endif # PLATFORM
+
+ifneq ($(filter-out windows os2, $(PLATFORM)),)
 # vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv SOLARIS/LINUX
 
 ifndef OPENJDK
@@ -229,7 +264,7 @@ vpath %.c   $(SHARE_SRC)/native/$(PKGDIR)/../java2d
 vpath %.c   $(SHARE_SRC)/native/$(PKGDIR)/../java2d/loops
 vpath %.c   $(SHARE_SRC)/native/$(PKGDIR)/../java2d/pipe
 vpath %.cpp $(SHARE_SRC)/native/$(PKGDIR)/image
-ifeq ($(PLATFORM), windows)
+ifeq ($(filter-out windows os2, $(PLATFORM)),)
 # vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv WINDOWS
 vpath %.cpp   $(PLATFORM_SRC)/native/sun/windows
 vpath %.cpp   $(PLATFORM_SRC)/native/$(PKGDIR)
@@ -278,7 +313,29 @@ awt.clean:
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ WINDOWS
 endif # PLATFORM
 
-ifneq ($(PLATFORM), windows)
+ifeq ($(PLATFORM), os2)
+# vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv OS/2
+OTHER_LDLIBS = -lkernel32.lib -ladvapi32.lib -luser32.lib \
+               -lgdi32.lib -lshell32.lib -lcomdlg32.lib \
+               -lversion.lib -lmpr.lib -lrasapi32.lib \
+               -lwinmm.lib -lwinspool.lib -lvfw32.lib \
+               -lsecur32.lib -loleacc.lib -loledlg.lib \
+               -lsensapi.lib \
+               -lkernel32.lib -luser32.lib -lgdi32.lib -lwinspool.lib \
+               -limm32.lib -lole32.lib -luuid.lib $(JVMLIB) \
+               -lshell32.lib
+
+clean:: awt.clean
+
+awt.clean: 
+	$(RM) $(TEMPDIR)/awt.ico 
+	$(RM) $(TEMPDIR)/awt.res 
+	$(RM) $(TEMPDIR)/hand.cur 
+	$(RM) $(TEMPDIR)/check.bmp
+# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ OS/2
+endif # PLATFORM
+
+ifneq ($(filter-out windows os2, $(PLATFORM)),)
 # vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv SOLARIS/LINUX
 
 ifeq ($(STATIC_MOTIF),true)
@@ -376,6 +433,18 @@ _FONTCONFIGS = \
 FONTCONFIGS_SRC_PREFIX =
 
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ WINDOWS
+endif # PLATFORM
+
+ifeq ($(PLATFORM), os2)
+# vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv OS/2
+
+FONTCONFIGS_SRC = $(PLATFORM_SRC)/classes/sun/awt/os2
+_FONTCONFIGS = \
+        fontconfig.properties
+
+FONTCONFIGS_SRC_PREFIX =
+
+# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ OS/2
 endif # PLATFORM
 
 ifeq ($(PLATFORM), linux)
@@ -501,7 +570,60 @@ VERSIONINFO_RESOURCE = $(WINAWT_native)/awt.rc
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ WINDOWS
 endif # PLATFORM
 
-ifneq ($(PLATFORM), windows)
+ifeq ($(PLATFORM), os2)
+# vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv OS/2
+
+#
+# Useful variables that name parts of the src tree.
+#
+WINAWT_native        = $(PLATFORM_SRC)/native/sun/windows
+WINAWT_COMMON_native = $(PLATFORM_SRC)/native/sun/awt_common
+
+# FIXME: awt shouldn't have to see the VM's private headers.
+# FIXME: if you re-order this list, the build breaks, possibly because 
+#        of filename collision. Such a collision, if present, is pure
+#        evil. Need to investigate this.
+
+OTHER_INCLUDES += -I$(CLASSHDRDIR)/../../java/jvm \
+	-I$(OBJDIR) \
+	-I$(SHARE_SRC)/native/common \
+	-I$(WINAWT_native) \
+	-I$(SHARE_SRC)/native/sun/awt/image/cvutils \
+	-I$(SHARE_SRC)/native/sun/awt/image \
+	-I$(SHARE_SRC)/native/sun/java2d/loops \
+	-I$(SHARE_SRC)/native/sun/java2d \
+	-I$(PLATFORM_SRC)/native/sun/java2d \
+	-I$(SHARE_SRC)/native/sun/java2d/opengl \
+	-I$(PLATFORM_SRC)/native/sun/java2d/d3d \
+	-I$(PLATFORM_SRC)/native/sun/java2d/opengl \
+	-I$(PLATFORM_SRC)/native/sun/java2d/windows \
+	-I$(SHARE_SRC)/native/sun/font \
+	-I$(SHARE_SRC)/native/sun/java2d/pipe \
+	-I$(SHARE_SRC)/native/sun/dc/path \
+	-I$(SHARE_SRC)/native/sun/dc/doe \
+	-I$(SHARE_SRC)/native/sun/awt/debug \
+	-I$(PLATFORM_SRC)/native/sun/awt \
+#	-I$(WINAWT_COMMON_native)
+
+# this is only required for compiling )/native/sun/awt/medialib/*.c files
+#
+OTHER_INCLUDES += -I$(SHARE_SRC)/native/sun/awt/medialib
+
+#
+# .res file construction.
+#
+
+ifdef OPENJDK
+    RC_FLAGS += -i "$(PLATFORM_SRC)/resource/icons"
+else
+    RC_FLAGS += -i "$(CLOSED_SRC)/windows/native/sun/windows"
+endif
+VERSIONINFO_RESOURCE = $(WINAWT_native)/awt.rc
+
+# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ OS/2
+endif # PLATFORM
+
+ifneq ($(filter-out windows os2, $(PLATFORM)),)
 # vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv SOLARIS/LINUX
 
 #
