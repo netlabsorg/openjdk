@@ -26,8 +26,10 @@
 #ifndef UNICOWSLOADER_H
 #define UNICOWSLOADER_H
 
+#ifndef __WIN32OS2__
 #if !defined(UNICODE) || !defined(_UNICODE)
 #error UnicowsLoader module needs UNICODE and _UNICODE flags to be set on compiling
+#endif
 #endif
 
 #include <winspool.h>
