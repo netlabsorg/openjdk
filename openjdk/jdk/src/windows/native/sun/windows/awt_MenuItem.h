@@ -78,7 +78,7 @@ public:
 
     virtual LPCTSTR GetClassName();
 
-    void AwtMenuItem::LinkObjects(jobject peer);
+    void LinkObjects(jobject peer);
     static AwtMenuItem* Create(jobject self, jobject menu);
 
     INLINE AwtMenu* GetMenuContainer() { return m_menuContainer; }

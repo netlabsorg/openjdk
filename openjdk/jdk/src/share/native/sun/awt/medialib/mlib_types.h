@@ -62,6 +62,9 @@ typedef double             mlib_d64;
 #if defined(__linux__)
 #include <stdint.h>                     /* for uintptr_t */
 #include <malloc.h>                     /* for ptrdiff_t */
+#elif defined(OS2)
+#include <sys/types.h>                  /* for uintptr_t */
+#include <stddef.h>                     /* for ptrdiff_t */
 #else
 #include <link.h>                       /* for uintptr_t */
 #include <stddef.h>                     /* for ptrdiff_t */

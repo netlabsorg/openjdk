@@ -54,7 +54,7 @@ static BOOL                     UpdateInstance(JNIEnv *env);
            InstanceAccess& operator=(const InstanceAccess&);
            InstanceAccess* operator&();
        };
-friend                          InstanceAccess;
+friend class                    InstanceAccess;
 
 private:
                                 Devices(int numElements);
@@ -70,4 +70,4 @@ static CriticalSection          arrayLock;
 
 };
 
-#endif _DEVICES_H_
+#endif // _DEVICES_H_

@@ -300,4 +300,4 @@ Win32SurfaceData_GetComp(JNIEnv *env, Win32SDOps *wsdo);
 } /* extern "C" */
 
 
-#endif _WIN32SURFACEDATA_H_
+#endif // _WIN32SURFACEDATA_H_

@@ -64,4 +64,4 @@ private:
     void SetCap(WCHAR *capName, int value);
 };
 
-#endif DX_CAPABILITIES_H
+#endif // DX_CAPABILITIES_H

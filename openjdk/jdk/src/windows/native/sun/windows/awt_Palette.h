@@ -107,4 +107,4 @@ private:
 
 
 
-#endif AWT_PALETTE_H
+#endif // AWT_PALETTE_H

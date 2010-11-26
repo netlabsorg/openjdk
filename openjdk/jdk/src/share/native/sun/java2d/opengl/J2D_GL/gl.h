@@ -104,7 +104,7 @@
  * than "WIN32_LEAN_AND_MEAN" may include windows.h before
  * glut.h or gl.h.
  */
-#if defined(_WIN32) && !defined(APIENTRY) && !defined(__CYGWIN__)
+#if (defined(_WIN32) && !defined(APIENTRY) && !defined(__CYGWIN__)) || defined(__WIN32OS2__)
 #define WIN32_LEAN_AND_MEAN 1
 #include <windows.h>
 #endif

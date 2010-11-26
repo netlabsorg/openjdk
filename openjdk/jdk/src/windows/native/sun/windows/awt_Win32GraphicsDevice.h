@@ -115,4 +115,4 @@ private:
     DxCapabilities          dxCaps;
 };
 
-#endif AWT_WIN32GRAPHICSDEVICE_H
+#endif // AWT_WIN32GRAPHICSDEVICE_H
