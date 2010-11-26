@@ -69,4 +69,4 @@ private:
     static void PrintRegistryError(LONG errNum, char *message);
 };
 
-#endif REGISTRYKEY_H
+#endif // REGISTRYKEY_H

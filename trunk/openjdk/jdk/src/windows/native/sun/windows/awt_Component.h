@@ -447,7 +447,7 @@ public:
     static UINT WindowsKeyToJavaKey(UINT windowsKey, UINT modifiers);
     static void JavaKeyToWindowsKey(UINT javaKey, UINT *windowsKey, UINT *modifiers, UINT originalWindowsKey);
 
-    INLINE static void AwtComponent::JavaKeyToWindowsKey(UINT javaKey,
+    INLINE static void JavaKeyToWindowsKey(UINT javaKey,
                                        UINT *windowsKey, UINT *modifiers)
     {
         JavaKeyToWindowsKey(javaKey, windowsKey, modifiers, IGNORE_KEY);

@@ -68,6 +68,9 @@
     #define UNIMPLEMENTED()     DASSERT(FALSE)
 
     /* Disable inlining. */
+    #ifdef INLINE
+    #undef INLINE
+    #endif
     #define INLINE
 #else
     #define AWT_DUMP_UPDATE_RECTANGLE(_msg, _hwnd) ((void)0)
@@ -83,6 +86,9 @@
     #define VERIFY(exp) ((void)(exp))
 
     /* Enable inlining. */
+    #ifdef INLINE
+    #undef INLINE
+    #endif
     #define INLINE inline
 #endif // DEBUG
 
