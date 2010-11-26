@@ -96,6 +96,8 @@ include FILES_export_windows.gmk
 AUTO_JAVA_PRUNE += RemoteOffScreenImage.java
 
 OTHER_CXXFLAGS += -DD3D_OVERLOADS
+OTHER_CFLAGS += -DUNICODE -D_UNICODE
+OTHER_CXXFLAGS += -DUNICODE -D_UNICODE
 
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ OS/2
 endif # PLATFORM
