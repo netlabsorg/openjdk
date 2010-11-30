@@ -42,4 +42,4 @@ void SetD3DEnabledFlag(JNIEnv *env, BOOL d3dEnabled, BOOL d3dSet);
 
 void SetDDEnabledFlag(JNIEnv *env, BOOL ddEnabled);
 
-#endif WINDOWSFLAGS_H
+#endif // WINDOWSFLAGS_H

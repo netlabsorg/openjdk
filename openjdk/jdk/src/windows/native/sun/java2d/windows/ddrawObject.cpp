@@ -277,6 +277,7 @@ DDraw *DDraw::CreateDDrawObject(GUID *lpGUID, HMONITOR hMonitor) {
     HRESULT ddResult;
     DXObject *newDXObject;
 
+#ifndef __WIN32OS2__
     // First, try to create a DX7 object
     FnDDCreateExFunc ddCreateEx = NULL;
 
@@ -315,6 +316,27 @@ DDraw *DDraw::CreateDDrawObject(GUID *lpGUID, HMONITOR hMonitor) {
                       "DDraw::CreateDDrawObject: No DX7+, ddraw is disabled");
         return NULL;
     }
+#else
+    J2dTraceLn(J2D_TRACE_VERBOSE, "  Using DX4");
+    IDirectDraw4    *ddObject;
+
+    ddResult = DirectDrawCreate(lpGUID, &ddObject, NULL);
+    if (ddResult != DD_OK) {
+        DebugPrintDirectDrawError(ddResult,
+                                  "DDraw::CreateDDrawObject: "\
+                                  "DirectDrawCreate failed");
+        return NULL;
+    }
+    ddResult = ddObject->SetCooperativeLevel(NULL,
+                                             DDSCL_NORMAL);
+    if (ddResult != DD_OK) {
+        DebugPrintDirectDrawError(ddResult,
+                                  "DDraw::CreateDDrawObject: Error "\
+                                  "setting cooperative level");
+        return NULL;
+    }
+    newDXObject = new DXObject(ddObject, hMonitor);
+#endif
 
     return new DDraw(newDXObject);
 }
