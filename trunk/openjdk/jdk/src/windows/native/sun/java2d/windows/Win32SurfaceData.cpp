@@ -82,12 +82,14 @@ void SetupThreadGraphicsInfo(JNIEnv *env, Win32SDOps *wsdo) {
         info = new ThreadGraphicsInfo;
         ZeroMemory(info, sizeof(ThreadGraphicsInfo));
         TlsSetValue(threadInfoIndex, (LPVOID)info);
+#ifndef __WIN32OS2__
         J2dTraceLn2(J2D_TRACE_VERBOSE,
                     "  current batch limit for for thread 0x%x is %d",
                      GetCurrentThreadId(), ::GdiGetBatchLimit());
         J2dTraceLn(J2D_TRACE_VERBOSE, "  setting to the limit to 1");
         // Fix for bug 4374079
         ::GdiSetBatchLimit(1);
+#endif
 
         Disposer_AddRecord(env, JNI_GetCurrentThread(env),
                            DisposeThreadGraphicsInfo,

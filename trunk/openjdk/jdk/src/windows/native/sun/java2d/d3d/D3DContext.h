@@ -229,7 +229,11 @@ public:
     DWORD GetMaxTextureWidth() { return d3dDevDesc.dwMaxTextureWidth; }
     DWORD GetMaxTextureHeight() { return d3dDevDesc.dwMaxTextureHeight; }
     DWORD GetMaxTextureAspectRatio()
+#ifdef __WIN32OS2__
+        { return 0; };
+#else
         { return d3dDevDesc.dwMaxTextureAspectRatio; };
+#endif
     BOOL IsPow2TexturesOnly()
         { return d3dDevDesc.dpcTriCaps.dwTextureCaps & D3DPTEXTURECAPS_POW2; };
     BOOL IsSquareTexturesOnly()
@@ -443,4 +447,4 @@ typedef J2D_XY_VERTEX   J2DXY_HEXA[6];
 #define J2D_D3D_ENABLED_OK \
     sun_java2d_d3d_D3DContext_J2D_D3D_ENABLED_OK
 
-#endif D3DCONTEXT_H
+#endif // D3DCONTEXT_H

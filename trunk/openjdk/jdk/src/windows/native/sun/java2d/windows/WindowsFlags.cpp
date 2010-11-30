@@ -118,7 +118,7 @@ void GetFlagValues(JNIEnv *env, jclass wFlagsClass)
     j2dAccelKey = (WCHAR *)safe_Calloc((j2dRootKeyLength + versionLength + 2),
                                        sizeof(WCHAR));
     wcscpy(j2dAccelKey, J2D_ACCEL_KEY_ROOT);
-    wcscat(j2dAccelKey, javaVersion);
+    wcscat(j2dAccelKey, (WCHAR *)javaVersion);
     wcscat(j2dAccelKey, L"\\");
     j2dAccelDriverKey =
         (WCHAR *)safe_Calloc((wcslen(j2dAccelKey) +

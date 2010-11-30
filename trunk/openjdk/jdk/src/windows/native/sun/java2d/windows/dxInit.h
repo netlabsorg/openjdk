@@ -55,4 +55,4 @@ BOOL CALLBACK EnumDeviceCallback(GUID FAR* lpGUID, LPSTR szName, LPSTR szDevice,
 
 BOOL    DDCreateObject();
 
-#endif DXINIT_H
+#endif // DXINIT_H

@@ -132,4 +132,4 @@ DDrawObjectStruct *GetDDInstanceForDevice(HMONITOR hMon);
         CLIP2RECTS_1PARAM(r1, r2, bottom, >, B); \
     } while(0)
 
-#endif DDRAWUTILS_H
+#endif // DDRAWUTILS_H

@@ -70,6 +70,13 @@ class DXSurface;
 
 class D3DContext;
 
+#ifdef __WIN32OS2__
+#define IDirectDraw7        IDirectDraw4
+#define IDirectDrawSurface7 IDirectDrawSurface4
+#define IDirect3D7          IDirect3D2
+#define IDirect3DDevice7    IDirect3DDevice2
+#define D3DDEVICEDESC7      D3DDEVICEDESC
+#endif
 
 class DXObject {
 private:
@@ -137,7 +144,11 @@ public:
     }
     HRESULT SetCooperativeLevel(HWND hWnd, DWORD dwFlags) {
         return ddObject->SetCooperativeLevel(hWnd,
+#ifdef DDSCL_FPUPRESERVE
                                              (dwFlags | DDSCL_FPUPRESERVE));
+#else
+                                             dwFlags);
+#endif
     }
     HRESULT CreateD3DObject(IDirect3D7 **d3dObject);
     /**
@@ -440,8 +451,8 @@ public:
         //            lpSurface, count);
         if (count == 0) {
             //J2dTraceLn1(J2D_TRACE_VERBOSE,
-            //            "DDCriticalSection::Leave Invalid "\
-            //            "decrement in DDCriticalSection "\
+            //            "DDCriticalSection::Leave Invalid "
+            //            "decrement in DDCriticalSection "
             //            "for surface 0x%x\n",
             //            lpSurface);
             StackTrace();
@@ -478,4 +489,4 @@ private:
 };
 
 
-#endif DDRAWOBJECT_H
+#endif // DDRAWOBJECT_H
