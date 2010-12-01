@@ -76,6 +76,7 @@ class D3DContext;
 #define IDirect3D7          IDirect3D2
 #define IDirect3DDevice7    IDirect3DDevice2
 #define D3DDEVICEDESC7      D3DDEVICEDESC
+#define LPD3DDEVICEDESC7    LPD3DDEVICEDESC
 #endif
 
 class DXObject {

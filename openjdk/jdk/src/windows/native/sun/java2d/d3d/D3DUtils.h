@@ -134,14 +134,14 @@ do { \
         if (SUCCEEDED(RES)) { \
             break; \
         } else if (RES == DDERR_SURFACEBUSY || RES == DDERR_WASSTILLDRAWING) { \
-            J2dTraceLn(J2D_TRACE_VERBOSE, #PRIM ## ": surface is busy."); \
+            J2dTraceLn(J2D_TRACE_VERBOSE, PRIM ": surface is busy."); \
             continue; \
         } else if (RES == DDERR_SURFACELOST) { \
-            J2dTraceLn(J2D_TRACE_INFO, #PRIM ## ": dest surface lost."); \
+            J2dTraceLn(J2D_TRACE_INFO, PRIM ": dest surface lost."); \
             DST_WSDO->RestoreSurface(ENV, DST_WSDO); \
             break; \
         } else { \
-            DebugPrintDirectDrawError(RES, #PRIM); \
+            DebugPrintDirectDrawError(RES, PRIM); \
         } \
      } \
 } while (0)
@@ -151,20 +151,20 @@ do { \
         if (SUCCEEDED(RES)) { \
             break; \
         } else if (RES == DDERR_SURFACEBUSY || RES == DDERR_WASSTILLDRAWING) { \
-            J2dTraceLn(J2D_TRACE_VERBOSE, #PRIM ## ": surface is busy."); \
+            J2dTraceLn(J2D_TRACE_VERBOSE, PRIM ": surface is busy."); \
             continue; \
         } else if (RES == DDERR_SURFACELOST) { \
             if (FAILED((DST_WSDO)->lpSurface->IsLost())) { \
-                J2dTraceLn(J2D_TRACE_INFO, #PRIM ## ": dst surface lost."); \
+                J2dTraceLn(J2D_TRACE_INFO, PRIM ": dst surface lost."); \
                 (DST_WSDO)->RestoreSurface(ENV, (DST_WSDO)); \
             } \
             if (FAILED((SRC_WSDO)->lpSurface->IsLost())) { \
-                J2dTraceLn(J2D_TRACE_INFO, #PRIM ## ": src surface lost."); \
+                J2dTraceLn(J2D_TRACE_INFO, PRIM ": src surface lost."); \
                 (SRC_WSDO)->RestoreSurface(ENV, (SRC_WSDO)); \
             } \
             break; \
         } else { \
-            DebugPrintDirectDrawError(RES, #PRIM); \
+            DebugPrintDirectDrawError(RES, PRIM); \
         } \
      } \
 } while (0)

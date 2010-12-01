@@ -109,6 +109,7 @@ Java_sun_java2d_d3d_D3DBlitLoops_doTransform
                           d3dc->blitPolygonPixel,
                           tx1, ty1, tx2, ty2);
 
+#ifndef __WIN32OS2__
     if (hint == D3DSD_XFORM_BILINEAR) {
         d3dDevice->SetTextureStageState(0, D3DTSS_MAGFILTER, D3DTFG_LINEAR);
         d3dDevice->SetTextureStageState(0, D3DTSS_MINFILTER, D3DTFG_LINEAR);
@@ -116,6 +117,7 @@ Java_sun_java2d_d3d_D3DBlitLoops_doTransform
         d3dDevice->SetTextureStageState(0, D3DTSS_MAGFILTER, D3DTFG_POINT);
         d3dDevice->SetTextureStageState(0, D3DTSS_MINFILTER, D3DTFG_POINT);
     }
+#endif
 
     HRESULT res;
     D3DU_PRIM2_LOOP_BEGIN(res, srcOps, dstOps);

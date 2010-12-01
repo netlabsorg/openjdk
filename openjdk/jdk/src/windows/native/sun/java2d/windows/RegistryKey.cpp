@@ -56,6 +56,10 @@
 
 #include <windows.h>
 #include <stdio.h>
+#ifdef __WIN32OS2__
+#include <minivcrt.h>
+#endif
+
 #include "Trace.h"
 #include "WindowsFlags.h"
 #include "RegistryKey.h"

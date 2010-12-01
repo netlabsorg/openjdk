@@ -31,6 +31,10 @@
 #include "WindowsFlags.h"
 #include "Devices.h"
 
+#ifdef __WIN32OS2__
+#include <minivcrt.h>
+#endif
+
 /**
  * This file holds the functions that handle the initialization
  * process for DirectX.  This process includes checking the
@@ -571,6 +575,9 @@ typedef HRESULT (WINAPI *FnDDEnumerateFunc)(LPDDENUMCALLBACK cb,
  * here; we assume that our callers are taking that lock for us.
  */
 BOOL DDCreateObject() {
+#ifdef __WIN32OS2__
+    typedef HRESULT (WINAPI * LPDIRECTDRAWENUMERATEEXA)( LPDDENUMCALLBACKEXA lpCallback, LPVOID lpContext, DWORD dwFlags);
+#endif
     LPDIRECTDRAWENUMERATEEXA lpDDEnum;
 
     J2dTraceLn(J2D_TRACE_INFO, "DDCreateObject");
