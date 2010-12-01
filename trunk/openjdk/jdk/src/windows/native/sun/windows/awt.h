@@ -198,6 +198,10 @@ extern JavaVM *jvm;
  * macros for saving and restoring FPU control word
  * NOTE: float.h must be defined if using these macros
  */
+#ifdef __WIN32OS2__
+#define SAVE_CONTROLWORD
+#define RESTORE_CONTROLWORD
+#else
 #define SAVE_CONTROLWORD  \
    unsigned int fpu_cw = _CW_DEFAULT;   \
    if (IS_WIN95) {  \
@@ -210,6 +214,7 @@ extern JavaVM *jvm;
               _control87(fpu_cw, 0xfffff);   \
        }   \
    }
+#endif
 
 /*
  * checks if the current thread is/isn't the toolkit thread
