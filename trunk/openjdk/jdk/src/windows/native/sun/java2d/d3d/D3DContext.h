@@ -340,7 +340,11 @@ private:
 
 // - Various vertex formats -------------------------------------------
 
+#ifdef __WIN32OS2__
+#define D3DFVF_J2DLVERTEX D3DVT_LVERTEX
+#else
 #define D3DFVF_J2DLVERTEX (D3DFVF_XYZ | D3DFVF_DIFFUSE | D3DFVF_TEX1)
+#endif
 typedef struct _J2DLVERTEX {
     float x, y, z;
     DWORD color;
