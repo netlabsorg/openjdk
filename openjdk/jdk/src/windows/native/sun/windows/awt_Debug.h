@@ -48,6 +48,12 @@
     };
 
     extern void * operator new(size_t size, const char * filename, int linenumber);
+#ifdef __GNUC__
+    inline void * operator new[](size_t size, const char * filename, int linenumber)
+    {
+        return operator new(size, filename, linenumber);
+    }
+#endif
 #if _MSC_VER >= 1200
     /* VC 6.0 is more strict about enforcing matching placement new & delete */
     extern void operator delete(void *ptr, const char*, int);

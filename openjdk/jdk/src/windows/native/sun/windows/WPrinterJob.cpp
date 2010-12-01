@@ -28,6 +28,9 @@
 #include <winspool.h>
 #include <limits.h>
 #include <float.h>
+#ifdef __WIN32OS2__
+#include <minivcrt.h>
+#endif
 
 #include "awt.h"
 #include "awt_dlls.h"
@@ -875,7 +878,7 @@ Java_sun_print_Win32PrintService_getDefaultSettings(JNIEnv *env,
           LPWORD papers = (LPWORD)safe_Malloc(numSizes * sizeof(WORD));
           if (papers != NULL &&
               ::DeviceCapabilities(printerName, printerPort,
-                                   DC_PAPERS, papers, NULL) != -1) {
+                                   DC_PAPERS, (LPTSTR)papers, NULL) != -1) {
               int present = 0;
               for (int i=0;i<numSizes;i++) {
                   if (papers[i] == pDevMode->dmPaperSize) {
