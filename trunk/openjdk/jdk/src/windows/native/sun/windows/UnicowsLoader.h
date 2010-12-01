@@ -75,9 +75,15 @@ private:
 
 // Now the platform encoding is Unicode (UTF-16), re-define JNU_ functions
 // to proper JNI functions.
+#ifdef __WIN32OS2__
+#define JNU_NewStringPlatform(env, x) env->NewString(reinterpret_cast<jchar*>(x), static_cast<jsize>(_tcslen(reinterpret_cast<LPTSTR>(x))))
+#define JNU_GetStringPlatformChars(env, x, y) (LPWSTR)env->GetStringChars(x, y)
+#define JNU_ReleaseStringPlatformChars(env, x, y) env->ReleaseStringChars(x, reinterpret_cast<jchar*>(y))
+#else
 #define JNU_NewStringPlatform(env, x) env->NewString(x, static_cast<jsize>(_tcslen(x)))
 #define JNU_GetStringPlatformChars(env, x, y) (LPWSTR)env->GetStringChars(x, y)
 #define JNU_ReleaseStringPlatformChars(env, x, y) env->ReleaseStringChars(x, y)
+#endif
 
 // The following Windows W-APIs are not supported by the MSLU.
 // You need to implement a stub to use these APIs. Or, if it is
@@ -155,6 +161,7 @@ private:
 // call _wsomefunc
 // #define _wsomefunc NotSupportedOnWin9X
 
+#ifndef __WIN32OS2__
 #define _waccess        NotSupportedOnWin9X
 #define _wchmod         NotSupportedOnWin9X
 #define _wfullpath      UnicowsLoader::_wfullpathImpl
@@ -193,6 +200,6 @@ private:
 #define _wspawnve       NotSupportedOnWin9X
 #define _wspawnvp       NotSupportedOnWin9X
 #define _wspawnvpe      NotSupportedOnWin9X
-
+#endif // __WIN32OS2__
 
 #endif // UNICOWSLOADER_H
