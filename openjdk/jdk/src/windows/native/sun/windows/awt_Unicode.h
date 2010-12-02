@@ -33,6 +33,9 @@
 #define AWT_UNICODE_H
 
 #include <malloc.h>
+#ifdef __GNUC__
+#include <alloca.h>
+#endif
 
 // Get a Unicode string copy of a Java String object (Java String aren't
 // null-terminated).

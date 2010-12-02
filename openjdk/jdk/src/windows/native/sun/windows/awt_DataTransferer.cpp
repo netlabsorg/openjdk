@@ -35,6 +35,13 @@
 
 #include "locale_str.h"
 
+#ifndef max
+#define max(a,b) ( (a>b) ? a : b )
+#endif
+#ifndef min
+#define min(a,b) ( (a<b) ? a : b )
+#endif
+
 #define GALLOCFLG (GMEM_DDESHARE | GMEM_MOVEABLE | GMEM_ZEROINIT)
 #define WIN_TO_JAVA_PIXEL(r, g, b) (0xFF000000 | (r) << 16 | (g) << 8  | (b) << 0)
 

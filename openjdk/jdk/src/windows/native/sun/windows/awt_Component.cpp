@@ -27,6 +27,10 @@
 #include <windowsx.h>
 #include <zmouse.h>
 
+#ifdef __WIN32OS2__
+#include <minivcrt.h>
+#endif
+
 #include "jlong.h"
 #include "awt_AWTEvent.h"
 #include "awt_Component.h"
@@ -70,7 +74,9 @@
 // Begin -- Win32 SDK include files
 #include <tchar.h>
 #include <imm.h>
+#ifndef __WIN32OS2__
 #include <ime.h>
+#endif
 // End -- Win32 SDK include files
 
 #ifndef GET_KEYSTATE_WPARAM     // defined for (_WIN32_WINNT >= 0x0400)
@@ -82,7 +88,7 @@
 #endif
 
 // <XXX> <!-- TEMPORARY HACK TO TEST AGAINST OLD VC INLCUDES -->
-#if !defined(__int3264)
+#if !defined(__int3264) && !defined(__WIN32OS2__)
 #define GetWindowLongPtr GetWindowLong
 #define SetWindowLongPtr SetWindowLong
 #define GWLP_USERDATA GWL_USERDATA
@@ -3076,12 +3082,14 @@ KeyMapEntry keyMapTable[] = {
     {java_awt_event_KeyEvent_VK_CONVERT,          VK_CONVERT},
     {java_awt_event_KeyEvent_VK_NONCONVERT,       VK_NONCONVERT},
     {java_awt_event_KeyEvent_VK_INPUT_METHOD_ON_OFF, VK_KANJI},
+#ifndef __WIN32OS2__
     {java_awt_event_KeyEvent_VK_ALPHANUMERIC,     VK_DBE_ALPHANUMERIC},
     {java_awt_event_KeyEvent_VK_KATAKANA,         VK_DBE_KATAKANA},
     {java_awt_event_KeyEvent_VK_HIRAGANA,         VK_DBE_HIRAGANA},
     {java_awt_event_KeyEvent_VK_FULL_WIDTH,       VK_DBE_DBCSCHAR},
     {java_awt_event_KeyEvent_VK_HALF_WIDTH,       VK_DBE_SBCSCHAR},
     {java_awt_event_KeyEvent_VK_ROMAN_CHARACTERS, VK_DBE_ROMAN},
+#endif
 
     {java_awt_event_KeyEvent_VK_UNDEFINED,        0}
 };
@@ -3327,10 +3335,12 @@ void AwtComponent::JavaKeyToWindowsKey(UINT javaKey,
             *windowsKey = VK_CONVERT;
             *modifiers = java_awt_event_InputEvent_SHIFT_DOWN_MASK;
             return;
+#ifndef __WIN32OS2__
         case java_awt_event_KeyEvent_VK_CODE_INPUT:
             *windowsKey = VK_DBE_ALPHANUMERIC;
             *modifiers = java_awt_event_InputEvent_ALT_DOWN_MASK;
             return;
+#endif
         case java_awt_event_KeyEvent_VK_KANA_LOCK:
             if (isKanaLockAvailable()) {
                 *windowsKey = VK_KANA;
@@ -3397,11 +3407,13 @@ UINT AwtComponent::WindowsKeyToJavaKey(UINT windowsKey, UINT modifiers)
                 return java_awt_event_KeyEvent_VK_PREVIOUS_CANDIDATE;
             }
             break;
+#ifndef __WIN32OS2__
         case VK_DBE_ALPHANUMERIC:
             if ((modifiers & java_awt_event_InputEvent_ALT_DOWN_MASK) != 0) {
                 return java_awt_event_KeyEvent_VK_CODE_INPUT;
             }
             break;
+#endif
         case VK_KANA:
             if (isKanaLockAvailable()) {
                 return java_awt_event_KeyEvent_VK_KANA_LOCK;
@@ -3867,7 +3879,7 @@ void AwtComponent::SetCompositionWindow(RECT& r)
     if (hIMC == NULL) {
         return;
     }
-    COMPOSITIONFORM cf = {CFS_POINT, {0, r.bottom}, NULL};
+    COMPOSITIONFORM cf = {CFS_POINT, {0, r.bottom}, {0,0,0,0}};
     // Place the composition window right below the client Window
     ImmSetCompositionWindow(hIMC, &cf);
 }
@@ -5334,7 +5346,7 @@ void AwtComponent::Invalidate(RECT* r)
 
 void AwtComponent::BeginValidate()
 {
-    DASSERT(m_validationNestCount >= 0 &&
+    DASSERT(/*m_validationNestCount >= 0 &&*/
            m_validationNestCount < 1000); // sanity check
 
     if (m_validationNestCount == 0) {
@@ -6731,7 +6743,7 @@ JNIEXPORT jboolean JNICALL Java_sun_awt_windows_WComponentPeer__1requestFocus
     rfs->time = time;
     rfs->cause = env->NewGlobalRef(cause);
 
-    return (jboolean)AwtToolkit::GetInstance().SyncCall(
+    return (jboolean)(bool)AwtToolkit::GetInstance().SyncCall(
         (void*(*)(void*))AwtComponent::_RequestFocus, rfs);
     // global refs and rfs are deleted in _RequestFocus
 
@@ -6918,7 +6930,7 @@ Java_sun_awt_windows_WComponentPeer_nativeHandlesWheelScrolling (JNIEnv* env,
 {
     TRY;
 
-    return (jboolean)AwtToolkit::GetInstance().SyncCall(
+    return (jboolean)(bool)AwtToolkit::GetInstance().SyncCall(
         (void *(*)(void *))AwtComponent::_NativeHandlesWheelScrolling,
         env->NewGlobalRef(self));
     // global ref is deleted in _NativeHandlesWheelScrolling
@@ -6939,7 +6951,7 @@ Java_sun_awt_windows_WComponentPeer_isObscured(JNIEnv* env,
 
     jobject selfGlobalRef = env->NewGlobalRef(self);
 
-    return (jboolean)AwtToolkit::GetInstance().SyncCall(
+    return (jboolean)(bool)AwtToolkit::GetInstance().SyncCall(
         (void*(*)(void*))AwtComponent::_IsObscured,
         (void *)selfGlobalRef);
     // selfGlobalRef is deleted in _IsObscured

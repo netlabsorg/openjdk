@@ -76,7 +76,7 @@ public:
     virtual void ReleaseDragCapture(UINT flags);
 
     BOOL ActMouseMessage(MSG * pMsg);
-    INLINE BOOL AwtChoice::IsChoiceOpened() {return SendMessage(CB_GETDROPPEDSTATE, 0, 0);}
+    INLINE BOOL IsChoiceOpened() {return SendMessage(CB_GETDROPPEDSTATE, 0, 0);}
 
     static BOOL mouseCapture;
     static BOOL skipNextMouseUp;
