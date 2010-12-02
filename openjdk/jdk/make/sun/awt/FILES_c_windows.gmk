@@ -126,6 +126,9 @@ FILES_cpp = \
 	dxCapabilities.cpp \
 	dxInit.cpp \
 	RegistryKey.cpp \
+	
+ifndef OS2_TEMP # D3D
+FILES_cpp += \
 	D3DBlitLoops.cpp \
 	D3DContext.cpp \
 	D3DMaskFill.cpp \
@@ -134,6 +137,9 @@ FILES_cpp = \
 	D3DSurfaceData.cpp \
 	D3DTextRenderer_md.cpp \
 	D3DUtils.cpp \
+
+endif	
+FILES_cpp += \
 	ddrawObject.cpp \
 	awt_AWTEvent.cpp \
 	awt_BitmapUtil.cpp \

@@ -139,7 +139,11 @@ void GetFlagValues(JNIEnv *env, jclass wFlagsClass)
         J2dRlsTraceLn(J2D_TRACE_WARNING,
                       "GetFlagValues: DDraw/D3D is disabled on Windows Vista");
     }
-
+#ifdef __WIN32OS2__
+    SetD3DEnabledFlag(env, FALSE, FALSE);
+    J2dRlsTraceLn(J2D_TRACE_WARNING,
+                  "GetFlagValues: D3D is disabled on OS/2");
+#else
     if (IS_NT && !(IS_WIN2000)) {
         // Do not enable d3d on NT4; d3d is only supported through
         // software on that platform
@@ -156,6 +160,7 @@ void GetFlagValues(JNIEnv *env, jclass wFlagsClass)
         J2dRlsTraceLn(J2D_TRACE_WARNING,
                       "GetFlagValues: D3D is disabled on 64-bit OSs");
     }
+#endif
     if (IS_WIN2000 && !ddLockSet) { // valid for win2k, XP, and future OSs
         // Fix for cursor flicker on win2k and XP (bug 4409306).  The
         // fix is to avoid using DDraw for locking the
