@@ -240,6 +240,10 @@ HRESULT DXObject::EnumDisplayModes(DDrawDisplayMode *dm,
 
 HRESULT DXObject::CreateD3DObject(IDirect3D7 **d3dObject)
 {
+#ifdef __WIN32OS2__
+    J2dTraceLn(J2D_TRACE_INFO, "DXObject::CreateD3DObject: Not implemented");
+    return E_NOTIMPL;
+#else
     HRESULT ddResult = ddObject->QueryInterface(IID_IDirect3D7,
                                                 (void**)d3dObject);
     if (FAILED(ddResult)) {
@@ -248,6 +252,7 @@ HRESULT DXObject::CreateD3DObject(IDirect3D7 **d3dObject)
                                   "query Direct3D7 interface failed");
     }
     return ddResult;
+#endif
 }
 
 /**
@@ -320,7 +325,7 @@ DDraw *DDraw::CreateDDrawObject(GUID *lpGUID, HMONITOR hMonitor) {
     J2dTraceLn(J2D_TRACE_VERBOSE, "  Using DX4");
     IDirectDraw4    *ddObject;
 
-    ddResult = DirectDrawCreate(lpGUID, &ddObject, NULL);
+    ddResult = DirectDrawCreate(lpGUID, (LPDIRECTDRAW*)&ddObject, NULL);
     if (ddResult != DD_OK) {
         DebugPrintDirectDrawError(ddResult,
                                   "DDraw::CreateDDrawObject: "\
