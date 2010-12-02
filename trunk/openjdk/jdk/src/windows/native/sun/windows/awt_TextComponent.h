@@ -33,7 +33,9 @@
 
 #include <ole2.h>
 #include <richedit.h>
+#ifndef __WIN32OS2__
 #include <richole.h>
+#endif
 
 
 /************************************************************************

@@ -76,9 +76,9 @@ private:
 // Now the platform encoding is Unicode (UTF-16), re-define JNU_ functions
 // to proper JNI functions.
 #ifdef __WIN32OS2__
-#define JNU_NewStringPlatform(env, x) env->NewString(reinterpret_cast<jchar*>(x), static_cast<jsize>(_tcslen(reinterpret_cast<LPTSTR>(x))))
+#define JNU_NewStringPlatform(env, x) env->NewString(reinterpret_cast<const jchar*>(x), static_cast<jsize>(_tcslen(reinterpret_cast<LPCTSTR>(x))))
 #define JNU_GetStringPlatformChars(env, x, y) (LPWSTR)env->GetStringChars(x, y)
-#define JNU_ReleaseStringPlatformChars(env, x, y) env->ReleaseStringChars(x, reinterpret_cast<jchar*>(y))
+#define JNU_ReleaseStringPlatformChars(env, x, y) env->ReleaseStringChars(x, reinterpret_cast<const jchar*>(y))
 #else
 #define JNU_NewStringPlatform(env, x) env->NewString(x, static_cast<jsize>(_tcslen(x)))
 #define JNU_GetStringPlatformChars(env, x, y) (LPWSTR)env->GetStringChars(x, y)

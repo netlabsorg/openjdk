@@ -149,7 +149,11 @@ FileDialogHookProc(HWND hdlg, UINT uiMsg, WPARAM wParam, LPARAM lParam)
             break;
         }
         case WM_NOTIFY: {
+#ifdef __WIN32OS2__
+            OFNOTIFY *notifyEx = (OFNOTIFY *)lParam;
+#else
             OFNOTIFYEX *notifyEx = (OFNOTIFYEX *)lParam;
+#endif
             if (notifyEx) {
                 jobject peer = (jobject)(::GetProp(parent, ModalDialogPeerProp));
                 if (notifyEx->hdr.code == CDN_INCLUDEITEM) {
@@ -222,7 +226,7 @@ AwtFileDialog::Show(void *p)
         HWND hwndOwner = awtParent ? awtParent->GetHWnd() : NULL;
 
         if (title == NULL || env->GetStringLength(title)==0) {
-            title = env->NewString(&unicodeChar, 1);
+            title = env->NewString((const jchar*)&unicodeChar, 1);
         }
 
         JavaStringBuffer titleBuffer(env, title);

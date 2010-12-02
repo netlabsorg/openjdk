@@ -35,6 +35,13 @@
 #include "Zmouse.h"
 #include "shellapi.h"
 
+#ifndef max
+#define max(a,b) ( (a>b) ? a : b )
+#endif
+#ifndef min
+#define min(a,b) ( (a<b) ? a : b )
+#endif
+
 // WDesktopProperties fields
 jfieldID AwtDesktopProperties::pDataID = 0;
 jmethodID AwtDesktopProperties::setBooleanPropertyID = 0;
@@ -667,7 +674,7 @@ UINT AwtDesktopProperties::GetIntegerParameter(UINT spi) {
 }
 
 void AwtDesktopProperties::SetStringProperty(LPCTSTR propName, LPTSTR value) {
-    jstring key = JNU_NewStringPlatform(GetEnv(), propName);
+    jstring key = JNU_NewStringPlatform(GetEnv(), (const jchar*)propName);
     GetEnv()->CallVoidMethod(self,
                              AwtDesktopProperties::setStringPropertyID,
                              key, JNU_NewStringPlatform(GetEnv(), value));
@@ -675,7 +682,7 @@ void AwtDesktopProperties::SetStringProperty(LPCTSTR propName, LPTSTR value) {
 }
 
 void AwtDesktopProperties::SetIntegerProperty(LPCTSTR propName, int value) {
-    jstring key = JNU_NewStringPlatform(GetEnv(), propName);
+    jstring key = JNU_NewStringPlatform(GetEnv(), (const jchar*)propName);
     GetEnv()->CallVoidMethod(self,
                              AwtDesktopProperties::setIntegerPropertyID,
                              key, (jint)value);
@@ -683,7 +690,7 @@ void AwtDesktopProperties::SetIntegerProperty(LPCTSTR propName, int value) {
 }
 
 void AwtDesktopProperties::SetBooleanProperty(LPCTSTR propName, BOOL value) {
-    jstring key = JNU_NewStringPlatform(GetEnv(), propName);
+    jstring key = JNU_NewStringPlatform(GetEnv(), (const jchar*)propName);
     GetEnv()->CallVoidMethod(self,
                              AwtDesktopProperties::setBooleanPropertyID,
                              key, value ? JNI_TRUE : JNI_FALSE);
@@ -691,7 +698,7 @@ void AwtDesktopProperties::SetBooleanProperty(LPCTSTR propName, BOOL value) {
 }
 
 void AwtDesktopProperties::SetColorProperty(LPCTSTR propName, DWORD value) {
-    jstring key = JNU_NewStringPlatform(GetEnv(), propName);
+    jstring key = JNU_NewStringPlatform(GetEnv(), (const jchar*)propName);
     GetEnv()->CallVoidMethod(self,
                              AwtDesktopProperties::setColorPropertyID,
                              key, GetRValue(value), GetGValue(value),
@@ -726,7 +733,7 @@ void AwtDesktopProperties::SetFontProperty(HDC dc, int fontID,
                             // Couldn't determine mapping for MS Shell Dlg,
                             // fall back to Microsoft Sans Serif
                             fontName = JNU_NewStringPlatform(GetEnv(),
-                                                    L"Microsoft Sans Serif");
+                                         (const jchar*)L"Microsoft Sans Serif");
                         }
                     }
                     else {
@@ -743,7 +750,7 @@ void AwtDesktopProperties::SetFontProperty(HDC dc, int fontID,
                         style |= java_awt_Font_ITALIC;
                     }
 
-                    jstring key = JNU_NewStringPlatform(GetEnv(), propName);
+                    jstring key = JNU_NewStringPlatform(GetEnv(), (const jchar*)propName);
                     GetEnv()->CallVoidMethod(self,
                               AwtDesktopProperties::setFontPropertyID,
                               key, fontName, style, pointSize);
@@ -784,7 +791,7 @@ void AwtDesktopProperties::SetFontProperty(LPCTSTR propName, const LOGFONT & fon
         style |= java_awt_Font_ITALIC;
     }
 
-    jstring key = JNU_NewStringPlatform(GetEnv(), propName);
+    jstring key = JNU_NewStringPlatform(GetEnv(), (const jchar*)propName);
     GetEnv()->CallVoidMethod(self, AwtDesktopProperties::setFontPropertyID,
                              key, fontName, style, pointSize);
 
@@ -793,8 +800,8 @@ void AwtDesktopProperties::SetFontProperty(LPCTSTR propName, const LOGFONT & fon
 }
 
 void AwtDesktopProperties::SetSoundProperty(LPCTSTR propName, LPCTSTR winEventName) {
-    jstring key = JNU_NewStringPlatform(GetEnv(), propName);
-    jstring event = JNU_NewStringPlatform(GetEnv(), winEventName);
+    jstring key = JNU_NewStringPlatform(GetEnv(), (const jchar*)propName);
+    jstring event = JNU_NewStringPlatform(GetEnv(), (const jchar*)winEventName);
     GetEnv()->CallVoidMethod(self,
                              AwtDesktopProperties::setSoundPropertyID,
                              key, event);
