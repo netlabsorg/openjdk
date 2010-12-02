@@ -506,10 +506,16 @@ POPT = $(_OPT$(ALT_OPT))$(ALT_OPT)
 # Convenient macros
 #
 
-# Prepare $@ target, remove old one and making sure directory exists
+# Prepare $@ target file, remove old one and making sure directory exists
 define prep-target
 $(MKDIR) -p $(@D)
 $(RM) $@
+endef
+
+# Prepare $@ target directory, remove old one and making sure parent exists
+define prep-dir-target
+$(MKDIR) -p $(@D)
+$(RM) -r $@
 endef
 
 # Simple install of $< file to $@
