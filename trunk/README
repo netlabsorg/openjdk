@@ -1,5 +1,7 @@
 OpenJDK 6 for OS/2 and eCS
 
+This document contains information about building the OpenJDK 6 source code on OS/2.
+
 Requirements (draft)
 
 1.  GCC 4.4.4 + WLINK (ftp://ftp.netlabs.org/pub/qt4/tools/gcc-4_4_4-complete-20100712.zip)
