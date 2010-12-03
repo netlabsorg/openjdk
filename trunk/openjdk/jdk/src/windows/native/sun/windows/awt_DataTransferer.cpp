@@ -35,11 +35,8 @@
 
 #include "locale_str.h"
 
-#ifndef max
-#define max(a,b) ( (a>b) ? a : b )
-#endif
-#ifndef min
-#define min(a,b) ( (a<b) ? a : b )
+#ifdef __WIN32OS2__
+#include <minivcrt.h>
 #endif
 
 #define GALLOCFLG (GMEM_DDESHARE | GMEM_MOVEABLE | GMEM_ZEROINIT)

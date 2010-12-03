@@ -38,6 +38,7 @@ static char* AWTPANEL_RESTACK_MSG_1 = "Peers array is null";
 static char* AWTPANEL_RESTACK_MSG_2 = "Peer null in JNI";
 static char* AWTPANEL_RESTACK_MSG_3 = "Native resources unavailable";
 static char* AWTPANEL_RESTACK_MSG_4 = "Child peer is null";
+static char* AWTPANEL_RESTACK_MSG_5 = "Allocation error";
 
 void* AwtPanel::Restack(void * param) {
     TRY;
@@ -94,7 +95,7 @@ void* AwtPanel::Restack(void * param) {
     env->DeleteGlobalRef(peers);
     env->DeleteLocalRef(self);
 
-    CATCH_BAD_ALLOC_RET("Allocation error");
+    CATCH_BAD_ALLOC_RET(AWTPANEL_RESTACK_MSG_5);
     return NULL;
 }
 

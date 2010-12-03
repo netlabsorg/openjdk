@@ -32,6 +32,10 @@
 #include "awt_Unicode.h"
 #include "awt_Window.h"
 
+#ifdef __WIN32OS2__
+#include <minivcrt.h>
+#endif
+
 /* IMPORTANT! Read the README.JNI file for notes on JNI converted AWT code.
  */
 
@@ -190,9 +194,11 @@ AwtTextArea* AwtTextArea::Create(jobject peer, jobject parent)
           /* Unregister RichEdit built-in drop target. */
           VERIFY(::RevokeDragDrop(c->GetHWnd()) != DRAGDROP_E_INVALIDHWND);
 
+#ifndef __WIN32OS2__
           /* To enforce CF_TEXT format for paste operations. */
           VERIFY(c->SendMessage(EM_SETOLECALLBACK, 0,
                                 (LPARAM)&GetOleCallback()));
+#endif
 
           c->SendMessage(EM_SETEVENTMASK, 0, ENM_CHANGE);
         }
@@ -244,7 +250,8 @@ size_t AwtTextArea::CountNewLines(JNIEnv *env, jstring jStr, size_t maxlen)
      */
     size_t length = env->GetStringLength(jStr) + 1;
     WCHAR *string = new WCHAR[length];
-    env->GetStringRegion(jStr, 0, static_cast<jsize>(length - 1), string);
+    env->GetStringRegion(jStr, 0, static_cast<jsize>(length - 1),
+                         reinterpret_cast<jchar*>(string));
     string[length-1] = '\0';
     for (size_t i = 0; i < maxlen && i < length - 1; i++) {
         if (string[i] == L'\n') {
@@ -987,7 +994,7 @@ void AwtTextArea::_ReplaceText(void *param)
       // Bugid 4141477 - Can't use TO_WSTRING here because it uses alloca
       // WCHAR* buffer = TO_WSTRING(text);
       WCHAR *buffer = new WCHAR[length];
-      env->GetStringRegion(text, 0, length-1, buffer);
+      env->GetStringRegion(text, 0, length-1, reinterpret_cast<jchar*>(buffer));
       buffer[length-1] = '\0';
 
       c->CheckLineSeparator(buffer);
@@ -1107,6 +1114,7 @@ Java_sun_awt_windows_WTextAreaPeer_insertText(JNIEnv *env, jobject self,
 } /* extern "C" */
 
 
+#ifndef __WIN32OS2__
 AwtTextArea::OleCallback AwtTextArea::sm_oleCallback;
 
 /************************************************************************
@@ -1238,3 +1246,5 @@ AwtTextArea::OleCallback::GetContextMenu(WORD seltype,
                                               HMENU FAR * lphmenu) {
     return E_NOTIMPL;
 }
+#endif
+

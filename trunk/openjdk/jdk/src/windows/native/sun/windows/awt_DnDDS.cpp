@@ -703,7 +703,7 @@ HRESULT __stdcall AwtDragSource::GetData(FORMATETC __RPC_FAR *pFormatEtc,
 
         LPMETAFILEPICT lpMfpOld = (LPMETAFILEPICT)lpbMfpBuffer;
 
-        HMETAFILEPICT hmfp = ::GlobalAlloc(GALLOCFLG, sizeof(METAFILEPICT));
+        HMETAFILEPICT hmfp = (HMETAFILEPICT)::GlobalAlloc(GALLOCFLG, sizeof(METAFILEPICT));
         if (hmfp == NULL) {
             VERIFY(::DeleteMetaFile(hmf));
             env->ReleasePrimitiveArrayCritical(bytes, (LPVOID)lpbMfpBuffer, JNI_ABORT);

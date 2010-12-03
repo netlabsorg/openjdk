@@ -32,7 +32,11 @@
 // Begin -- Win32 SDK include files
 #include <tchar.h>
 #include <imm.h>
+#ifndef __WIN32OS2__
 #include <ime.h>
+#else
+#include <minivcrt.h>
+#endif
 // End -- Win32 SDK include files
 
 //add for multifont menuitem
@@ -301,7 +305,7 @@ AwtMenuItem::DrawSelf(DRAWITEMSTRUCT& drawInfo)
     * check state of the parent
     */
     AwtMenu* menu = GetMenuContainer();
-    DASSERT(menu != NULL && GetID() >= 0);
+    DASSERT(menu != NULL /*&& GetID() >= 0*/);
 
     //Check whether the MenuItem is disabled.
     BOOL bEnabled = (jboolean)env->GetBooleanField(target,
@@ -614,7 +618,7 @@ void AwtMenuItem::SetLabel(LPCTSTR sb)
     * check parent
     */
     if (menu == NULL) return;
-    DASSERT(menu != NULL && GetID() >= 0);
+    DASSERT(menu != NULL /*&& GetID() >= 0*/);
 
 /*
  * SetMenuItemInfo is replaced by this code for fix bug 4261935
@@ -661,7 +665,7 @@ void AwtMenuItem::Enable(BOOL isEnabled)
     */
     if (menu == NULL) return;
     isEnabled = isEnabled && !menu->IsDisabledAndPopup();
-    DASSERT(menu != NULL && GetID() >= 0);
+    DASSERT(menu != NULL /*&& GetID() >= 0*/);
     VERIFY(::EnableMenuItem(menu->GetHMenu(), GetID(),
                             MF_BYCOMMAND | (isEnabled ? MF_ENABLED : MF_GRAYED))
            != 0xFFFFFFFF);
@@ -679,7 +683,7 @@ void AwtMenuItem::SetState(BOOL isChecked)
     * check parent
     */
     if (menu == NULL) return;
-    DASSERT(menu != NULL && GetID() >= 0);
+    DASSERT(menu != NULL /*&& GetID() >= 0*/);
     VERIFY(::CheckMenuItem(menu->GetHMenu(), GetID(),
                            MF_BYCOMMAND | (isChecked ? MF_CHECKED : MF_UNCHECKED))
            != 0xFFFFFFFF);

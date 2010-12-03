@@ -228,6 +228,9 @@ void AwtRobot::GetRGBPixels(jint x, jint y, jint width, jint height, jintArray p
     // copy screen image to offscreen bitmap
     // CAPTUREBLT flag is required to capture WS_EX_LAYERED windows' contents
     // correctly on Win2K/XP
+#ifdef __WIN32OS2__
+    #define CAPTUREBLT 0
+#endif
     VERIFY(::BitBlt(hdcMem, 0, 0, width, height, hdcScreen, x, y,
                                                 SRCCOPY|CAPTUREBLT) != 0);
 

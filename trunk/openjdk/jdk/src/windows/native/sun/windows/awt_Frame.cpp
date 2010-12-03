@@ -1256,9 +1256,10 @@ void AwtFrame::_SetState(void *param)
     AwtFrame *f = NULL;
 
     PDATA pData;
+    HWND hwnd;
     JNI_CHECK_PEER_GOTO(self, ret);
     f = (AwtFrame *)pData;
-    HWND hwnd = f->GetHWnd();
+    hwnd = f->GetHWnd();
     if (::IsWindow(hwnd))
     {
         DASSERT(!IsBadReadPtr(f, sizeof(AwtFrame)));

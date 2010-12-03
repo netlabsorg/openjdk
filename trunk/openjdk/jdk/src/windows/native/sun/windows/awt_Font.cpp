@@ -38,6 +38,11 @@
 #include "awt_Component.h"
 #include "Disposer.h"
 
+#ifdef __WIN32OS2__
+#include <minivcrt.h>
+#include <wctype.h>
+#endif
+
 /* IMPORTANT! Read the README.JNI file for notes on JNI converted AWT code.
  */
 
