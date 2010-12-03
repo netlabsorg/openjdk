@@ -35,7 +35,7 @@ LPWSTR JNI_J2WHelper1(JNIEnv *env, LPWSTR lpwstr, jstring jstr) {
 
     int len = env->GetStringLength(jstr);
 
-    env->GetStringRegion(jstr, 0, len, lpwstr);
+    env->GetStringRegion(jstr, 0, len, reinterpret_cast<jchar*>(lpwstr));
     lpwstr[len] = '\0';
 
     return lpwstr;

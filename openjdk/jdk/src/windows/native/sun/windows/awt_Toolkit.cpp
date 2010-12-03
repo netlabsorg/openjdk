@@ -65,6 +65,10 @@
 #include <java_awt_event_InputMethodEvent.h>
 #include <java_awt_peer_ComponentPeer.h>
 
+#ifdef __WIN32OS2__
+#include <minivcrt.h>
+#endif
+
 extern void initScreens(JNIEnv *env);
 extern "C" void awt_dnd_initialize();
 extern "C" void awt_dnd_uninitialize();
@@ -267,7 +271,7 @@ extern "C" BOOL APIENTRY DllMain(HANDLE hInstance, DWORD ul_reason_for_call,
 #ifdef DEBUG
         DTrace_DisableMutex();
         DMem_DisableMutex();
-#endif DEBUG
+#endif // DEBUG
         // Release any resources that have not yet been released
         // Note that releasing DirectX objects is necessary for some
         // failure situations on win9x (such as the primary remaining

@@ -33,7 +33,9 @@
 
 #include <ole2.h>
 #include <richedit.h>
+#ifndef __WIN32OS2__
 #include <richole.h>
+#endif
 
 /************************************************************************
  * AwtTextArea class
@@ -41,8 +43,10 @@
 
 class AwtTextArea : public AwtTextComponent {
 
+#ifndef __WIN32OS2__
     // inner classes
     class OleCallback;
+#endif
 
 public:
 
@@ -91,7 +95,9 @@ public:
     static void _ReplaceText(void *param);
 
 protected:
+#ifndef __WIN32OS2__
     INLINE static OleCallback& GetOleCallback() { return sm_oleCallback; }
+#endif
     void EditSetSel(CHARRANGE &cr);
     void EditGetSel(CHARRANGE &cr);
     LONG EditGetCharFromPos(POINT& pt);
@@ -118,13 +124,14 @@ protected:
     LONG    m_lVDeltaAccum;
 
 
+#ifndef __WIN32OS2__
     static OleCallback sm_oleCallback;
 
     /*****************************************************************
      * Inner class OleCallback declaration.
      */
 
-    class AwtTextArea::OleCallback : public IRichEditOleCallback {
+    class OleCallback : public IRichEditOleCallback {
     public:
         OleCallback();
 
@@ -150,7 +157,7 @@ protected:
     private:
         ULONG             m_refs; // Reference count
     };
-
+#endif
 };
 
 #endif /* AWT_TEXTAREA_H */

@@ -44,6 +44,10 @@
 #include <jlong_md.h>
 #include <float.h>
 
+#ifdef __WIN32OS2__
+#include <minivcrt.h>
+#endif
+
 #define DEBUG_PRINTING  0
 
 /* Round 'num' to the nearest integer and return
@@ -59,6 +63,8 @@
 /************************************************************************
  * WPrintJob native methods
  */
+
+jfieldID AwtPrintDialog::pageID;
 
 extern "C" {
 
@@ -207,8 +213,6 @@ static const double POINTS_TO_HIMETRIC = (2540.0 / 72.0);
  * (10th of an millimeter) units.
  */
 static const double POINTS_TO_LOMETRIC = (254.0 / 72.0);
-
-jfieldID AwtPrintDialog::pageID;
 
 
 /*** Private Macros ***/
@@ -2280,7 +2284,7 @@ JNIEXPORT jint JNICALL Java_sun_awt_windows_WPrinterJob_getGDIAdvance
  */
 JNIEXPORT void JNICALL Java_sun_awt_windows_WPrinterJob_textOut
 (JNIEnv *env, jobject self, jlong printDC, jstring text, jint strLen,
-     boolean glyphCodes, jfloat x, jfloat y, jfloatArray positions)
+     jboolean glyphCodes, jfloat x, jfloat y, jfloatArray positions)
 {
 
     long posX = ROUND_TO_LONG(x);

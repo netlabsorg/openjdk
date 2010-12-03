@@ -43,7 +43,7 @@
 #include <java_awt_event_ComponentEvent.h>
 #include "sun_awt_windows_WCanvasPeer.h"
 
-#if !defined(__int3264)
+#if !defined(__int3264) && !defined(__WIN32OS2__)
 typedef __int32 LONG_PTR;
 #endif // __int3264
 
@@ -57,6 +57,9 @@ const int COMBOBOX_POPUP = 5;
 const int TYPES_COUNT = 6;
 jint windowTYPES[TYPES_COUNT];
 
+#ifdef __WIN32OS2__
+#include <minivcrt.h>
+#endif
 
 /* IMPORTANT! Read the README.JNI file for notes on JNI converted AWT code.
  */
@@ -1499,6 +1502,7 @@ void AwtWindow::SetAndActivateModalBlocker(HWND window, HWND blocker) {
 }
 
 void AwtWindow::FlashWindowEx(HWND hWnd, UINT count, DWORD timeout, DWORD flags) {
+#ifndef __WIN32OS2__
     FLASHWINFO fi;
     fi.cbSize = sizeof(fi);
     fi.hwnd = hWnd;
@@ -1506,6 +1510,7 @@ void AwtWindow::FlashWindowEx(HWND hWnd, UINT count, DWORD timeout, DWORD flags)
     fi.uCount = count;
     fi.dwTimeout = timeout;
     ::FlashWindowEx(&fi);
+#endif
 }
 
 void AwtWindow::_ToFront(void *param)
@@ -1671,7 +1676,7 @@ void AwtWindow::_SetTitle(void *param)
     {
         int length = env->GetStringLength(title);
         WCHAR *buffer = new WCHAR[length + 1];
-        env->GetStringRegion(title, 0, length, buffer);
+        env->GetStringRegion(title, 0, length, reinterpret_cast<jchar*>(buffer));
         buffer[length] = L'\0';
         VERIFY(::SetWindowTextW(w->GetHWnd(), buffer));
         delete[] buffer;
@@ -2042,9 +2047,10 @@ void AwtWindow::_ModalDisable(void *param)
 
     AwtWindow *window = NULL;
     HWND windowHWnd = 0;
+    PDATA pData;
 
     JNI_CHECK_NULL_GOTO(self, "peer", ret);
-    PDATA pData = JNI_GET_PDATA(self);
+    pData = JNI_GET_PDATA(self);
     if (pData == NULL) {
         env->DeleteGlobalRef(self);
         delete mds;
@@ -2071,9 +2077,10 @@ void AwtWindow::_ModalEnable(void *param)
 
     AwtWindow *window = NULL;
     HWND windowHWnd = 0;
+    PDATA pData;
 
     JNI_CHECK_NULL_GOTO(self, "peer", ret);
-    PDATA pData = JNI_GET_PDATA(self);
+    pData = JNI_GET_PDATA(self);
     if (pData == NULL) {
         env->DeleteGlobalRef(self);
         return;

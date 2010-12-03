@@ -187,7 +187,7 @@ jstring AwtInputTextInfor::MakeJavaString(JNIEnv* env, LPWSTR lpStrW, int cStrW)
 
     if (env == NULL || lpStrW == NULL || cStrW == 0) return NULL;
 
-    return env->NewString(lpStrW, cStrW);
+    return env->NewString((jchar*)lpStrW, cStrW);
 }
 
 //

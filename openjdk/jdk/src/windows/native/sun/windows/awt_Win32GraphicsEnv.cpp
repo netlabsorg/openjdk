@@ -33,6 +33,10 @@
 #include "WindowsFlags.h"
 #include "dxInit.h"
 
+#ifdef __WIN32OS2__
+#include <minivcrt.h>
+#endif
+
 void initScreens(JNIEnv *env) {
 
     if (!Devices::UpdateInstance(env)) {

@@ -150,10 +150,19 @@ FileDialogHookProc(HWND hdlg, UINT uiMsg, WPARAM wParam, LPARAM lParam)
         }
         case WM_NOTIFY: {
 #ifdef __WIN32OS2__
-            OFNOTIFY *notifyEx = (OFNOTIFY *)lParam;
+            OFNOTIFY *notify = (OFNOTIFY *)lParam;
+            if (notify) {
+                jobject peer = (jobject)(::GetProp(parent, ModalDialogPeerProp));
+                if (notify->hdr.code == CDN_FILEOK) {
+                    // This notification is sent when user selects some file and presses
+                    // OK button; it is not sent when no file is selected. So it's time
+                    // to unblock all the windows blocked by this dialog as it will
+                    // be closed soon
+                    env->CallVoidMethod(peer, AwtFileDialog::setHWndMID, (jlong)0);
+                }
+            }
 #else
             OFNOTIFYEX *notifyEx = (OFNOTIFYEX *)lParam;
-#endif
             if (notifyEx) {
                 jobject peer = (jobject)(::GetProp(parent, ModalDialogPeerProp));
                 if (notifyEx->hdr.code == CDN_INCLUDEITEM) {
@@ -177,6 +186,7 @@ FileDialogHookProc(HWND hdlg, UINT uiMsg, WPARAM wParam, LPARAM lParam)
                     env->CallVoidMethod(peer, AwtFileDialog::setHWndMID, (jlong)0);
                 }
             }
+#endif
             break;
         }
     }

@@ -197,16 +197,16 @@ void AwtList::Reshape(int x, int y, int w, int h)
 {
     AwtComponent::Reshape(x, y, w, h);
 
-/*
+#if 0
     HWND hList = GetListHandle();
     if (hList != NULL) {
         long flags = SWP_NOACTIVATE | SWP_NOZORDER | SWP_NOCOPYBITS;
         /*
          * Fix for bug 4046446.
-         * /
+         */
         SetWindowPos(hList, 0, 0, 0, w, h, flags);
     }
-*/
+#endif
 }
 
 //Netscape : Override the AwtComponent method so we can set the item height
@@ -1092,7 +1092,7 @@ Java_sun_awt_windows_WListPeer_isSelected(JNIEnv *env, jobject self,
     ses->list = env->NewGlobalRef(self);
     ses->index = index;
 
-    return (jboolean)AwtToolkit::GetInstance().SyncCall(
+    return (jboolean)(bool)AwtToolkit::GetInstance().SyncCall(
         (void *(*)(void *))AwtList::_IsSelected, ses);
     // global ref and ses are deleted in _IsSelected
 

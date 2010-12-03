@@ -31,6 +31,10 @@
 #include <float.h>
 #include <math.h>
 
+#ifdef __WIN32OS2__
+#include <minivcrt.h>
+#endif
+
 #define ROUNDTOINT(x) ((int)((x)+0.5))
 static const int DEFAULT_RES = 72;
 static const double TENTHS_MM_TO_POINTS = 3.527777778;
@@ -946,9 +950,9 @@ BOOL AwtPrintControl::UpdateAttributes(JNIEnv *env,
     if (pd.hDevNames != NULL) {
         DEVNAMES *devnames = (DEVNAMES*)::GlobalLock(pd.hDevNames);
         DASSERT(!IsBadReadPtr(devnames, sizeof(DEVNAMES)));
-        LPTSTR lpcNames = (LPTSTR)devnames;
-        LPTSTR pbuf = (_tcslen(lpcNames + devnames->wDeviceOffset) == 0 ?
-                      TEXT("") : lpcNames + devnames->wDeviceOffset);
+        LPCTSTR lpcNames = (LPTSTR)devnames;
+        LPCTSTR pbuf = (_tcslen(lpcNames + devnames->wDeviceOffset) == 0 ?
+                        TEXT("") : lpcNames + devnames->wDeviceOffset);
         if (pbuf != NULL) {
             jstring jstr = JNU_NewStringPlatform(env, pbuf);
             env->CallVoidMethod(printCtrl,
