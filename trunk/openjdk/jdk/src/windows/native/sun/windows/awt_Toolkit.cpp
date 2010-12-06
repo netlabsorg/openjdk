@@ -406,8 +406,10 @@ BOOL AwtToolkit::Initialize(BOOL localPump) {
     /* Register this toolkit's helper window */
     VERIFY(tk.RegisterClass() != NULL);
 
+#ifndef __WIN32OS2__
     // Set up operator new/malloc out of memory handler.
     NewHandler::init();
+#endif
 
         //\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
         // Bugs 4032109, 4047966, and 4071991 to fix AWT

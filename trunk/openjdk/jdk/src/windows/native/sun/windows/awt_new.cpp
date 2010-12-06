@@ -23,7 +23,9 @@
  * have any questions.
  */
 
+#ifndef __WIN32OS2__
 #include <new.h>
+#endif
 #include <stdio.h>
 #include "awt_new.h"
 #include "awt_Toolkit.h"
@@ -46,6 +48,7 @@
   static DWORD thread_seeded = TLS_OUT_OF_INDEXES;
 #endif
 
+#ifndef __WIN32OS2__
 
 void
 NewHandler::init() {
@@ -77,6 +80,8 @@ NewHandler::handler(size_t) {
     fprintf(stderr, "java.lang.OutOfMemoryError\n");
     return FALSE;
 }
+
+#endif /* !__WIN32OS2__ */
 
 // These three functions throw std::bad_alloc in an out of memory condition
 // instead of returning 0. safe_Realloc will return 0 if memblock is not
