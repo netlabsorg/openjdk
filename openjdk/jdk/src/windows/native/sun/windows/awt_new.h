@@ -28,6 +28,7 @@
 
 #include "awt.h"
 
+#ifndef __WIN32OS2__
 
 // This class is used for establishing and implementing an operator new/
 // malloc out of memory handler. The handler attempts to correct the
@@ -43,5 +44,7 @@ private:
     static int handler(size_t);
 
 };
+
+#endif /* !__WIN32OS2__ */
 
 #endif /* AWT_NEW_H */
