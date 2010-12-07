@@ -262,7 +262,11 @@ DDraw::DDraw(DXObject *dxObject) {
     J2dTraceLn(J2D_TRACE_INFO, "DDraw::DDraw");
     lpPrimary = NULL;
     d3dContext = NULL;
+#ifdef __WIN32OS2__
+    deviceUseD3D = FALSE;
+#else
     deviceUseD3D = useD3D;
+#endif
     this->dxObject = dxObject;
 }
 
@@ -547,6 +551,7 @@ DDrawSurface* DDraw::CreateDDPrimarySurface(DWORD backBufferCount)
 void
 DDraw::InitD3DContext()
 {
+#ifndef __WIN32OS2__
     J2dTraceLn(J2D_TRACE_INFO, "DDraw::InitD3DContext");
     // note: the first time the context initialization fails,
     // deviceUseD3D is set to FALSE, and we never attempt to
@@ -561,15 +566,18 @@ DDraw::InitD3DContext()
             d3dContext->CreateD3DDevice();
         }
     }
+#endif
 }
 
 void
 DDraw::ReleaseD3DContext()
 {
+#ifndef __WIN32OS2__
     J2dTraceLn(J2D_TRACE_INFO, "DDraw::ReleaseD3DContext");
     if (d3dContext != NULL) {
         d3dContext->Release3DDevice();
     }
+#endif
 }
 
 DDrawClipper* DDraw::CreateDDClipper() {
@@ -1053,10 +1061,12 @@ HRESULT DDrawSurface::Blt(LPRECT destRect, DDrawSurface* pSrc,
 }
 
 void DDrawSurface::FlushD3DContext(BOOL bForce) {
+#ifndef __WIN32OS2__
     D3DContext *d3dContext = ddObject->GetD3dContext();
     if (d3dContext) {
         d3dContext->FlushD3DQueueForTarget(bForce ? NULL : this);
     }
+#endif
 }
 
 HRESULT DDrawSurface::Flip(DDrawSurface* pDest, DWORD dwFlags) {

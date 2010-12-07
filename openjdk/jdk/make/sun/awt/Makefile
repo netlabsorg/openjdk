@@ -320,12 +320,11 @@ ifeq ($(PLATFORM), os2)
 OTHER_LDLIBS = -lkernel32.lib -ladvapi32.lib -luser32.lib \
                -lgdi32.lib -lshell32.lib -lcomdlg32.lib \
                -lversion.lib -lmpr.lib -lrasapi32.lib \
-               -lwinmm.lib -lwinspool.lib -lvfw32.lib \
+               -lwinmm.lib -lwinspool.lib \
                -lsecur32.lib -loleacc.lib -loledlg.lib \
-               -lsensapi.lib \
                -lkernel32.lib -luser32.lib -lgdi32.lib -lwinspool.lib \
-               -limm32.lib -lole32.lib -luuid.lib $(JVMLIB) \
-               -lshell32.lib
+               -limm32os2.lib -lole32.lib -lguidlib.lib $(JVMLIB) \
+               -lddraw.lib -lshell32.lib
 
 clean:: awt.clean
 

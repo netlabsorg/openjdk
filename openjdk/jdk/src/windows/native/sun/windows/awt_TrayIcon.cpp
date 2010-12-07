@@ -733,9 +733,9 @@ void AwtTrayIcon::_SetToolTip(void *param)
         goto ret;
     }
 
-    tooltipStr = env->GetStringChars(jtooltip, (jboolean *)NULL);
+    tooltipStr = reinterpret_cast<LPCTSTR>(env->GetStringChars(jtooltip, (jboolean *)NULL));
     trayIcon->SetToolTip(tooltipStr);
-    env->ReleaseStringChars(jtooltip, tooltipStr);
+    env->ReleaseStringChars(jtooltip, reinterpret_cast<const jchar *>(tooltipStr));
 ret:
     env->DeleteGlobalRef(self);
     env->DeleteGlobalRef(jtooltip);
@@ -776,10 +776,11 @@ void AwtTrayIcon::_UpdateIcon(void *param)
     AwtTrayIcon *trayIcon = NULL;
 
     PDATA pData;
+    BOOL result;
     JNI_CHECK_PEER_GOTO(self, ret);
     trayIcon = (AwtTrayIcon *)pData;
 
-    BOOL result = trayIcon->SendTrayMessage(jupdate == JNI_TRUE ? NIM_MODIFY : NIM_ADD);
+    result = trayIcon->SendTrayMessage(jupdate == JNI_TRUE ? NIM_MODIFY : NIM_ADD);
     // 6270114: Instructs the taskbar to behave according to the Shell version 5.0
     if (result && jupdate == JNI_FALSE) {
         trayIcon->SendTrayMessage(AWT_NIM_SETVERSION);
@@ -855,15 +856,15 @@ void AwtTrayIcon::_DisplayMessage(void *param)
     JNI_CHECK_PEER_GOTO(self, ret);
     trayIcon = (AwtTrayIcon *)pData;
 
-    captionStr = env->GetStringChars(jcaption, (jboolean *)NULL);
-    textStr = env->GetStringChars(jtext, (jboolean *)NULL);
-    msgTypeStr = env->GetStringChars(jmsgType, (jboolean *)NULL);
+    captionStr = reinterpret_cast<LPCTSTR>(env->GetStringChars(jcaption, (jboolean *)NULL));
+    textStr = reinterpret_cast<LPCTSTR>(env->GetStringChars(jtext, (jboolean *)NULL));
+    msgTypeStr = reinterpret_cast<LPCTSTR>(env->GetStringChars(jmsgType, (jboolean *)NULL));
 
     trayIcon->DisplayMessage(captionStr, textStr, msgTypeStr);
 
-    env->ReleaseStringChars(jcaption, captionStr);
-    env->ReleaseStringChars(jtext, textStr);
-    env->ReleaseStringChars(jmsgType, msgTypeStr);
+    env->ReleaseStringChars(jcaption, reinterpret_cast<const jchar *>(captionStr));
+    env->ReleaseStringChars(jtext, reinterpret_cast<const jchar *>(textStr));
+    env->ReleaseStringChars(jmsgType, reinterpret_cast<const jchar *>(msgTypeStr));
 ret:
     env->DeleteGlobalRef(self);
     env->DeleteGlobalRef(jcaption);
