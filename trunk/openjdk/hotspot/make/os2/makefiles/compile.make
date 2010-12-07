@@ -76,4 +76,4 @@ DEBUG_LINK_FLAGS        += -L$(ALT_ODINSDK_PATH)/lib/Debug -L$(ALT_ODINSDK_PATH)
 LINK_FLAGS  += -lkernel32.lib -luser32.lib -lgdi32.lib -lwinspool.lib \
                -lcomdlg32.lib -ladvapi32.lib -lshell32.lib -lole32.lib \
                -loleaut32.lib -lWsock32.lib -lwinmm.lib \
-               -lemxlibwrap0.lib -lemxlibwrap1.lib
+               -llibwrap0.lib -llibwrap1.lib
