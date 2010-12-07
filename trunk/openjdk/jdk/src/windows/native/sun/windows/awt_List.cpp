@@ -687,17 +687,17 @@ void AwtList::_AddItems(void *param)
             l->SendListMessage(WM_SETREDRAW, (WPARAM)FALSE, 0);
             for (jsize i=0; i < itemCount; i++)
             {
-                LPTSTR itemPtr = NULL;
+                LPCTSTR itemPtr = NULL;
                 jstring item = (jstring)env->GetObjectArrayElement(items, i);
                 JNI_CHECK_NULL_GOTO(item, "null item", next_item);
-                itemPtr = (LPTSTR)JNU_GetStringPlatformChars(env, item, 0);
+                itemPtr = jsafe_cast<LPCTSTR>(JNU_GetStringPlatformChars(env, item, 0));
                 if (itemPtr == NULL)
                 {
                     badAlloc = 1;
                 }
                 else
                 {
-                    l->InsertString(index+i, itemPtr);
+                    l->InsertString(index+i, const_cast<LPTSTR>(itemPtr));
                     JNU_ReleaseStringPlatformChars(env, item, itemPtr);
                 }
                 env->DeleteLocalRef(item);

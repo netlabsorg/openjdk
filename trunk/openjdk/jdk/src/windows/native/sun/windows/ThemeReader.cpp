@@ -250,7 +250,7 @@ static void assert_result(HRESULT hres, JNIEnv *env) {
                     NULL,
                     lastError,
                     MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                    (LPSTR)&msgBuffer,
+                    reinterpret_cast<LPSTR>(&msgBuffer),
                     // it's an output parameter when allocate buffer is used
                     0,
                     NULL);
@@ -270,7 +270,7 @@ static void assert_result(HRESULT hres, JNIEnv *env) {
 JNIEXPORT jlong JNICALL Java_sun_awt_windows_ThemeReader_openTheme
 (JNIEnv *env, jclass klass, jstring widget) {
 
-    LPCTSTR str = (LPCTSTR) JNU_GetStringPlatformChars(env, widget, NULL);
+    LPCTSTR str = jsafe_cast<LPCTSTR>(JNU_GetStringPlatformChars(env, widget, NULL));
     // We need to open the Theme on a Window that will stick around.
     // The best one for that purpose is the Toolkit window.
     HTHEME htheme = OpenThemeData(AwtToolkit::GetInstance().GetHWnd(), str);
@@ -288,7 +288,7 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_ThemeReader_setWindowTheme
 
     LPCTSTR str = NULL;
     if (subAppName != NULL) {
-        str = (LPCTSTR) JNU_GetStringPlatformChars(env, subAppName, NULL);
+        str = jsafe_cast<LPCTSTR>(JNU_GetStringPlatformChars(env, subAppName, NULL));
     }
     // We need to set the Window theme on the same theme that we opened it with.
     HRESULT hres = SetWindowTheme(AwtToolkit::GetInstance().GetHWnd(), str, NULL);

@@ -180,15 +180,15 @@ static jstring jstringFromSTRRET(JNIEnv* env, LPITEMIDLIST pidl, STRRET* pStrret
             return JNU_NewStringPlatform(env,
                                          (CHAR*)pidl + pStrret->uOffset);
         case STRRET_WSTR :
-            return env->NewString(reinterpret_cast<const jchar*>(pStrret->pOleStr),
+            return env->NewString(jsafe_cast<const jchar*>(pStrret->pOleStr),
                 static_cast<jsize>(wcslen(pStrret->pOleStr)));
     }
     return NULL;
 }
 // restoring the original definition
 #define JNU_NewStringPlatform(env, x) \
-    env->NewString(reinterpret_cast<const jchar*>(x), \
-        static_cast<jsize>(_tcslen(reinterpret_cast<const WCHAR*>(x))))
+    env->NewString(jsafe_cast<const jchar*>(x), \
+        static_cast<jsize>(_tcslen(jsafe_cast<const WCHAR*>(x))))
 
 /*
  * Class:     sun_awt_shell_Win32ShellFolder2
@@ -728,10 +728,10 @@ JNIEXPORT jlong JNICALL Java_sun_awt_shell_Win32ShellFolder2_parseDisplayName0
     int nLength = env->GetStringLength(jname);
     jchar* wszPath = new jchar[nLength + 1];
     const jchar* strPath = env->GetStringChars(jname, NULL);
-    wcsncpy(reinterpret_cast<wchar_t*>(wszPath), reinterpret_cast<const wchar_t*>(strPath), nLength);
+    wcsncpy(jsafe_cast<wchar_t*>(wszPath), jsafe_cast<const wchar_t*>(strPath), nLength);
     wszPath[nLength] = 0;
     HRESULT res = pIShellFolder->ParseDisplayName(NULL, NULL,
-                        reinterpret_cast<WCHAR*>(wszPath), NULL, &pIDL, NULL);
+                        jsafe_cast<WCHAR*>(wszPath), NULL, &pIDL, NULL);
     if (res != S_OK) {
         JNU_ThrowIOException(env, "Could not parse name");
         pIDL = 0;
@@ -774,7 +774,7 @@ JNIEXPORT jstring JNICALL Java_sun_awt_shell_Win32ShellFolder2_getFolderType
     (JNIEnv* env, jclass cls, jlong pIDL)
 {
     SHFILEINFO fileInfo;
-    if (fn_SHGetFileInfo((LPCTSTR)pIDL, 0L, &fileInfo, sizeof(fileInfo),
+    if (fn_SHGetFileInfo(reinterpret_cast<LPCTSTR>(pIDL), 0L, &fileInfo, sizeof(fileInfo),
         SHGFI_TYPENAME | SHGFI_PIDL) == 0) {
         return NULL;
     }
@@ -790,7 +790,7 @@ JNIEXPORT jstring JNICALL Java_sun_awt_shell_Win32ShellFolder2_getExecutableType
     (JNIEnv* env, jobject folder, jstring path)
 {
     TCHAR szBuf[MAX_PATH];
-    LPCTSTR szPath = (LPCTSTR)JNU_GetStringPlatformChars(env, path, NULL);
+    LPCTSTR szPath = jsafe_cast<LPCTSTR>(JNU_GetStringPlatformChars(env, path, NULL));
     if (szPath == NULL) {
         return NULL;
     }
@@ -813,7 +813,7 @@ JNIEXPORT jlong JNICALL Java_sun_awt_shell_Win32ShellFolder2_getIcon
 {
     HICON hIcon = NULL;
     SHFILEINFO fileInfo;
-    LPCTSTR pathStr = (LPCTSTR)JNU_GetStringPlatformChars(env, absolutePath, NULL);
+    LPCTSTR pathStr = jsafe_cast<LPCTSTR>(JNU_GetStringPlatformChars(env, absolutePath, NULL));
     if (fn_SHGetFileInfo(pathStr, 0L, &fileInfo, sizeof(fileInfo),
                          SHGFI_ICON | (getLargeIcon ? 0 : SHGFI_SMALLICON)) != 0) {
         hIcon = fileInfo.hIcon;
@@ -1017,13 +1017,13 @@ JNIEXPORT jintArray JNICALL Java_sun_awt_shell_Win32ShellFolder2_getFileChooserB
     libShell32 = LoadLibrary(TEXT("shell32.dll"));
     if (libShell32 != NULL) {
         hBitmap = (HBITMAP)LoadImage(libShell32,
-                    isVista ? TEXT("IDB_TB_SH_DEF_16") : (LPCTSTR)MAKEINTRESOURCE(216),
+                    isVista ? TEXT("IDB_TB_SH_DEF_16") : MAKEINTRESOURCE(216),
                     IMAGE_BITMAP, 0, 0, LR_CREATEDIBSECTION);
     }
     if (hBitmap == NULL) {
         libComCtl32 = LoadLibrary(TEXT("comctl32.dll"));
         if (libComCtl32 != NULL) {
-            hBitmap = (HBITMAP)LoadImage(libComCtl32, (LPCTSTR)MAKEINTRESOURCE(124),
+            hBitmap = (HBITMAP)LoadImage(libComCtl32, MAKEINTRESOURCE(124),
                                          IMAGE_BITMAP, 0, 0, LR_CREATEDIBSECTION);
         }
     }
@@ -1031,7 +1031,7 @@ JNIEXPORT jintArray JNICALL Java_sun_awt_shell_Win32ShellFolder2_getFileChooserB
         return NULL;
     }
 
-    GetObject(hBitmap, sizeof(bm), (LPSTR)&bm);
+    GetObject(hBitmap, sizeof(bm), reinterpret_cast<LPSTR>(&bm));
 
     // Get the screen DC
     HDC dc = GetDC(NULL);
@@ -1087,7 +1087,7 @@ JNIEXPORT jintArray JNICALL Java_sun_awt_shell_Win32ShellFolder2_getFileChooserB
 JNIEXPORT jlong JNICALL Java_sun_awt_shell_Win32ShellFolder2_getSystemIcon
     (JNIEnv* env, jclass cls, jint iconID)
 {
-    return (jlong)LoadIcon(NULL, (LPCTSTR)MAKEINTRESOURCE(iconID));
+    return (jlong)LoadIcon(NULL, MAKEINTRESOURCE(iconID));
 }
 
 
@@ -1100,10 +1100,10 @@ JNIEXPORT jlong JNICALL Java_sun_awt_shell_Win32ShellFolder2_getIconResource
     (JNIEnv* env, jclass cls, jstring libName, jint iconID,
      jint cxDesired, jint cyDesired, jboolean useVGAColors)
 {
-    HINSTANCE libHandle = LoadLibrary(reinterpret_cast<const WCHAR*>(env->GetStringChars(libName, NULL)));
+    HINSTANCE libHandle = LoadLibrary(jsafe_cast<const WCHAR*>(env->GetStringChars(libName, NULL)));
     if (libHandle != NULL) {
         UINT fuLoad = (useVGAColors && !isXP) ? LR_VGACOLOR : 0;
-        return ptr_to_jlong(LoadImage(libHandle, (LPCTSTR)MAKEINTRESOURCE(iconID),
+        return ptr_to_jlong(LoadImage(libHandle, MAKEINTRESOURCE(iconID),
                                       IMAGE_ICON, cxDesired, cyDesired,
                                       fuLoad));
     }

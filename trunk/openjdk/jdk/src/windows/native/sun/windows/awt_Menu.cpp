@@ -149,11 +149,11 @@ void AwtMenu::AddItem(AwtMenuItem* item)
 
         UINT flags = MF_STRING | (enabled ? MF_ENABLED : MF_GRAYED);
         flags |= MF_OWNERDRAW;
-        LPCTSTR itemInfo = (LPCTSTR) this;
+        LPCTSTR itemInfo = reinterpret_cast<LPCTSTR>(this);
 
         if (_tcscmp(item->GetClassName(), TEXT("SunAwtMenu")) == 0) {
             flags |= MF_POPUP;
-            itemInfo = (LPCTSTR) item;
+            itemInfo = reinterpret_cast<LPCTSTR>(item);
         }
 
         VERIFY(::AppendMenu(GetHMenu(), flags, item->GetID(), itemInfo));

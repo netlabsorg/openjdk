@@ -40,20 +40,20 @@ extern "C" {
 JNIEXPORT jstring JNICALL Java_sun_awt_windows_WDesktopPeer_ShellExecute
   (JNIEnv *env, jclass cls, jstring uri_j, jstring verb_j)
 {
-    const WCHAR* uri_c = (const WCHAR*)env->GetStringChars(uri_j, JNI_FALSE);
-    const WCHAR* verb_c = (const WCHAR*)env->GetStringChars(verb_j, JNI_FALSE);
+    const WCHAR* uri_c = jsafe_cast<const WCHAR*>(env->GetStringChars(uri_j, JNI_FALSE));
+    const WCHAR* verb_c = jsafe_cast<const WCHAR*>(env->GetStringChars(verb_j, JNI_FALSE));
 
     // 6457572: ShellExecute possibly changes FPU control word - saving it here
     unsigned oldcontrol87 = _control87(0, 0);
     HINSTANCE retval = ShellExecuteW(NULL, verb_c, uri_c, NULL, NULL, SW_SHOWNORMAL);
     _control87(oldcontrol87, 0xffffffff);
 
-    env->ReleaseStringChars(uri_j, (jchar*)uri_c);
-    env->ReleaseStringChars(verb_j, (jchar*)verb_c);
+    env->ReleaseStringChars(uri_j, jsafe_cast<const jchar*>(uri_c));
+    env->ReleaseStringChars(verb_j, jsafe_cast<const jchar*>(verb_c));
 
     if ((int)retval <= 32) {
         // ShellExecute failed.
-        LPVOID buffer;
+        LPWSTR buffer;
         int len = FormatMessageW(
                     FORMAT_MESSAGE_ALLOCATE_BUFFER |
                     FORMAT_MESSAGE_FROM_SYSTEM  |
@@ -61,11 +61,11 @@ JNIEXPORT jstring JNICALL Java_sun_awt_windows_WDesktopPeer_ShellExecute
                     NULL,
                     GetLastError(),
                     MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), // Default language
-                    (LPWSTR) &buffer,
+                    reinterpret_cast<LPWSTR>(&buffer),
                     0,
                     NULL );
 
-        jstring errmsg = env->NewString((jchar*)buffer, len);
+        jstring errmsg = env->NewString(jsafe_cast<const jchar*>(buffer), len);
         LocalFree(buffer);
         return errmsg;
     }

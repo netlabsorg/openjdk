@@ -140,7 +140,7 @@ Java_sun_print_Win32PrintServiceLookup_getDefaultPrinterName(JNIEnv *env,
          return NULL;
        }
 
-       pPrinterName = (LPTSTR)GlobalAlloc(GPTR, (index+1)*sizeof(TCHAR));
+       pPrinterName = static_cast<LPTSTR>(GlobalAlloc(GPTR, (index+1)*sizeof(TCHAR)));
        lstrcpyn(pPrinterName, cBuffer, index+1);
        jPrinterName = JNU_NewStringPlatform(env, pPrinterName);
        GlobalFree(pPrinterName);
@@ -243,17 +243,17 @@ Java_sun_print_Win32PrintServiceLookup_notifyFirstPrinterChange(JNIEnv *env,
                                                                 jstring printer) {
     HANDLE hPrinter;
 
-    LPTSTR printerName = NULL;
+    LPCTSTR printerName = NULL;
     if (printer != NULL) {
-        printerName = (LPTSTR)JNU_GetStringPlatformChars(env,
+        printerName = jsafe_cast<LPCTSTR>(JNU_GetStringPlatformChars(env,
                                                          printer,
-                                                         NULL);
+                                                         NULL));
         JNU_ReleaseStringPlatformChars(env, printer, printerName);
     }
 
     // printerName - "Win NT/2K/XP: If NULL, it indicates the local printer
     // server" - MSDN.   Win9x : OpenPrinter returns 0.
-    BOOL ret = OpenPrinter(printerName, &hPrinter, NULL);
+    BOOL ret = OpenPrinter(const_cast<LPTSTR>(printerName), &hPrinter, NULL);
     if (!ret) {
       return (jlong)-1;
     }
@@ -303,8 +303,8 @@ Java_sun_print_Win32PrintService_getMediaPrintableArea(JNIEnv *env,
 {
     TRY;
 
-    LPTSTR printerName = (LPTSTR)JNU_GetStringPlatformChars(env,
-                                                            printer, NULL);
+    LPCTSTR printerName = jsafe_cast<LPCTSTR>(JNU_GetStringPlatformChars(env,
+                                                            printer, NULL));
 
     jfloatArray printableArray = NULL;
 
@@ -314,14 +314,15 @@ Java_sun_print_Win32PrintService_getMediaPrintableArea(JNIEnv *env,
     if (pdc) {
         HANDLE hPrinter;
         /* Start by opening the printer */
-        if (!::OpenPrinter(printerName, &hPrinter, NULL)) {
+        if (!::OpenPrinter(const_cast<LPTSTR>(printerName), &hPrinter, NULL)) {
             JNU_ReleaseStringPlatformChars(env, printer, printerName);
             return printableArray;
         }
 
         PDEVMODE pDevMode;
 
-        if (!AwtPrintControl::getDevmode(hPrinter, printerName, &pDevMode)) {
+        if (!AwtPrintControl::getDevmode(hPrinter, const_cast<LPTSTR>(printerName),
+                                         &pDevMode)) {
             /* if failure, cleanup and return failure */
 
             if (pDevMode != NULL) {
@@ -383,8 +384,8 @@ Java_sun_print_Win32PrintService_getAllMediaIDs(JNIEnv *env,
 {
   TRY;
 
-  LPTSTR printerName = (LPTSTR)JNU_GetStringPlatformChars(env, printer, NULL);
-  LPTSTR printerPort = (LPTSTR)JNU_GetStringPlatformChars(env, port, NULL);
+  LPCTSTR printerName = jsafe_cast<LPCTSTR>(JNU_GetStringPlatformChars(env, printer, NULL));
+  LPCTSTR printerPort = jsafe_cast<LPCTSTR>(JNU_GetStringPlatformChars(env, port, NULL));
   jintArray mediasizeArray = NULL;
 
   SAVE_CONTROLWORD
@@ -402,7 +403,7 @@ Java_sun_print_Win32PrintService_getAllMediaIDs(JNIEnv *env,
     jboolean isCopy;
     jint *jpcIndices = env->GetIntArrayElements(mediasizeArray,
                                        &isCopy), *saveFormats = jpcIndices;
-    LPTSTR papersBuf = (LPTSTR)new char[numSizes * sizeof(WORD)];
+    LPTSTR papersBuf = reinterpret_cast<LPTSTR>(new char[numSizes * sizeof(WORD)]);
     if (::DeviceCapabilities(printerName, printerPort,
                              DC_PAPERS, papersBuf, NULL) != -1) {
       RESTORE_CONTROLWORD
@@ -431,9 +432,9 @@ Java_sun_print_Win32PrintService_getAllMediaTrays(JNIEnv *env,
 {
   TRY;
 
-  LPTSTR printerName = (LPTSTR)JNU_GetStringPlatformChars(env,
-                                                          printer, NULL);
-  LPTSTR printerPort = (LPTSTR)JNU_GetStringPlatformChars(env, port, NULL);
+  LPCTSTR printerName = jsafe_cast<LPCTSTR>(JNU_GetStringPlatformChars(env,
+                                                          printer, NULL));
+  LPCTSTR printerPort = jsafe_cast<LPCTSTR>(JNU_GetStringPlatformChars(env, port, NULL));
 
   jintArray mediaTrayArray = NULL;
 
@@ -451,7 +452,7 @@ Java_sun_print_Win32PrintService_getAllMediaTrays(JNIEnv *env,
     jint *jpcIndices = env->GetIntArrayElements(mediaTrayArray,
                                            &isCopy), *saveFormats = jpcIndices;
 
-    LPTSTR buf = (LPTSTR)new char[nBins * sizeof(WORD)];
+    LPTSTR buf = reinterpret_cast<LPTSTR>(new char[nBins * sizeof(WORD)]);
 
     if (::DeviceCapabilities(printerName, printerPort,
                              DC_BINS, buf, NULL) != -1) {
@@ -481,9 +482,9 @@ Java_sun_print_Win32PrintService_getAllMediaSizes(JNIEnv *env,
 {
   TRY;
 
-  LPTSTR printerName = (LPTSTR)JNU_GetStringPlatformChars(env,
-                                                          printer, NULL);
-  LPTSTR printerPort = (LPTSTR)JNU_GetStringPlatformChars(env, port, NULL);
+  LPCTSTR printerName = jsafe_cast<LPCTSTR>(JNU_GetStringPlatformChars(env,
+                                                          printer, NULL));
+  LPCTSTR printerPort = jsafe_cast<LPCTSTR>(JNU_GetStringPlatformChars(env, port, NULL));
 
   jintArray mediaArray = NULL;
 
@@ -501,7 +502,7 @@ Java_sun_print_Win32PrintService_getAllMediaSizes(JNIEnv *env,
     jint *jpcIndices = env->GetIntArrayElements(mediaArray,
                                           &isCopy), *saveFormats = jpcIndices;
 
-    LPTSTR buf = (LPTSTR)new char[nPapers * sizeof(POINT)]; // array of POINTs
+    LPTSTR buf = reinterpret_cast<LPTSTR>(new char[nPapers * sizeof(POINT)]); // array of POINTs
 
     if (::DeviceCapabilities(printerName, printerPort,
                              DC_PAPERSIZE, buf, NULL) != -1) {
@@ -530,9 +531,9 @@ jobjectArray getAllDCNames(JNIEnv *env, jobject peer, jstring printer,
 {
   TRY;
 
-  LPTSTR printerName = (LPTSTR)JNU_GetStringPlatformChars(env,
-                                                          printer, NULL);
-  LPTSTR printerPort = (LPTSTR)JNU_GetStringPlatformChars(env, port, NULL);
+  LPCTSTR printerName = jsafe_cast<LPCTSTR>(JNU_GetStringPlatformChars(env,
+                                                          printer, NULL));
+  LPCTSTR printerPort = jsafe_cast<LPCTSTR>(JNU_GetStringPlatformChars(env, port, NULL));
 
   jstring utf_str;
   jclass cls = env->FindClass("java/lang/String");
@@ -544,7 +545,7 @@ jobjectArray getAllDCNames(JNIEnv *env, jobject peer, jstring printer,
   RESTORE_CONTROLWORD
   if (cReturned > 0) {
 
-    buf = (LPTSTR)new char[cReturned * buf_len * sizeof(TCHAR)];
+    buf = reinterpret_cast<LPTSTR>(new char[cReturned * buf_len * sizeof(TCHAR)]);
     if (buf == NULL) {
       throw std::bad_alloc();
     }
@@ -602,8 +603,8 @@ Java_sun_print_Win32PrintService_getCopiesSupported(JNIEnv *env,
                                                     jstring printer,
                                                     jstring port)
 {
-  LPTSTR printerName = (LPTSTR)JNU_GetStringPlatformChars(env, printer, NULL);
-  LPTSTR printerPort = (LPTSTR)JNU_GetStringPlatformChars(env, port, NULL);
+  LPCTSTR printerName = jsafe_cast<LPCTSTR>(JNU_GetStringPlatformChars(env, printer, NULL));
+  LPCTSTR printerPort = jsafe_cast<LPCTSTR>(JNU_GetStringPlatformChars(env, port, NULL));
 
   SAVE_CONTROLWORD
   int numCopies = ::DeviceCapabilities(printerName, printerPort,
@@ -640,8 +641,8 @@ Java_sun_print_Win32PrintService_getAllResolutions(JNIEnv *env,
 {
   TRY;
 
-  LPTSTR printerName = (LPTSTR)JNU_GetStringPlatformChars(env, printer, NULL);
-  LPTSTR printerPort = (LPTSTR)JNU_GetStringPlatformChars(env, port, NULL);
+  LPCTSTR printerName = jsafe_cast<LPCTSTR>(JNU_GetStringPlatformChars(env, printer, NULL));
+  LPCTSTR printerPort = jsafe_cast<LPCTSTR>(JNU_GetStringPlatformChars(env, port, NULL));
 
   jintArray resolutionArray = NULL;
 
@@ -659,7 +660,7 @@ Java_sun_print_Win32PrintService_getAllResolutions(JNIEnv *env,
     jint *jpcIndices = env->GetIntArrayElements(resolutionArray,
                                           &isCopy), *saveFormats = jpcIndices;
 
-    LPTSTR resBuf = (LPTSTR)new char[nResolutions * sizeof(LONG) * 2]; // pairs of long
+    LPTSTR resBuf = reinterpret_cast<LPTSTR>(new char[nResolutions * sizeof(LONG) * 2]); // pairs of long
 
     if (::DeviceCapabilities(printerName, printerPort,
                              DC_ENUMRESOLUTIONS, resBuf, NULL) != -1) {
@@ -691,18 +692,18 @@ static BOOL IsDCPostscript( HDC hDC )
     // If it supports POSTSCRIPT_PASSTHROUGH, it must be PS.
     nEscapeCode = POSTSCRIPT_PASSTHROUGH;
     if( ::ExtEscape( hDC, QUERYESCSUPPORT, sizeof(int),
-                     (LPCSTR)&nEscapeCode, 0, NULL ) > 0 )
+                     reinterpret_cast<LPCSTR>(&nEscapeCode), 0, NULL ) > 0 )
         return TRUE;
 
     // If it doesn't support GETTECHNOLOGY, we won't be able to tell.
     nEscapeCode = GETTECHNOLOGY;
     if( ::ExtEscape( hDC, QUERYESCSUPPORT, sizeof(int),
-                     (LPCSTR)&nEscapeCode, 0, NULL ) <= 0 )
+                     reinterpret_cast<LPCSTR>(&nEscapeCode), 0, NULL ) <= 0 )
         return FALSE;
 
     // Get the technology string and check if the word "postscript" is in it.
     if( ::ExtEscape( hDC, GETTECHNOLOGY, 0, NULL, MAX_PATH,
-                     (LPSTR)szTechnology ) <= 0 )
+                     reinterpret_cast<LPSTR>(szTechnology) ) <= 0 )
         return FALSE;
     strupr( szTechnology );
     if(!strstr( szTechnology, "POSTSCRIPT" ) == NULL )
@@ -755,8 +756,8 @@ Java_sun_print_Win32PrintService_getCapabilities(JNIEnv *env,
                                                  jstring printer,
                                                  jstring port)
 {
-  LPTSTR printerName = (LPTSTR)JNU_GetStringPlatformChars(env, printer, NULL);
-  LPTSTR printerPort = (LPTSTR)JNU_GetStringPlatformChars(env, port, NULL);
+  LPCTSTR printerName = jsafe_cast<LPCTSTR>(JNU_GetStringPlatformChars(env, printer, NULL));
+  LPCTSTR printerPort = jsafe_cast<LPCTSTR>(JNU_GetStringPlatformChars(env, port, NULL));
   // 0x1000 is a flag to indicate that getCapabilities has already been called.
   // 0x0001 is a flag for color support and supported is the default.
   jint ret = 0x1001;
@@ -828,8 +829,8 @@ Java_sun_print_Win32PrintService_getDefaultSettings(JNIEnv *env,
 
   TRY;
 
-  LPTSTR printerName = (LPTSTR)JNU_GetStringPlatformChars(env, printer, NULL);
-  LPTSTR printerPort = (LPTSTR)JNU_GetStringPlatformChars(env, port, NULL);
+  LPCTSTR printerName = jsafe_cast<LPCTSTR>(JNU_GetStringPlatformChars(env, printer, NULL));
+  LPCTSTR printerPort = jsafe_cast<LPCTSTR>(JNU_GetStringPlatformChars(env, port, NULL));
 
   jintArray defaultArray = env->NewIntArray(NDEFAULT);
   if (defaultArray == NULL) {
@@ -845,13 +846,13 @@ Java_sun_print_Win32PrintService_getDefaultSettings(JNIEnv *env,
   }
 
   /* Start by opening the printer */
-  if (!::OpenPrinter(printerName, &hPrinter, NULL)) {
+  if (!::OpenPrinter(const_cast<LPTSTR>(printerName), &hPrinter, NULL)) {
       env->ReleaseIntArrayElements(defaultArray, saveFormats, 0);
       JNU_ReleaseStringPlatformChars(env, printer, printerName);
       return defaultArray;
   }
 
-  if (!AwtPrintControl::getDevmode(hPrinter, printerName, &pDevMode)) {
+  if (!AwtPrintControl::getDevmode(hPrinter, const_cast<LPTSTR>(printerName), &pDevMode)) {
       /* if failure, cleanup and return failure */
       if (pDevMode != NULL) {
           ::GlobalFree(pDevMode);
@@ -875,10 +876,10 @@ Java_sun_print_Win32PrintService_getDefaultSettings(JNIEnv *env,
       int numSizes = ::DeviceCapabilities(printerName, printerPort,
                                           DC_PAPERS, NULL, NULL);
       if (numSizes > 0) {
-          LPWORD papers = (LPWORD)safe_Malloc(numSizes * sizeof(WORD));
+          LPWORD papers = static_cast<LPWORD>(safe_Malloc(numSizes * sizeof(WORD)));
           if (papers != NULL &&
               ::DeviceCapabilities(printerName, printerPort,
-                                   DC_PAPERS, (LPTSTR)papers, NULL) != -1) {
+                                   DC_PAPERS, reinterpret_cast<LPTSTR>(papers), NULL) != -1) {
               int present = 0;
               for (int i=0;i<numSizes;i++) {
                   if (papers[i] == pDevMode->dmPaperSize) {
@@ -950,10 +951,10 @@ Java_sun_print_Win32PrintService_getJobStatus(JNIEnv *env,
     PRINTER_INFO_2 *pPrinterInfo = NULL;
     int ret=0;
 
-    LPTSTR printerName = (LPTSTR)JNU_GetStringPlatformChars(env, printer, NULL);
+    LPCTSTR printerName = jsafe_cast<LPCTSTR>(JNU_GetStringPlatformChars(env, printer, NULL));
 
     // Start by opening the printer
-    if (!::OpenPrinter(printerName, &hPrinter, NULL)) {
+    if (!::OpenPrinter(const_cast<LPTSTR>(printerName), &hPrinter, NULL)) {
         JNU_ReleaseStringPlatformChars(env, printer, printerName);
         return -1;
     }
@@ -1038,16 +1039,16 @@ Java_sun_print_Win32PrintJob_startPrintRawData(JNIEnv *env,
 {
   HANDLE      hPrinter;
   DOC_INFO_1  DocInfo;
-  LPTSTR printerName = (LPTSTR)JNU_GetStringPlatformChars(env, printer, NULL);
+  LPCTSTR printerName = jsafe_cast<LPCTSTR>(JNU_GetStringPlatformChars(env, printer, NULL));
   DASSERT(jobname != NULL);
-  LPTSTR lpJobName = (LPTSTR)JNU_GetStringPlatformChars(env, jobname, NULL);
+  LPCTSTR lpJobName = jsafe_cast<LPCTSTR>(JNU_GetStringPlatformChars(env, jobname, NULL));
   LPTSTR jname = _tcsdup(lpJobName);
   JNU_ReleaseStringPlatformChars(env, jobname, lpJobName);
 
   // Start by opening the printer
-  if (!::OpenPrinter(printerName, &hPrinter, NULL)) {
+  if (!::OpenPrinter(const_cast<LPTSTR>(printerName), &hPrinter, NULL)) {
     JNU_ReleaseStringPlatformChars(env, printer, printerName);
-    free((LPTSTR)jname);
+    free(jname);
     return false;
   }
 
@@ -1061,11 +1062,11 @@ Java_sun_print_Win32PrintJob_startPrintRawData(JNIEnv *env,
   // Inform the spooler the document is beginning.
   if( (::StartDocPrinter(hPrinter, 1, (LPBYTE)&DocInfo)) == 0 ) {
     ::ClosePrinter( hPrinter );
-    free((LPTSTR)jname);
+    free(jname);
     return false;
   }
 
-  free((LPTSTR)jname);
+  free(jname);
 
   // Start a page.
   if( ! ::StartPagePrinter( hPrinter ) ) {

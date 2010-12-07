@@ -288,13 +288,13 @@ Java_sun_awt_windows_WDataTransferer_dragQueryFile
         }
 
         UINT bufsize = 512; // in characters, not in bytes
-        buffer = (LPTSTR)safe_Malloc(bufsize*sizeof(TCHAR));
+        buffer = static_cast<LPTSTR>(safe_Malloc(bufsize*sizeof(TCHAR)));
 
         for (UINT i = 0; i < nFilenames; i++) {
             UINT size = (*do_drag_query_file)(hdrop, i, NULL, 0);
             if (size > bufsize) {
                 bufsize = size;
-                buffer = (LPTSTR)safe_Realloc(buffer, bufsize*sizeof(TCHAR));
+                buffer = static_cast<LPTSTR>(safe_Realloc(buffer, bufsize*sizeof(TCHAR)));
             }
             (*do_drag_query_file)(hdrop, i, buffer, bufsize);
 
@@ -390,7 +390,7 @@ Java_sun_awt_windows_WDataTransferer_platformImageBytesToImageData(
         switch (format) {
         case CF_DIB:
 
-            pSrcBmi = (BITMAPINFO*)((LPSTR)bBytes + uOffset);
+            pSrcBmi = (BITMAPINFO*)(reinterpret_cast<LPSTR>(bBytes) + uOffset);
             pSrcBmih = &pSrcBmi->bmiHeader;
 
             width = pSrcBmih->biWidth;
@@ -428,7 +428,7 @@ Java_sun_awt_windows_WDataTransferer_platformImageBytesToImageData(
                     return NULL;
                 }
 
-                pSrcBits = (LPSTR)pSrcBmi + pSrcBmih->biSize
+                pSrcBits = reinterpret_cast<LPSTR>(pSrcBmi) + pSrcBmih->biSize
                     + nColorEntries * sizeof(RGBQUAD);
             }
             break;
@@ -665,7 +665,7 @@ Java_sun_awt_windows_WDataTransferer_imageDataToPlatformImageBytes(JNIEnv *env,
     // don't handle such DIBs correctly, so we specify the size explicitly.
     pinfo->bmiHeader.biSizeImage = size + pad;
 
-    jbyte *array = (jbyte*)((LPSTR)pinfo + sizeof(BITMAPINFOHEADER));
+    jbyte *array = (jbyte*)(reinterpret_cast<LPSTR>(pinfo) + sizeof(BITMAPINFOHEADER));
     env->GetByteArrayRegion(imageData, 0, size, array);
     HRESULT hr = S_OK;
 

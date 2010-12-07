@@ -106,7 +106,7 @@ AwtCheckbox* AwtCheckbox::Create(jobject peer, jobject parent)
 
             label = (jstring)env->GetObjectField(target, AwtCheckbox::labelID);
             if (label != NULL) {
-                labelStr = (LPCWSTR)env->GetStringChars(label, 0);
+                labelStr = jsafe_cast<LPCWSTR>(env->GetStringChars(label, 0));
             }
             if (labelStr != 0) {
                 jint x = env->GetIntField(target, AwtComponent::xID);
@@ -123,7 +123,7 @@ AwtCheckbox* AwtCheckbox::Create(jobject peer, jobject parent)
                                      peer);
 
                 if (labelStr != defaultLabelStr) {
-                    env->ReleaseStringChars(label, (jchar*)labelStr);
+                    env->ReleaseStringChars(label, jsafe_cast<const jchar*>(labelStr));
                 }
             } else {
                 throw std::bad_alloc();

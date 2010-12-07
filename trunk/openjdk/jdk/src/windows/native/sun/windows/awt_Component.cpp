@@ -552,7 +552,7 @@ AwtComponent::CreateHWnd(JNIEnv *env, LPCWSTR title,
             TCHAR *buf;
             FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM,
                 NULL, dw, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                (LPTSTR)&buf, 0, NULL);
+                reinterpret_cast<LPTSTR>(&buf), 0, NULL);
             jstring s = JNU_NewStringPlatform(env, buf);
             createError = JNU_NewObjectByName(env, "java/lang/InternalError",
                                                   "(Ljava/lang/String;)V", s);
@@ -1883,7 +1883,7 @@ LRESULT AwtComponent::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
           break;
       case WM_SETTINGCHANGE:
           CheckFontSmoothingSettings(NULL);
-          mr = WmSettingChange(static_cast<UINT>(wParam), (LPCTSTR)lParam);
+          mr = WmSettingChange(static_cast<UINT>(wParam), reinterpret_cast<LPCTSTR>(lParam));
           break;
       case WM_CONTEXTMENU:
           mr = WmContextMenu((HWND)wParam,
@@ -3616,7 +3616,7 @@ UINT AwtComponent::WindowsKeyToJavaChar(UINT wkey, UINT modifiers, TransOps ops)
     if (converted > 0) {
         WCHAR unicodeChar[2];
         VERIFY(::MultiByteToWideChar(GetCodePage(), MB_PRECOMPOSED,
-        (LPCSTR)&mbChar, 1, unicodeChar, 1));
+        reinterpret_cast<LPCSTR>(&mbChar), 1, unicodeChar, 1));
 
         translation = unicodeChar[0];
     }

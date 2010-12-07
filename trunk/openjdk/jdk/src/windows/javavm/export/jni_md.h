@@ -38,4 +38,32 @@ typedef __int64 jlong;
 #endif
 typedef signed char jbyte;
 
+#ifdef __cplusplus
+
+/* template for safe type casting: the generic version lets the compiler
+ * decide (as if no template was used); specific instantiations deal with
+ * special cases which are guaranteed to be safe */
+template<typename TR, typename TS>
+inline TR jsafe_cast(TS ts) { return ts; }
+
+#ifdef __EMX__
+/* sizeof(jchar) = sizeof(wchar_t) in GCC but the types are not relative
+ * (as opposed to MSVC) so an explicit cast is required */
+typedef unsigned short jchar;
+template<>
+inline jchar *jsafe_cast<jchar *, wchar_t *>(wchar_t *ts) { return reinterpret_cast<jchar*>(ts); }
+template<>
+inline const jchar *jsafe_cast<const jchar *, wchar_t *>(wchar_t *ts) { return reinterpret_cast<const jchar*>(ts); }
+template<>
+inline const jchar *jsafe_cast<const jchar *, const wchar_t *>(const wchar_t *ts) { return reinterpret_cast<const jchar*>(ts); }
+template<>
+inline wchar_t *jsafe_cast<wchar_t *, jchar *>(jchar *ts) { return reinterpret_cast<wchar_t*>(ts); }
+template<>
+inline const wchar_t *jsafe_cast<const wchar_t *, jchar *>(jchar *ts) { return reinterpret_cast<const wchar_t*>(ts); }
+template<>
+inline const wchar_t *jsafe_cast<const wchar_t *, const jchar *>(const jchar *ts) { return reinterpret_cast<const wchar_t*>(ts); }
+#endif
+
+#endif /* __cplusplus */
+
 #endif /* !_JAVASOFT_JNI_MD_H_ */

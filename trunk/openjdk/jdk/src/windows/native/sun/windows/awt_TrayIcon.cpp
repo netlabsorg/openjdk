@@ -733,9 +733,9 @@ void AwtTrayIcon::_SetToolTip(void *param)
         goto ret;
     }
 
-    tooltipStr = reinterpret_cast<LPCTSTR>(env->GetStringChars(jtooltip, (jboolean *)NULL));
+    tooltipStr = jsafe_cast<LPCTSTR>(env->GetStringChars(jtooltip, (jboolean *)NULL));
     trayIcon->SetToolTip(tooltipStr);
-    env->ReleaseStringChars(jtooltip, reinterpret_cast<const jchar *>(tooltipStr));
+    env->ReleaseStringChars(jtooltip, jsafe_cast<const jchar *>(tooltipStr));
 ret:
     env->DeleteGlobalRef(self);
     env->DeleteGlobalRef(jtooltip);
@@ -856,15 +856,15 @@ void AwtTrayIcon::_DisplayMessage(void *param)
     JNI_CHECK_PEER_GOTO(self, ret);
     trayIcon = (AwtTrayIcon *)pData;
 
-    captionStr = reinterpret_cast<LPCTSTR>(env->GetStringChars(jcaption, (jboolean *)NULL));
-    textStr = reinterpret_cast<LPCTSTR>(env->GetStringChars(jtext, (jboolean *)NULL));
-    msgTypeStr = reinterpret_cast<LPCTSTR>(env->GetStringChars(jmsgType, (jboolean *)NULL));
+    captionStr = jsafe_cast<LPCTSTR>(env->GetStringChars(jcaption, (jboolean *)NULL));
+    textStr = jsafe_cast<LPCTSTR>(env->GetStringChars(jtext, (jboolean *)NULL));
+    msgTypeStr = jsafe_cast<LPCTSTR>(env->GetStringChars(jmsgType, (jboolean *)NULL));
 
     trayIcon->DisplayMessage(captionStr, textStr, msgTypeStr);
 
-    env->ReleaseStringChars(jcaption, reinterpret_cast<const jchar *>(captionStr));
-    env->ReleaseStringChars(jtext, reinterpret_cast<const jchar *>(textStr));
-    env->ReleaseStringChars(jmsgType, reinterpret_cast<const jchar *>(msgTypeStr));
+    env->ReleaseStringChars(jcaption, jsafe_cast<const jchar *>(captionStr));
+    env->ReleaseStringChars(jtext, jsafe_cast<const jchar *>(textStr));
+    env->ReleaseStringChars(jmsgType, jsafe_cast<const jchar *>(msgTypeStr));
 ret:
     env->DeleteGlobalRef(self);
     env->DeleteGlobalRef(jcaption);

@@ -326,7 +326,7 @@ jstring AwtTextComponent::_GetText(void *param)
             WCHAR* buf = new WCHAR[len + 1];
             c->GetText(buf, len + 1);
             c->RemoveCR(buf);
-            result = env->NewString(reinterpret_cast<jchar*>(buf),
+            result = env->NewString(jsafe_cast<jchar*>(buf),
                                     static_cast<jsize>(wcslen(buf)));
             delete [] buf;
         }
@@ -363,7 +363,7 @@ void AwtTextComponent::_SetText(void *param)
     {
         int length = env->GetStringLength(text);
         WCHAR* buffer = new WCHAR[length + 1];
-        env->GetStringRegion(text, 0, length, reinterpret_cast<jchar*>(buffer));
+        env->GetStringRegion(text, 0, length, jsafe_cast<jchar*>(buffer));
         buffer[length] = 0;
         c->CheckLineSeparator(buffer);
         c->RemoveCR(buffer);

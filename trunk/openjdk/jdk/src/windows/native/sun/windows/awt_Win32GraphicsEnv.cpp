@@ -170,7 +170,7 @@ Java_sun_awt_Win32GraphicsEnvironment_registerFontWithPlatform(JNIEnv *env,
                                                               jstring fontName)
 {
     if (getWinVer() >= 5 && procAddFontResourceEx != NULL) {
-      LPTSTR file = (LPTSTR)JNU_GetStringPlatformChars(env, fontName, NULL);
+      LPCTSTR file = jsafe_cast<LPCTSTR>(JNU_GetStringPlatformChars(env, fontName, NULL));
       (*procAddFontResourceEx)(file, FR_PRIVATE, NULL);
     }
 }
@@ -189,7 +189,7 @@ Java_sun_awt_Win32GraphicsEnvironment_deRegisterFontWithPlatform(JNIEnv *env,
                                                               jstring fontName)
 {
     if (getWinVer() >= 5 && procRemoveFontResourceEx != NULL) {
-      LPTSTR file = (LPTSTR)JNU_GetStringPlatformChars(env, fontName, NULL);
+      LPCTSTR file = jsafe_cast<LPCTSTR>(JNU_GetStringPlatformChars(env, fontName, NULL));
       (*procRemoveFontResourceEx)(file, FR_PRIVATE, NULL);
     }
 }

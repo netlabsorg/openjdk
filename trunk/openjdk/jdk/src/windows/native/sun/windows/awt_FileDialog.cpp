@@ -65,7 +65,7 @@ AwtFileDialog::Initialize(JNIEnv *env, jstring filterDescription)
 {
     int length = env->GetStringLength(filterDescription);
     DASSERT(length + 1 < MAX_FILTER_STRING);
-    LPCTSTR tmp = (LPTSTR)JNU_GetStringPlatformChars(env, filterDescription, NULL);
+    LPCTSTR tmp = jsafe_cast<LPCTSTR>(JNU_GetStringPlatformChars(env, filterDescription, NULL));
     _tcscpy(s_fileFilterString, tmp);
     JNU_ReleaseStringPlatformChars(env, filterDescription, tmp);
 
@@ -236,7 +236,7 @@ AwtFileDialog::Show(void *p)
         HWND hwndOwner = awtParent ? awtParent->GetHWnd() : NULL;
 
         if (title == NULL || env->GetStringLength(title)==0) {
-            title = env->NewString((const jchar*)&unicodeChar, 1);
+            title = env->NewString(jsafe_cast<const jchar*>(&unicodeChar), 1);
         }
 
         JavaStringBuffer titleBuffer(env, title);

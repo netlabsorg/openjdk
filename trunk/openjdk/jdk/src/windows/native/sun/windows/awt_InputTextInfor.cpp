@@ -108,10 +108,10 @@ AwtInputTextInfor::GetContextData(HIMC hIMC, const LPARAM flags) {
 
     // Assign the context data
     m_cStrW = cbData[0]/WCHAR_SZ;
-    m_lpStrW = (LPWSTR)lpData[0];
+    m_lpStrW = static_cast<LPWSTR>(lpData[0]);
 
     m_cReadStrW = cbData[1]/WCHAR_SZ;
-    m_lpReadStrW = (LPWSTR)lpData[1];
+    m_lpReadStrW = static_cast<LPWSTR>(lpData[1]);
 
     m_cClauseW = cbData[2]/DWORD_SZ - 1;
     m_lpClauseW = (LPDWORD)lpData[2];
@@ -187,7 +187,7 @@ jstring AwtInputTextInfor::MakeJavaString(JNIEnv* env, LPWSTR lpStrW, int cStrW)
 
     if (env == NULL || lpStrW == NULL || cStrW == 0) return NULL;
 
-    return env->NewString((jchar*)lpStrW, cStrW);
+    return env->NewString(jsafe_cast<const jchar*>(lpStrW), cStrW);
 }
 
 //
@@ -252,7 +252,7 @@ int AwtInputTextInfor::GetClauseInfor(int*& lpBndClauseW, jstring*& lpReadingCla
             }
         }
         else {
-            readingClauseW[cls] = MakeJavaString(env, (LPWSTR)NULL, 0);
+            readingClauseW[cls] = MakeJavaString(env, NULL, 0);
         }
     }
 

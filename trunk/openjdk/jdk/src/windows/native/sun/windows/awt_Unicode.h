@@ -46,7 +46,7 @@ extern LPWSTR JNI_J2WHelper1(JNIEnv *env, LPWSTR lpw, jstring jstr);
 
 #define TO_WSTRING(jstr) \
    ((jstr == NULL) ? NULL : \
-     (JNI_J2WHelper1(env, (LPWSTR) alloca((env->GetStringLength(jstr)+1)*2), \
+     (JNI_J2WHelper1(env, static_cast<LPWSTR>(alloca((env->GetStringLength(jstr)+1)*2)), \
                      jstr) \
     ))
 

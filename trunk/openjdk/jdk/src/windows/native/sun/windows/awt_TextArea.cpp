@@ -251,7 +251,7 @@ size_t AwtTextArea::CountNewLines(JNIEnv *env, jstring jStr, size_t maxlen)
     size_t length = env->GetStringLength(jStr) + 1;
     WCHAR *string = new WCHAR[length];
     env->GetStringRegion(jStr, 0, static_cast<jsize>(length - 1),
-                         reinterpret_cast<jchar*>(string));
+                         jsafe_cast<jchar*>(string));
     string[length-1] = '\0';
     for (size_t i = 0; i < maxlen && i < length - 1; i++) {
         if (string[i] == L'\n') {
@@ -994,7 +994,7 @@ void AwtTextArea::_ReplaceText(void *param)
       // Bugid 4141477 - Can't use TO_WSTRING here because it uses alloca
       // WCHAR* buffer = TO_WSTRING(text);
       WCHAR *buffer = new WCHAR[length];
-      env->GetStringRegion(text, 0, length-1, reinterpret_cast<jchar*>(buffer));
+      env->GetStringRegion(text, 0, length-1, jsafe_cast<jchar*>(buffer));
       buffer[length-1] = '\0';
 
       c->CheckLineSeparator(buffer);

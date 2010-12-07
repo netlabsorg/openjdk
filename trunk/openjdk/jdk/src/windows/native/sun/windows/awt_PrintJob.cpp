@@ -437,7 +437,7 @@ Java_sun_awt_windows_WPageDialogPeer__1show(JNIEnv *env, jobject peer)
         int measure = PSD_INTHOUSANDTHSOFINCHES;
         int sz = GetLocaleInfo(LOCALE_USER_DEFAULT, LOCALE_IMEASURE, NULL, 0);
         if (sz > 0) {
-          LPTSTR str = (LPTSTR)safe_Malloc(sizeof(TCHAR) * sz);
+          LPTSTR str = static_cast<LPTSTR>(safe_Malloc(sizeof(TCHAR) * sz));
           if (str != NULL) {
             sz = GetLocaleInfo(LOCALE_USER_DEFAULT, LOCALE_IMEASURE, str, sz);
             if (sz > 0) {
@@ -445,7 +445,7 @@ Java_sun_awt_windows_WPageDialogPeer__1show(JNIEnv *env, jobject peer)
                 measure = PSD_INHUNDREDTHSOFMILLIMETERS;
               }
             }
-            free((LPTSTR)str);
+            free(str);
           }
         }
         setup.Flags |= measure;
@@ -483,7 +483,7 @@ Java_sun_awt_windows_WPageDialogPeer__1show(JNIEnv *env, jobject peer)
         if (setup.hDevNames != NULL) {
             DEVNAMES* names = (DEVNAMES*)::GlobalLock(setup.hDevNames);
             if (names != NULL) {
-                LPTSTR printer = (LPTSTR)names+names->wDeviceOffset;
+                LPTSTR printer = reinterpret_cast<LPTSTR>(names)+names->wDeviceOffset;
                 SAVE_CONTROLWORD
                 HDC newDC = ::CreateDC(TEXT("WINSPOOL"), printer, NULL, NULL);
                 RESTORE_CONTROLWORD
@@ -609,7 +609,7 @@ Java_sun_awt_windows_WPrinterJob_getDefaultPage(JNIEnv *env, jobject self,
 
   if (devnames != NULL) {
 
-    LPTSTR lpdevnames = (LPTSTR)devnames;
+    LPTSTR lpdevnames = reinterpret_cast<LPTSTR>(devnames);
     LPTSTR printerName = _tcsdup(lpdevnames+devnames->wDeviceOffset);
 
     HANDLE      hPrinter = NULL;
@@ -621,7 +621,7 @@ Java_sun_awt_windows_WPrinterJob_getDefaultPage(JNIEnv *env, jobject self,
         ::ClosePrinter(hPrinter);
       }
       ::GlobalUnlock(hDevNames);
-      free ((LPTSTR) printerName);
+      free (printerName);
       return;
     }
 
@@ -632,7 +632,7 @@ Java_sun_awt_windows_WPrinterJob_getDefaultPage(JNIEnv *env, jobject self,
         }
         ::ClosePrinter(hPrinter);
         ::GlobalUnlock(hDevNames);
-        free ((LPTSTR) printerName);
+        free (printerName);
         return ;
     }
 
@@ -647,7 +647,7 @@ Java_sun_awt_windows_WPrinterJob_getDefaultPage(JNIEnv *env, jobject self,
           int sz = GetLocaleInfo(LOCALE_USER_DEFAULT,
                                  LOCALE_IMEASURE, NULL, 0);
           if (sz > 0) {
-            LPTSTR str = (LPTSTR)safe_Malloc(sizeof(TCHAR) * sz);
+            LPTSTR str = static_cast<LPTSTR>(safe_Malloc(sizeof(TCHAR) * sz));
             if (str != NULL) {
               sz = GetLocaleInfo(LOCALE_USER_DEFAULT,
                                  LOCALE_IMEASURE, str, sz);
@@ -656,7 +656,7 @@ Java_sun_awt_windows_WPrinterJob_getDefaultPage(JNIEnv *env, jobject self,
                   units = MM_HIMETRIC;
                 }
               }
-              free((LPTSTR)str);
+              free(str);
             }
           }
 
@@ -693,7 +693,7 @@ Java_sun_awt_windows_WPrinterJob_getDefaultPage(JNIEnv *env, jobject self,
     }
     ::GlobalFree(pDevMode);
 
-    free ((LPTSTR) printerName);
+    free (printerName);
 
     ::ClosePrinter(hPrinter);
 
@@ -918,7 +918,7 @@ Java_sun_awt_windows_WPrinterJob_initPrinter(JNIEnv *env, jobject self) {
         DEVNAMES *devnames = (DEVNAMES *)::GlobalLock(hDevNames);
 
         if (devnames != NULL) {
-            LPTSTR lpdevnames = (LPTSTR)devnames;
+            LPTSTR lpdevnames = reinterpret_cast<LPTSTR>(devnames);
             LPTSTR printername = lpdevnames+devnames->wDeviceOffset;
             LPTSTR port = lpdevnames+devnames->wOutputOffset;
 
@@ -1089,7 +1089,7 @@ LPTSTR VerifyDestination(JNIEnv *env, jobject wPrinterJob) {
 
     DEVNAMES *devnames = (DEVNAMES *)::GlobalLock(hDevNames);
     if (devnames != NULL) {
-        LPTSTR lpdevnames = (LPTSTR)devnames;
+        LPTSTR lpdevnames = reinterpret_cast<LPTSTR>(devnames);
         LPTSTR printer = lpdevnames+devnames->wDeviceOffset;
         LPTSTR port = lpdevnames+devnames->wOutputOffset;
         if (port != NULL && isFilePort(port)) {
@@ -1127,15 +1127,15 @@ Java_sun_awt_windows_WPrinterJob__1startDoc(JNIEnv *env, jobject self,
 
     int err = 0;
 
-    LPTSTR destination = NULL;
+    LPCTSTR destination = NULL;
     if (dest != NULL) {
-        destination = (LPTSTR)JNU_GetStringPlatformChars(env, dest, NULL);
+        destination = jsafe_cast<LPCTSTR>(JNU_GetStringPlatformChars(env, dest, NULL));
     } else {
         destination = VerifyDestination(env, self);
     }
     LPTSTR docname = NULL;
     if (jobname != NULL) {
-        LPTSTR tmp = (LPTSTR)JNU_GetStringPlatformChars(env, jobname, NULL);
+        LPCTSTR tmp = jsafe_cast<LPCTSTR>(JNU_GetStringPlatformChars(env, jobname, NULL));
         docname = _tcsdup(tmp);
         JNU_ReleaseStringPlatformChars(env, jobname, tmp);
     } else {
@@ -1352,7 +1352,7 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_WPrinterJob_deviceStartPage
                     DEVNAMES *devnames = (DEVNAMES *)::GlobalLock(hDevNames);
                     if (devnames != NULL) {
 
-                      LPTSTR lpdevnames = (LPTSTR)devnames;
+                      LPTSTR lpdevnames = reinterpret_cast<LPTSTR>(devnames);
                       LPTSTR printerName = _tcsdup(lpdevnames+devnames->wDeviceOffset);
 
                       HANDLE hPrinter;
@@ -2983,7 +2983,7 @@ static HDC getDefaultPrinterDC(JNIEnv *env, jobject printerJob) {
             DEVNAMES *devnames = (DEVNAMES *)::GlobalLock(pd.hDevNames);
 
             if (devnames != NULL) {
-                LPTSTR lpdevnames = (LPTSTR)devnames;
+                LPTSTR lpdevnames = reinterpret_cast<LPTSTR>(devnames);
                 LPTSTR printer = lpdevnames+devnames->wDeviceOffset;
                 LPTSTR port = lpdevnames+devnames->wOutputOffset;
                 // if DeviceCapabilities fails, return value is -1
@@ -3129,7 +3129,7 @@ static POINT *getPaperSizeList(LPCTSTR deviceName, LPCTSTR portName) {
         paperSizes = (POINT *)safe_Malloc(sizeof(*paperSizes) * numPaperSizes);
 
         DWORD result = DeviceCapabilities(deviceName, portName,
-                                          DC_PAPERSIZE, (LPTSTR) paperSizes,
+                                          DC_PAPERSIZE, reinterpret_cast<LPTSTR>(paperSizes),
                                           NULL);
         if (result == -1) {
             free((char *) paperSizes);
@@ -3758,7 +3758,7 @@ static void matchPaperSize(HDC printDC, HGLOBAL hDevMode, HGLOBAL hDevNames,
     if (hDevNames != NULL) {
         DEVNAMES *devnames = (DEVNAMES *)::GlobalLock(hDevNames);
         if (devnames != NULL) {
-            LPTSTR lpdevnames = (LPTSTR)devnames;
+            LPTSTR lpdevnames = reinterpret_cast<LPTSTR>(devnames);
             printer = _tcsdup(lpdevnames+devnames->wDeviceOffset);
             port = _tcsdup(lpdevnames+devnames->wOutputOffset);
         }
@@ -3778,9 +3778,9 @@ static void matchPaperSize(HDC printDC, HGLOBAL hDevMode, HGLOBAL hDevNames,
         paperSizes = (POINT *)safe_Malloc(sizeof(*paperSizes) * numPaperSizes);
 
         DWORD result1 = DeviceCapabilities(printer, port,
-                                           DC_PAPERS, (LPTSTR) papers, NULL);
+                                           DC_PAPERS, reinterpret_cast<LPTSTR>(papers), NULL);
         DWORD result2 = DeviceCapabilities(printer, port,
-                                           DC_PAPERSIZE, (LPTSTR) paperSizes,
+                                           DC_PAPERSIZE, reinterpret_cast<LPTSTR>(paperSizes),
                                            NULL);
 
         if (result1 == -1 || result2 == -1 ) {
@@ -3989,17 +3989,17 @@ static BOOL SetPrinterDevice(LPTSTR pszDeviceName, HGLOBAL* p_hDevMode,
 
   // Copy the DEVNAMES information from PRINTER_INFO_2 structure.
   pDevNames->wDriverOffset = sizeof(DEVNAMES)/sizeof(TCHAR);
-  memcpy((LPTSTR)pDevNames + pDevNames->wDriverOffset,
+  memcpy(reinterpret_cast<LPTSTR>(pDevNames) + pDevNames->wDriverOffset,
          p2->pDriverName, drvNameLen*sizeof(TCHAR));
 
    pDevNames->wDeviceOffset = static_cast<WORD>(sizeof(DEVNAMES)/sizeof(TCHAR)) +
    drvNameLen + 1;
-   memcpy((LPTSTR)pDevNames + pDevNames->wDeviceOffset,
+   memcpy(reinterpret_cast<LPTSTR>(pDevNames) + pDevNames->wDeviceOffset,
        p2->pPrinterName, ptrNameLen*sizeof(TCHAR));
 
    pDevNames->wOutputOffset = static_cast<WORD>(sizeof(DEVNAMES)/sizeof(TCHAR)) +
      drvNameLen + ptrNameLen + 2;
-   memcpy((LPTSTR)pDevNames + pDevNames->wOutputOffset,
+   memcpy(reinterpret_cast<LPTSTR>(pDevNames) + pDevNames->wOutputOffset,
           p2->pPortName, porNameLen*sizeof(TCHAR));
 
    pDevNames->wDefault = 0;
@@ -4020,8 +4020,8 @@ Java_sun_awt_windows_WPrinterJob_setNativePrintService(JNIEnv *env,
                                                        jstring printer)
 {
     TRY;
-    LPTSTR printerName = (LPTSTR)JNU_GetStringPlatformChars(env,
-                                                            printer, NULL);
+    LPCTSTR printerName = jsafe_cast<LPCTSTR>(JNU_GetStringPlatformChars(env,
+                                                            printer, NULL));
     HDC hDC = AwtPrintControl::getPrintDC(env, name);
     if (hDC != NULL) {
         DeletePrintDC(hDC);
@@ -4051,7 +4051,7 @@ Java_sun_awt_windows_WPrinterJob_setNativePrintService(JNIEnv *env,
       hDevNames = NULL;
     }
 
-    SetPrinterDevice(printerName, &hDevMode, &hDevNames);
+    SetPrinterDevice(const_cast<LPTSTR>(printerName), &hDevMode, &hDevNames);
 
     AwtPrintControl::setPrintHDMode(env, name, hDevMode);
     AwtPrintControl::setPrintHDName(env, name, hDevNames);
@@ -4098,7 +4098,7 @@ Java_sun_awt_windows_WPrinterJob_getNativePrintService(JNIEnv *env,
     DEVNAMES* pDevNames = (DEVNAMES*)::GlobalLock(hDevNames);
 
     printer = JNU_NewStringPlatform(env,
-                                    (LPTSTR)pDevNames+pDevNames->wDeviceOffset);
+                                    reinterpret_cast<LPTSTR>(pDevNames)+pDevNames->wDeviceOffset);
     ::GlobalUnlock(hDevNames);
     return printer;
 

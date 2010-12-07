@@ -77,7 +77,7 @@ HMODULE __stdcall UnicowsLoader::LoadUnicows(void)
     // an infinite loop if some W call were made inside AwtToolkit class
     // initialization.
     HMODULE hmodAWT = GetModuleHandleA("awt");
-    LPSTR abspath = (LPSTR)safe_Malloc(MAX_PATH);
+    LPSTR abspath = static_cast<LPSTR>(safe_Malloc(MAX_PATH));
     if (abspath != NULL) {
         GetModuleFileNameA(hmodAWT, abspath, MAX_PATH);
         *strrchr(abspath, '\\') = '\0';
@@ -160,7 +160,7 @@ void UnicowsLoader::PrinterInfo1A2W(
     LPPRINTER_INFO_1W pi1W,
     const DWORD num)
 {
-    LPWSTR pwstrbuf = (LPWSTR)(pi1W + num);
+    LPWSTR pwstrbuf = reinterpret_cast<LPWSTR>(pi1W + num);
     DWORD current;
 
     // loop through all structures
@@ -222,7 +222,7 @@ void UnicowsLoader::PrinterInfo5A2W(
     LPPRINTER_INFO_5W pi5W,
     const DWORD num)
 {
-    LPWSTR pbuf = (LPWSTR)(pi5W + num);
+    LPWSTR pbuf = reinterpret_cast<LPWSTR>(pi5W + num);
     DWORD current;
 
     // loop through all structures
@@ -336,7 +336,7 @@ BOOL __stdcall UnicowsLoader::EnumPrintersWImpl(
 
     if (Name != NULL) {
         DWORD len = static_cast<DWORD>(wcslen(Name)) + 1;
-        pNameA = (LPSTR)safe_Malloc(len);
+        pNameA = static_cast<LPSTR>(safe_Malloc(len));
         ::WideCharToMultiByte(CP_ACP, 0, Name, -1, pNameA, len, NULL, NULL);
     }
 
