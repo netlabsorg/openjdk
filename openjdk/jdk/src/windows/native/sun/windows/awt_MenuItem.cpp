@@ -165,7 +165,7 @@ BOOL AwtMenuItem::CheckMenuCreation(JNIEnv *env, jobject self, HMENU hMenu)
             TCHAR *buf;
             FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM,
                 NULL, dw, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                (LPTSTR)&buf, 0, NULL);
+                reinterpret_cast<LPTSTR>(&buf), 0, NULL);
             jstring s = JNU_NewStringPlatform(env, buf);
             createError = JNU_NewObjectByName(env, "java/lang/InternalError",
                                                    "(Ljava/lang/String;)V", s);
@@ -635,7 +635,7 @@ void AwtMenuItem::SetLabel(LPCTSTR sb)
     ::GetMenuItemInfo(hMenu, GetID(), FALSE, &mii);
 
     mii.fType = MFT_OWNERDRAW;
-    mii.dwTypeData = (LPTSTR)(*sb);
+    mii.dwTypeData = reinterpret_cast<LPTSTR>(*sb);
 
     // find index by menu item id
     int nMenuItemCount = ::GetMenuItemCount(hMenu);;
@@ -699,7 +699,7 @@ LRESULT AwtMenuItem::WinThreadExecProc(ExecuteArgs * args)
     switch( args->cmdId ) {
         case MENUITEM_SETLABEL:
         {
-            LPCTSTR sb = (LPCTSTR)args->param1;
+            LPCTSTR sb = reinterpret_cast<LPCTSTR>(args->param1);
             DASSERT(!IsBadStringPtr(sb, 20));
             this->SetLabel(sb);
         }

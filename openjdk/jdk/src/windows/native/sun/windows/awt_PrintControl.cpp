@@ -135,7 +135,7 @@ BOOL AwtPrintControl::FindPrinter(jstring printerName, LPBYTE pPrinterEnum,
     DWORD cbBuf = *pcbBuf, dummyWord = 0;
 
     JavaStringBuffer printerNameBuf(env, printerName);
-    LPTSTR lpcPrinterName = (LPTSTR)printerNameBuf;
+    LPTSTR lpcPrinterName = jsafe_cast<LPTSTR>(printerNameBuf);
     DASSERT(lpcPrinterName != NULL);
 
     // For NT, first do a quick check of all remote and local printers.
@@ -435,7 +435,7 @@ BOOL AwtPrintControl::CreateDevModeAndDevNames(PRINTDLG *ppd,
         DEVNAMES *devnames =
             (DEVNAMES *)::GlobalLock(ppd->hDevNames);
         DASSERT(!IsBadWritePtr(devnames, devnameSize));
-        LPTSTR lpcDevnames = (LPTSTR)devnames;
+        LPTSTR lpcDevnames = reinterpret_cast<LPTSTR>(devnames);
 
         // note: all sizes are in characters, not in bytes
         devnames->wDriverOffset = sizeof(DEVNAMES)/sizeof(TCHAR);
@@ -511,17 +511,17 @@ WORD AwtPrintControl::getNearestMatchingPaper(LPTSTR printer, LPTSTR port,
                                           numPaperSizes);
 
         DWORD result1 = DeviceCapabilities(printer, port,
-                                       DC_PAPERS, (LPTSTR) papers, NULL);
+                                       DC_PAPERS, reinterpret_cast<LPTSTR>(papers), NULL);
 
         DWORD result2 = DeviceCapabilities(printer, port,
-                                       DC_PAPERSIZE, (LPTSTR) paperSizes,
+                                       DC_PAPERSIZE, reinterpret_cast<LPTSTR>(paperSizes),
                                        NULL);
 
         // REMIND: cache in papers and paperSizes
         if (result1 == -1 || result2 == -1 ) {
-            free((LPTSTR) papers);
+            free(papers);
             papers = NULL;
-            free((LPTSTR) paperSizes);
+            free(paperSizes);
             paperSizes = NULL;
         }
     }
@@ -577,11 +577,11 @@ WORD AwtPrintControl::getNearestMatchingPaper(LPTSTR printer, LPTSTR port,
     }
 
     if (papers != NULL) {
-        free((LPTSTR)papers);
+        free(papers);
     }
 
     if (paperSizes != NULL) {
-        free((LPTSTR)paperSizes);
+        free(paperSizes);
     }
 
     return closestMatch;
@@ -620,8 +620,8 @@ BOOL AwtPrintControl::InitPrintDialog(JNIEnv *env,
         pd.hDevMode = AwtPrintControl::getPrintHDMode(env, printCtrl);
         pd.hDevNames = AwtPrintControl::getPrintHDName(env, printCtrl);
 
-        LPTSTR getName = (LPTSTR)JNU_GetStringPlatformChars(env,
-                                                      printerName, NULL);
+        LPCTSTR getName = jsafe_cast<LPCTSTR>(JNU_GetStringPlatformChars(env,
+                                                      printerName, NULL));
 
         BOOL samePrinter = FALSE;
 
@@ -630,7 +630,7 @@ BOOL AwtPrintControl::InitPrintDialog(JNIEnv *env,
 
             DEVNAMES *devnames = (DEVNAMES *)::GlobalLock(pd.hDevNames);
             if (devnames != NULL) {
-                LPTSTR lpdevnames = (LPTSTR)devnames;
+                LPTSTR lpdevnames = reinterpret_cast<LPTSTR>(devnames);
                 printName = lpdevnames+devnames->wDeviceOffset;
 
                 if (!_tcscmp(printName, getName)) {
@@ -950,7 +950,7 @@ BOOL AwtPrintControl::UpdateAttributes(JNIEnv *env,
     if (pd.hDevNames != NULL) {
         DEVNAMES *devnames = (DEVNAMES*)::GlobalLock(pd.hDevNames);
         DASSERT(!IsBadReadPtr(devnames, sizeof(DEVNAMES)));
-        LPCTSTR lpcNames = (LPTSTR)devnames;
+        LPCTSTR lpcNames = reinterpret_cast<LPTSTR>(devnames);
         LPCTSTR pbuf = (_tcslen(lpcNames + devnames->wDeviceOffset) == 0 ?
                         TEXT("") : lpcNames + devnames->wDeviceOffset);
         if (pbuf != NULL) {

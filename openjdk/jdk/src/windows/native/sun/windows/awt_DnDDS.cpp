@@ -1193,7 +1193,7 @@ AwtDragSource::ADSIStreamProxy::ADSIStreamProxy(AwtDragSource* parent, jbyteArra
 
     ::CoFileTimeNow(&now);
 
-    m_statstg.pwcsName          = (LPWSTR)NULL;
+    m_statstg.pwcsName          = NULL;
     m_statstg.type              = STGTY_STREAM;
     m_statstg.cbSize.HighPart   = 0;
     m_statstg.cbSize.LowPart    = m_blen;

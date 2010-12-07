@@ -510,7 +510,7 @@ JNIEXPORT jstring JNICALL Java_sun_awt_windows_WInputMethod_getNativeIMMDescript
     jstring infojStr = NULL;
 
     if ((buffSize = ::ImmGetDescription(hkl, szImmDescription, 0)) > 0) {
-        szImmDescription = (LPTSTR) safe_Malloc(buffSize * sizeof(TCHAR));
+        szImmDescription = static_cast<LPTSTR>(safe_Malloc(buffSize * sizeof(TCHAR)));
 
         if (szImmDescription != NULL) {
             ImmGetDescription(hkl, szImmDescription, buffSize);
@@ -595,7 +595,7 @@ HKL getDefaultKeyboardLayout() {
 
         if (ret == ERROR_SUCCESS) {
             hkl = reinterpret_cast<HKL>(static_cast<INT_PTR>(
-                _tcstoul((LPCTSTR)szHKL, &end, 16)));
+                _tcstoul(reinterpret_cast<LPCTSTR>(szHKL), &end, 16)));
         }
 
         ::RegCloseKey(hKey);

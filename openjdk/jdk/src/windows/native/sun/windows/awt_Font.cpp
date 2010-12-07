@@ -365,8 +365,8 @@ AwtFont* AwtFont::Create(JNIEnv *env, jobject font, jint angle, jfloat awScale)
 int CALLBACK FindFamilyName (ENUMLOGFONTEX *lpelfe,
           NEWTEXTMETRICEX *lpntme, int FontType, LPARAM lParam)
 {
-    if(_tcsstr((LPTSTR)lParam, lpelfe->elfLogFont.lfFaceName)) {
-        _tcscpy((LPTSTR)lParam, lpelfe->elfLogFont.lfFaceName);
+    if(_tcsstr(reinterpret_cast<LPTSTR>(lParam), lpelfe->elfLogFont.lfFaceName)) {
+        _tcscpy(reinterpret_cast<LPTSTR>(lParam), lpelfe->elfLogFont.lfFaceName);
         return 0;
     } else {
         return 1;
@@ -693,7 +693,7 @@ SIZE  AwtFont::DrawStringSize_sub(jstring str, HDC hDC,
             if (IS_WIN95) {
                 // Start of conversion Code to fix arabic shaping problems
                 // with unicode support in win 95
-                LPSTR buffer =  (LPSTR) alloca((wcslen(string) + 1) * 2);
+                LPSTR buffer =  static_cast<LPSTR>(alloca((wcslen(string) + 1) * 2));
                 int count = ::WideCharToMultiByte(codePage, 0, string, length,
                                                   buffer,
                                                   static_cast<int>((wcslen(string) + 1) * 2),
@@ -753,8 +753,8 @@ SIZE  AwtFont::DrawStringSize_sub(jstring str, HDC hDC,
                 char* offsetBuffer = (char *)(buffer + 4);
 
                 if (unicodeUsed) {
-                    VERIFY(!draw || ::TextOutW(hDC, x, y, (LPCWSTR)offsetBuffer, buflen / 2));
-                    VERIFY(::GetTextExtentPoint32W(hDC, (LPCWSTR)offsetBuffer, buflen / 2, &temp));
+                    VERIFY(!draw || ::TextOutW(hDC, x, y, reinterpret_cast<LPCWSTR>(offsetBuffer), buflen / 2));
+                    VERIFY(::GetTextExtentPoint32W(hDC, reinterpret_cast<LPCWSTR>(offsetBuffer), buflen / 2, &temp));
                 }
                 else {
                     VERIFY(!draw || ::TextOutA(hDC, x, y, offsetBuffer, buflen));
@@ -1776,7 +1776,7 @@ void CCombinedSegTable::GetEUDCFileName(LPWSTR lpszFileName, int cchFileName)
     char szTmpName[80];
     VERIFY(::WideCharToMultiByte(CP_ACP, 0, szFamilyName, -1,
         szTmpName, sizeof(szTmpName), NULL, NULL));
-    LONG lStatus = ::RegQueryValueExA(hKey, (LPCSTR) szTmpName,
+    LONG lStatus = ::RegQueryValueExA(hKey, reinterpret_cast<LPCSTR>(szTmpName),
         NULL, &dwType, szFileName, &dwBytes);
     BOOL fUseDefault = FALSE;
     if (lStatus != ERROR_SUCCESS){ // try System default EUDC font
@@ -1787,7 +1787,7 @@ void CCombinedSegTable::GetEUDCFileName(LPWSTR lpszFileName, int cchFileName)
             return;
         }
         char szDefault[] = "SystemDefaultEUDCFont";
-        lStatus = ::RegQueryValueExA(hKey, (LPCSTR) szDefault,
+        lStatus = ::RegQueryValueExA(hKey, reinterpret_cast<LPCSTR>(szDefault),
             NULL, &dwType, szFileName, &dwBytes);
         fUseDefault = TRUE;
         if (lStatus != ERROR_SUCCESS) {
@@ -1798,16 +1798,16 @@ void CCombinedSegTable::GetEUDCFileName(LPWSTR lpszFileName, int cchFileName)
         }
     }
 
-    if (strcmp((LPCSTR) szFileName, "userfont.fon") == 0) {
+    if (strcmp(reinterpret_cast<char*>(szFileName), "userfont.fon") == 0) {
         // This font is associated with no EUDC font
         // and the system default EUDC font is not TrueType
         m_fTTEUDCFileExist = FALSE;
         return;
     }
 
-    DASSERT(strlen((LPCSTR)szFileName) > 0);
+    DASSERT(strlen(reinterpret_cast<char*>(szFileName)) > 0);
     VERIFY(::MultiByteToWideChar(CP_ACP, 0,
-        (LPCSTR)szFileName, -1, lpszFileName, cchFileName) != 0);
+        reinterpret_cast<LPCSTR>(szFileName), -1, lpszFileName, cchFileName) != 0);
     if (fUseDefault)
         wcscpy(m_szDefaultEUDCFile, lpszFileName);
 }

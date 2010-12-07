@@ -595,7 +595,7 @@ void AwtWindow::Show()
                       NULL,
                       GetLastError(),
                       MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                      (LPTSTR)&msgBuffer, // it's an output parameter when allocate buffer is used
+                      reinterpret_cast<LPTSTR>(&msgBuffer), // it's an output parameter when allocate buffer is used
                       0,
                       NULL);
 
@@ -1676,7 +1676,7 @@ void AwtWindow::_SetTitle(void *param)
     {
         int length = env->GetStringLength(title);
         WCHAR *buffer = new WCHAR[length + 1];
-        env->GetStringRegion(title, 0, length, reinterpret_cast<jchar*>(buffer));
+        env->GetStringRegion(title, 0, length, jsafe_cast<jchar*>(buffer));
         buffer[length] = L'\0';
         VERIFY(::SetWindowTextW(w->GetHWnd(), buffer));
         delete[] buffer;

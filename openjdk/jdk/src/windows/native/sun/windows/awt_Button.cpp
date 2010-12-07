@@ -106,7 +106,7 @@ AwtButton* AwtButton::Create(jobject self, jobject parent)
         if (label == NULL) {
             labelStr = L"";
         } else {
-            labelStr = (LPCWSTR)env->GetStringChars(label, JNI_FALSE);
+            labelStr = jsafe_cast<LPCWSTR>(env->GetStringChars(label, JNI_FALSE));
         }
         style = 0;
 
@@ -128,7 +128,7 @@ AwtButton* AwtButton::Create(jobject self, jobject parent)
         c->m_backgroundColorSet = TRUE;  // suppress inheriting parent's color
         c->UpdateBackground(env, target);
         if (label != NULL)
-            env->ReleaseStringChars(label, (jchar*)labelStr);
+            env->ReleaseStringChars(label, jsafe_cast<const jchar*>(labelStr));
     } catch (...) {
         env->DeleteLocalRef(target);
         if (label != NULL)

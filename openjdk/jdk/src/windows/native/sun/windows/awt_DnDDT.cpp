@@ -555,8 +555,8 @@ jobject AwtDropTarget::GetData(jlong fmt) {
             break;
         }
         case TYMED_FILE: {
-            jobject local = JNU_NewStringPlatform(env, (LPCTSTR)
-                                                  stgmedium.lpszFileName);
+            jobject local = JNU_NewStringPlatform(env, jsafe_cast<LPCTSTR>(
+                                                  stgmedium.lpszFileName));
             jstring fileName = (jstring)env->NewGlobalRef(local);
             env->DeleteLocalRef(local);
 

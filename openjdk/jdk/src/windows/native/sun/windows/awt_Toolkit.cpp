@@ -313,7 +313,7 @@ JavaStringBuffer::JavaStringBuffer(JNIEnv *env, jstring jstr) {
     if (jstr != NULL) {
         int length = env->GetStringLength(jstr);
         buffer = new TCHAR[length + 1];
-        LPCTSTR tmp = (LPCTSTR)JNU_GetStringPlatformChars(env, jstr, NULL);
+        LPCTSTR tmp = jsafe_cast<LPCTSTR>(JNU_GetStringPlatformChars(env, jstr, NULL));
         _tcscpy(buffer, tmp);
         JNU_ReleaseStringPlatformChars(env, jstr, tmp);
     } else {
@@ -379,7 +379,7 @@ HWND AwtToolkit::CreateToolkitWnd(LPCTSTR name)
 {
     HWND hwnd = CreateWindow(
         szAwtToolkitClassName,
-        (LPCTSTR)name,                    /* window name */
+        name,                             /* window name */
         WS_DISABLED,                      /* window style */
         -1, -1,                           /* position of window */
         0, 0,                             /* width and height */

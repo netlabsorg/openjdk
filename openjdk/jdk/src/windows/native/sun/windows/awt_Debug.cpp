@@ -157,7 +157,7 @@ void AwtDebugSupport::AssertCallback(const char * expr, const char * file, int l
                   NULL,
                   lastError,
                   MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                  (LPSTR)&msgBuffer, // it's an output parameter when allocate buffer is used
+                  reinterpret_cast<LPSTR>(&msgBuffer), // it's an output parameter when allocate buffer is used
                   0,
                   NULL);
 
