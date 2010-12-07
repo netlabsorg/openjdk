@@ -23,7 +23,9 @@
  * have any questions.
  */
 
+#ifndef __WIN32OS2__
 #define INITGUID
+#endif
 #include "Trace.h"
 #include "ddrawUtils.h"
 #include "ddrawObject.h"

@@ -26,6 +26,10 @@
 #include "awt.h"
 #include "awt_dlls.h"
 
+#ifdef __WIN32OS2__
+#include <minivcrt.h>
+#endif
+
 /*
  * To reduce memory footprint we don't statically link to COMDLG32.DLL
  * and SHELL32.  Instead we programatically load them only when they are
@@ -292,7 +296,7 @@ load_rich_edit_library() {
         LPTSTR    szFullPath = new TCHAR[_MAX_PATH];
         DWORD     dwVerHnd = 0;
         DWORD     dwVersionInfoSize;
-        LPVOID    lpVersionInfo;
+        LPBYTE    lpVersionInfo;
         UINT      uLength = 0;
         struct LANGANDCODEPAGE {
             WORD wLanguage;

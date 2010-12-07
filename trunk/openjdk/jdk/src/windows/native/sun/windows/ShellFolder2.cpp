@@ -180,13 +180,15 @@ static jstring jstringFromSTRRET(JNIEnv* env, LPITEMIDLIST pidl, STRRET* pStrret
             return JNU_NewStringPlatform(env,
                                          (CHAR*)pidl + pStrret->uOffset);
         case STRRET_WSTR :
-            return env->NewString(pStrret->pOleStr,
+            return env->NewString(reinterpret_cast<const jchar*>(pStrret->pOleStr),
                 static_cast<jsize>(wcslen(pStrret->pOleStr)));
     }
     return NULL;
 }
 // restoring the original definition
-#define JNU_NewStringPlatform(env, x) env->NewString(x, static_cast<jsize>(_tcslen(x)))
+#define JNU_NewStringPlatform(env, x) \
+    env->NewString(reinterpret_cast<const jchar*>(x), \
+        static_cast<jsize>(_tcslen(reinterpret_cast<const WCHAR*>(x))))
 
 /*
  * Class:     sun_awt_shell_Win32ShellFolder2
@@ -726,10 +728,10 @@ JNIEXPORT jlong JNICALL Java_sun_awt_shell_Win32ShellFolder2_parseDisplayName0
     int nLength = env->GetStringLength(jname);
     jchar* wszPath = new jchar[nLength + 1];
     const jchar* strPath = env->GetStringChars(jname, NULL);
-    wcsncpy(wszPath, strPath, nLength);
+    wcsncpy(reinterpret_cast<wchar_t*>(wszPath), reinterpret_cast<const wchar_t*>(strPath), nLength);
     wszPath[nLength] = 0;
     HRESULT res = pIShellFolder->ParseDisplayName(NULL, NULL,
-                        const_cast<jchar*>(wszPath), NULL, &pIDL, NULL);
+                        reinterpret_cast<WCHAR*>(wszPath), NULL, &pIDL, NULL);
     if (res != S_OK) {
         JNU_ThrowIOException(env, "Could not parse name");
         pIDL = 0;
@@ -862,6 +864,9 @@ JNIEXPORT jlong JNICALL Java_sun_awt_shell_Win32ShellFolder2_extractIcon
 
     HICON hIcon = NULL;
 
+#ifdef __WIN32OS2__
+    // @todo Odin32 doesn't define IExtractIcon, use native API instead
+#else
     HRESULT hres;
     if (IS_NT) {
         IExtractIconW* pIcon;
@@ -910,6 +915,7 @@ JNIEXPORT jlong JNICALL Java_sun_awt_shell_Win32ShellFolder2_extractIcon
             pIcon->Release();
         }
     }
+#endif /* __WIN32OS2__ */
     return (jlong)hIcon;
 }
 
@@ -1011,13 +1017,13 @@ JNIEXPORT jintArray JNICALL Java_sun_awt_shell_Win32ShellFolder2_getFileChooserB
     libShell32 = LoadLibrary(TEXT("shell32.dll"));
     if (libShell32 != NULL) {
         hBitmap = (HBITMAP)LoadImage(libShell32,
-                    isVista ? TEXT("IDB_TB_SH_DEF_16") : MAKEINTRESOURCE(216),
+                    isVista ? TEXT("IDB_TB_SH_DEF_16") : (LPCTSTR)MAKEINTRESOURCE(216),
                     IMAGE_BITMAP, 0, 0, LR_CREATEDIBSECTION);
     }
     if (hBitmap == NULL) {
         libComCtl32 = LoadLibrary(TEXT("comctl32.dll"));
         if (libComCtl32 != NULL) {
-            hBitmap = (HBITMAP)LoadImage(libComCtl32, MAKEINTRESOURCE(124),
+            hBitmap = (HBITMAP)LoadImage(libComCtl32, (LPCTSTR)MAKEINTRESOURCE(124),
                                          IMAGE_BITMAP, 0, 0, LR_CREATEDIBSECTION);
         }
     }
@@ -1081,7 +1087,7 @@ JNIEXPORT jintArray JNICALL Java_sun_awt_shell_Win32ShellFolder2_getFileChooserB
 JNIEXPORT jlong JNICALL Java_sun_awt_shell_Win32ShellFolder2_getSystemIcon
     (JNIEnv* env, jclass cls, jint iconID)
 {
-    return (jlong)LoadIcon(NULL, MAKEINTRESOURCE(iconID));
+    return (jlong)LoadIcon(NULL, (LPCTSTR)MAKEINTRESOURCE(iconID));
 }
 
 
@@ -1094,10 +1100,10 @@ JNIEXPORT jlong JNICALL Java_sun_awt_shell_Win32ShellFolder2_getIconResource
     (JNIEnv* env, jclass cls, jstring libName, jint iconID,
      jint cxDesired, jint cyDesired, jboolean useVGAColors)
 {
-    HINSTANCE libHandle = LoadLibrary(env->GetStringChars(libName, NULL));
+    HINSTANCE libHandle = LoadLibrary(reinterpret_cast<const WCHAR*>(env->GetStringChars(libName, NULL)));
     if (libHandle != NULL) {
         UINT fuLoad = (useVGAColors && !isXP) ? LR_VGACOLOR : 0;
-        return ptr_to_jlong(LoadImage(libHandle, MAKEINTRESOURCE(iconID),
+        return ptr_to_jlong(LoadImage(libHandle, (LPCTSTR)MAKEINTRESOURCE(iconID),
                                       IMAGE_ICON, cxDesired, cyDesired,
                                       fuLoad));
     }
@@ -1194,6 +1200,7 @@ JNIEXPORT jobjectArray JNICALL
         return columns;
     }
 
+#ifndef __WIN32OS2__
     hr = pIShellFolder->CreateViewObject(NULL, IID_IShellDetails, (void**)&pIUnknown);
     if(SUCCEEDED (hr)) {
         // The folder exposes IShellDetails interface
@@ -1230,6 +1237,7 @@ JNIEXPORT jobjectArray JNICALL
 
         return columns;
     }
+#endif /* !__WIN32OS2__ */
 
     // The folder exposes neither IShellFolder2 nor IShelDetails
     return NULL;
@@ -1267,6 +1275,8 @@ JNIEXPORT jobject JNICALL
         }
     }
 
+#ifndef __WIN32OS2__
+    // @todo Odin32 doesn't define IExtractIcon, use native API instead
     hr = pIShellFolder->CreateViewObject(NULL, IID_IShellDetails, (void**)&pIUnknown);
     if(SUCCEEDED (hr)) {
         // The folder exposes IShellDetails interface
@@ -1278,6 +1288,7 @@ JNIEXPORT jobject JNICALL
             return jstringFromSTRRET(env, pidl, &strRet);
         }
     }
+#endif /* !__WIN32OS2__ */
 
     // The folder exposes neither IShellFolder2 nor IShelDetails
     return NULL;

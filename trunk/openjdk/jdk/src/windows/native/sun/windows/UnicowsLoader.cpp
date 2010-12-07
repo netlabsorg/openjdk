@@ -27,6 +27,11 @@
 #include "alloc.h"
 #include "UnicowsLoader.h"
 
+#ifdef __WIN32OS2__
+#include <minivcrt.h>
+#define _CW_DEFAULT CW_DEFAULT
+#endif
+
 /*
  * Support functions for the Microsoft Layer for Unicode (MSLU).
  *
