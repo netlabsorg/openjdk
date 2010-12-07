@@ -5,13 +5,16 @@ This document contains information about building the OpenJDK 6 source code on O
 Requirements (draft)
 
 1.  GCC 4.4.4 + WLINK (ftp://ftp.netlabs.org/pub/qt4/tools/gcc-4_4_4-complete-20100712.zip)
-2.  Odin32 SDK (take from SVN at http://svn.netlabs.org/repos/odin32/trunk)
+2.  Odin32 SDK (take from SVN at http://svn.netlabs.org/repos/odin32/trunk,
+    configure with configure.cmd --use-oldlib)
 3a. Java 1.5.0 (so far, download link is to be clarified)
-3b. JAXB 2.1 (https://jaxb.dev.java.net/2.1/JAXB2_20061211.jar, install it with java -jar JAXB2_20061211.jar)
+3b. JAXB 2.1 (https://jaxb.dev.java.net/2.1/JAXB2_20061211.jar,
+    install it with java -jar JAXB2_20061211.jar)
 4a. Ant 1.8.1 (http://ant.apache.org/bindownload.cgi)
 4b. Patched ant.jar for Ant 1.8.1 (ftp://ftp.netlabs.org/pub/qt4/tmp/ant-1.8.1-patch-os2_cmd_line_length.zip)
 5.  Object REXX (can bue turned on system-wide with the standard SWITCHRX.CMD script)
-6.  The contents of the j2sdk-image directory of the Windows build of OpenJDK6 (for parts still missing from the OS/2 port)
+6.  The contents of the j2sdk-image directory of the Windows build of OpenJDK6
+    (for parts still missing from the OS/2 port)
 
 Copy LocalEnv.tpl.cmd to LocalEnv.cmd and alter according to your environment
 and then use env.cmd to set it up.
