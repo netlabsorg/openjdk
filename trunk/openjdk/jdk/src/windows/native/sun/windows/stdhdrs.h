@@ -42,12 +42,8 @@
 // we need in alloc.h.
 // #include <new>
 
-extern "C" {
-
 // standard Java headers
 #include <jni.h>
 #include <jni_util.h>
-
-} // extern "C"
 
 #endif // _STDHDRS_H_
