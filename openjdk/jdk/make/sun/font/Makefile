@@ -32,6 +32,8 @@ PACKAGE = sun.font
 LIBRARY = fontmanager
 PRODUCT = sun
 
+LIBRARY_SHORT = fontmgr
+
 # Indicate we want the C++ compiler to do the linking.
 CPLUSPLUSLIBRARY=true
 
