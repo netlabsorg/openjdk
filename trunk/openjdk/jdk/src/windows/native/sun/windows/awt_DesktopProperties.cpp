@@ -658,14 +658,14 @@ void AwtDesktopProperties::GetSoundEvents() {
 }
 
 BOOL AwtDesktopProperties::GetBooleanParameter(UINT spi) {
-    BOOL        flag;
+    BOOL flag = FALSE;
     SystemParametersInfo(spi, 0, &flag, 0);
     DASSERT(flag == TRUE || flag == FALSE); // should be simple boolean value
     return flag;
 }
 
 UINT AwtDesktopProperties::GetIntegerParameter(UINT spi) {
-    UINT retValue;
+    UINT retValue = 0;
     SystemParametersInfo(spi, 0, &retValue, 0);
     return retValue;
 }
