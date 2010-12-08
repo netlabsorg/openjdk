@@ -53,6 +53,16 @@ ifndef PLATFORM_SRC
   PLATFORM_SRC  = $(BUILDDIR)/../src/windows
 endif # PLATFORM_SRC
 
+ifndef PLATFORM_SRC_OS2
+  # OS/2 is based on Odin32 so PLATFORM_SRC is 'windows'. But in some cases we
+  # provide the native bits and need to refer to a separate 'os2' soorce tree
+  PLATFORM_SRC_OS2 = $(PLATFORM_SRC:%/windows=%/os2)
+endif
+
+ifeq ($(PLATFORM_SRC), $(PLATFORM_SRC_OS2))
+  $(error Both PLATFORM_SRC and PLATFORM_SRC_OS2 are '$(PLATFOROM_SRC)'!)
+endif
+
 # Platform specific closed sources
 ifndef OPENJDK
   ifndef CLOSED_PLATFORM_SRC
