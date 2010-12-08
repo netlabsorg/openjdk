@@ -439,7 +439,7 @@ endif # PLATFORM
 ifeq ($(PLATFORM), os2)
 # vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv OS/2
 
-FONTCONFIGS_SRC = $(PLATFORM_SRC)/classes/sun/awt/os2
+FONTCONFIGS_SRC = $(PLATFORM_SRC_OS2)/classes/sun/awt/os2
 _FONTCONFIGS = \
         fontconfig.properties
 
