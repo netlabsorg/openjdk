@@ -93,6 +93,8 @@ PACKAGE = sun.security.mscapi
 LIBRARY = sunmscapi
 PRODUCT = sun
 
+LIBRARY_SHORT = smscapi
+
 #
 # The following is for when we need to do postprocessing
 # (signing/obfuscation) against a read-only build.  If the OUTPUTDIR

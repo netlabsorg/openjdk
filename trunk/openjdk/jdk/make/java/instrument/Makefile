@@ -31,6 +31,8 @@ PACKAGE = sun.instrument
 LIBRARY = instrument
 PRODUCT = sun
 
+LIBRARY_SHORT = instrmnt
+
 # Configure the CFLAGS for this library.  Use static binding so that there
 # are not dependencies on modules not on the search patch when invoked from
 # the Windows system directory (or elsewhere).

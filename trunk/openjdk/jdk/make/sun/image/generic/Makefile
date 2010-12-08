@@ -31,6 +31,9 @@ BUILDDIR = ../../..
 PACKAGE = sun.awt.medialib
 LIBRARY = mlib_image
 PRODUCT = sun
+
+LIBRARY_SHORT = mlibimg
+
 include $(BUILDDIR)/common/Defs.gmk
 
 #

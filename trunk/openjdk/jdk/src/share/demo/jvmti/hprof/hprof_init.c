@@ -2029,8 +2029,11 @@ Agent_OnLoad(JavaVM *vm, char *options, void *reserved)
     if ( gdata->bci ) {
 
         /* Load the library or get the handle to it */
+#ifdef OS2        
+        gdata->java_crw_demo_library = load_library("javacrwd");
+#else
         gdata->java_crw_demo_library = load_library("java_crw_demo");
-
+#endif
         { /* "java_crw_demo" */
             static char *symbols[]  = JAVA_CRW_DEMO_SYMBOLS;
             gdata->java_crw_demo_function =
