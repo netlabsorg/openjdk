@@ -100,7 +100,11 @@ public abstract class HotSpotVirtualMachine extends VirtualMachine {
             args = args + "=" + options;
         }
         try {
-            loadAgentLibrary("instrument", args);
+            if (System.getProperty("os.name").startsWith("OS/2")) {
+                loadAgentLibrary("instrmnt", args);
+            } else {
+                loadAgentLibrary("instrument", args);
+            }
         } catch (AgentLoadException x) {
             throw new InternalError("instrument library is missing in target VM");
         } catch (AgentInitializationException x) {

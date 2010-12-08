@@ -48,8 +48,11 @@ extern "C"
          * the System.loadLibrary() call. Here we just need to get handle to
          * initialize the pointers to required mlib routines.
          */
+#ifdef __WIN32OS2__         
+        hDLL = ::LoadLibrary(TEXT("mlibimg.dll"));
+#else
         hDLL = ::LoadLibrary(TEXT("mlib_image.dll"));
-
+#endif
         if (hDLL == NULL) {
             return MLIB_FAILURE;
         }

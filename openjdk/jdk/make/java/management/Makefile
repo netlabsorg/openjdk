@@ -27,6 +27,9 @@ BUILDDIR = ../..
 PACKAGE = java.lang.management
 LIBRARY = management
 PRODUCT = java
+
+LIBRARY_SHORT = mngemnt
+
 include $(BUILDDIR)/common/Defs.gmk
 
 MGMT_SRC  = $(SHARE_SRC)/classes/java/lang/management

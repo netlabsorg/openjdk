@@ -482,7 +482,11 @@ public class ManagementFactory {
     }
 
     static {
-        AccessController.doPrivileged(new LoadLibraryAction("management"));
+        if (System.getProperty("os.name").startsWith("OS/2")) {
+            AccessController.doPrivileged(new LoadLibraryAction("mngemnt"));
+        } else {
+            AccessController.doPrivileged(new LoadLibraryAction("management"));
+        }
         jvm = new VMManagementImpl();
     }
 

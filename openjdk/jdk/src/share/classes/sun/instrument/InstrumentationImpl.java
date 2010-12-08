@@ -271,7 +271,11 @@ public class InstrumentationImpl implements Instrumentation {
     setNativeMethodPrefixes(long nativeAgent, String[] prefixes, boolean isRetransformable);
 
     static {
-        System.loadLibrary("instrument");
+        if (System.getProperty("os.name").startsWith("OS/2")) {
+            System.loadLibrary("instrmnt");
+        } else {
+            System.loadLibrary("instrument");
+        }
     }
 
     /*

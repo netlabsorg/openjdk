@@ -96,7 +96,11 @@ public class ImagingLib {
 
                     if (arch == null || !arch.startsWith("sparc")) {
                         try {
-                            System.loadLibrary("mlib_image");
+                            if (System.getProperty("os.name").startsWith("OS/2")) {
+                                System.loadLibrary("mlibimg");
+                            } else {
+                                System.loadLibrary("mlib_image");
+                            }
                         } catch (UnsatisfiedLinkError e) {
                             return Boolean.FALSE;
                         }
