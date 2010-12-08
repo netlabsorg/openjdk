@@ -58,7 +58,11 @@ public class FontManagerNativeLibrary {
                           shared library in order to avoid dependency. */
                    System.loadLibrary("freetype");
                }
-               System.loadLibrary("fontmanager");
+               if (System.getProperty("os.name").startsWith("OS/2")) {
+                   System.loadLibrary("fontmgr");
+               } else {
+                   System.loadLibrary("fontmanager");
+               }
 
                return null;
             }
