@@ -70,6 +70,7 @@ SUBDIRS = jar security javazic misc net audio $(RENDER_SUBDIR) image \
           native2ascii serialver tools jconsole
 else # disable GUI stuff
 SUBDIRS = jar security javazic misc net \
+      awt \
 	  rmi beans $(JDBC_SUBDIR) \
 	  text nio launcher management $(ORG_SUBDIR) \
           native2ascii serialver tools jconsole
