@@ -32,6 +32,11 @@
 
 #define BSIZE (max(512, MAX_PATH+1))
 
+#ifdef __WIN32OS2__
+#include <string.h>
+#include <wchar.h>
+#include <minivcrt.h>
+#endif
 
 JNIEXPORT jstring JNICALL Java_sun_font_FontManager_getFontPath(JNIEnv *env, jclass obj, jboolean noType1)
 {
