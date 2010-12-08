@@ -252,7 +252,7 @@ public final class FontManager {
                    isSolaris8 = version.equals("5.8");
                    isSolaris9 = version.equals("5.9");
                } else {
-                   isWindows = osName.startsWith("Windows");
+                   isWindows = osName.startsWith("Windows") || osName.startsWith("OS/2");
                    if (isWindows) {
                        String eudcFile =
                            SunGraphicsEnvironment.eudcFontFileName;
