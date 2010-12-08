@@ -74,7 +74,7 @@ FILES_export = \
     sun/java2d/loops/DrawGlyphListLCD.java \
     sun/java2d/loops/GraphicsPrimitive.java
 
-ifeq ($(filter-out windows os2, $(PLATFORM)),)
+ifeq ($(PLATFORM), windows)
 
   # Files built here do not compile with warning level 3 if warnings are fatal
   COMPILER_WARNINGS_FATAL=false
@@ -86,6 +86,14 @@ ifeq ($(filter-out windows os2, $(PLATFORM)),)
 
   FILES_export += sun/java2d/d3d/D3DTextRenderer.java
 
+else
+ifeq ($(PLATFORM), os2)
+
+  LDLIBS += -luser32.lib -lgdi32.lib -l$(OBJDIR)/../../../sun.awt/awt/$(OBJDIRNAME)/awt.lib  
+
+  # no D3D ATM
+  #FILES_export += sun/java2d/d3d/D3DTextRenderer.java
+
 else # PLATFORM unix
 
   FILES_export += \
@@ -94,6 +102,7 @@ else # PLATFORM unix
     sun/font/X11TextRenderer.java \
     sun/awt/X11GraphicsEnvironment.java 
 
+endif # PLATFORM
 endif # PLATFORM
 
 #In the non-OpenJDK mode we need to build T2K
@@ -131,7 +140,11 @@ library:: $(LIB_LOCATION)/$(LIB_PREFIX)freetype.$(LIBRARY_SUFFIX)
 
 $(LIB_LOCATION)/$(LIB_PREFIX)freetype.$(LIBRARY_SUFFIX):
 ifeq ($(filter-out windows os2, $(PLATFORM)),)
+  ifeq ($(PLATFORM), windows)
 	$(CP) $(FREETYPE_LIB_PATH)/$(LIB_PREFIX)freetype.$(LIBRARY_SUFFIX) $@
+  eles
+    # we link to the static library so far, see #32 for details
+  endif
 else 
   ifeq ($(USING_SYSTEM_FT_LIB), false)
 	$(CP) $(FREETYPE_LIB_PATH)/$(LIB_PREFIX)freetype.$(LIBRARY_SUFFIX) $@.6
@@ -192,20 +205,28 @@ endif # PLATFORM
 
 # set up compile flags..
 
-CPPFLAGS += -I$(SHARE_SRC)/native/$(PKGDIR) \
-            -I$(SHARE_SRC)/native/$(PKGDIR)/layout \
-            -I$(SHARE_SRC)/native/$(PKGDIR)/bidi \
-	    -I$(SHARE_SRC)/native/sun/awt/image/cvutils \
-	    -I$(PLATFORM_SRC)/native/sun/awt \
-	    -I$(SHARE_SRC)/native/sun/awt/debug \
-	    -I$(SHARE_SRC)/native/sun/java2d/loops \
-	    -I$(SHARE_SRC)/native/sun/java2d/pipe \
-            -I$(PLATFORM_SRC)/native/sun/java2d \
-	    -I$(SHARE_SRC)/native/sun/java2d \
-	    -I$(TEMPDIR)/../../sun.awt/awt/CClassHeaders
+# some font headers interfere with the compiler headers (e.g. Features.h vs
+# features.h) on OS/2. Use -iquote to solve that
+ifeq ($(PLATFORM), os2)
+I_OPT = -iquote # preserve trailing space
+else
+I_OPT = -I
+endif
+
+CPPFLAGS += $(I_OPT)$(SHARE_SRC)/native/$(PKGDIR) \
+            $(I_OPT)$(SHARE_SRC)/native/$(PKGDIR)/layout \
+            $(I_OPT)$(SHARE_SRC)/native/$(PKGDIR)/bidi \
+	    $(I_OPT)$(SHARE_SRC)/native/sun/awt/image/cvutils \
+	    $(I_OPT)$(PLATFORM_SRC)/native/sun/awt \
+	    $(I_OPT)$(SHARE_SRC)/native/sun/awt/debug \
+	    $(I_OPT)$(SHARE_SRC)/native/sun/java2d/loops \
+	    $(I_OPT)$(SHARE_SRC)/native/sun/java2d/pipe \
+            $(I_OPT)$(PLATFORM_SRC)/native/sun/java2d \
+	    $(I_OPT)$(SHARE_SRC)/native/sun/java2d \
+	    $(I_OPT)$(TEMPDIR)/../../sun.awt/awt/CClassHeaders
 
 ifeq ($(filter-out windows os2, $(PLATFORM)),)
-CPPFLAGS += -I$(PLATFORM_SRC)/native/sun/windows \
-	    -I$(PLATFORM_SRC)/native/sun/java2d/d3d
+CPPFLAGS += $(I_OPT)$(PLATFORM_SRC)/native/sun/windows \
+	    $(I_OPT)$(PLATFORM_SRC)/native/sun/java2d/d3d
 endif
 
