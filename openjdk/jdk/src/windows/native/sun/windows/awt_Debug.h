@@ -49,8 +49,7 @@
 
     extern void * operator new(size_t size, const char * filename, int linenumber);
 #ifdef __GNUC__
-    inline void * operator new[](size_t size, const char * filename, int linenumber)
-    {
+    inline void * operator new[](size_t size, const char * filename, int linenumber) {
         return operator new(size, filename, linenumber);
     }
 #endif
@@ -59,6 +58,11 @@
     extern void operator delete(void *ptr, const char*, int);
 #endif
     extern void operator delete(void *ptr);
+#ifdef __GNUC__
+    inline void operator delete[](void *ptr) {
+        return operator delete(ptr);
+    }
+#endif
     extern void DumpClipRectangle(const char * file, int line, int argc, const char * fmt, va_list arglist);
     extern void DumpUpdateRectangle(const char * file, int line, int argc, const char * fmt, va_list arglist);
 
