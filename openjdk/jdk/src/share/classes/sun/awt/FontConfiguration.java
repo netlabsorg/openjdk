@@ -211,14 +211,20 @@ public abstract class FontConfiguration {
     private File findFontConfigFile(String javaLib) {
         String baseName = javaLib + File.separator + "fontconfig";
         File configFile;
-        if (osVersion != null && osName != null) {
-            configFile = findImpl(baseName + "." + osName + "." + osVersion);
+        /* osName may contain \ and / chars that we certainly don't want to be
+           interpreted as path separators in the code below, fix it */
+        String osNameFixed = null;
+        if (osName != null) {
+            osNameFixed = osName.replace('\\', '_').replace('/', '_');
+        }
+        if (osVersion != null && osNameFixed != null) {
+            configFile = findImpl(baseName + "." + osNameFixed + "." + osVersion);
             if (configFile != null) {
                 return configFile;
             }
         }
-        if (osName != null) {
-            configFile = findImpl(baseName + "." + osName);
+        if (osNameFixed != null) {
+            configFile = findImpl(baseName + "." + osNameFixed);
             if (configFile != null) {
                 return configFile;
             }
