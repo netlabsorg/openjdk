@@ -119,7 +119,7 @@ int errorHandler(int errorCode, const char *errorText) {
     return 1;
 }
 
-JNIEXPORT int JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved) {
+JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved) {
     javaVM = jvm;
 
     cmsSetErrorHandler(errorHandler);
@@ -456,7 +456,8 @@ JNIEXPORT void JNICALL Java_sun_java2d_cmm_lcms_LCMS_colorConvert
   (JNIEnv *env, jclass obj, jobject trans, jobject src, jobject dst)
 {
     storeID_t sTrans;
-    int size, inFmt, outFmt, srcDType, dstDType, outSize, renderType;
+    int size, inFmt, outFmt, outSize, renderType;
+    jint srcDType, dstDType;
     int srcOffset, srcNextRowOffset, dstOffset, dstNextRowOffset;
     int width, height, i;
     void* inputBuffer;

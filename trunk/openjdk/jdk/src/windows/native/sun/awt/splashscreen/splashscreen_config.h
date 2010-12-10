@@ -52,7 +52,9 @@ typedef RECT RECT_T;
                                     (r).right=(xx)+(ww); (r).bottom=(yy)+(hh);
 #define RECT_INC_HEIGHT(r) (r).bottom++;
 
+#ifndef INLINE
 #define INLINE __inline
+#endif
 
 #define SPLASHEXPORT __declspec(dllexport)
 

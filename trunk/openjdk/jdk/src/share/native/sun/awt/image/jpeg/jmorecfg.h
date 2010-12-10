@@ -126,6 +126,8 @@ typedef char JOCTET;
 #endif /* HAVE_UNSIGNED_CHAR */
 
 
+#if !defined(__WIN32OS2__) || !defined(__WINE_BASETSD_H)
+
 /* These typedefs are used for various table entries and so forth.
  * They must be at least as wide as specified; but making them too big
  * won't cost a huge amount of memory, so we don't provide special
@@ -168,6 +170,8 @@ typedef long INT32;
 typedef int INT32;
 #endif
 #endif
+
+#endif /* !defined(__WIN32OS2__) || !defined(__WINE_BASETSD_H) */
 
 /* Datatype used for image dimensions.  The JPEG standard only supports
  * images up to 64K*64K due to 16-bit fields in SOF markers.  Therefore
