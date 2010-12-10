@@ -116,6 +116,10 @@
 #    endif
 #endif
 
+#ifdef __WIN32OS2__
+#    undef NON_WINDOWS
+#endif
+
 // Borland C
 
 #ifdef __BORLANDC__
@@ -262,7 +266,11 @@ typedef void *LPVOID;
 
 #include <windows.h>
 
-#ifdef _WIN64
+#if defined(__WIN32OS2__)
+#   include <string.h>
+#endif
+
+#if defined(_WIN64) || defined(__WIN32OS2__)
 # ifdef USE_ASSEMBLER
 #    undef  USE_ASSEMBLER
 #    define USE_C           1
@@ -276,8 +284,12 @@ typedef void *LPVOID;
 #  endif
 #endif
 
+#ifndef __GNUC__
 // This works for both VC & BorlandC
 #define LCMS_INLINE __inline
+#else
+#define LCMS_INLINE static inline
+#endif
 
 #ifdef USE_PTHREADS
 typedef CRITICAL_SECTION LCMS_RWLOCK_T;

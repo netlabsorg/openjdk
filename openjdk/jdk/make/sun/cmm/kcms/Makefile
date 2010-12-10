@@ -84,7 +84,7 @@ clean clobber::
 #
 vpath %.c   $(CLOSED_SRC)/share/native/$(PKGDIR)
 
-ifeq ($(filter-out windows os2, $(PLATFORM)),)
+ifeq ($(PLATFORM), windows)
 
 OTHER_LDLIBS = user32.lib version.lib
 
@@ -96,6 +96,11 @@ res.clean:
 	$(RM) $(OBJDIR)/cmm.h
 
 else # PLATFORM
+ifeq ($(PLATFORM), os2)
+
+OTHER_LDLIBS = -luser32.lib -lversion.lib
+
+else # PLATFORM
 OTHER_LDLIBS = $(LIBM)
 
 # Use pic instead of PIC on this library
@@ -103,6 +108,7 @@ GLOBAL_KPIC = $(PIC_CODE_SMALL)
 
 CPPFLAGS += -I$(CLASSHDRDIR) \
 
+endif # PLATFORM
 endif # PLATFORM
 
 #CFLAGS += -DJAVACMM -DFUT_CALC_EX -DNO_FUT_GCONST

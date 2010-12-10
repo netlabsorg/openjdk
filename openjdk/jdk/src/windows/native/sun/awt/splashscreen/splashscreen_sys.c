@@ -28,6 +28,10 @@
 #include <windows.h>
 #include <winuser.h>
 
+#ifdef __EMX__
+#include <alloca.h>
+#endif
+
 /* layered windows api prototypes. wouldn't be needed if we could use an updated version of the MS PSDK. */
 
 typedef BOOL WINAPI UpdateLayeredWindowT(HWND hwnd,     // handle to layered window
@@ -67,8 +71,10 @@ static UpdateLayeredWindowT *UpdateLayeredWindow = NULL;
 #define SetWindowLongPtr SetWindowLong
 #define GWLP_USERDATA GWL_USERDATA
 #define GWLP_WNDPROC  GWL_WNDPROC
+#if !defined(__WIN32OS2__)
 typedef __int32 LONG_PTR;
 typedef unsigned __int32 ULONG_PTR;
+#endif
 #endif // __int3264
 
 

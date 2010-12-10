@@ -33,7 +33,7 @@ include $(BUILDDIR)/common/Defs.gmk
 #
 # Files
 #
-ifeq ($(PLATFORM), windows)
+ifeq ($(filter-out windows os2,$(PLATFORM)),)
 include FILES_c_windows.gmk
 else # PLATFORM
 include FILES_c_unix.gmk
@@ -92,8 +92,15 @@ res.clean:
 	$(RM) $(OBJDIR)/cmm.h
 
 else
+ifeq ($(PLATFORM), os2)
+
+OTHER_LDLIBS = -luser32.lib -lversion.lib -l$(OBJDIR)/../../../sun.awt/awt/$(OBJDIRNAME)/awt.lib
+OTHER_INCLUDES += -I$(SHARE_SRC)/native/sun/java2d \
+                  -I$(SHARE_SRC)/native/sun/awt/debug
+
+else
 OTHER_LDLIBS = $(LIBM) -lawt -L$(LIBDIR)/$(LIBARCH)/xawt 
 CPPFLAGS += -I$(SHARE_SRC)/native/sun/java2d \
             -I$(SHARE_SRC)/native/sun/awt/debug
 endif
-
+endif

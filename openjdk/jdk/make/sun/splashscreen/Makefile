@@ -29,6 +29,8 @@ LIBRARY = splashscreen
 PRODUCT = sun
 include $(BUILDDIR)/common/Defs.gmk
 
+LIBRARY_SHORT = splshscr
+
 #
 # Files
 #
@@ -66,9 +68,14 @@ ifneq ($(filter-out windows os2, $(PLATFORM)),)
   CPPFLAGS += -I$(OPENWIN_HOME)/include -I$(OPENWIN_HOME)/include/X11/extensions
   OTHER_LDLIBS += -L$(OPENWIN_LIB) -lX11 -lXext $(LIBM) -lpthread
 else # PLATFORM
+ifeq ($(PLATFORM), windows)
   CFLAGS += -DWITH_WIN32
   OTHER_LDLIBS += kernel32.lib user32.lib gdi32.lib 
 #$(JVMLIB) $(OBJDIR)/../../jpeg/$(OBJDIRNAME)/jpeg$(SUFFIX).lib
+else # PLATFORM = os2
+  CFLAGS += -DWITH_WIN32
+  OTHER_LDLIBS += -lkernel32.lib -luser32.lib -lgdi32.lib 
+endif # PLATFORM
 endif # PLATFORM
 
 #
