@@ -132,7 +132,7 @@ typedef AwtObject* PDATA;
  * uname -s returns Windows_98 on 98 and ME
  * uname -s returns Windows_NT on NT and 2000 and XP
  */
-#if defined (WIN32)
+#if defined (WIN32) || defined(__WIN32OS2__)
     #define IS_WIN32 TRUE
 #else
     #define IS_WIN32 FALSE
