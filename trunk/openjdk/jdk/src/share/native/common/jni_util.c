@@ -160,6 +160,14 @@ JNU_ThrowByNameWithLastError(JNIEnv *env, const char *name,
     int n = JVM_GetLastErrorString(buf, sizeof(buf));
 
     if (n > 0) {
+        /* Prepend defaultDetail for better informativeness */
+        int len = defaultDetail ? strlen(defaultDetail) : 0;
+        if (len > 0 && sizeof(buf) - n - 1 >= len + 3) {
+            memmove(buf + len + 2, buf, n);
+            memcpy(buf, defaultDetail, len);
+            memcpy(buf + len, " (", 2);
+            memcpy(buf + len + 2 + n, ")\0", 2);
+        }
         jstring s = JNU_NewStringPlatform(env, buf);
         if (s != NULL) {
             jobject x = JNU_NewObjectByName(env, name,
