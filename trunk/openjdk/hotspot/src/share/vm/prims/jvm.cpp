@@ -594,11 +594,25 @@ JVM_END
 
 // Error message support //////////////////////////////////////////////////////
 
+// JVM_GetLastErrorString is special: it should return the platform last error
+// message which may get changed by NoHandleMark methods due to platform API
+// calls but the original error message seems to be more useful than marking
+// with NoHandleMark here, so temporarily disable it. Affects only debug builds.
+// TODO: Maybe drop JVM_LEAF at all and use the plain function def instead?
+#ifdef ASSERT
+# undef debug_only
+# define debug_only(x)
+#endif
+
 JVM_LEAF(jint, JVM_GetLastErrorString(char *buf, int len))
   JVMWrapper("JVM_GetLastErrorString");
   return hpi::lasterror(buf, len);
 JVM_END
 
+#ifdef ASSERT
+# undef debug_only
+# define debug_only(x) x
+#endif
 
 // java.io.File ///////////////////////////////////////////////////////////////
 
