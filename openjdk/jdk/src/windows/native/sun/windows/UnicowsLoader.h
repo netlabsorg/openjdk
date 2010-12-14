@@ -63,15 +63,15 @@ private:
     static void StringA2W(LPCSTR, LPWSTR *, LPWSTR *);
 };
 
-#ifndef AWT_H
+#ifndef _AWT_H_
 // copied from awt.h
-#if defined (WIN32)
+#if defined (WIN32) || defined(__WIN32OS2__)
     #define IS_WIN32 TRUE
 #else
     #define IS_WIN32 FALSE
 #endif
 #define IS_NT      (IS_WIN32 && !(::GetVersion() & 0x80000000))
-#endif // AWT_H
+#endif // _AWT_H_
 
 // Now the platform encoding is Unicode (UTF-16), re-define JNU_ functions
 // to proper JNI functions.
