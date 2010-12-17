@@ -114,8 +114,10 @@ FILES_cpp_shared = \
 
 ifeq ($(filter-out windows os2,$(PLATFORM)),)
 FILES_c_platform = fontpath.c
-ifneq ($(PLATFORM), os2)  
+ifeq ($(PLATFORM), os2)  
+FILES_c_platform += fontpath_os2.c
 # no D3D on OS/2
+else
 FILES_cpp_platform = D3DTextRenderer.cpp
 endif
 else

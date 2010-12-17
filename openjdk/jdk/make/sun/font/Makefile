@@ -170,6 +170,10 @@ vpath %.c   $(SHARE_SRC)/native/$(PKGDIR)/bidi
 vpath %.cpp   $(SHARE_SRC)/native/$(PKGDIR)/layout
 vpath %.cpp   $(SHARE_SRC)/native/$(PKGDIR)
 
+ifeq ($(PLATFORM), os2)  
+vpath %.c   $(PLATFORM_SRC_OS2)/native/$(PKGDIR)
+endif
+
 #
 # Fontmanager is headless (independent of X/Motif)
 #

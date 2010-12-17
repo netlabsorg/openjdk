@@ -36,14 +36,29 @@
 #include <string.h>
 #include <wchar.h>
 #include <minivcrt.h>
+extern char *getOs2FontPath();
 #endif
 
 JNIEXPORT jstring JNICALL Java_sun_font_FontManager_getFontPath(JNIEnv *env, jclass obj, jboolean noType1)
 {
     char windir[BSIZE];
     char sysdir[BSIZE];
+#ifdef __WIN32OS2__
+    char *fontpath;
+#else
     char fontpath[BSIZE*2];
+#endif
     char *end;
+
+#ifdef __WIN32OS2__
+    /* Find out all folders containing registered fonts in OS/2 to let Java
+     * pick them up */
+    fontpath = getOs2FontPath();
+    fontpath = fontpath ? realloc(fontpath, strlen(fontpath) + BSIZE*2)
+                        : malloc(BSIZE*2);
+    if (!fontpath)
+        return NULL;
+#endif
 
     /* Locate fonts directories relative to the Windows System directory.
      * If Windows System location is different than the user's window
@@ -64,13 +79,22 @@ JNIEXPORT jstring JNICALL Java_sun_font_FontManager_getFontPath(JNIEnv *env, jcl
         strcat(windir, "\\Fonts");
     }
 
+#ifdef __WIN32OS2__
+    strcat(fontpath,sysdir);
+#else
     strcpy(fontpath,sysdir);
+#endif
     if (stricmp(sysdir,windir)) {
         strcat(fontpath,";");
         strcat(fontpath,windir);
     }
 
-    return JNU_NewStringPlatform(env, fontpath);
+    jstring ret = JNU_NewStringPlatform(env, fontpath);
+#ifdef __WIN32OS2__
+    free(fontpath);
+#endif
+
+    return ret;
 }
 
 /* This isn't used on windows, the implementation is added in case shared
