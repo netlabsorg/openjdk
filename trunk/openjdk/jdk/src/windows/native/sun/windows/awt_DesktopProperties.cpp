@@ -486,6 +486,7 @@ void AwtDesktopProperties::GetOtherParameters() {
     // check whether this has been fixed on Windows 2000 and Windows 98
     // ECH 10/6/2000 seems to be fixed on NT4 SP5, but not on 98
     SetBooleanProperty(TEXT("win.frame.fullWindowDragsOn"), GetBooleanParameter(SPI_GETDRAGFULLWINDOWS));
+#ifndef __WIN32OS2__
     SetBooleanProperty(TEXT("win.text.fontSmoothingOn"), GetBooleanParameter(SPI_GETFONTSMOOTHING));
     // TODO END
 
@@ -497,6 +498,15 @@ void AwtDesktopProperties::GetOtherParameters() {
         SetIntegerProperty(TEXT("win.text.fontSmoothingOrientation"),
                            GetLCDSubPixelOrder());
     }
+#else
+    // The hinting quality of standard Type1 fonts on OS/2 is very low;
+    // FreeType auto-hinting makes them better but still not good. Therefore,
+    // we want to use LCD antialiasing by default.
+    SetBooleanProperty(TEXT("win.text.fontSmoothingOn"), TRUE);
+    SetIntegerProperty(TEXT("win.text.fontSmoothingType"), 2); // ClearType
+    SetIntegerProperty(TEXT("win.text.fontSmoothingContrast"), 1000);
+    SetIntegerProperty(TEXT("win.text.fontSmoothingOrientation"), 1); // LCD_RGB
+#endif
 
     int cxdrag = GetSystemMetrics(SM_CXDRAG);
     int cydrag = GetSystemMetrics(SM_CYDRAG);
