@@ -729,6 +729,12 @@ Java_sun_font_FreetypeFontScaler_getGlyphImageNative(
     } else {
         target = FT_LOAD_TARGET_LCD_V;
     }
+
+#ifdef __WIN32OS2__
+    /* Standard OS/2 fonts have pure hitning */
+    target |= FT_LOAD_FORCE_AUTOHINT;
+#endif
+
     renderFlags |= target;
 
     glyph_index = FT_Get_Char_Index(scalerInfo->face, glyphCode);
@@ -877,9 +883,9 @@ JNIEXPORT void JNICALL
 Java_sun_font_FreetypeFontScaler_disposeNativeScaler(
         JNIEnv *env, jobject scaler, jlong pScaler) {
     FTScalerInfo* scalerInfo = (FTScalerInfo *) jlong_to_ptr(pScaler);
-    
+
     /* Freetype functions *may* cause callback to java
-       that can use cached values. Make sure our cache is up to date. 
+       that can use cached values. Make sure our cache is up to date.
        NB: scaler context is not important at this point, can use NULL. */
     int errCode = setupFTContext(env, scaler, scalerInfo, NULL);
     if (errCode) {
@@ -939,7 +945,7 @@ Java_sun_font_FreetypeFontScaler_getGlyphCodeNative(
         invalidateJavaScaler(env, scaler, scalerInfo);
         return 0;
     }
-    
+
     /* Freetype functions *may* cause callback to java
        that can use cached values. Make sure our cache is up to date.
        Scaler context is not important here, can use NULL. */
