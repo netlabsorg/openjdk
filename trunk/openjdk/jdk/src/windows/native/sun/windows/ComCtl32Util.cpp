@@ -39,6 +39,8 @@ ComCtl32Util::~ComCtl32Util() {
 }
 
 void ComCtl32Util::InitLibraries() {
+    // SetWindowSubclass API is broken in Odin
+#ifndef __WIN32OS2__
     if (hModComCtl32 == NULL) {
         hModComCtl32 = ::LoadLibrary(TEXT("comctl32.dll"));
         if (hModComCtl32 != NULL) {
@@ -51,6 +53,7 @@ void ComCtl32Util::InitLibraries() {
                                 (m_lpfnDefSubclassProc != NULL);
         }
     }
+#endif
 }
 
 void ComCtl32Util::FreeLibraries() {
