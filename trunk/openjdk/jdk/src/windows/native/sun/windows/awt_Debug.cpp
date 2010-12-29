@@ -47,6 +47,12 @@ void * operator new(size_t size, const char * filename, int linenumber) {
     return ptr;
 }
 
+#ifdef __GNUC__
+void * operator new[](size_t size, const char * filename, int linenumber) {
+    return operator new(size, filename, linenumber);
+}
+#endif
+
 #if _MSC_VER >= 1200
 void operator delete(void *ptr, const char*, int) {
     DASSERTMSG(FALSE, "This version of 'delete' should never get called!!!");
@@ -55,6 +61,11 @@ void operator delete(void *ptr, const char*, int) {
 void operator delete(void *ptr) {
     DMem_FreeBlock(ptr);
 }
+#ifdef __GNUC__
+void operator delete[](void *ptr) {
+    operator delete(ptr);
+}
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////////
 
