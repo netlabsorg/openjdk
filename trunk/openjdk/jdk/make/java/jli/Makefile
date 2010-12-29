@@ -103,7 +103,8 @@ JAVALIB =
 
 # exports live in .def file
 DEF_FILE = $(OBJDIR)/$(LIBRARY).def
-$(DEF_FILE): $(MAKEFILE)
+$(DEF_FILE): $(MAKEFILE_LIST)
+	@$(ECHO) "LIBRARY $(LIBRARY) INITINSTANCE TERMINSTANCE" > $@
 	@$(ECHO) 'EXPORTS \n \
   _JLI_ParseManifest \n \
   _JLI_JarUnpackFile \n \
@@ -131,7 +132,7 @@ $(DEF_FILE): $(MAKEFILE)
   JLI_MemRealloc = _JLI_MemRealloc \n \
   JLI_StringDup = _JLI_StringDup \n \
   JLI_MemFree = _JLI_MemFree \n \
-' > $@
+' >> $@
 
 clean::
 	-$(RM) $(DEF_FILE)

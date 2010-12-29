@@ -80,11 +80,10 @@ else
 AGCT_EXPORT=_AsyncGetCallTrace \n  AsyncGetCallTrace = _AsyncGetCallTrace \n
 endif
 
-MAKEFILE = $(word 1,$(MAKEFILE_LIST))
-
 Def_File = vm.def
-$(Def_File): $(MAKEFILE)
-	@echo -e 'EXPORTS \n \
+$(Def_File): $(MAKEFILE_LIST)
+	@echo -e 'LIBRARY jvm INITINSTANCE TERMINSTANCE \n \
+EXPORTS \n \
   JNI_GetDefaultJavaVMInitArgs = "_JNI_GetDefaultJavaVMInitArgs@4" \n \
   JNI_CreateJavaVM = "_JNI_CreateJavaVM@12" \n \
   JNI_GetCreatedJavaVMs = "_JNI_GetCreatedJavaVMs@12" \n \

@@ -69,11 +69,12 @@ ifeq ($(PLATFORM), os2)
 
 # exports live in .def file
 DEF_FILE = $(OBJDIR)/$(LIBRARY).def
-$(DEF_FILE): $(MAKEFILE)
+$(DEF_FILE): $(MAKEFILE_LIST)
+	@$(ECHO) "LIBRARY $(LIBRARY) INITINSTANCE TERMINSTANCE" > $@
 	@$(ECHO) 'EXPORTS \n \
   nptInitialize = "_nptInitialize@12" \n \
   nptTerminate = "_nptTerminate@8" \n \
-' > $@
+' >> $@
 
 clean::
 	-$(RM) $(DEF_FILE)

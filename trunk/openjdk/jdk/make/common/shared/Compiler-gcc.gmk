@@ -79,9 +79,6 @@ ifeq ($(PLATFORM), os2)
     SHARED_LIBRARY_FLAG += -Zlinker /DLL
   endif
 
-  # current makefile reference (assumes GNU make)
-  MAKEFILE = $(word 1,$(MAKEFILE_LIST))
-
 endif
 
 ifeq ($(PLATFORM), linux)
