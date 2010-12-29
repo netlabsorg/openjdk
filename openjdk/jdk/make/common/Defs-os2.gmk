@@ -162,6 +162,9 @@ LDFLAGS_DBG     =
 ifeq ($(EMXOMFLD_TYPE), WLINK)
   LDFLAGS_COMMON += -Zlinker "DISABLE 1121"
 endif
+ifeq ($(EMXOMFLD_TYPE), VAC308)
+  LDFLAGS_COMMON += -Zlinker /OPTFUNC
+endif
 
 #
 # Additional libraries needed by all targets

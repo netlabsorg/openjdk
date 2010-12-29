@@ -63,6 +63,9 @@ LINK_FLAGS = \
 ifeq ($(EMXOMFLD_TYPE), WLINK)
   LINK_FLAGS += -Zlinker "DISABLE 1121"
 endif
+ifeq ($(EMXOMFLD_TYPE), VAC308)
+  LINK_FLAGS += -Zlinker /OPTFUNC
+endif
  
 IMPLIB = emximp
 
