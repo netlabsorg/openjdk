@@ -1,0 +1,17 @@
+This document contains a brief list of the most important OS/2-specific changes
+in the OpenJDK product from release to release.
+
+
+CHANGES
+
+
+1.6.0 Build 19 Beta (2010-12-30)
+
+  - Added support for AWT and Swing classes which brings GUI capabilities.
+
+  - Lots of small fixes.
+
+
+1.6.0 Build 19 Alpha (2010-10-01)
+
+  - First public release.

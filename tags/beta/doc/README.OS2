@@ -1,0 +1,107 @@
+OpenJDK 6 Alpha for OS/2 and eCS
+
+Version 1.6.0 Build 19 Beta (2010-12-30)
+
+This is a beta build intended for testing purposes.
+
+
+
+INTRODUCTION
+
+This document contains a brief information on the OS/2 version of the
+OpenJDK 6 product. Please read it carefully before starting your work.
+You may also visit the project page at
+
+  http://svn.netlabs.org/java/wiki
+
+to get more information and the latest news and also to report bugs.
+
+To get a brief list of OS/2-specific changes from release to release
+please see the CHANGES.OS2 file included in this distribution.
+
+
+
+REQUIREMENTS
+
+In order to use this version of OpenJDK, you will need the following:
+
+  - A OS/2 Warp 4 Fixpack 16+, OS/2 Warp 4.5 or eComStation operating system.
+
+  - Odin32 library version 0.6.21541 (2010-12-30) or above:
+
+    ftp://ftp.netlabs.org/pub/odin/odin32bin-20101230-release.wpi
+
+
+
+INSTALLATION
+
+  The OpenJDK product is distributed in two packages: the JRE and the SDK
+  (which includes a copy of JRE). Simply take a necessary package and unzip it
+  to a directory of your choice. You will need to add the \bin subdirectory
+  inside this directory to PATH and BEGINLIBPATH to allow for starting Java
+  executables from an arbitrary location:
+
+    set PATH=<directory>\bin;%PATH%
+    set BEGINLIBPATH=<directory>\bin;%BEGINLIBPATH%
+
+  Also make sure there are no traces of other Java installations in the
+  environment because this is known to make problems (this in particular means
+  that the CLASSPATH environment variable should not be set).
+
+  Alternatively, you may add this subdirectory to PATH and LIBPATH statements
+  of your CONFIG.SYS (and reboot) to make the given Java installation the
+  default one.
+
+
+
+CURRENT LIMITATIONS
+
+  1. OpenJDK will not work correctly under the OS/2 SMP kernel (Java process
+     hangs are very likely). This is a known problem of Odin32 which will be
+     addressed in further releases. The workaround is to use the OS/2 UNI or
+     Warp4 kernel instead.
+
+  2. The separate JRE package of OpenJDK is not currently available. You may
+     still extract JRE from the SDK package (it is located in the \jre
+     subdirectory of the SDK distribution archive).
+
+  3. AWT and Swing always use font anti-aliasing for all standard components.
+     If you want to disable anti-aliasing, you may use the following Java
+     command line argument:
+     
+       -Dawt.useSystemAAFontSettings=off
+
+     However, this is not recommended since Java uses standard OS/2 Type1
+     fonts by default which look really ugly with anti-aliasing turned off.
+
+  3. Some rarely used Java system classes may be still missing in this release.
+
+  See the project roadmap for more information on the current progress and
+  future plans:
+
+    http://svn.netlabs.org/java/roadmap
+
+  Feel free to request new features and report bugs using the project bug
+  tracker abaialble at:
+
+    http://svn.netlabs.org/java/report
+
+
+
+CREDITS
+
+Dmitry A. Kuminov (development)
+Silvan Scherrer (management)
+
+netlabs.org (hosting & support)
+
+Oracle Corporation (original OpenJDK product)
+
+We also want to THANK all individuals and organizations who made the donations
+to this project and helped to make it happen.
+
+
+Oracle and Java are registered trademarks of Oracle and/or its affiliates.
+OS/2 and OS/2 Warp are trademarks of the IBM Corporation and/or its subsidiary(-ies).
+eComStation is a trademark of Serenity Systems International and/or its subsidiary(-ies).
+Other names may be trademarks of their respective owners.
