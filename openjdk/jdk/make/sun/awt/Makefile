@@ -89,6 +89,8 @@ ifeq ($(PLATFORM), os2)
 include FILES_c_windows.gmk
 include FILES_export_windows.gmk
 
+FILES_c += awt_init.c
+
 #
 # Prune files that are currently unused on Windows (but still used on
 # Solaris/Linux).
@@ -268,6 +270,9 @@ vpath %.c   $(SHARE_SRC)/native/$(PKGDIR)/../java2d/pipe
 vpath %.cpp $(SHARE_SRC)/native/$(PKGDIR)/image
 ifeq ($(filter-out windows os2, $(PLATFORM)),)
 # vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv WINDOWS
+ifeq ($(PLATFORM), os2)
+vpath %.cpp   $(PLATFORM_SRC_OS2)/native/sun/os2
+endif
 vpath %.cpp   $(PLATFORM_SRC)/native/sun/windows
 vpath %.cpp   $(PLATFORM_SRC)/native/$(PKGDIR)
 vpath %.cpp   $(PLATFORM_SRC)/native/$(PKGDIR)/../java2d/windows
