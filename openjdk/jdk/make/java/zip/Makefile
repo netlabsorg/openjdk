@@ -71,7 +71,8 @@ else
 ifeq ($(PLATFORM), os2)
 # exports live in .def file
 DEF_FILE = $(OBJDIR)/$(LIBRARY).def
-$(DEF_FILE): $(MAKEFILE)
+$(DEF_FILE): $(MAKEFILE_LIST)
+	@$(ECHO) "LIBRARY $(LIBRARY) INITINSTANCE TERMINSTANCE" > $@
 	@$(ECHO) 'EXPORTS \n \
   ZIP_CRC32 = _ZIP_CRC32 \n \
   ZIP_Open = "_ZIP_Open@8" \n \
@@ -79,7 +80,7 @@ $(DEF_FILE): $(MAKEFILE)
   ZIP_FindEntry = "_ZIP_FindEntry@16" \n \
   ZIP_ReadEntry = "_ZIP_ReadEntry@16" \n \
   ZIP_GetNextEntry = "_ZIP_GetNextEntry@8" \n \
-' > $@
+' >> $@
 clean::
 	-$(RM) $(DEF_FILE)
 else

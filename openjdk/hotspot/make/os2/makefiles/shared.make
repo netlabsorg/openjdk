@@ -60,6 +60,4 @@ ifdef SUBDIRS
 	@$(MAKE) ACTION=$@ DIR=$(DIR)
 endif
 
-MAKEFILE = $(word 1,$(MAKEFILE_LIST))
-
 FORCE:

@@ -53,7 +53,8 @@ LIB_LOCATION = $(BINDIR)
 # exports live in .def file
 DEF_FILE = $(OBJDIR)/$(LIBRARY).def
 
-$(DEF_FILE): $(MAKEFILE)
+$(DEF_FILE): $(MAKEFILE_LIST)
+	@$(ECHO) "LIBRARY $(LIBRARY) INITINSTANCE TERMINSTANCE" > $@
 	@$(ECHO) 'EXPORTS \n \
   Canonicalize = _Canonicalize \n \
   getEncodingFromLangID = _getEncodingFromLangID \n \
@@ -81,7 +82,7 @@ $(DEF_FILE): $(MAKEFILE)
   VerifyClassCodes = _VerifyClassCodes \n \
   _winFileHandleOpen \n \
   winFileHandleOpen = _winFileHandleOpen \n \
-' > $@
+' >> $@
 
 clean::
 	-$(RM) $(DEF_FILE)
