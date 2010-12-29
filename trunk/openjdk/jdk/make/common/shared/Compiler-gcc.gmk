@@ -57,6 +57,11 @@ endif
 
 ifeq ($(PLATFORM), os2)
 
+  ifeq ($(EMXOMFLD_TYPE), WLINK)
+    $(error WLINK is not currently supported due to fixup-related bugs when building awt.dll. \
+            Use VAC308 ILINK instead)
+  endif
+
   # Settings specific to OS/2
   CC           = $(COMPILER_PATH)gcc
   CPP          = $(COMPILER_PATH)gcc -E
@@ -69,6 +74,10 @@ ifeq ($(PLATFORM), os2)
 
   # Option used to create a shared library
   SHARED_LIBRARY_FLAG = -Zdll
+  ifeq ($(EMXOMFLD_TYPE), VAC308)
+    # (for some reason -Zdll is not always converted to /DLL by emxomfld)
+    SHARED_LIBRARY_FLAG += -Zlinker /DLL
+  endif
 
   # current makefile reference (assumes GNU make)
   MAKEFILE = $(word 1,$(MAKEFILE_LIST))

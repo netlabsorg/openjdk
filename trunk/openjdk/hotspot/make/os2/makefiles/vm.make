@@ -103,6 +103,11 @@ $(Def_File): $(MAKEFILE)
 
 LINK_FLAGS += -Zdll
 
+ifeq ($(EMXOMFLD_TYPE), VAC308)
+  # (for some reason -Zdll is not always converted to /DLL by emxomfld)
+  LINK_FLAGS += -Zlinker /DLL
+endif
+
 Src_Dirs = \
   ../generated/incls                    \
   ../generated/jvmtifiles               \

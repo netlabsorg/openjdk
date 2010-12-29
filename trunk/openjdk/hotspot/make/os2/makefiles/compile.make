@@ -58,8 +58,12 @@ endif
 # Generic linker settings
 LINK = g++
 LINK_FLAGS = \
- -Zomf -Zmap -Zstack 0x2000 -Zlinker "DISABLE 1121" -Zhigh-mem -Zno-fork -Zno-unix
+ -Zomf -Zmap -Zstack 0x2000 -Zhigh-mem -Zno-fork -Zno-unix
 
+ifeq ($(EMXOMFLD_TYPE), WLINK)
+  LINK_FLAGS += -Zlinker "DISABLE 1121"
+endif
+ 
 IMPLIB = emximp
 
 # Odin SDK
