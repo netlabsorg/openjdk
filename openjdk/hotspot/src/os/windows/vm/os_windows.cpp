@@ -672,6 +672,7 @@ julong os::physical_memory() {
   return win32::physical_memory();
 }
 
+#ifndef __WIN32OS2__
 julong os::allocatable_physical_memory(julong size) {
 #ifdef _LP64
   return size;
@@ -680,6 +681,7 @@ julong os::allocatable_physical_memory(julong size) {
   return MIN2(size, (julong)1400*M);
 #endif
 }
+#endif
 
 // VC6 lacks DWORD_PTR
 #ifndef __WIN32OS2__
