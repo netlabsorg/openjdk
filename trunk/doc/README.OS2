@@ -90,25 +90,26 @@ MEMORY REQUIREMENTS
   Max free block in shared arena      228 |  404 |  852 | 1230 | 2196
 
   Note that these values are gathered on a default eCS 2.0 GA system and may
-  vary depending on what system DLLs get loaded into each process, they are
+  vary depending on what system DLLs get loaded into each process; they are
   given only as an example. You may get the real values on your system with
   a variety of tools gathering system information, such as THESEUS.
 
   On the other hand, when calculating the default amount of memory to reserve
-  for the the heap (which is called the maximum heap size in the documentation),
+  for the heap (which is called the maximum heap size in the documentation),
   Java uses the physical RAM size as a base, not the the size of the free block
   in the private arena (where Java actually allocates the heap). Below is a
   simplified version of the algorithm for these calculations:
 
-  1. Use MIN (MaxRAM, <physical_RAM>) as the base RAM value. MaxRAM is a Java[
-     constant that defaults to 1G for the client (regular) Java virtual machine
-     and 4G for the server JVM.
+  1. Use MIN (MaxRAM, <physical_RAM>) as the base RAM value. MaxRAM is a Java
+     constant that defaults to 1G for the client (default) Java virtual machine
+     and to 4G for the server JVM.
 
   2. Divide this base RAM value by MaxRAMFraction (4 by default) and assign the
      result as the default value for the maximum heap size (MaxHeapSize).
 
   3. Use the MaxHeapSize value increased by 20-30% (for the needs other than the
-     Java heap) as the size of the private memory block to allocate.
+     Java heap) as the size of the memory block to allocate in the private
+     arena.
 
   So, if your machine has, say, 2G of RAM and you attempt to start it in server
   mode (using the -server command line option), Java will want 512M (2G/4) plus
@@ -120,21 +121,21 @@ MEMORY REQUIREMENTS
   Starting with version 6 Beta 2, OpenJDK for OS/2 solves this problem by
   limiting the amount of memory Java wants for the heap to the actual size of
   the available memory block in the private arena. So, in the above case Java
-  would actually get about 310M in server mode (instead of the requested 512M).
-  You may change this limit by changing VIRTUALADDRESSLIMIT in CONFIG.SYS
-  (according to the table above), but please note that values higher than 1024
-  may cause problems with some drivers (for example, it is known that JFS and
-  HPFS386 drivers cannot allocate a disk cache of the big size if the
-  VIRTUALADDRESSLIMIT value is too high).
+  would actually get about 310M in server mode (instead of performing a failed
+  attempt to allocate 512M). You may change this limit by changing the
+  VIRTUALADDRESSLIMIT value in CONFIG.SYS (according to the table above), but
+  please note that values higher than 1024 may cause problems with some drivers
+  (for example, it is known that JFS and HPFS386 drivers cannot allocate a disk
+  cache of the big size if the VIRTUALADDRESSLIMIT value is too high).
 
   In either case, the above describes how Java calculates the defaulut maximum
   heap size. You may always override this default using the -Xmx<size> Java
   command line option if you are not satisfied with the default value for some
   reason or if your applcation gives you the "Could not reserve enough space for
-  object heap" message at startup. However, keep in mind that if you a -Xmx
-  value which is bigger than the maximum free block in the private arena, you
-  will get the same error and will have to decrease the requested size until it
-  succeeds.
+  object heap" message at startup. However, keep in mind that if you specify a
+  -Xmx value which is, increased by 20-30% as described in step 3 above, bigger
+  than the maximum free block in the private arena, you will get the same memory
+  allocation error which indicates that you should use a smaller value.
 
 
 
