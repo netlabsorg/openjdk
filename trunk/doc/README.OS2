@@ -54,6 +54,90 @@ INSTALLATION
 
 
 
+MEMORY REQUIREMENTS
+
+  Sometimes you may find out that starting a Java application fails with the
+  following error message:
+
+     Error occured during initialization of VM
+     Could not reserve enough space for object heap
+     Could not create the Java virtual machine.
+
+  This means that the amount of memory Java wants to reserve for its heap is
+  bigger than the maximum free block of memory available to the Java process.
+  Note that the size of this free block does not directly depend on the amount
+  of physical RAM installed in your computer (because the physical RAM may be
+  extended using the swap file, for instance). It rather depends on the virtual
+  address limit set by OS/2 for the process. In older OS/2 versions that don't
+  support high memory (e.g. the ones based on pre-WSeB kernels) this limit
+  is known to be 512M. In later versions it is controlled by the
+  VIRTUALADDRESSLIMIT parameter in CONFIG.SYS (which is specified in megabytes
+  and defaults to 1024M).
+
+  Furthermore, not all memory within the virtual address limit is available to
+  the process. Some small fraction of it is used by the kernel and the rest is
+  divided in two more or less equal parts: the private arena and the shared
+  arena. As said, the size of these arenas does not depend on the amount of
+  physical RAM and can be approximated using the following table. Note that the
+  values in the table are not the initial arena sizes but rather the sizes of
+  the maximum free block of memory available in the corresponding arena to a
+  dummy process that does nothing but queries these system values (all numbers
+  are in MB, the first column is for systems with no high memory support):
+
+  VIRTUALADDRESSLIMIT                *512 | 1024 | 1536 | 2048 | 3072
+  -------------------------------------------------------------------
+  Max free block in private arena     267 |  432 |  880 | 1328 | 2224
+  Max free block in shared arena      228 |  404 |  852 | 1230 | 2196
+
+  Note that these values are gathered on a default eCS 2.0 GA system and may
+  vary depending on what system DLLs get loaded into each process, they are
+  given only as an example. You may get the real values on your system with
+  a variety of tools gathering system information, such as THESEUS.
+
+  On the other hand, when calculating the default amount of memory to reserve
+  for the the heap (which is called the maximum heap size in the documentation),
+  Java uses the physical RAM size as a base, not the the size of the free block
+  in the private arena (where Java actually allocates the heap). Below is a
+  simplified version of the algorithm for these calculations:
+
+  1. Use MIN (MaxRAM, <physical_RAM>) as the base RAM value. MaxRAM is a Java[
+     constant that defaults to 1G for the client (regular) Java virtual machine
+     and 4G for the server JVM.
+
+  2. Divide this base RAM value by MaxRAMFraction (4 by default) and assign the
+     result as the default value for the maximum heap size (MaxHeapSize).
+
+  3. Use the MaxHeapSize value increased by 20-30% (for the needs other than the
+     Java heap) as the size of the private memory block to allocate.
+
+  So, if your machine has, say, 2G of RAM and you attempt to start it in server
+  mode (using the -server command line option), Java will want 512M (2G/4) plus
+  additional 20-30%. This would obviously not fit into 432M of free private
+  memory available for the process when VIRTUALADDRESSLIMIT is set to 1024 and
+  it was the case with earlier releases of OpenJDK 6 for OS/2 as well as with
+  the releases of InnoTek Java 1.4.x for OS/2.
+
+  Starting with version 6 Beta 2, OpenJDK for OS/2 solves this problem by
+  limiting the amount of memory Java wants for the heap to the actual size of
+  the available memory block in the private arena. So, in the above case Java
+  would actually get about 310M in server mode (instead of the requested 512M).
+  You may change this limit by changing VIRTUALADDRESSLIMIT in CONFIG.SYS
+  (according to the table above), but please note that values higher than 1024
+  may cause problems with some drivers (for example, it is known that JFS and
+  HPFS386 drivers cannot allocate a disk cache of the big size if the
+  VIRTUALADDRESSLIMIT value is too high).
+
+  In either case, the above describes how Java calculates the defaulut maximum
+  heap size. You may always override this default using the -Xmx<size> Java
+  command line option if you are not satisfied with the default value for some
+  reason or if your applcation gives you the "Could not reserve enough space for
+  object heap" message at startup. However, keep in mind that if you a -Xmx
+  value which is bigger than the maximum free block in the private arena, you
+  will get the same error and will have to decrease the requested size until it
+  succeeds.
+
+
+
 CURRENT LIMITATIONS
 
   1. OpenJDK will not work correctly under the OS/2 SMP kernel (Java process
@@ -68,7 +152,7 @@ CURRENT LIMITATIONS
   3. AWT and Swing always use font anti-aliasing for all standard components.
      If you want to disable anti-aliasing, you may use the following Java
      command line argument:
-     
+
        -Dawt.useSystemAAFontSettings=off
 
      However, this is not recommended since Java uses standard OS/2 Type1
