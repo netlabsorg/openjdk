@@ -26,10 +26,14 @@
 
 #define INCL_DOSMODULEMGR
 #define INCL_DOSPROFILE
+#define INCL_DOSMISC
+#define INCL_DOSERRORS
 #include <os2wrap2.h>
 
 // do not include precompiled header file
 # include "incls/_os_windows.cpp.incl"
+
+#define MIN2(x, y) (((x) < (y))? (x) : (y))
 
 bool os::dll_address_to_library_name(address addr, char* buf,
                                      int buflen, int* offset) {
@@ -37,7 +41,7 @@ bool os::dll_address_to_library_name(address addr, char* buf,
     os2_ULONG obj, offs;
     os2_APIRET arc = DosQueryModFromEIP(&hmod, &obj, buflen, buf, &offs,
                                         (ULONG)addr);
-    if (arc == NO_ERROR) {
+    if (arc == os2_NO_ERROR) {
     // buf already contains path name
     if (offset) {
           // as the offset is relative to the object (and there is no separate
@@ -65,14 +69,14 @@ bool os::address_is_in_vm(address addr) {
     if (jvmHmod == os2_NULLHANDLE) {
         arc = DosQueryModFromEIP(&jvmHmod, &obj, sizeof(buf), buf, &offs,
                                  (ULONG)&os::address_is_in_vm);
-        if (arc != NO_ERROR) {
+        if (arc != os2_NO_ERROR) {
             assert(false, "Can't find jvm module.");
             return false;
         }
     }
 
     arc = DosQueryModFromEIP(&hmod, &obj, sizeof(buf), buf, &offs, (ULONG)addr);
-    if (arc != NO_ERROR)
+    if (arc != os2_NO_ERROR)
         return false;
     return hmod == jvmHmod;
 }
@@ -120,7 +124,7 @@ void os::print_dll_info(outputStream *st) {
     char *buf = (char *)malloc(64 * 1024);
     os2_APIRET arc = DosQuerySysState(os2_QS_PROCESS | os2_QS_MTE, os2_QS_MTE,
                                       pid, 0, buf, 64 * 1024);
-    if (arc != NO_ERROR) {
+    if (arc != os2_NO_ERROR) {
         assert(false, "DosQuerySysState() failed.");
         return;
     }
@@ -140,3 +144,75 @@ void os::print_dll_info(outputStream *st) {
     free(buf);
 }
 
+julong os::allocatable_physical_memory(julong size) {
+    // The primary role of this method on OS/2 is to limit the default maximum
+    // Java heap size as the calculations done by Java when defining this limit
+    // use fractions of the physical memory but in fact the OS/2 process can
+    // allocate much less than the physical memory size of the modern PCs so
+    // the allocation will fail very often in -server mode (-client mode limits
+    // the physical RAM size to 1G for calculations so it's not a big problem
+    // for it; -server mode limits it to 4G which is very problematic taking
+    // into account that the default fraction for the heap size is 1/4 -- see
+    // below about the maximum private memory block size). Since this method is
+    // called after Java has performed its calculations, we correct the limit
+    // here.
+    //
+    // Some details about the process' maximum private memory block size on
+    // OS/2:
+    //
+    // 1. For systems that don't suport high memory (prior to WSeB AFAIR)
+    //    the theoretical maximum memory block size is approx. 512M / 2.
+    // 2. For systems with high memory support, the theoretical maximum spans
+    //    from VIRTUALADDRESSLIMIT / 2 to VIRTUALADDRESSLIMIT / 1.5 or so.
+    //    VIRTUALADDRESSLIMIT is 1024M unless it is explicitly specified in
+    //    CONFIG.SYS.
+    // 3. The real maximum memory block available to Java is somewhat smaller
+    //    than the theoretical maximum and it gets decreased each time the
+    //    process allocates memory with DosAllocMem().
+    //
+    // A typical situation when Java fails in -server mode is when the
+    // theoretical maximum is 1024M (or lower) and the amount of physical RAM
+    // is 2G and more. Java will want >=512M in this case for the heap, but the
+    // process will have less than 512M available because because some space
+    // will be occupied by the system DLLs.
+    //
+    // We solve this problem by limiting the requested size to the real maximum
+    // memory block size (minus some threshold, see below).
+
+    static os2_ULONG maxMemBlock = 0;
+    if (maxMemBlock == 0) {
+        os2_ULONG pageSize;
+        os2_ULONG flags = os2_OBJ_ANY;
+        os2_APIRET arc;
+        arc = DosQuerySysInfo(os2_QSV_PAGE_SIZE, os2_QSV_PAGE_SIZE,
+                              (os2_PVOID)&pageSize, sizeof(os2_ULONG));
+        if (arc != os2_NO_ERROR)
+            return size;
+        // get maximum high memory block size
+        arc = DosQuerySysInfo(os2_QSV_MAXHPRMEM, os2_QSV_MAXHPRMEM,
+                              (os2_PVOID)&maxMemBlock, sizeof(os2_ULONG));
+        if (arc == os2_ERROR_INVALID_PARAMETER) {
+            // high memory is not supported, get maximum low memory block size
+            flags &= ~os2_OBJ_ANY;
+            arc = DosQuerySysInfo(os2_QSV_MAXPRMEM, os2_QSV_MAXPRMEM,
+                                  (os2_PVOID)&maxMemBlock, sizeof(os2_ULONG));
+        }
+        if (arc != os2_NO_ERROR)
+            return size;
+        // maxMemBlock is the maximum memory block available right now. It will
+        // decrease by the time when the actual heap allocation takes place. We
+        // assume that Java will allocate for non-heap needs (this includes
+        // other DLLs it may drag in) no more than 3/10 of the current size.
+        // Note that this is quite an arbitrary choice based on some experiments
+        // with various VIRTUALADDRESSLIMIT settings. Our mission here is to
+        // make java with no explicit -Xmx specification not fail at startup
+        // due to "Could not reserve enough space for object heap" error. But
+        // even if it fails in some specific configuration, it's always possible
+        // to specify the upper limit manually with -Xmx.
+        os2_ULONG threshold = maxMemBlock * 3 / 10;
+        threshold = ((threshold + pageSize - 1) / pageSize) * pageSize;
+        maxMemBlock -= threshold;
+    }
+
+    return MIN2(size, maxMemBlock);
+}
