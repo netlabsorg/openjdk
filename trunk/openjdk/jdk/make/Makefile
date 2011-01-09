@@ -261,8 +261,8 @@ all build:: sanity-all post-sanity-all
 
 ifndef OS2_TEMP
 SUBDIRS    = tools java javax org sun sunw com jpda mkdemo mksample launchers
-else # disable various stuff
-SUBDIRS    = tools java javax org sun sunw com launchers
+else # disable JPDA
+SUBDIRS    = tools java javax org sun sunw com mkdemo mksample launchers
 endif
 all build::
 	$(SUBDIRS-loop)

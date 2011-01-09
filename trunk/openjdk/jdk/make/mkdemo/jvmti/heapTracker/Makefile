@@ -26,6 +26,7 @@
 BUILDDIR = ../../..
 PRODUCT = demo/jvmti
 DEMONAME = heapTracker
+DEMONAME_SHORT = heapTrck
 include $(BUILDDIR)/common/Defs.gmk
 
 DEMO_ROOT       = $(SHARE_SRC)/demo/jvmti/$(DEMONAME)

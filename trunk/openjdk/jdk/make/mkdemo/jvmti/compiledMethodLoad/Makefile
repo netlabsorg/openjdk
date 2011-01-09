@@ -26,6 +26,7 @@
 BUILDDIR = ../../..
 PRODUCT = demo/jvmti
 DEMONAME = compiledMethodLoad
+DEMONAME_SHORT = cml
 include $(BUILDDIR)/common/Defs.gmk
 
 DEMO_ROOT       = $(SHARE_SRC)/demo/jvmti/$(DEMONAME)

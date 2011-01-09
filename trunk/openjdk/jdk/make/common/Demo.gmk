@@ -27,6 +27,7 @@
   
 # Some names are defined with LIBRARY inside the Defs.gmk file
 LIBRARY=$(DEMONAME)
+LIBRARY_SHORT=$(DEMONAME_SHORT)
 OBJDIR=$(TEMPDIR)/$(DEMONAME)
 
 # Input:
@@ -122,8 +123,13 @@ endif
 # If we have native sources, define the native library we will create
 ifneq ($(strip $(DEMO_ALL_NATIVE_SOURCES)),)
   # Path to native library we will create
-  DEMO_LIBRARY = \
-      $(DEMO_DESTDIR)/lib$(ISA_DIR)/$(LIB_PREFIX)$(DEMONAME).$(LIBRARY_SUFFIX)
+  ifneq ($(DEMONAME_SHORT),)
+    DEMO_LIBRARY = \
+        $(DEMO_DESTDIR)/lib$(ISA_DIR)/$(LIB_PREFIX)$(DEMONAME_SHORT).$(LIBRARY_SUFFIX)
+  else
+    DEMO_LIBRARY = \
+        $(DEMO_DESTDIR)/lib$(ISA_DIR)/$(LIB_PREFIX)$(DEMONAME).$(LIBRARY_SUFFIX)
+  endif
   # C and C++ compiler flags we need to add to standard flags
   DEMO_CPPFLAGS     += -I$(DEMO_BUILD_SRCDIR)
   # If the npt library is used we need to find the npt.h file
