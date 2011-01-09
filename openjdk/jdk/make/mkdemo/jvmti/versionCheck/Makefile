@@ -26,6 +26,7 @@
 BUILDDIR = ../../..
 PRODUCT = demo/jvmti
 DEMONAME = versionCheck
+DEMONAME_SHORT = verCheck
 include $(BUILDDIR)/common/Defs.gmk
 
 DEMO_ROOT       = $(SHARE_SRC)/demo/jvmti/$(DEMONAME)

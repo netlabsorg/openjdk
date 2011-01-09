@@ -35,8 +35,11 @@ DEMO_DESTDIR    = $(DEMODIR)/jvmti/$(DEMONAME)
 
 DEMO_OBJECTS    = java_crw_demo.$(OBJECT_SUFFIX)
 
-ifeq ($(filter-out windows os2, $(PLATFORM)),)
+ifeq ($(PLATFORM), windows)
   EXTRA_LIBS += wsock32.lib winmm.lib
+endif
+ifeq ($(PLATFORM), os2)
+  EXTRA_LIBS += -lwsock32.lib -lwinmm.lib
 endif
 ifeq ($(PLATFORM), solaris)
   OTHER_LDLIBS += $(LIBSOCKET) -lnsl -ldl
