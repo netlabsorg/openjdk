@@ -446,7 +446,8 @@ ifeq ($(PLATFORM), os2)
 
 FONTCONFIGS_SRC = $(PLATFORM_SRC_OS2)/classes/sun/awt/os2
 _FONTCONFIGS = \
-        fontconfig.properties
+        fontconfig.properties \
+        fontconfig.liberation.properties
 
 FONTCONFIGS_SRC_PREFIX =
 
@@ -498,6 +499,16 @@ endif # PLATFORM
 
 FONTCONFIGS     = $(_FONTCONFIGS:%=$(LIBDIR)/%.src)
 BINARYFONTCONFIGS = $(_FONTCONFIGS:%.properties=$(LIBDIR)/%.bfc)
+
+ifeq ($(PLATFORM), os2)
+# copy the default fontconfig file to fontconfig.default.* for convenience
+FONTCONFIGS       += $(LIBDIR)/fontconfig.default.properties.src
+BINARYFONTCONFIGS += $(LIBDIR)/fontconfig.default.bfc
+$(LIBDIR)/fontconfig.default.properties.src: $(LIBDIR)/fontconfig.properties.src
+	$(install-file)
+$(LIBDIR)/fontconfig.default.bfc: $(LIBDIR)/fontconfig.bfc
+	$(install-file)
+endif
 
 fontconfigs: $(FONTCONFIGS) $(BINARYFONTCONFIGS)
 
