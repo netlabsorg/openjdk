@@ -49,7 +49,7 @@ FILES_m = mapfile-vers
 include $(BUILDDIR)/common/Mapfile-vers.gmk
 
 
-ifeq ($(filter-out windows os2, $(PLATFORM)),)
+ifeq ($(PLATFORM), windows)
 #
 # Extra C flags.
 #
@@ -82,7 +82,7 @@ vpath %.cpp   $(PLATFORM_SRC)/native/sun/windows
 # Libraries to link in.
 #
 ifeq ($(ARCH_DATA_MODEL), 64)
-OTHER_LDLIBS = $(OBJDIR)/../../awt/$(OBJDIRNAME)/awt.lib 
+OTHER_LDLIBS = $(OBJDIR)/../../awt/$(OBJDIRNAME)/awt.lib
 else
 OTHER_LDLIBS = /nod:kernel32.lib /nod:advapi32.lib /nod:user32.lib \
                /nod:gdi32.lib /nod:shell32.lib /nod:comdlg32.lib \
@@ -91,8 +91,40 @@ OTHER_LDLIBS = /nod:kernel32.lib /nod:advapi32.lib /nod:user32.lib \
                /nod:secur32.lib /nod:oleacc.lib /nod:oledlg.lib \
                /nod:sensapi.lib \
                $(UNICOWS_LIB_PATH)/unicows.lib kernel32.lib \
-	       $(OBJDIR)/../../awt/$(OBJDIRNAME)/awt.lib 
+	       $(OBJDIR)/../../awt/$(OBJDIRNAME)/awt.lib
 endif
+else
+ifeq ($(PLATFORM), os2)
+
+OTHER_CXXFLAGS += -DUNICODE -D_UNICODE
+
+#
+# Other extra flags needed for compiling.
+#
+CPPFLAGS += -I$(SHARE_SRC)/native/common \
+	-I$(PLATFORM_SRC)/native/sun/windows \
+	-I$(CLASSHDRDIR:%/jawt/CClassHeaders=%/awt/CClassHeaders) \
+        -I$(SHARE_SRC)/native/sun/awt/debug \
+        -I$(SHARE_SRC)/native/sun/font \
+        -I$(SHARE_SRC)/native/sun/java2d \
+        -I$(SHARE_SRC)/native/sun/java2d/loops \
+        -I$(SHARE_SRC)/native/sun/java2d/pipe \
+	-I$(PLATFORM_SRC)/native/sun/java2d \
+	-I$(PLATFORM_SRC)/native/sun/java2d/windows \
+	-I$(PLATFORM_SRC)/native/sun/java2d/d3d \
+	-I$(SHARE_SRC)/native/$(PKGDIR)/image/cvutils \
+	-I$(SHARE_SRC)/javavm/export \
+	-I$(PLATFORM_SRC)/javavm/export
+INSTALL_DOT_LIB = true
+
+vpath %.cpp   $(PLATFORM_SRC)/native/sun/windows
+
+OTHER_LDLIBS = -lkernel32.lib -ladvapi32.lib -luser32.lib \
+               -lgdi32.lib -lshell32.lib -lcomdlg32.lib \
+               -lversion.lib -lmpr.lib -lrasapi32.lib \
+               -lwinmm.lib -lwinspool.lib \
+               -lsecur32.lib -loleacc.lib -loledlg.lib \
+               -l$(OBJDIR)/../../awt/$(OBJDIRNAME)/awt.lib
 else # PLATFORM
 
 #
@@ -127,6 +159,7 @@ OTHER_LDLIBS = -L$(LIBDIR)/$(LIBARCH) -lawt -L$(LIBDIR)/$(LIBARCH)/xawt -lmawt
 endif # PLATFORM
 
 endif # PLATFORM
+endif # PLATFORM
 
 
 #
@@ -141,7 +174,7 @@ include $(BUILDDIR)/common/Library.gmk
 
 build: $(FILES_h)
 
-ifeq ($(filter-out windows os2, $(PLATFORM)),)
+ifeq ($(PLATFORM), windows)
 include make.depend
 endif
 
