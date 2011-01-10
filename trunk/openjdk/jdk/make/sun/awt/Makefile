@@ -128,7 +128,7 @@ ifeq ($(CC_VER), 5.8)
     ifeq ($(ARCH_FAMILY), i586)
       # If on Solaris 11 (or dlfcn.h has unknown_control_flow pragmas in it)
       #   we trigger a SS11 bug that causes the compiler to crash (bug 6343678)
-      #   Here we check to see if we need this workaround and change the opt 
+      #   Here we check to see if we need this workaround and change the opt
       #   settings for this one file.
       USE_WORKAROUND:=$(shell $(GREP) unknown_control_flow /usr/include/dlfcn.h)
       ifneq ($(USE_WORKAROUND),)
@@ -156,7 +156,7 @@ endif
 FILES_c += initIDs.c
 
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ SOLARIS/LINUX
-endif # PLATFORM 
+endif # PLATFORM
 
 # vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv SOLARIS-SPARC
 # solaris-sparc and solaris-sparcv9 both build 'vis'
@@ -166,7 +166,7 @@ ifeq ("$(PLATFORM)-$(ARCH_FAMILY)", "solaris-sparc")
   FILES_s += mlib_v_ImageCopy_blk.s
   INLINE_VIS = $(PLATFORM_SRC)/native/sun/awt/medialib/vis_$(ARCH_DATA_MODEL).il
   CFLAGS_sparcv9 = -DMLIB_OS64BIT
-  
+
   CFLAGS += $(CFLAGS_$(ARCH)) -DMLIB_ADD_SUFF $(INLINE_VIS) \
 	    -I$(SHARE_SRC)/native/sun/awt/medialib \
 	    -I$(PLATFORM_SRC)/native/sun/awt/medialib \
@@ -213,28 +213,13 @@ ifeq ($(PLATFORM), windows)
 # Additional dependencies.
 #
 # If make.depend is not working correctly, then it can be omitted
-# if you always build from a clean workspace. 
+# if you always build from a clean workspace.
 
 include make.depend
 
 # required additional rules:
 
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ WINDOWS
-endif # PLATFORM
-
-ifeq ($(PLATFORM), os2)
-# vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv OS/2
-#
-# Additional dependencies.
-#
-# If make.depend is not working correctly, then it can be omitted
-# if you always build from a clean workspace. 
-
-include make.depend.gmk
-
-# required additional rules:
-
-# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ OS/2
 endif # PLATFORM
 
 ifneq ($(filter-out windows os2, $(PLATFORM)),)
@@ -249,7 +234,7 @@ endif # PLATFORM
 clobber clean:: java2d.clean motif.clean fontconfigs.clean
 
 ifndef OPENJDK
-clobber clean:: dgalib.clean 
+clobber clean:: dgalib.clean
 endif
 
 java2d.clean:
@@ -312,10 +297,10 @@ endif
 
 clean:: awt.clean
 
-awt.clean: 
-	$(RM) $(TEMPDIR)/awt.ico 
-	$(RM) $(TEMPDIR)/awt.res 
-	$(RM) $(TEMPDIR)/hand.cur 
+awt.clean:
+	$(RM) $(TEMPDIR)/awt.ico
+	$(RM) $(TEMPDIR)/awt.res
+	$(RM) $(TEMPDIR)/hand.cur
 	$(RM) $(TEMPDIR)/check.bmp
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ WINDOWS
 endif # PLATFORM
@@ -333,10 +318,10 @@ OTHER_LDLIBS = -lkernel32.lib -ladvapi32.lib -luser32.lib \
 
 clean:: awt.clean
 
-awt.clean: 
-	$(RM) $(TEMPDIR)/awt.ico 
-	$(RM) $(TEMPDIR)/awt.res 
-	$(RM) $(TEMPDIR)/hand.cur 
+awt.clean:
+	$(RM) $(TEMPDIR)/awt.ico
+	$(RM) $(TEMPDIR)/awt.res
+	$(RM) $(TEMPDIR)/hand.cur
 	$(RM) $(TEMPDIR)/check.bmp
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ OS/2
 endif # PLATFORM
@@ -434,7 +419,7 @@ ifeq ($(PLATFORM), windows)
 FONTCONFIGS_SRC = $(PLATFORM_SRC)/classes/sun/awt/windows
 _FONTCONFIGS = \
         fontconfig.properties \
-        fontconfig.98.properties 
+        fontconfig.98.properties
 
 FONTCONFIGS_SRC_PREFIX =
 
@@ -543,7 +528,7 @@ WINAWT_native        = $(PLATFORM_SRC)/native/sun/windows
 WINAWT_COMMON_native = $(PLATFORM_SRC)/native/sun/awt_common
 
 # FIXME: awt shouldn't have to see the VM's private headers.
-# FIXME: if you re-order this list, the build breaks, possibly because 
+# FIXME: if you re-order this list, the build breaks, possibly because
 #        of filename collision. Such a collision, if present, is pure
 #        evil. Need to investigate this.
 
@@ -597,7 +582,7 @@ WINAWT_native        = $(PLATFORM_SRC)/native/sun/windows
 WINAWT_COMMON_native = $(PLATFORM_SRC)/native/sun/awt_common
 
 # FIXME: awt shouldn't have to see the VM's private headers.
-# FIXME: if you re-order this list, the build breaks, possibly because 
+# FIXME: if you re-order this list, the build breaks, possibly because
 #        of filename collision. Such a collision, if present, is pure
 #        evil. Need to investigate this.
 
@@ -651,7 +636,7 @@ ifeq ($(PLATFORM), linux)
 CPPFLAGS += -I$(MOTIF_DIR)/include \
             -I$(OPENWIN_HOME)/include \
             -I$(OPENWIN_HOME)/include/X11/extensions \
-            -I$(PLATFORM_SRC)/native/$(PKGDIR)/font 
+            -I$(PLATFORM_SRC)/native/$(PKGDIR)/font
 endif
 CPPFLAGS += -I$(SHARE_SRC)/native/$(PKGDIR)/debug \
             -I$(SHARE_SRC)/native/$(PKGDIR)/../font \
