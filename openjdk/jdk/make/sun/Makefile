@@ -73,7 +73,7 @@ SUBDIRS = jar security javazic misc net $(RENDER_SUBDIR) image \
 	  awt splashscreen $(XAWT_SUBDIR) $(MOTIF_SUBDIRS) \
           $(HEADLESS_SUBDIR) $(DGA_SUBDIR) \
 	  font jpeg cmm applet rmi beans $(JDBC_SUBDIR) \
-	  text nio launcher management $(ORG_SUBDIR) \
+	  jawt text nio launcher management $(ORG_SUBDIR) \
           native2ascii serialver tools jconsole
 endif
 
