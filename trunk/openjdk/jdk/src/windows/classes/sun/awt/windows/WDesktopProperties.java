@@ -249,7 +249,7 @@ class WDesktopProperties {
         map.put(PROP_NAMES, getKeyNames());
         // DnD uses one value for x and y drag diff, but Windows provides
         // separate ones.  For now, just use the x value - rnk
-        map.put("DnD.Autoscroll.cursorHysteresis", "win.drag.x");
+        map.put("DnD.Autoscroll.cursorHysteresis", map.get("win.drag.width"));
 
         return (Map<String, Object>) map.clone();
     }
