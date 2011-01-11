@@ -942,9 +942,7 @@ initial-image-jdk:: initial-image-jdk-setup \
 	@# lib/
 	@#
 	$(CP) $(LIBDIR)/$(LIB_PREFIX)jvm.$(LIB_SUFFIX) $(JDK_IMAGE_DIR)/lib
-ifndef OS2_TEMP # GUI stuff
 	$(CP) $(LIBDIR)/$(LIB_PREFIX)jawt.$(LIB_SUFFIX) $(JDK_IMAGE_DIR)/lib
-endif
 	@#
 	@# bin/
 	@#
@@ -1070,17 +1068,13 @@ endif
 	@#
 	@# demo, include
 	@#
-ifndef OS2_TEMP # later
 	$(CP) -r -f $(DEMODIR) $(JDK_IMAGE_DIR)
 	$(CP) -r -f $(SAMPLEDIR) $(JDK_IMAGE_DIR)
-endif
 	$(CP) -r $(INCLUDEDIR) $(JDK_IMAGE_DIR)
-ifndef OS2_TEMP # GUI stuff
 	@#
 	@# Swing BeanInfo generation
 	@#
 	$(CD) javax/swing/beaninfo && $(MAKE) swing-1.2-beans
-endif
 ifneq ($(filter-out windows os2, $(PLATFORM)),)
 	$(call copy-man-pages,$(JDK_IMAGE_DIR),$(JDK_MAN_PAGES))
 endif # !windows
