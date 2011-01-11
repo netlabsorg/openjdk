@@ -1165,6 +1165,28 @@ AwtToolkit::CommonPeekMessageFunc(MSG& msg) {
     return ::PeekMessage(&msg, NULL, 0, 0, PM_REMOVE);
 }
 
+BOOL
+AwtToolkit::SecondaryPeekMessageFunc(MSG& msg) {
+    /*
+     * During DnD, it is possible that while running a secondary message loop
+     * waiting for a quit message from the Java event handler thread (that is
+     * processing the IDropSource::GiveFeedback() callback), another
+     * WM_MOUSEMOVE message comes to the AWT thread's message queue before the
+     * quit message from the Java event handler thread (sent as a result of the
+     * WToolkit::quitSecondaryEventLoop call). This will create another nested
+     * secondary message loop that will eat this outer quit message (together
+     * with its own quit message) which will a) break the message flow and b)
+     * leave the outer loop running forever (so that no new DnD session will be
+     * possible). A solution is similar to the one from
+     * AwtDataTransferer::SecondaryMessageLoop(). Given that
+     * WToolkit::startSecondaryEventLoop() isn't actually used for anything else
+     * but DnD, this solution should work fine.
+     */
+    return ::PeekMessage(&msg, NULL, WM_QUIT, WM_QUIT, PM_REMOVE) ||
+           ::PeekMessage(&msg, NULL, WM_AWT_INVOKE_METHOD, WM_AWT_INVOKE_VOID_METHOD, PM_REMOVE) ||
+           ::PeekMessage(&msg, NULL, WM_PAINT, WM_PAINT, PM_REMOVE);
+}
+
 /*
  * Perform pre-processing on a message before it is translated &
  * dispatched.  Returns true to eat the message
@@ -1734,7 +1756,7 @@ Java_sun_awt_windows_WToolkit_startSecondaryEventLoop(
     DASSERT(AwtToolkit::MainThread() == ::GetCurrentThreadId());
 
     AwtToolkit::GetInstance().MessageLoop(AwtToolkit::SecondaryIdleFunc,
-                                          AwtToolkit::CommonPeekMessageFunc);
+                                          AwtToolkit::SecondaryPeekMessageFunc);
 
     CATCH_BAD_ALLOC;
 }

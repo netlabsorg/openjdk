@@ -373,6 +373,7 @@ public:
     static VOID CALLBACK PrimaryIdleFunc();
     static VOID CALLBACK SecondaryIdleFunc();
     static BOOL CALLBACK CommonPeekMessageFunc(MSG& msg);
+    static BOOL CALLBACK SecondaryPeekMessageFunc(MSG& msg);
     static BOOL activateKeyboardLayout(HKL hkl);
 
     HANDLE m_waitEvent;
