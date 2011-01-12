@@ -26,10 +26,8 @@ jre_build_id = ver_id'_jre_os2_'build_id
  * --------------------------------------------------------------------------
  */
 
-/*
 rc = CreateImageZIP()
 if (rc \= 0) then signal rc_error
-*/
 
 rc = CreateImageZIP('JRE')
 if (rc \= 0) then signal rc_error
