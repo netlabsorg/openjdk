@@ -1,6 +1,6 @@
 OpenJDK 6 Alpha for OS/2 and eCS
 
-Version 1.6.0 Build 19 Beta (2010-12-30)
+Version 1.6.0 Build 19 Beta 2 (2011-01-12)
 
 This is a beta build intended for testing purposes.
 
@@ -27,9 +27,9 @@ In order to use this version of OpenJDK, you will need the following:
 
   - A OS/2 Warp 4 Fixpack 16+, OS/2 Warp 4.5 or eComStation operating system.
 
-  - Odin32 library version 0.6.21541 (2010-12-30) or above:
+  - Odin32 library version 0.6.21558 (2011-01-12) or above:
 
-    ftp://ftp.netlabs.org/pub/odin/odin32bin-20101230-release.wpi
+    ftp://ftp.netlabs.org/pub/odin/odin32bin-20110112-release.wpi
 
 
 
@@ -45,8 +45,9 @@ INSTALLATION
     set BEGINLIBPATH=<directory>\bin;%BEGINLIBPATH%
 
   Also make sure there are no traces of other Java installations in the
-  environment because this is known to make problems (this in particular means
-  that the CLASSPATH environment variable should not be set).
+  environment because this is known to make problems (in particular, this means
+  that the CLASSPATH/JAVA_HOME/SWING_HOME environment variables should not be
+  set).
 
   Alternatively, you may add this subdirectory to PATH and LIBPATH statements
   of your CONFIG.SYS (and reboot) to make the given Java installation the
@@ -80,13 +81,14 @@ FONT SELECTION
   2. Copy all *.TTF files from the archive to a directory and install them
      normally (for example, using the OS/2 Font Palette object).
 
-  3. Go to the directory "<OpenJDK>\bin\jre\lib" (where <OpenJDK> is where you
-     installed the OpenJDK package) and copy the file
-     "fontconfig.liberation.bfc" to "fontconfig.bfc". It is safe to overwrite
-     the target file.
+  3. Go to the directory "<SDK>\bin\jre\lib" (where <SDK> is where you installed
+     SDK package) or "<JRE>\lib" (where <JRE is where you installed the JRE
+     package) and copy the file "fontconfig.liberation.bfc" to "fontconfig.bfc".
+     It is safe to overwrite the target file.
 
   In order to return back to the default fonts, go to "<OpenJDK>\bin\jre\lib"
-  again and copy the file "fontconfig.default.bfc" to "fontconfig.bfc".
+  (or to "<JRE>\lib") again and copy the file "fontconfig.default.bfc" to
+  "fontconfig.bfc".
 
   Note that you need to restart all Java applications to let them pick up the
   new fonts.
@@ -210,11 +212,13 @@ CURRENT LIMITATIONS
      addressed in further releases. The workaround is to use the OS/2 UNI or
      Warp4 kernel instead.
 
-  2. The separate JRE package of OpenJDK is not currently available. You may
-     still extract JRE from the SDK package (it is located in the \jre
-     subdirectory of the SDK distribution archive).
+  2. The JPDA (Java Platform Debugger Architecture) component is missing.
 
-  3. Some rarely used Java system classes may be still missing in this release.
+  3. The com.sun.tools.attach package (API to attach to a Java virtual machine)
+     is missing.
+
+  4. Some other rarely used Java system classes may also be missing in this
+     release.
 
   See the project roadmap for more information on the current progress and
   future plans:
