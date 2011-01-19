@@ -291,7 +291,8 @@ public abstract class Preferences {
 
         // 3. Use platform-specific system-wide default
         String platformFactory =
-            System.getProperty("os.name").startsWith("Windows")
+            (System.getProperty("os.name").startsWith("Windows") ||
+             System.getProperty("os.name").startsWith("OS/2"))
             ? "java.util.prefs.WindowsPreferencesFactory"
             : "java.util.prefs.FileSystemPreferencesFactory";
         try {
