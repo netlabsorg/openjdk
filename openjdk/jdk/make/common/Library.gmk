@@ -248,6 +248,7 @@ ifeq ($(LIBRARY), fdlibm)
 else # LIBRARY
 	$(LINK) $(LDFLAGS) $(SHARED_LIBRARY_FLAG) -o $@ $(FILES_o) $(LDLIBS) $(DEF_FILE)
 	$(IMPLIB) -o $(OBJDIR)/$(LIBRARY).lib $@
+	cd $(@D) && $(MAPSYM) $(basename $(@F)).map
 endif # LIBRARY
 
 #

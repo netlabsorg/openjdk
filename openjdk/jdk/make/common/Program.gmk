@@ -174,14 +174,12 @@ else # PLATFORM == windows
 
 ifeq ($(PLATFORM), os2)
 
-$(ACTUAL_PROGRAM):: $(OBJDIR)/$(PROGRAM)$(EXE_SUFFIX)
-	@$(install-file)
-
-$(OBJDIR)/$(PROGRAM)$(EXE_SUFFIX):: $(FILES_o)
+$(ACTUAL_PROGRAM):: $(FILES_o)
 	@$(prep-target)
 	@set -- $?; \
 	    $(ECHO) Rebuilding $@ because of $$1 $$2 $$3 $$4 $$5 $$6 $${7:+...};
 	$(LINK) $(LDFLAGS) -Zstack 0x2000 -o $@ $(FILES_o) $(LDLIBS)
+	cd $(@D) && $(MAPSYM) $(basename $(@F)).map
 
 else # PLATFORM == os2
 

@@ -69,6 +69,8 @@ endif
  
 IMPLIB = emximp
 
+MAPSYM = mapsym.exe
+
 # Odin SDK
 
 CPP_FLAGS += -D__WIN32OS2__ -D__i386__ -DSTRICT -D_POSIX_SOURCE \

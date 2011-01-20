@@ -260,6 +260,9 @@ $(EXPORT_JRE_BIN_DIR)/%.dll: $(MISC_DIR)/%.dll
   ifneq ($(OSNAME),os2)
 $(EXPORT_JRE_BIN_DIR)/%.pdb: $(MISC_DIR)/%.pdb
 	$(install-file)
+  else
+$(EXPORT_JRE_BIN_DIR)/%.sym: $(MISC_DIR)/%.sym
+	$(install-file)
   endif
 $(EXPORT_JRE_BIN_DIR)/%.map: $(MISC_DIR)/%.map
 	$(install-file)
@@ -269,6 +272,9 @@ $(EXPORT_CLIENT_DIR)/%.dll:  $(C1_DIR)/%.dll
 	$(install-file)
   ifneq ($(OSNAME),os2)
 $(EXPORT_CLIENT_DIR)/%.pdb:  $(C1_DIR)/%.pdb
+	$(install-file)
+  else
+$(EXPORT_CLIENT_DIR)/%.sym:  $(C1_DIR)/%.sym
 	$(install-file)
   endif
 $(EXPORT_CLIENT_DIR)/%.map:  $(C1_DIR)/%.map
@@ -280,6 +286,9 @@ $(EXPORT_SERVER_DIR)/%.dll:  $(C2_DIR)/%.dll
   ifneq ($(OSNAME),os2)
 $(EXPORT_SERVER_DIR)/%.pdb:  $(C2_DIR)/%.pdb
 	$(install-file)
+  else
+$(EXPORT_SERVER_DIR)/%.sym:  $(C2_DIR)/%.sym
+	$(install-file)
   endif
 $(EXPORT_SERVER_DIR)/%.map:  $(C2_DIR)/%.map
 	$(install-file)
@@ -289,6 +298,9 @@ $(EXPORT_KERNEL_DIR)/%.dll:  $(KERNEL_DIR)/%.dll
 	$(install-file)
   ifneq ($(OSNAME),os2)
 $(EXPORT_KERNEL_DIR)/%.pdb:  $(KERNEL_DIR)/%.pdb
+	$(install-file)
+  else
+$(EXPORT_KERNEL_DIR)/%.sym:  $(KERNEL_DIR)/%.sym
 	$(install-file)
   endif
 $(EXPORT_KERNEL_DIR)/%.map:  $(KERNEL_DIR)/%.map
