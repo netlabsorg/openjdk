@@ -56,6 +56,7 @@ HS_BUILD_ID = $(HS_BUILD_VER)
 $(AOUT): $(Res_Files) $(Obj_Files) $(Def_File)
 	$(LINK) $(LINK_FLAGS) -o $@ $(Def_File) $(Obj_Files) $(Res_Files)
 	$(IMPLIB) -o $(basename $@).lib $@
+	cd $(@D) && $(MAPSYM) $(basename $(@F)).map
 
 include $(WorkSpace)/make/os2/makefiles/shared.make
 include $(WorkSpace)/make/os2/makefiles/sa.make

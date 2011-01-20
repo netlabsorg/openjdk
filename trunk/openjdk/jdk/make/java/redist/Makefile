@@ -172,23 +172,17 @@ endif
 $(LIBDIR)/$(JVMLIB_NAME): $(HOTSPOT_LIB_PATH)/$(JVMLIB_NAME)
 	$(install-import-file)
 
-# it is OK for the .map and .sym files to not exist, so do not force a
-# dependency on them from the bootstrap location, and allow the copy to fail.
-$(LIB_LOCATION)/$(CLIENT_LOCATION)/$(JVMMAP_NAME):
-	@$(prep-target)
-	-$(CP) $(HOTSPOT_CLIENT_PATH)/$(JVMMAP_NAME)  $@
+$(LIB_LOCATION)/$(CLIENT_LOCATION)/$(JVMMAP_NAME): $(HOTSPOT_CLIENT_PATH)/$(JVMMAP_NAME)
+	$(install-import-file)
 
-$(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVMMAP_NAME):
-	@$(prep-target)
-	-$(CP) $(HOTSPOT_SERVER_PATH)/$(JVMMAP_NAME) $@
+$(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVMMAP_NAME): $(HOTSPOT_SERVER_PATH)/$(JVMMAP_NAME)
+	$(install-import-file)
 
-$(LIB_LOCATION)/$(CLIENT_LOCATION)/$(JVMSYM_NAME):
-	@$(prep-target)
-	-$(CP) $(HOTSPOT_CLIENT_PATH)/$(JVMSYM_NAME)  $@
+$(LIB_LOCATION)/$(CLIENT_LOCATION)/$(JVMSYM_NAME): $(HOTSPOT_CLIENT_PATH)/$(JVMSYM_NAME)
+	$(install-import-file)
 
-$(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVMSYM_NAME):
-	@$(prep-target)
-	-$(CP) $(HOTSPOT_SERVER_PATH)/$(JVMSYM_NAME) $@
+$(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVMSYM_NAME): $(HOTSPOT_SERVER_PATH)/$(JVMSYM_NAME)
+	$(install-import-file)
 
 #  OS/2        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  OS/2
 
