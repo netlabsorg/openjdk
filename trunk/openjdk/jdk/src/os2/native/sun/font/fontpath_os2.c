@@ -27,7 +27,7 @@
 
 #define OS2EMX_PLAIN_CHAR
 #define INCL_WINSHELLDATA
-#include <os2.h>
+#include <os2wrap.h> // Odin32 OS/2 api wrappers
 
 #include <malloc.h>
 #include <string.h>

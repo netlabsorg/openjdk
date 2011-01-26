@@ -28,7 +28,7 @@
 // This code redirects the OS/2 DLL initialization/termination calls to
 // the Windows DllMain() and registers the DLL with Odin
 
-#include <os2.h> // Odin32 OS/2 api wrappers
+#include <os2wrap.h> // Odin32 OS/2 api wrappers
 #include <odinlx.h>
 #include <misc.h>
 

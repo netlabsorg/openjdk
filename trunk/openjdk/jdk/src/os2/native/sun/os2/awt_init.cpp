@@ -29,7 +29,7 @@
 // with Odin
 
 #define INCL_DOSPROCESS
-#include <os2.h> // Odin32 OS/2 api wrappers
+#include <os2wrap.h> // Odin32 OS/2 api wrappers
 #include <odinlx.h>
 #include <misc.h>
 #include <exitlist.h>
