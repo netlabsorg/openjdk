@@ -31,7 +31,9 @@
 #include "shmemBase.h"
 #include "jdwpTransport.h"  /* for Packet, TransportCallback */
 
+#ifndef MIN
 #define MIN(x,y) ((x)<(y)?(x):(y))
+#endif
 
 /*
  * This is the base shared memory transport implementation that is used
@@ -82,14 +84,14 @@ typedef struct SharedMemoryListener {
     jlong attachingPID;
 } SharedListener;
 
-typedef struct SharedMemoryTransport {
+struct SharedMemoryTransport {
     char name[MAX_IPC_PREFIX];
     sys_ipmutex_t mutex;
     sys_event_t acceptEvent;
     sys_event_t attachEvent;
     sys_shmem_t sharedMemory;
     SharedListener *shared;
-} SharedMemoryTransport;
+};
 
 /*
  * Access must be syncronized.  Holds one shared
@@ -142,7 +144,7 @@ typedef struct Stream {
 #define IS_STATE_CLOSED(state) (state != STATE_OPEN)
 
 
-typedef struct SharedMemoryConnection {
+struct SharedMemoryConnection {
     char name[MAX_IPC_NAME];
     SharedMemory *shared;
     sys_shmem_t sharedMemory;
@@ -150,7 +152,7 @@ typedef struct SharedMemoryConnection {
     Stream outgoing;
     sys_process_t otherProcess;
     sys_event_t shutdown;           /* signalled to indicate shutdown */
-} SharedMemoryConnection;
+};
 
 static jdwpTransportCallback *callback;
 static JavaVM *jvm;

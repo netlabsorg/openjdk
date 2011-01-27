@@ -81,4 +81,4 @@ endif
 #
 # vpaths for the transport (should not be seen by others)
 #
-vpath %.c $(SHARE_SRC)/native/com/sun/tools/jdi:$(SHARE_SRC)/transport/shmem:$(PLATFORM_SRC)/transport/shmem
+vpath %.c $(SHARE_SRC)/native/com/sun/tools/jdi $(SHARE_SRC)/transport/shmem $(PLATFORM_SRC)/transport/shmem

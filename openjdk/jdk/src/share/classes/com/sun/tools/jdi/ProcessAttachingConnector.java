@@ -122,7 +122,8 @@ public class ProcessAttachingConnector
         address = address.substring(pos+1, address.length());
 
         TransportService ts = null;
-        if (lib.equals("dt_socket")) {
+        final String sockLib = System.getProperty("os.name").startsWith("OS/2") ? "dt_sock" : "dt_socket";
+        if (lib.equals(sockLib)) {
             ts = new SocketTransportService();
         } else {
             if (lib.equals("dt_shmem")) {

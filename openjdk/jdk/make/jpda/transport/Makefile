@@ -32,7 +32,7 @@ PRODUCT = jpda
 include $(BUILDDIR)/common/Defs.gmk
 
 SUBDIRS = socket
-ifeq ($(PLATFORM), windows)
+ifeq ($(filter-out windows os2, $(PLATFORM)),)
 SUBDIRS += shmem
 endif # PLATFORM
 all build clean clobber::

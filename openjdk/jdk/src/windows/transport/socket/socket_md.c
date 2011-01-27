@@ -25,6 +25,11 @@
 #include <windows.h>
 #include <winsock2.h>
 
+#ifdef __EMX__
+#include <string.h>
+#include <memory.h>
+#endif
+
 #include "sysSocket.h"
 #include "socketTransport.h"
 
@@ -40,7 +45,9 @@ static struct {
     int errCode;
     const char *errString;
 } const winsock_errors[] = {
+#ifndef __WIN32OS2__
     { WSAEPROVIDERFAILEDINIT,   "Provider initialization failed (check %SystemRoot%)" },
+#endif
     { WSAEACCES,                "Permission denied" },
     { WSAEADDRINUSE,            "Address already in use" },
     { WSAEADDRNOTAVAIL,         "Cannot assign requested address" },
@@ -426,11 +433,11 @@ dbgsysTlsGet(int index) {
 }
 
 #define FT2INT64(ft) \
-        ((long)(ft).dwHighDateTime << 32 | (long)(ft).dwLowDateTime)
+        ((jlong)(ft).dwHighDateTime << 32 | (jlong)(ft).dwLowDateTime)
 
 long
 dbgsysCurrentTimeMillis() {
-    static long fileTime_1_1_70 = 0;    /* midnight 1/1/70 */
+    static jlong fileTime_1_1_70 = 0;    /* midnight 1/1/70 */
     SYSTEMTIME st0;
     FILETIME   ft0;
 

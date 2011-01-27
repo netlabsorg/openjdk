@@ -29,6 +29,7 @@
 
 BUILDDIR = ../../..
 LIBRARY = dt_socket
+LIBRARY_SHORT = dt_sock
 PRODUCT = jbug
 
 # Mapfile only used on Solaris/Linux
@@ -53,6 +54,10 @@ ifeq ($(PLATFORM), windows)
   OTHER_LDLIBS += ws2_32.lib
 endif
 
+ifeq ($(PLATFORM), os2)
+  OTHER_LDLIBS += -lws2_32.lib
+endif
+
 OTHER_INCLUDES = -I$(INCLUDEDIR) -I$(PLATFORM_INCLUDE) \
                  -I$(SHARE_SRC)/transport/export \
                  -I$(SHARE_SRC)/transport/socket \
@@ -72,11 +77,6 @@ ifdef FILES_m
   include $(BUILDDIR)/common/Mapfile-vers.gmk
 endif
 
-#
-# Rules.
-#
-include $(BUILDDIR)/common/Library.gmk
-
 # We don't want to link against -ljava
 JAVALIB=
 
@@ -85,7 +85,30 @@ ifeq ($(PLATFORM), windows)
   OTHER_LCF += -export:jdwpTransport_OnLoad
 endif
 
+ifeq ($(PLATFORM), os2)
+
+FILES_c += socket_md_init.c
+vpath %.c $(PLATFORM_SRC_OS2)/transport/socket
+
+# exports live in .def file
+DEF_FILE = $(OBJDIR)/$(LIBRARY).def
+$(DEF_FILE): $(MAKEFILE_LIST)
+	@$(ECHO) "LIBRARY $(LIBRARY) INITINSTANCE TERMINSTANCE" > $@
+	@$(ECHO) 'EXPORTS \n \
+  jdwpTransport_OnLoad = "_jdwpTransport_OnLoad@16" \n \
+' >> $@
+
+clean::
+	-$(RM) $(DEF_FILE)
+
+endif
+
+#
+# Rules.
+#
+include $(BUILDDIR)/common/Library.gmk
+
 #
 # Add to ambient vpath so we pick up the library files
 #
-vpath %.c $(SHARE_SRC)/transport/socket:$(PLATFORM_SRC)/transport/socket
+vpath %.c $(SHARE_SRC)/transport/socket $(PLATFORM_SRC)/transport/socket

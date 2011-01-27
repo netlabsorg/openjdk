@@ -31,11 +31,7 @@ BUILDDIR = ..
 PRODUCT = demos
 include $(BUILDDIR)/common/Defs.gmk
 
-ifndef OS2_TEMP
 SUBDIRS = applets jfc jvmti management jni scripting jpda
-else # disable JPDA
-SUBDIRS = applets jfc jvmti management jni scripting
-endif
 
 all build:: nbproject
 	$(SUBDIRS-loop)
