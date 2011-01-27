@@ -68,15 +68,30 @@ ifdef FILES_m
   include $(BUILDDIR)/common/Mapfile-vers.gmk
 endif
 
-#
-# Rules.
-#
-include $(BUILDDIR)/common/Library.gmk
-
 # Add -export options to explicitly spell exported symbols
 ifeq ($(PLATFORM), windows)
   OTHER_LCF += -export:jdwpTransport_OnLoad
 endif
+
+ifeq ($(PLATFORM), os2)
+
+# exports live in .def file
+DEF_FILE = $(OBJDIR)/$(LIBRARY).def
+$(DEF_FILE): $(MAKEFILE_LIST)
+	@$(ECHO) "LIBRARY $(LIBRARY) INITINSTANCE TERMINSTANCE" > $@
+	@$(ECHO) 'EXPORTS \n \
+  jdwpTransport_OnLoad = "_jdwpTransport_OnLoad@16" \n \
+' >> $@
+
+clean::
+	-$(RM) $(DEF_FILE)
+
+endif
+
+#
+# Rules.
+#
+include $(BUILDDIR)/common/Library.gmk
 
 #
 # vpaths for the transport (should not be seen by others)
