@@ -51,7 +51,8 @@ class SourceMapper {
             //XXX remove .jar and .zip files; we want only directories on
             //the source path. (Bug ID 4186582)
             if ( ! (element.endsWith(".jar") ||
-                    element.endsWith(".zip"))) {
+                    element.endsWith(".zip") ||
+                    element.isEmpty())) {
                 dirList.add(element);
             }
         }
@@ -75,7 +76,8 @@ class SourceMapper {
             //XXX remove .jar and .zip files; we want only directories on
             //the source path. (Bug ID 4186582)
             if ( ! (s.endsWith(".jar") ||
-                    s.endsWith(".zip"))) {
+                    s.endsWith(".zip") ||
+                    s.isEmpty())) {
                 dirList.add(s);
             }
         }
