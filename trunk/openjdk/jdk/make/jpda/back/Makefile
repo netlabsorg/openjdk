@@ -118,8 +118,4 @@ JAVALIB=
 #
 # Add to ambient vpath so we pick up the library files
 #
-ifeq ($(filter-out windows os2, $(PLATFORM)),)
-vpath %.c $(SHARE_SRC)/back:$(SHARE_SRC)/back
-endif # PLATFORM
-vpath %.c $(SHARE_SRC)/back:$(PLATFORM_SRC)/back
-
+vpath %.c $(SHARE_SRC)/back $(PLATFORM_SRC)/back
