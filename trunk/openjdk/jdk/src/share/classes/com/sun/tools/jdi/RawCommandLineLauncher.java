@@ -70,6 +70,8 @@ public class RawCommandLineLauncher extends AbstractLauncher implements Launchin
             transportService = new SocketTransportService();
             transport = new Transport() {
                 public String name() {
+                    if (System.getProperty("os.name").startsWith("OS/2"))
+                        return "dt_sock";
                     return "dt_socket";
                 }
             };

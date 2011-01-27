@@ -337,13 +337,9 @@ SOURCE_FILES_filter = $(SOURCE_FILTERs:%=-name % -prune -o)
 #
 TOOLS = \
 
-ifndef OS2_TEMP # JPDA
 TOOLS += \
 	META-INF/services/com.sun.jdi.connect.Connector \
 	META-INF/services/com.sun.jdi.connect.spi.TransportService \
-
-endif
-TOOLS += \
 	sun/tools/asm		\
 	sun/tools/jar		\
 	sun/tools/java		\
@@ -369,26 +365,14 @@ TOOLS += \
 	sun/applet		\
 	sun/jvmstat		\
 	com/sun/javadoc		\
-
-ifndef OS2_TEMP # JPDA
-TOOLS += \
 	com/sun/jdi		\
-
-endif
-TOOLS += \
 	com/sun/jarsigner	\
 	com/sun/mirror		\
 	com/sun/source          \
 	com/sun/tools/doclets   \
-
-ifndef OS2_TEMP # JPDA
-TOOLS += \
 	com/sun/tools/example/debug/expr \
 	com/sun/tools/example/debug/tty  \
 	com/sun/tools/extcheck  \
-
-endif
-TOOLS += \
 	com/sun/tools/hat       \
 	com/sun/tools/javac     \
 	com/sun/tools/javadoc   \
@@ -407,13 +391,7 @@ TOOLS += \
         com/sun/xml/internal/xsom       \
         org/relaxng/datatype   \
 	com/sun/xml/internal/dtdparser \
-
-ifndef OS2_TEMP # JPDA
-TOOLS += \
 	com/sun/tools/jdi	\
-
-endif
-TOOLS += \
 	com/sun/tools/script/shell	\
 
 ifndef OS2_TEMP # disable com.sun.tools.attach (see ticket:18)

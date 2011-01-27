@@ -29,7 +29,14 @@
 #include <stddef.h>      /* for uintptr_t */
 #include <stdlib.h>      /* for _MAx_PATH */
 
+#ifdef __EMX__
+typedef __uint64_t UNSIGNED_JLONG;
+#define CONST_JLONG(x) x##LL
+#else
 typedef unsigned __int64 UNSIGNED_JLONG;
+#define CONST_JLONG(x) x
+#endif
+
 typedef unsigned long UNSIGNED_JINT;
 
 #define MAXPATHLEN _MAX_PATH
@@ -50,13 +57,13 @@ typedef unsigned long UNSIGNED_JINT;
                    (((UNSIGNED_JINT)(x & 0xff000000)) >> 24))
 #define HOST_TO_JAVA_LONG(x)                                            \
                   ((x << 56) |                                          \
-                   ((x & 0x000000000000ff00) << 40) |                   \
-                   ((x & 0x0000000000ff0000) << 24) |                   \
-                   ((x & 0x00000000ff000000) << 8) |                    \
-                   ((x & 0x000000ff00000000) >> 8) |                    \
-                   ((x & 0x0000ff0000000000) >> 24) |                   \
-                   ((x & 0x00ff000000000000) >> 40) |                   \
-                   (((UNSIGNED_JLONG)(x & 0xff00000000000000)) >> 56))
+                   ((x & CONST_JLONG(0x000000000000ff00)) << 40) |                   \
+                   ((x & CONST_JLONG(0x0000000000ff0000)) << 24) |                   \
+                   ((x & CONST_JLONG(0x00000000ff000000)) << 8) |                    \
+                   ((x & CONST_JLONG(0x000000ff00000000)) >> 8) |                    \
+                   ((x & CONST_JLONG(0x0000ff0000000000)) >> 24) |                   \
+                   ((x & CONST_JLONG(0x00ff000000000000)) >> 40) |                   \
+                   (((UNSIGNED_JLONG)(x & CONST_JLONG(0xff00000000000000))) >> 56))
 #define HOST_TO_JAVA_FLOAT(x) stream_encodeFloat(x)
 #define HOST_TO_JAVA_DOUBLE(x) stream_encodeDouble(x)
 

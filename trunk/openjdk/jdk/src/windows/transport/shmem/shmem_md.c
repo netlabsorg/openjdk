@@ -26,7 +26,6 @@
 #include <windows.h>
 #include <errno.h>
 
-#include "shmem_md.h"
 #include "sysShmem.h"
 #include "shmemBase.h"  /* for exitTransportWithError */
 
