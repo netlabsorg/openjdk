@@ -216,3 +216,61 @@ julong os::allocatable_physical_memory(julong size) {
 
     return MIN2(size, maxMemBlock);
 }
+
+// Extracts the LIBPATH value from CONFIG.SYS and puts it to the environment
+// under the JAVA_LIBPATH name unless JAVA_LIBPATH is already set in which
+// case the existing value is simply returned.
+const char *getLibPath()
+{
+    const char *libPath = ::getenv("JAVA_LIBPATH");
+    if (libPath)
+        return libPath;
+
+    os2_APIRET arc;
+    os2_ULONG drive;
+    arc = DosQuerySysInfo(os2_QSV_BOOT_DRIVE, os2_QSV_BOOT_DRIVE,
+                          &drive, sizeof(drive));
+    if (arc != os2_NO_ERROR)
+        return NULL;
+
+    char configSys[] = "?:\\CONFIG.SYS";
+    *configSys = drive + 'A' - 1;
+
+    FILE *f = fopen(configSys, "r");
+    if (!f)
+        return NULL;
+
+    char buf[1024];
+    char *libPathBuf = NULL;
+    while (!feof(f) && !ferror(f)) {
+        if (fgets(buf, sizeof(buf), f)) {
+            int len = strlen(buf);
+            if (libPathBuf) {
+                // continuation of the LIBPATH string
+                libPathBuf = (char *)realloc(libPathBuf, strlen(libPathBuf) + len + 2);
+                if (!libPathBuf)
+                    break;
+            }
+            else if (!strncmp(buf, "LIBPATH", 7)) {
+                // beginning of the LIBPATH string
+                libPathBuf = (char *)malloc(len + 1 + 5 /*JAVA_*/);
+                if (!libPathBuf)
+                    break;
+                strcpy(libPathBuf, "JAVA_");
+            }
+            if (libPathBuf) {
+                strcat(libPathBuf, buf);
+                if (buf[len - 1] == '\n') {
+                    // this is the last part, terminate and leave
+                    libPathBuf[strlen(libPathBuf) - 1] = '\0';
+                    break;
+                }
+            }
+        }
+    }
+
+    fclose(f);
+
+    ::putenv(libPathBuf);
+    return ::getenv("JAVA_LIBPATH");
+}

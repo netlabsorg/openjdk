@@ -158,6 +158,11 @@ static LPTOP_LEVEL_EXCEPTION_FILTER prev_uef_handler = NULL;
 
 LONG WINAPI Handle_FLT_Exception(struct _EXCEPTION_POINTERS* exceptionInfo);
 #endif
+
+#ifdef __WIN32OS2__
+const char *getLibPath(); // defined in os_os2.cpp
+#endif
+
 void os::init_system_properties_values() {
   /* sysclasspath, java_home, dll_dir */
   {
@@ -215,7 +220,13 @@ void os::init_system_properties_values() {
 
     char *library_path;
     char tmp[MAX_PATH];
+
+#ifdef __WIN32OS2__
+    /* On OS/2, LIBPATH is used for DLL searching insetad of PATH */
+    const char *path_str = getLibPath();
+#else
     char *path_str = ::getenv("PATH");
+#endif
 
     library_path = NEW_C_HEAP_ARRAY(char, MAX_PATH * 5 + sizeof(PACKAGE_DIR) +
         sizeof(BIN_DIR) + (path_str ? strlen(path_str) : 0) + 10);
