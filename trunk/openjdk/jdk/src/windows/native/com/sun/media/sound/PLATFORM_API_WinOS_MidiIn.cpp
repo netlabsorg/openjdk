@@ -27,9 +27,7 @@
 #define USE_TRACE
 
 /* include Java Sound specific headers as C code */
-extern "C" {
 #include "PLATFORM_API_WinOS_Util.h"
-}
 
 #if USE_PLATFORM_MIDI_IN == TRUE
 
