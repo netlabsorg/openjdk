@@ -114,6 +114,10 @@ typedef struct tag_MidiDeviceHandle {
 
 #if USE_MIDI_QUEUE == TRUE
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
  * Native Locking support
  */
@@ -141,6 +145,10 @@ MidiMessage* MIDI_QueueRead(MidiMessageQueue* queue);
 void MIDI_QueueRemove(MidiMessageQueue* queue, INT32 onlyLocked);
 void MIDI_QueueClear(MidiMessageQueue* queue);
 
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
+
 #endif /* USE_MIDI_QUEUE */
 
 
@@ -159,12 +167,14 @@ void MIDI_QueueClear(MidiMessageQueue* queue);
 // maximum number of bytes in one sys ex message
 #define MIDI_IN_LONG_MESSAGE_SIZE 1024
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /*
  * Return an error message for the error code
  */
 char* MIDI_IN_GetErrorStr(INT32 err);
-
 
 /*
  * Get the number of MIDI IN devices on the system.
@@ -242,6 +252,10 @@ MidiMessage* MIDI_IN_GetMessage(MidiDeviceHandle* handle);
  */
 void MIDI_IN_ReleaseMessage(MidiDeviceHandle* handle, MidiMessage* msg);
 
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
+
 #endif // USE_PLATFORM_MIDI_IN
 
 
@@ -260,11 +274,14 @@ void MIDI_IN_ReleaseMessage(MidiDeviceHandle* handle, MidiMessage* msg);
 // maximum number of bytes in one sys ex message
 #define MIDI_OUT_LONG_MESSAGE_SIZE 1024
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
  * Return an error message for the error code
  */
 char* MIDI_OUT_GetErrorStr(INT32 err);
-
 
 /*
  * Get the number of MIDI OUT devices on the system.
@@ -329,6 +346,10 @@ INT32 MIDI_OUT_SendShortMessage(MidiDeviceHandle* handle, UINT32 packedMsg, UINT
  * Returns MIDI_SUCCESS or an error code
  */
 INT32 MIDI_OUT_SendLongMessage(MidiDeviceHandle* handle, UBYTE* data, UINT32 size, UINT32 timestamp);
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif // USE_PLATFORM_MIDI_OUT
 

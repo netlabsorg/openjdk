@@ -54,6 +54,11 @@ typedef struct tag_SysExQueue {
     MIDIHDR header[1]; // Windows specific structure to hold meta info
 } SysExQueue;
 
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* set the startTime field in MidiDeviceHandle */
 void MIDI_SetStartTime(MidiDeviceHandle* handle);
 
@@ -64,6 +69,10 @@ INT64 MIDI_GetTimeStamp(MidiDeviceHandle* handle);
 int MIDI_WinCreateEmptyLongBufferQueue(MidiDeviceHandle* handle, int count);
 int MIDI_WinCreateLongBufferQueue(MidiDeviceHandle* handle, int count, int size, UBYTE* preAllocatedMem);
 void MIDI_WinDestroyLongBufferQueue(MidiDeviceHandle* handle);
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif // USE_PLATFORM_MIDI_IN || USE_PLATFORM_MIDI_OUT
 

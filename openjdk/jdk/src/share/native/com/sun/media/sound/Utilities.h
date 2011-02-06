@@ -27,10 +27,6 @@
 #include "SoundDefs.h"
 #include "Configure.h"          // put flags for debug msgs etc. here
 
-// return 1 if this platform is big endian, or 0 for little endian
-int UTIL_IsBigEndianPlatform();
-
-
 // ERROR PRINTS
 #ifdef USE_ERROR
 #define ERROR0(string)                        fprintf(stdout, (string)); fflush(stdout);
@@ -80,5 +76,16 @@ int UTIL_IsBigEndianPlatform();
 #define VTRACE4(string, p1, p2, p3, p4)
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+// return 1 if this platform is big endian, or 0 for little endian
+int UTIL_IsBigEndianPlatform();
 
 void ThrowJavaMessageException(JNIEnv *e, const char *exClass, const char *msg);
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
+
