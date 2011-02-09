@@ -35,7 +35,9 @@
 
 /* for waveformat extensible */
 #include <mmreg.h>
+#ifndef __WIN32OS2__
 #include <ks.h>
+#endif
 
 #ifndef PLATFORM_API_WINOS_UTIL_INCLUDED
 #define PLATFORM_API_WINOS_UTIL_INCLUDED

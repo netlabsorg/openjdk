@@ -89,7 +89,11 @@ void DS_unlockCache() {
     /* dummy implementation for now */
 }
 
+#ifdef __WIN32OS2__
+static GUID CLSID_DAUDIO_Zero = {0, 0, 0, {0, 0, 0, 0, 0, 0, 0, 0}};
+#else
 static GUID CLSID_DAUDIO_Zero = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+#endif
 
 BOOL isEqualGUID(LPGUID lpGuid1, LPGUID lpGuid2) {
     if (lpGuid1 == NULL || lpGuid2 == NULL) {
@@ -198,6 +202,7 @@ INT32 DAUDIO_GetDirectAudioDeviceCount() {
                 TRACE0("Removing stale Primary Sound Driver from list.\n");
             }
         }
+#ifndef __WIN32OS2__
         oldCount = rs.currMixerIndex;
         rs.isSource = FALSE;
         DirectSoundCaptureEnumerate((LPDSENUMCALLBACK) DS_RefreshCacheEnum, &rs);
@@ -211,6 +216,7 @@ INT32 DAUDIO_GetDirectAudioDeviceCount() {
                 TRACE0("Removing stale Primary Sound Capture Driver from list.\n");
             }
         }
+#endif
         g_mixerCount = rs.currMixerIndex;
 
         g_lastCacheRefreshTime = (UINT64) timeGetTime();
@@ -254,8 +260,10 @@ INT32 DAUDIO_GetDirectAudioDeviceDescription(INT32 mixerIndex, DirectAudioDevice
         DirectSoundEnumerate((LPDSENUMCALLBACK) DS_GetDescEnum, desc);
         strncpy(desc->description, "DirectSound Playback", DAUDIO_STRING_LENGTH);
     } else {
+#ifndef __WIN32OS2__
         DirectSoundCaptureEnumerate((LPDSENUMCALLBACK) DS_GetDescEnum, desc);
         strncpy(desc->description, "DirectSound Capture", DAUDIO_STRING_LENGTH);
+#endif
     }
 
     /*desc->vendor;
@@ -479,10 +487,12 @@ DWORD WINAPI __stdcall DS_StartBufferHelper::ThreadProc(void *param)
         }
         if (data.line2Start->isSource) {
             data.startResult =
-                data.line2Start->playBuffer->Play(0, 0, DSCBSTART_LOOPING);
+                data.line2Start->playBuffer->Play(0, 0, DSBPLAY_LOOPING);
         } else {
+#ifndef __WIN32OS2__
             data.startResult =
                 data.line2Start->captureBuffer->Start(DSCBSTART_LOOPING);
+#endif
         }
         ::SetEvent(data.startedEvent);
     }
@@ -544,8 +554,10 @@ BOOL DS_addDeviceRef(INT32 deviceID) {
             res = DirectSoundCreate(lpGuid, &devPlay, NULL);
             g_audioDeviceCache[deviceID].dev = (void*) devPlay;
         } else {
+#ifndef __WIN32OS2__
             res = DirectSoundCaptureCreate(lpGuid, &devCapture, NULL);
             g_audioDeviceCache[deviceID].dev = (void*) devCapture;
+#endif
         }
         g_audioDeviceCache[deviceID].refCount = 0;
         if (FAILED(res)) {
@@ -583,7 +595,9 @@ void DS_removeDeviceRef(INT32 deviceID) {
             if (g_audioDeviceCache[deviceID].isSource) {
                 DEV_PLAY(deviceID)->Release();
             } else {
+#ifndef __WIN32OS2__
                 DEV_CAPTURE(deviceID)->Release();
+#endif
             }
             g_audioDeviceCache[deviceID].dev = NULL;
         }
@@ -610,7 +624,11 @@ typedef struct {
 #endif // !defined(WAVE_FORMAT_EXTENSIBLE)
 
 #if !defined(DEFINE_WAVEFORMATEX_GUID)
+#ifdef __WIN32OS2__
+#define DEFINE_WAVEFORMATEX_GUID(x) (USHORT)(x), 0x0000, 0x0010, { 0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71 }
+#else
 #define DEFINE_WAVEFORMATEX_GUID(x) (USHORT)(x), 0x0000, 0x0010, 0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71
+#endif
 #endif
 #ifndef STATIC_KSDATAFORMAT_SUBTYPE_PCM
 #define STATIC_KSDATAFORMAT_SUBTYPE_PCM\
@@ -724,6 +742,7 @@ void DS_clearBuffer(DS_Info* info, BOOL fromWritePos) {
             return;
         }
     } else {
+#ifndef __WIN32OS2__
         if (FAILED(info->captureBuffer->Lock(0,
                                              info->dsBufferSizeInBytes,
                                              (LPVOID*) &pb1, &cb1,
@@ -732,6 +751,7 @@ void DS_clearBuffer(DS_Info* info, BOOL fromWritePos) {
             TRACE0("< DS_clearbuffer\n");
             return;
         }
+#endif
     }
     if (pb1!=NULL) {
         memset(pb1, (info->bitsPerSample == 8)?128:0, cb1);
@@ -755,7 +775,9 @@ void DS_clearBuffer(DS_Info* info, BOOL fromWritePos) {
         }
         DEBUG_SILENCING2("  silencedBytes=%d, my writePos=%d\n", (int)info->silencedBytes, (int)info->writePos);
     } else {
+#ifndef __WIN32OS2__
         info->captureBuffer->Unlock( pb1, cb1, pb2, cb2 );
+#endif
     }
     TRACE0("< DS_clearbuffer\n");
 }
@@ -767,7 +789,9 @@ void* DS_createSoundBuffer(DS_Info* info,
                           int channels,
                           int bufferSizeInBytes) {
     DSBUFFERDESC dsbdesc;
+#ifndef __WIN32OS2__
     DSCBUFFERDESC dscbdesc;
+#endif
     HRESULT res;
     WAVEFORMATEXTENSIBLE format;
     void* buffer;
@@ -799,6 +823,7 @@ void* DS_createSoundBuffer(DS_Info* info,
         res = DEV_PLAY(info->deviceID)->CreateSoundBuffer
             (&dsbdesc, (LPDIRECTSOUNDBUFFER*) &buffer, NULL);
     } else {
+#ifndef __WIN32OS2__
         memset(&dscbdesc, 0, sizeof(DSCBUFFERDESC));
         dscbdesc.dwSize = sizeof(DSCBUFFERDESC);
         dscbdesc.dwFlags = 0;
@@ -806,6 +831,7 @@ void* DS_createSoundBuffer(DS_Info* info,
         dscbdesc.lpwfxFormat = (WAVEFORMATEX*) &format;
         res = DEV_CAPTURE(info->deviceID)->CreateCaptureBuffer
             (&dscbdesc, (LPDIRECTSOUNDCAPTUREBUFFER*) &buffer, NULL);
+#endif
     }
     if (FAILED(res)) {
         ERROR1("DS_createSoundBuffer: ERROR: Failed to create sound buffer: %s", TranslateDSError(res));
@@ -820,8 +846,10 @@ void DS_destroySoundBuffer(DS_Info* info) {
         info->playBuffer = NULL;
     }
     if (info->captureBuffer != NULL) {
+#ifndef __WIN32OS2__
         info->captureBuffer->Release();
         info->captureBuffer = NULL;
+#endif
     }
 }
 
@@ -952,6 +980,7 @@ int DAUDIO_Start(void* id, int isSource) {
             }
         }
     } else {
+#ifndef __WIN32OS2__
         if (info->captureBuffer->GetStatus(&status) == DS_OK) {
             if (status & DSCBSTATUS_LOOPING) {
                 ERROR0("DAUDIO_Start: ERROR: Already started!");
@@ -959,6 +988,7 @@ int DAUDIO_Start(void* id, int isSource) {
             }
         }
         res = DS_StartBufferHelper::StartBuffer(info);
+#endif
     }
     if (FAILED(res)) {
         ERROR1("DAUDIO_Start: ERROR: Failed to start: %s", TranslateDSError(res));
@@ -977,7 +1007,9 @@ int DAUDIO_Stop(void* id, int isSource) {
     if (info->isSource)  {
         info->playBuffer->Stop();
     } else {
+#ifndef __WIN32OS2__
         info->captureBuffer->Stop();
+#endif
     }
 
     TRACE0("< DAUDIO_Stop\n");
@@ -1088,6 +1120,7 @@ int DS_GetAvailable(DS_Info* info,
             }
         }
     } else {
+#ifndef __WIN32OS2__
         if (FAILED(info->captureBuffer->GetCurrentPosition(playCursor, writeCursor))) {
             ERROR0("DS_GetAvailable: ERROR: Failed to get current position.\n");
             return 0;
@@ -1125,6 +1158,7 @@ int DS_GetAvailable(DS_Info* info,
             info->writePos = newReadPos;
             available = info->bufferSizeInBytes;
         }
+#endif
     }
     available = (available / info->frameSize) * info->frameSize;
 
@@ -1237,6 +1271,7 @@ int DAUDIO_Read(void* id, char* data, int byteSize) {
 
     TRACE1("> DAUDIO_Read %d bytes\n", byteSize);
 
+#ifndef __WIN32OS2__
     available = DS_GetAvailable(info, &captureCursor, &readCursor, &bufferSize, FALSE /* fromCaptureCursor? */);
     if (byteSize > available) byteSize = available;
     if (byteSize > 0) {
@@ -1279,6 +1314,9 @@ int DAUDIO_Read(void* id, char* data, int byteSize) {
             info->writePos = thisReadPos;
         }
     }
+#else
+    byteSize = -1;
+#endif
 
     TRACE1("< DAUDIO_Read: returning %d bytes.\n", byteSize);
     return byteSize;
@@ -1315,6 +1353,7 @@ int DAUDIO_Flush(void* id, int isSource) {
         info->playBuffer->Stop();
         DS_clearBuffer(info, FALSE /* entire buffer */);
     } else {
+#ifndef __WIN32OS2__
         DWORD captureCursor, readCursor;
         /* set the read pointer to the current read position */
         if (FAILED(info->captureBuffer->GetCurrentPosition(&captureCursor, &readCursor))) {
@@ -1327,6 +1366,7 @@ int DAUDIO_Flush(void* id, int isSource) {
          * in a subsequent GetAvailable() call.
          */
         info->writePos = (int) readCursor;
+#endif
     }
     return TRUE;
 }

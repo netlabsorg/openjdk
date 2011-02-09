@@ -100,6 +100,22 @@ ifeq ($(PLATFORM), windows)
   #MXSPP_ADD = $(PLATFORM)-$(ARCH)/
 endif # PLATFORM win32
 
+ifeq ($(PLATFORM), os2)
+  CPPFLAGS += 	-DUSE_PLATFORM_MIDI_OUT=TRUE \
+		-DUSE_PLATFORM_MIDI_IN=TRUE \
+		-DUSE_PORTS=TRUE
+  LDLIBS += -lwinmm.lib
+
+  # Odin32 always provides MIDI and ports
+  INCLUDE_MIDI  = TRUE
+  INCLUDE_PORTS = TRUE
+
+  # DirectSound handles directaudio (both i586 and amd64)
+  SUBDIRS += jsoundds
+  EXTRA_SOUND_JNI_LIBS += jsoundds
+  #MXSPP_ADD = $(PLATFORM)-$(ARCH)/
+endif # PLATFORM os2
+
 ifeq ($(PLATFORM), linux)
   # ALSA handles directaudio, ports, and MIDI
   SUBDIRS += jsoundalsa

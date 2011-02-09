@@ -52,11 +52,18 @@ FILES_export = \
 #
 # Extra cc/linker flags.
 #
+ifeq ($(PLATFORM), os2)
+LDLIBS += -ldsound.lib -lwinmm.lib -luser32.lib
+CPPFLAGS += \
+	-DUSE_DAUDIO=TRUE \
+	-I$(SHARE_SRC)/native/com/sun/media/sound
+else
 LDLIBS += dsound.lib winmm.lib user32.lib
 CPPFLAGS += \
 	-DUSE_DAUDIO=TRUE \
 	-I$(SHARE_SRC)/native/com/sun/media/sound \
 	-I$(DXSDK_INCLUDE_PATH)
+endif
 
 #
 # Add to the ambient VPATH.

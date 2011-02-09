@@ -29,6 +29,11 @@
 
 #include "PLATFORM_API_WinOS_Util.h"
 
+#ifdef __EMX__
+#include <string.h>
+#include <memory.h>
+#endif
+
 #if (USE_PLATFORM_MIDI_IN == TRUE) || (USE_PLATFORM_MIDI_OUT == TRUE)
 
 /* set the startTime field in MidiDeviceHandle */
