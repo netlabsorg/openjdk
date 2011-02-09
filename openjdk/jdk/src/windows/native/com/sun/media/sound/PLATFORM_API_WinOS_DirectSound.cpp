@@ -43,14 +43,8 @@
 /* include DirectSound headers */
 #include <dsound.h>
 
-/* include Java Sound specific headers as C code */
-#ifdef __cplusplus
-extern "C" {
-#endif
- #include "DirectAudio.h"
-#ifdef __cplusplus
-}
-#endif
+/* include Java Sound specific headers */
+#include "DirectAudio.h"
 
 #ifdef USE_DEBUG_SILENCING
 #define DEBUG_SILENCING0(p) TRACE0(p)

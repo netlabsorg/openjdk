@@ -56,6 +56,10 @@ typedef struct tag_DirectAudioDeviceDescription {
 
 #if (USE_DAUDIO == TRUE)
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // callback from GetFormats, implemented in DirectAudioDevice.c
 void DAUDIO_AddAudioFormat(void* creator, int significantBits, int frameSizeInBytes,
                            int channels, float sampleRate,
@@ -96,6 +100,10 @@ void DAUDIO_SetBytePosition(void* id, int isSource, INT64 javaBytePos);
 
 int DAUDIO_RequiresServicing(void* id, int isSource);
 void DAUDIO_Service(void* id, int isSource);
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif // USE_DAUDIO
 
