@@ -40,6 +40,12 @@ FILES_windows = \
 	PLATFORM_API_WinOS_Util.c \
 	PLATFORM_API_WinOS_Ports.c
 
+FILES_os2 = \
+	PLATFORM_API_WinOS_MidiIn.c \
+	PLATFORM_API_WinOS_MidiOut.c \
+	PLATFORM_API_WinOS_Util.c \
+	PLATFORM_API_WinOS_Ports.c
+	
 FILES_export = \
 	com/sun/media/sound/Platform.java
 

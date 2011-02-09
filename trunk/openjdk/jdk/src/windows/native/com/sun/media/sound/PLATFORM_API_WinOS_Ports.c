@@ -70,7 +70,7 @@ typedef struct tag_PortInfo {
 #define PORT_CONTROL_TYPE_MUX         5
 #define PORT_CONTROL_TYPE_MIXER       6
 
-typedef struct tag_PortControlID {
+struct tag_PortControlID {
     PortInfo*           portInfo;
     INT32               controlType;  // one of PORT_CONTROL_TYPE_XX
     INT32               min;
@@ -82,7 +82,7 @@ typedef struct tag_PortControlID {
         MIXERCONTROLDETAILS_UNSIGNED unsignedValue[2];
         INT32                        muxIndex;
     };
-} PortControlID;
+};
 
 
 int getControlInfo(HMIXER handle, MIXERLINE* line, MIXERLINECONTROLS* controls);
