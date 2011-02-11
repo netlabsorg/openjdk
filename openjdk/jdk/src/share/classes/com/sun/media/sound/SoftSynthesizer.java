@@ -171,6 +171,13 @@ public class SoftSynthesizer implements AudioSynthesizer,
         }
     }
 
+    private static final boolean isOS2 = AccessController
+        .doPrivileged(new PrivilegedAction<Boolean>() {
+            public Boolean run() {
+                return System.getProperty("os.name").startsWith("OS/2");
+            }
+        });
+
     protected static final String INFO_NAME = "Gervill";
     protected static final String INFO_VENDOR = "OpenJDK";
     protected static final String INFO_DESCRIPTION = "Software MIDI Synthesizer";
@@ -928,7 +935,7 @@ public class SoftSynthesizer implements AudioSynthesizer,
         item.description = "Number of midi channels.";
         list.add(item);
 
-        item = new AudioSynthesizerPropertyInfo("jitter correction", o?jitter_correction:true);
+        item = new AudioSynthesizerPropertyInfo("jitter correction", o?jitter_correction:isOS2?false:true);
         item.description = "Turn jitter correction on or off.";
         list.add(item);
 
