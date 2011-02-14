@@ -52,6 +52,27 @@ include $(BUILDDIR)/common/Mapfile-vers.gmk
 #
 include FILES_c.gmk
 
+ifeq ($(PLATFORM), os2)
+
+# exports live in .def file
+DEF_FILE = $(OBJDIR)/$(LIBRARY).def
+$(DEF_FILE): $(MAKEFILE_LIST)
+	@$(ECHO) "LIBRARY $(LIBRARY) INITINSTANCE TERMINSTANCE" > $@
+	@$(ECHO) 'EXPORTS \n \
+  j2d_mlib_ImageConvMxN = _j2d_mlib_ImageConvMxN \n \
+  j2d_mlib_ImageConvKernelConvert = _j2d_mlib_ImageConvKernelConvert \n \
+  j2d_mlib_ImageCreateStruct = _j2d_mlib_ImageCreateStruct \n \
+  j2d_mlib_ImageCreate = _j2d_mlib_ImageCreate \n \
+  j2d_mlib_ImageDelete = _j2d_mlib_ImageDelete \n \
+  j2d_mlib_ImageAffine = _j2d_mlib_ImageAffine \n \
+  j2d_mlib_ImageLookUp = _j2d_mlib_ImageLookUp \n \
+' >> $@
+
+clean::
+	-$(RM) $(DEF_FILE)
+
+endif
+
 #
 # Rules
 #
@@ -73,4 +94,3 @@ CPPFLAGS += \
 
 OTHER_CFLAGS += -D__USE_J2D_NAMES -D__MEDIALIB_OLD_NAMES
 OTHER_LDLIBS = $(LIBM) -ldl
-

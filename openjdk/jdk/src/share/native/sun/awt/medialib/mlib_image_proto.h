@@ -42,7 +42,7 @@ extern "C" {
 #include "j2d_names.h"
 #endif // __USE_J2D_NAMES
 
-#if defined ( _MSC_VER )
+#if defined ( _MSC_VER ) || defined ( __WIN32OS2__ )
 #define J2D_MLIB_PUBLIC __declspec(dllexport)
 #else
 #define J2D_MLIB_PUBLIC
