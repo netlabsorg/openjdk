@@ -124,6 +124,11 @@ call EnvAddFront 'PATH', ScriptDir'tools\bin'
 call EnvAddFront 'BEGINLIBPATH', ScriptDir'tools\bin'
 
 /*
+ * add boot JDK tools to BEGINLIBPATH
+ */
+call EnvAddFront 'BEGINLIBPATH', G.PATH_TOOL_BOOT_JDK'\bin'
+
+/*
  * bash is required for the build
  */
 call EnvSet 'MAKESHELL', 'bash.exe'
@@ -168,9 +173,6 @@ if (fJavaDebug & \fMake) then call EnvSet '_JAVA_LAUNCHER_DEBUG', '1'
 /*
  * @todo temporarily disable some components
  */
-call EnvSet 'BUILD_CORBA', 'false'
-call EnvSet 'BUILD_JAXP', 'false'
-call EnvSet 'BUILD_JAXWS', 'false'
 call EnvSet 'OS2_TEMP', 'true'
 
 /*
