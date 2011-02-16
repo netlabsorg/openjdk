@@ -117,7 +117,8 @@ JAVACFLAGS  += -classpath $(BOOTDIR)/lib/tools.jar
 JAVACFLAGS  += $(OTHER_JAVACFLAGS)
 
 # Needed for javah
-JAVAHFLAGS += -bootclasspath $(CLASSBINDIR)
+JAVAHFLAGS += -bootclasspath $(if $(filter $(CLASSBINDIR),$(CLASSDESTDIR)),\
+	$(CLASSBINDIR),$(CLASSDESTDIR)$(CLASSPATH_SEPARATOR)$(CLASSBINDIR))
 
 # Langtools
 ifdef LANGTOOLS_DIST

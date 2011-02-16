@@ -115,7 +115,7 @@ endef
 
 # Given a line of text, get the major.minor version number from it
 define GetVersion
-$(shell echo $1 | sed -e 's@[^1-9]*\([1-9][0-9]*\.[0-9][0-9]*\).*@\1@' )
+$(shell echo $1 | sed -ne 's@[^1-9]*\([1-9][0-9]*\.[0-9][0-9]*\).*@\1@p')
 endef
 
 # Given a major.minor.micro version, return the major, minor, or micro number

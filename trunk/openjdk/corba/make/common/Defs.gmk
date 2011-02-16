@@ -219,8 +219,9 @@ endif
 
 INCLUDES = -I. -I$(CLASSHDRDIR) \
 	$(patsubst %,-I%,$(subst $(CLASSPATH_SEPARATOR), ,$(VPATH.h))) $(OTHER_INCLUDES)
+ifneq ($(PLATFORM), os2)
 OTHER_CPPFLAGS = $(INCLUDES)
-
+endif
 
 #
 # vpaths.  These are the default locations searched for source files.
@@ -291,6 +292,12 @@ POPT = $(_OPT$(ALT_OPT))$(ALT_OPT)
 define prep-target
 $(MKDIR) -p $(@D)
 $(RM) $@
+endef
+
+# Prepare $@ target directory, remove old one and making sure parent exists
+define prep-dir-target
+$(MKDIR) -p $(@D)
+$(RM) -r $@
 endef
 
 # Simple install of $< file to $@
@@ -446,8 +453,13 @@ CXXFLAGS_$(VARIANT)/BYFILE  = $(CXXFLAGS_$(VARIANT)/$(@F)) \
 ASFLAGS         = $(ASFLAGS_$(VARIANT)) $(ASFLAGS_COMMON) $(OTHER_ASFLAGS)
 CFLAGS          = $(CFLAGS_$(VARIANT)/BYFILE)   $(CFLAGS_COMMON) $(OTHER_CFLAGS)
 CXXFLAGS        = $(CXXFLAGS_$(VARIANT)/BYFILE) $(CXXFLAGS_COMMON) $(OTHER_CXXFLAGS)
+ifeq ($(PLATFORM), os2)
+CPPFLAGS        = $(INCLUDES) $(CPPFLAGS_$(VARIANT)) $(CPPFLAGS_COMMON) $(OTHER_CPPFLAGS) \
+		  $(DEFINES) $(OPTIONS:%=-D%)
+else
 CPPFLAGS        = $(CPPFLAGS_$(VARIANT)) $(CPPFLAGS_COMMON) $(OTHER_CPPFLAGS) \
 		  $(DEFINES) $(OPTIONS:%=-D%)
+endif
 LDFLAGS         = $(LDFLAGS_$(VARIANT)) $(LDFLAGS_COMMON) $(OTHER_LDFLAGS)
 LDLIBS          = $(OTHER_LDLIBS) $(LDLIBS_$(VARIANT)) $(LDLIBS_COMMON)
 LINTFLAGS       = $(LINTFLAGS_$(VARIANT)) $(LINTFLAGS_COMMON) \

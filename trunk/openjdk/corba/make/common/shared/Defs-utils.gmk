@@ -60,7 +60,7 @@ ifeq ($(PLATFORM),solaris)
   UTILS_DEVTOOL_PATH=$(DEVTOOLS_PATH)
 endif
 
-ifeq ($(PLATFORM),windows)
+ifeq ($(filter-out windows os2,$(PLATFORM)),)
   UTILS_COMMAND_PATH=$(UNIXCOMMAND_PATH)
   UTILS_USR_BIN_PATH=$(UNIXCOMMAND_PATH)
   UTILS_CCS_BIN_PATH=$(UNIXCOMMAND_PATH)
@@ -155,6 +155,12 @@ ifeq ($(PLATFORM),windows)
   # Re-define some utilities
   LEX            =# override GNU Make intrinsic: no lex on windows
   NAWK           = $(UNIXCOMMAND_PATH)awk
+endif
+
+# OS/2 specific
+ifeq ($(PLATFORM),os2)
+  ECHO   = $(UNIXCOMMAND_PATH)echo -e
+  NAWK   = $(UNIXCOMMAND_PATH)awk
 endif
 
 # Linux specific
