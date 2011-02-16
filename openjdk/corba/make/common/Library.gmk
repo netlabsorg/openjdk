@@ -34,7 +34,13 @@ include $(TOPDIR)/make/common/Classes.gmk
 # in order to override the values defined inthat makefile.
 #
 
-ACTUAL_LIBRARY_NAME = $(LIB_PREFIX)$(LIBRARY).$(LIBRARY_SUFFIX)
+ifneq ($(LIBRARY_SHORT),)
+LIBRARY_NAME = $(LIBRARY_SHORT)
+else
+LIBRARY_NAME = $(LIBRARY)
+endif
+
+ACTUAL_LIBRARY_NAME = $(LIB_PREFIX)$(LIBRARY_NAME).$(LIBRARY_SUFFIX)
 ACTUAL_LIBRARY_DIR = $(LIB_LOCATION)
 ACTUAL_LIBRARY = $(ACTUAL_LIBRARY_DIR)/$(ACTUAL_LIBRARY_NAME)
 
@@ -185,7 +191,44 @@ $(LIBDIR)/$(LIBRARY).dll:: $(OBJDIR)/$(LIBRARY).dll
 
 endif # INSTALL_DOT_LIB
 
-else # PLATFORM
+else # PLATFORM == windows
+
+ifeq ($(PLATFORM), os2)
+
+#
+# Library building rules.
+#
+
+$(LIBRARY).lib:: $(OBJDIR)
+
+$(ACTUAL_LIBRARY):: $(COMPILE_FILES_o) $(FILES_m) $(FILES_reorder) $(DEF_FILE)
+	@$(prep-target)
+	@$(ECHO) "STATS: LIBRARY=$(LIBRARY), PRODUCT=$(PRODUCT), _OPT=$(_OPT)"
+	@$(ECHO) "Rebuilding $@ because of $?"
+	$(LINK) $(LDFLAGS) $(SHARED_LIBRARY_FLAG) -o $@ $(FILES_o) $(LDLIBS) $(DEF_FILE)
+	$(IMPLIB) -o $(OBJDIR)/$(LIBRARY).lib $@
+	cd $(@D) && $(MAPSYM) $(basename $(@F)).map
+
+#
+# Install a .lib file if required.
+#
+ifeq ($(INSTALL_DOT_LIB), true)
+
+$(ACTUAL_LIBRARY):: $(LIBDIR)/$(LIBRARY).lib
+
+clean::
+	-$(RM) $(LIBDIR)/$(LIBRARY).lib
+	-$(RM) $(LIBDIR)/$(LIBRARY).dll
+
+$(LIBDIR)/$(LIBRARY).lib:: $(OBJDIR)/$(LIBRARY).lib
+	$(install-file)
+
+$(LIBDIR)/$(LIBRARY).dll:: $(ACTUAL_LIBRARY)
+	$(install-file)
+
+endif # INSTALL_DOT_LIB
+
+else # PLATFORM == os2
 
 #
 # On Solaris, use mcs to write the version into the comment section of
@@ -201,7 +244,9 @@ ifeq ($(WRITE_LIBVERSION),true)
 	$(MCS) -d -a "$(FULL_VERSION)" $@
 endif # WRITE_LIBVERSION
 
-endif # PLATFORM
+endif # PLATFORM == os2
+
+endif # PLATFORM == windows
 
 #
 # Cross check all linted files against each other
@@ -215,11 +260,20 @@ endif
 # Class libraries with JNI native methods get a include to the package.
 #
 ifdef PACKAGE
+
+ifeq ($(PLATFORM), os2)
+# OS/2 specific vpath should come first
+vpath %.c $(PLATFORM_SRC_OS2)/native/$(PKGDIR)
+OTHER_INCLUDES += -I$(PLATFORM_SRC_OS2)/native/common
+OTHER_INCLUDES += -I$(PLATFORM_SRC_OS2)/native/$(PKGDIR)
+endif
+
 vpath %.c $(PLATFORM_SRC)/native/$(PKGDIR)
 vpath %.c $(SHARE_SRC)/native/$(PKGDIR)
 OTHER_INCLUDES += -I$(SHARE_SRC)/native/common -I$(PLATFORM_SRC)/native/common
 OTHER_INCLUDES += -I$(SHARE_SRC)/native/$(PKGDIR) \
 		  -I$(PLATFORM_SRC)/native/$(PKGDIR)
+
 endif
 
 #

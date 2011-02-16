@@ -32,6 +32,11 @@ ifeq ($(PLATFORM), windows)
   override CC_VERSION = msvc
 endif
 
+# OS/2 uses GNU compilers by default
+ifeq ($(PLATFORM), os2)
+  override CC_VERSION = gcc
+endif
+
 # Solaris uses Sun Studio compilers by default
 ifeq ($(PLATFORM), solaris)
   override CC_VERSION = sun
