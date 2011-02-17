@@ -16,7 +16,7 @@
 /**
  * Path to JDK used for bootstrapping. Must be set.
  */
-G.PATH_TOOL_BOOT_JDK    = 'D:\Dev\java150'
+G.PATH_TOOL_BOOT_JDK    = 'D:\Dev\openjdk6'
 
 /**
  * Path to GCC 4 environment script (+ possible arguments). If you use
@@ -44,9 +44,10 @@ G.PATH_LIB_ODIN32       = 'D:\Coding\odin32'
 
 /**
  * Path to the previous Java SDK where components not built from the
- * current source tree will be imported from. So far, must be set.
+ * current source tree will be imported from. Normally, it is not used and
+ * should be just the same as G.PATH_TOOL_BOOT_JDK.
  */
-G.PATH_JDK_IMPORT       = 'J:\Coding\openjdk\openjdk6\build\windows-i586\j2sdk-image'
+G.PATH_JDK_IMPORT       = G.PATH_TOOL_BOOT_JDK
 
 /**
  * Log file to save all console output of the build process (only works when
