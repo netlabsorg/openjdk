@@ -55,8 +55,12 @@ public class Win32PrintServiceLookup extends PrintServiceLookup {
     private PrintService[] printServices; /* includes the default printer */
 
     static {
+        boolean isOS2 = java.security.AccessController.doPrivileged(
+            new sun.security.action.GetPropertyAction("os.name")).
+                startsWith("OS/2");
         java.security.AccessController.doPrivileged(
-                    new sun.security.action.LoadLibraryAction("awt"));
+            new sun.security.action.LoadLibraryAction(isOS2 ? "jawtos2"
+                                                            : "awt"));
     }
 
     /* The singleton win32 print lookup service.

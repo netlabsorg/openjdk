@@ -93,7 +93,9 @@ PACKAGE = sun.security.mscapi
 LIBRARY = sunmscapi
 PRODUCT = sun
 
-LIBRARY_SHORT = smscapi
+ifeq ($(PLATFORM), os2)
+LIBRARY_SHORT = jsmscapi
+endif
 
 #
 # The following is for when we need to do postprocessing

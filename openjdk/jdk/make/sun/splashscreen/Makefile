@@ -29,7 +29,9 @@ LIBRARY = splashscreen
 PRODUCT = sun
 include $(BUILDDIR)/common/Defs.gmk
 
-LIBRARY_SHORT = splshscr
+ifeq ($(PLATFORM), os2)
+LIBRARY_SHORT = jsplash
+endif
 
 #
 # Files

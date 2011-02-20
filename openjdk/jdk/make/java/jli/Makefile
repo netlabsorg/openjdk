@@ -104,7 +104,7 @@ JAVALIB =
 # exports live in .def file
 DEF_FILE = $(OBJDIR)/$(LIBRARY).def
 $(DEF_FILE): $(MAKEFILE_LIST)
-	@$(ECHO) "LIBRARY $(LIBRARY) INITINSTANCE TERMINSTANCE" > $@
+	@$(ECHO) "LIBRARY $(LIBRARY_NAME) INITINSTANCE TERMINSTANCE" > $@
 	@$(ECHO) 'EXPORTS \n \
   _JLI_ParseManifest \n \
   _JLI_JarUnpackFile \n \

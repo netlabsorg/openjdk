@@ -559,7 +559,11 @@ void ClassLoader::load_zip_library() {
   // Load zip library
   char path[JVM_MAXPATHLEN];
   char ebuf[1024];
+#ifdef __WIN32OS2__  
+  hpi::dll_build_name(path, sizeof(path), Arguments::get_dll_dir(), "jzip");
+#else  
   hpi::dll_build_name(path, sizeof(path), Arguments::get_dll_dir(), "zip");
+#endif
   void* handle = hpi::dll_load(path, ebuf, sizeof ebuf);
   if (handle == NULL) {
     vm_exit_during_initialization("Unable to load ZIP library", path);

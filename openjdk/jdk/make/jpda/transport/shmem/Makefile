@@ -31,6 +31,10 @@ BUILDDIR = ../../..
 LIBRARY  = dt_shmem
 PRODUCT = jbug
 
+ifeq ($(PLATFORM), os2)
+LIBRARY_SHORT = jdtshmem
+endif
+
 # Mapfile only used on Solaris/Linux
 FILES_m = mapfile-vers
 
@@ -78,7 +82,7 @@ ifeq ($(PLATFORM), os2)
 # exports live in .def file
 DEF_FILE = $(OBJDIR)/$(LIBRARY).def
 $(DEF_FILE): $(MAKEFILE_LIST)
-	@$(ECHO) "LIBRARY $(LIBRARY) INITINSTANCE TERMINSTANCE" > $@
+	@$(ECHO) "LIBRARY $(LIBRARY_NAME) INITINSTANCE TERMINSTANCE" > $@
 	@$(ECHO) 'EXPORTS \n \
   jdwpTransport_OnLoad = "_jdwpTransport_OnLoad@16" \n \
 ' >> $@

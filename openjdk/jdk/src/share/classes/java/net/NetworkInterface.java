@@ -52,7 +52,10 @@ public final class NetworkInterface {
     private boolean virtual = false;
 
     static {
-        AccessController.doPrivileged(new LoadLibraryAction("net"));
+        boolean isOS2 = java.security.AccessController.doPrivileged(
+            new GetPropertyAction("os.name")).startsWith("OS/2");
+        AccessController.doPrivileged(new LoadLibraryAction(isOS2 ? "jnet" 
+                                                                  : "net"));
         init();
     }
 

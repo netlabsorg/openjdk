@@ -32,6 +32,10 @@ PRODUCT = java
 LIBRARY = verify
 include $(BUILDDIR)/common/Defs.gmk
 
+ifeq ($(PLATFORM), os2)
+LIBRARY_SHORT = jverify
+endif
+
 #
 # Link to libjvm so JVM_ functions can be called.
 #

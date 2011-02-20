@@ -97,7 +97,7 @@ public class ImagingLib {
                     if (arch == null || !arch.startsWith("sparc")) {
                         try {
                             if (System.getProperty("os.name").startsWith("OS/2")) {
-                                System.loadLibrary("mlibimg");
+                                System.loadLibrary("jmlibimg");
                             } else {
                                 System.loadLibrary("mlib_image");
                             }

@@ -28,7 +28,9 @@ LIBRARY = java_crw_demo
 PRODUCT = sun
 LIBRARY_OUTPUT = java_crw_demo
 
+ifeq ($(PLATFORM), os2)
 LIBRARY_SHORT = javacrwd
+endif
 
 # Configure the CFLAGS for this library.
 

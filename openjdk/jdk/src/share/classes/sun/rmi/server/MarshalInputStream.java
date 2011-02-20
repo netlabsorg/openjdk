@@ -111,8 +111,12 @@ public class MarshalInputStream extends ObjectInputStream {
      * Load the "rmi" native library.
      */
     static {
+        boolean isOS2 = java.security.AccessController.doPrivileged(
+            new sun.security.action.GetPropertyAction("os.name")).
+                startsWith("OS/2");
         java.security.AccessController.doPrivileged(
-            new sun.security.action.LoadLibraryAction("rmi"));
+            new sun.security.action.LoadLibraryAction(isOS2 ? "jrmi"
+                                                            : "rmi"));
     }
 
     /**

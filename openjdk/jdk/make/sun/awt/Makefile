@@ -28,6 +28,10 @@ PACKAGE = sun.awt
 LIBRARY = awt
 PRODUCT = sun
 
+ifeq ($(PLATFORM), os2)
+LIBRARY_SHORT = jawtos2
+endif
+
 #
 # Tell Defs.gmk that VIS is needed
 #

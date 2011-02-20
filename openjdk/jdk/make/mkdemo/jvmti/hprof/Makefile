@@ -28,6 +28,10 @@ PRODUCT = demo/jvmti
 DEMONAME = hprof
 include $(BUILDDIR)/common/Defs.gmk
 
+ifeq ($(PLATFORM), os2)
+DEMONAME_SHORT = jhprof
+endif
+
 DEMO_ROOT       = $(SHARE_SRC)/demo/jvmti/$(DEMONAME)
 DEMO_TOPFILES   = ./README.txt
 DEMO_PSRCDIR    = $(PLATFORM_SRC)/demo/jvmti/$(DEMONAME)

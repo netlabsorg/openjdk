@@ -53,7 +53,11 @@ class NativeLibLoader {
      * that the name of the library is "awt".  -br.
      */
     static void loadLibraries() {
+        boolean isOS2 = java.security.AccessController.doPrivileged(
+            new sun.security.action.GetPropertyAction("os.name")).
+                startsWith("OS/2");
         java.security.AccessController.doPrivileged(
-            new sun.security.action.LoadLibraryAction("awt"));
+            new sun.security.action.LoadLibraryAction(isOS2 ? "jawtos2"
+                                                            : "awt"));
     }
 }

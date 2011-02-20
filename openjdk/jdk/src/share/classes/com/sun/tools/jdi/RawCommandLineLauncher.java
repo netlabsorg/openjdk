@@ -57,6 +57,8 @@ public class RawCommandLineLauncher extends AbstractLauncher implements Launchin
             transportService = (TransportService)c.newInstance();
             transport = new Transport() {
                 public String name() {
+                    if (System.getProperty("os.name").startsWith("OS/2"))
+                        return "jdtshmem";
                     return "dt_shmem";
                 }
             };
@@ -71,7 +73,7 @@ public class RawCommandLineLauncher extends AbstractLauncher implements Launchin
             transport = new Transport() {
                 public String name() {
                     if (System.getProperty("os.name").startsWith("OS/2"))
-                        return "dt_sock";
+                        return "jdtsock";
                     return "dt_socket";
                 }
             };

@@ -66,7 +66,10 @@ class SharedMemoryTransportService extends TransportService {
     }
 
     SharedMemoryTransportService() {
-        System.loadLibrary("dt_shmem");
+        final String shmemLib =
+            System.getProperty("os.name").startsWith("OS/2") ? "jdtshmem"
+                                                             : "dt_shmem";
+        System.loadLibrary(shmemLib);
         initialize();
     }
 

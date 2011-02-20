@@ -29,8 +29,11 @@
 
 BUILDDIR = ../../..
 LIBRARY = dt_socket
-LIBRARY_SHORT = dt_sock
 PRODUCT = jbug
+
+ifeq ($(PLATFORM), os2)
+LIBRARY_SHORT = jdtsock
+endif
 
 # Mapfile only used on Solaris/Linux
 FILES_m = mapfile-vers
@@ -93,7 +96,7 @@ vpath %.c $(PLATFORM_SRC_OS2)/transport/socket
 # exports live in .def file
 DEF_FILE = $(OBJDIR)/$(LIBRARY).def
 $(DEF_FILE): $(MAKEFILE_LIST)
-	@$(ECHO) "LIBRARY $(LIBRARY) INITINSTANCE TERMINSTANCE" > $@
+	@$(ECHO) "LIBRARY $(LIBRARY_NAME) INITINSTANCE TERMINSTANCE" > $@
 	@$(ECHO) 'EXPORTS \n \
   jdwpTransport_OnLoad = "_jdwpTransport_OnLoad@16" \n \
 ' >> $@

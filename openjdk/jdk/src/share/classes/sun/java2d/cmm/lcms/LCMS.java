@@ -91,8 +91,13 @@ public class LCMS implements PCMM {
                     /* We need to load awt here because of usage trace and
                      * disposer frameworks
                      */
-                    System.loadLibrary("awt");
-                    System.loadLibrary("lcms");
+                    if (System.getProperty("os.name").startsWith("OS/2")) {
+                        System.loadLibrary("jawtos2");
+                        System.loadLibrary("jlcms");
+                    } else {
+                        System.loadLibrary("awt");
+                        System.loadLibrary("lcms");
+                    }
                     return null;
                 }
             }

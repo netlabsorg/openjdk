@@ -57,8 +57,12 @@ abstract class AbstractPlainDatagramSocketImpl extends DatagramSocketImpl
      * Load net library into runtime.
      */
     static {
+        boolean isOS2 = java.security.AccessController.doPrivileged(
+            new sun.security.action.GetPropertyAction("os.name")).
+                startsWith("OS/2");
         java.security.AccessController.doPrivileged(
-                  new sun.security.action.LoadLibraryAction("net"));
+            new sun.security.action.LoadLibraryAction(isOS2 ? "jnet"
+                                                            : "net"));
     }
 
     /**

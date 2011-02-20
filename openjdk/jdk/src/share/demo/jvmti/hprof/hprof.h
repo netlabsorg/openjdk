@@ -77,7 +77,12 @@ typedef unsigned SerialNumber;
 
 /* How the options get to OnLoad: */
 
+#ifdef __WIN32OS2__
+#define AGENTNAME               "jhprof"
+#else
 #define AGENTNAME               "hprof"
+#endif
+
 #define XRUN                    "-Xrun" AGENTNAME
 #define AGENTLIB                "-agentlib:" AGENTNAME
 
