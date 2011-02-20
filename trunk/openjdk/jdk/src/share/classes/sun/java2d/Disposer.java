@@ -55,8 +55,12 @@ public class Disposer implements Runnable {
     public static int refType = PHANTOM;
 
     static {
+        boolean isOS2 = java.security.AccessController.doPrivileged(
+            new sun.security.action.GetPropertyAction("os.name")).
+                startsWith("OS/2");
         java.security.AccessController.doPrivileged(
-            new sun.security.action.LoadLibraryAction("awt"));
+            new sun.security.action.LoadLibraryAction(isOS2 ? "jawtos2"
+                                                            : "awt"));
         initIDs();
         String type = (String) java.security.AccessController.doPrivileged(
                 new sun.security.action.GetPropertyAction("sun.java2d.reftype"));

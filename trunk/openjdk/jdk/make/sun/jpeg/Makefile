@@ -29,6 +29,10 @@ LIBRARY = jpeg
 PRODUCT = sun
 include $(BUILDDIR)/common/Defs.gmk
 
+ifeq ($(PLATFORM), os2)
+LIBRARY_SHORT = jjpeg
+endif
+
 #
 # Use highest optimization level
 #

@@ -48,6 +48,7 @@ import java.security.Permission;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import sun.security.action.LoadLibraryAction;
+import sun.security.action.GetPropertyAction;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -482,11 +483,10 @@ public class ManagementFactory {
     }
 
     static {
-        if (System.getProperty("os.name").startsWith("OS/2")) {
-            AccessController.doPrivileged(new LoadLibraryAction("mngemnt"));
-        } else {
-            AccessController.doPrivileged(new LoadLibraryAction("management"));
-        }
+        boolean isOS2 = AccessController.doPrivileged(
+            new GetPropertyAction("os.name")).startsWith("OS/2");
+        AccessController.doPrivileged(new LoadLibraryAction(isOS2 ? "jmngmnt"
+                                                                  : "management"));
         jvm = new VMManagementImpl();
     }
 

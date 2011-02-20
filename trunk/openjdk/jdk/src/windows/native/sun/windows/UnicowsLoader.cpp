@@ -76,7 +76,11 @@ HMODULE __stdcall UnicowsLoader::LoadUnicows(void)
     // instead of AwtToolkit.GetModuleHandle().  Otherwise it could cause
     // an infinite loop if some W call were made inside AwtToolkit class
     // initialization.
+#ifdef __WIN32OS2__    
+    HMODULE hmodAWT = GetModuleHandleA("jawtos2");
+#else
     HMODULE hmodAWT = GetModuleHandleA("awt");
+#endif
     LPSTR abspath = static_cast<LPSTR>(safe_Malloc(MAX_PATH));
     if (abspath != NULL) {
         GetModuleFileNameA(hmodAWT, abspath, MAX_PATH);

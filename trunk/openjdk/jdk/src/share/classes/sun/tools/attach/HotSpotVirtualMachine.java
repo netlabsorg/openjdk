@@ -101,7 +101,7 @@ public abstract class HotSpotVirtualMachine extends VirtualMachine {
         }
         try {
             if (System.getProperty("os.name").startsWith("OS/2")) {
-                loadAgentLibrary("instrmnt", args);
+                loadAgentLibrary("jinstr", args);
             } else {
                 loadAgentLibrary("instrument", args);
             }

@@ -28,6 +28,10 @@ LIBRARY = npt
 PRODUCT = sun
 LIBRARY_OUTPUT = npt
 
+ifeq ($(PLATFORM), os2)
+LIBRARY_SHORT = jnpt
+endif
+
 # Configure the CFLAGS for this library.
 
 FILES_m = mapfile-vers
@@ -70,7 +74,7 @@ ifeq ($(PLATFORM), os2)
 # exports live in .def file
 DEF_FILE = $(OBJDIR)/$(LIBRARY).def
 $(DEF_FILE): $(MAKEFILE_LIST)
-	@$(ECHO) "LIBRARY $(LIBRARY) INITINSTANCE TERMINSTANCE" > $@
+	@$(ECHO) "LIBRARY $(LIBRARY_NAME) INITINSTANCE TERMINSTANCE" > $@
 	@$(ECHO) 'EXPORTS \n \
   nptInitialize = "_nptInitialize@12" \n \
   nptTerminate = "_nptTerminate@8" \n \

@@ -31,6 +31,11 @@ BUILDDIR = ../../..
 PACKAGE = sun.rmi
 PRODUCT = sun
 LIBRARY = rmi
+
+ifeq ($(PLATFORM), os2)
+LIBRARY = jrmi
+endif
+
 include $(BUILDDIR)/common/Defs.gmk
 
 #

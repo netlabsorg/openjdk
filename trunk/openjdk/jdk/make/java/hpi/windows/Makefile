@@ -32,6 +32,10 @@ PRODUCT      = java
 THREADDIR    = windows_threads
 LIB_LOCATION = $(BINDIR)
 
+ifeq ($(PLATFORM), os2)
+LIBRARY_SHORT = jhpi
+endif
+
 include $(BUILDDIR)/common/Defs.gmk
 
 # windows compiler flags
@@ -65,7 +69,7 @@ ifeq ($(PLATFORM),os2)
 # exports live in .def file
 DEF_FILE = $(OBJDIR)/$(LIBRARY).def
 $(DEF_FILE): $(MAKEFILE_LIST)
-	@$(ECHO) "LIBRARY $(LIBRARY) INITINSTANCE TERMINSTANCE" > $@
+	@$(ECHO) "LIBRARY $(LIBRARY_NAME) INITINSTANCE TERMINSTANCE" > $@
 	@$(ECHO) 'EXPORTS \n \
   DLL_Initialize = "_DLL_Initialize@8" \n \
 ' >> $@

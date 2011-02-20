@@ -83,8 +83,12 @@ class NativeUnpack {
     static {
         // If loading from stand alone build uncomment this.
         // System.loadLibrary("unpack");
+        boolean isOS2 = java.security.AccessController.doPrivileged(
+            new sun.security.action.GetPropertyAction("os.name")).
+                startsWith("OS/2");
         java.security.AccessController.doPrivileged(
-                new sun.security.action.LoadLibraryAction("unpack"));
+            new sun.security.action.LoadLibraryAction(isOS2 ? "junpack"
+                                                            : "unpack"));
         initIDs();
     }
 

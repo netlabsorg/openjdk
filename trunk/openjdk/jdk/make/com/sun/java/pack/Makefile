@@ -32,6 +32,11 @@ PACKAGE = com.sun.java.util.jar.pack
 LIBRARY = unpack
 PRODUCT = sun
 PGRM = unpack200
+
+ifeq ($(PLATFORM), os2)
+LIBRARY_SHORT = junpack
+endif
+
 include $(BUILDDIR)/common/Defs.gmk
 
 CPLUSPLUSLIBRARY=true

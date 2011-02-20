@@ -50,6 +50,8 @@ public class SharedMemoryAttachingConnector extends GenericAttachingConnector {
 
         transport = new Transport() {
             public String name() {
+                if (System.getProperty("os.name").startsWith("OS/2"))
+                    return "jdtshmem";
                 return "dt_shmem";              // for compatability reasons
             }
         };

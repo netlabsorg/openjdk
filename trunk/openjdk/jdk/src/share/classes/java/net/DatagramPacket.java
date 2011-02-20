@@ -46,8 +46,12 @@ class DatagramPacket {
      * Perform class initialization
      */
     static {
+        boolean isOS2 = java.security.AccessController.doPrivileged(
+            new sun.security.action.GetPropertyAction("os.name")).
+                startsWith("OS/2");
         java.security.AccessController.doPrivileged(
-                  new sun.security.action.LoadLibraryAction("net"));
+            new sun.security.action.LoadLibraryAction(isOS2 ? "jnet"
+                                                            : "net"));
         init();
     }
 

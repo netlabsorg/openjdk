@@ -33,7 +33,11 @@
 #include <string.h>
 #include <errno.h>
 
+#ifdef __WIN32OS2__
+#define NPT_LIBNAME "jnpt.dll"
+#else
 #define NPT_LIBNAME "npt.dll"
+#endif
 
 #define NPT_INITIALIZE(pnpt,version,options)                            \
     {                                                                   \

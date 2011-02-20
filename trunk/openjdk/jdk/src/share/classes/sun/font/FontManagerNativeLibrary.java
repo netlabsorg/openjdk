@@ -33,7 +33,11 @@ public class FontManagerNativeLibrary {
                                     new java.security.PrivilegedAction() {
             public Object run() {
                /* REMIND do we really have to load awt here? */
-               System.loadLibrary("awt");
+               if (System.getProperty("os.name").startsWith("OS/2")) {
+                   System.loadLibrary("jawtos2");
+               } else {
+                   System.loadLibrary("awt");
+               }
                if (SunGraphicsEnvironment.isOpenJDK() &&
                    System.getProperty("os.name").startsWith("Windows")) {
                    /* Ideally fontmanager library should not depend on
@@ -59,7 +63,7 @@ public class FontManagerNativeLibrary {
                    System.loadLibrary("freetype");
                }
                if (System.getProperty("os.name").startsWith("OS/2")) {
-                   System.loadLibrary("fontmgr");
+                   System.loadLibrary("jfontmgr");
                } else {
                    System.loadLibrary("fontmanager");
                }

@@ -49,7 +49,7 @@ extern "C"
          * initialize the pointers to required mlib routines.
          */
 #ifdef __WIN32OS2__         
-        hDLL = ::LoadLibrary(TEXT("mlibimg.dll"));
+        hDLL = ::LoadLibrary(TEXT("jmlibimg.dll"));
 #else
         hDLL = ::LoadLibrary(TEXT("mlib_image.dll"));
 #endif

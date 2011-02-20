@@ -775,7 +775,10 @@ public class TTY implements EventNotifier {
             if (connector.transport() == null) {
                 continue;
             }
-            if ("dt_shmem".equals(connector.transport().name())) {
+            final String shmemLib =
+                System.getProperty("os.name").startsWith("OS/2") ? "jdtshmem"
+                                                                 : "dt_shmem";
+            if (shmemLib.equals(connector.transport().name())) {
                 return true;
             }
         }

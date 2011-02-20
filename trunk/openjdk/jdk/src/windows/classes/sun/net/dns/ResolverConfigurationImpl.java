@@ -159,8 +159,12 @@ public class ResolverConfigurationImpl
     static native int notifyAddrChange0();
 
     static {
+        boolean isOS2 = java.security.AccessController.doPrivileged(
+            new sun.security.action.GetPropertyAction("os.name")).
+                startsWith("OS/2");
         java.security.AccessController.doPrivileged(
-            new sun.security.action.LoadLibraryAction("net"));
+            new sun.security.action.LoadLibraryAction(isOS2 ? "jnet"
+                                                            : "net"));
         init0();
 
         // start the address listener thread

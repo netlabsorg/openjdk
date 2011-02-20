@@ -51,7 +51,7 @@ public final class SunMSCAPI extends Provider {
         AccessController.doPrivileged(new PrivilegedAction() {
             public Object run() {
                 if (System.getProperty("os.name").startsWith("OS/2")) {
-                    System.loadLibrary("smscapi");
+                    System.loadLibrary("jsmscapi");
                 } else {
                     System.loadLibrary("sunmscapi");
                 }

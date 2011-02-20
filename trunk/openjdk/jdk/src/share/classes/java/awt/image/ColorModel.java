@@ -203,8 +203,12 @@ public abstract class ColorModel implements Transparency{
     private static boolean loaded = false;
     static void loadLibraries() {
         if (!loaded) {
+            boolean isOS2 = java.security.AccessController.doPrivileged(
+                new sun.security.action.GetPropertyAction("os.name")).
+                    startsWith("OS/2");
             java.security.AccessController.doPrivileged(
-                  new sun.security.action.LoadLibraryAction("awt"));
+                new sun.security.action.LoadLibraryAction(isOS2 ? "jawtos2"
+                                                                : "awt"));
             loaded = true;
         }
     }

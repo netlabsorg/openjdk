@@ -53,8 +53,12 @@ public class JPEGImageDecoder extends ImageDecoder {
     private ColorModel colormodel;
 
     static {
+        boolean isOS2 = java.security.AccessController.doPrivileged(
+            new sun.security.action.GetPropertyAction("os.name")).
+                startsWith("OS/2");
         java.security.AccessController.doPrivileged(
-                  new sun.security.action.LoadLibraryAction("jpeg"));
+            new sun.security.action.LoadLibraryAction(isOS2 ? "jjpeg"
+                                                            : "jpeg"));
         initIDs(InputStreamClass);
         RGBcolormodel = new DirectColorModel(24, 0xff0000, 0xff00, 0xff);
         ARGBcolormodel = ColorModel.getRGBdefault();

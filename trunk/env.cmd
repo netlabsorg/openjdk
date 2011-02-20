@@ -166,6 +166,13 @@ end
 
 if (fProductRelease) then do
     call EnvSet 'ALT_OUTPUTDIR', UnixSlashes(ScriptDir'\openjdk\build-product-release')
+    if (EnvGet('MILESTONE') == '') then do
+        call EnvSet 'MILESTONE', 'fcs' /* avoid appearing milestone in version string */
+    end
+    if (EnvGet('BUILD_NUMBER') == '') then do
+        say 'ERROR: BUILD_NUMBER must be set in -R mode!'
+        exit 1
+    end
 end
 
 if (fJavaDebug & \fMake) then call EnvSet '_JAVA_LAUNCHER_DEBUG', '1'

@@ -88,8 +88,12 @@ public class DefaultProxySelector extends ProxySelector {
                     return NetProperties.getBoolean(key);
                 }});
         if (b != null && b.booleanValue()) {
+            boolean isOS2 = java.security.AccessController.doPrivileged(
+                new sun.security.action.GetPropertyAction("os.name")).
+                    startsWith("OS/2");
             java.security.AccessController.doPrivileged(
-                      new sun.security.action.LoadLibraryAction("net"));
+                new sun.security.action.LoadLibraryAction(isOS2 ? "jnet"
+                                                                : "net"));
             hasSystemProxies = init();
         }
     }

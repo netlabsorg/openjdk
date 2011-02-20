@@ -171,12 +171,8 @@ public class SoftSynthesizer implements AudioSynthesizer,
         }
     }
 
-    private static final boolean isOS2 = AccessController
-        .doPrivileged(new PrivilegedAction<Boolean>() {
-            public Boolean run() {
-                return System.getProperty("os.name").startsWith("OS/2");
-            }
-        });
+    private static final boolean isOS2 = AccessController.doPrivileged(
+        new sun.security.action.GetPropertyAction("os.name")).startsWith("OS/2");
 
     protected static final String INFO_NAME = "Gervill";
     protected static final String INFO_VENDOR = "OpenJDK";

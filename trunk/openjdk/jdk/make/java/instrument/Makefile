@@ -31,7 +31,9 @@ PACKAGE = sun.instrument
 LIBRARY = instrument
 PRODUCT = sun
 
-LIBRARY_SHORT = instrmnt
+ifeq ($(PLATFORM), os2)
+LIBRARY_SHORT = jinstr
+endif
 
 # Configure the CFLAGS for this library.  Use static binding so that there
 # are not dependencies on modules not on the search patch when invoked from
@@ -125,7 +127,7 @@ ifeq ($(PLATFORM), os2)
 # exports live in .def file
 DEF_FILE = $(OBJDIR)/$(LIBRARY).def
 $(DEF_FILE): $(MAKEFILE_LIST)
-	@$(ECHO) "LIBRARY $(LIBRARY) INITINSTANCE TERMINSTANCE" > $@
+	@$(ECHO) "LIBRARY $(LIBRARY_NAME) INITINSTANCE TERMINSTANCE" > $@
 	@$(ECHO) 'EXPORTS \n \
   Agent_OnAttach = "_Agent_OnAttach@12" \n \
 ' >> $@

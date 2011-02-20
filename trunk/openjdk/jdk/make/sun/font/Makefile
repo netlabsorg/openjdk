@@ -32,7 +32,9 @@ PACKAGE = sun.font
 LIBRARY = fontmanager
 PRODUCT = sun
 
-LIBRARY_SHORT = fontmgr
+ifeq ($(PLATFORM), os2)
+LIBRARY_SHORT = jfontmgr
+endif
 
 # Indicate we want the C++ compiler to do the linking.
 CPLUSPLUSLIBRARY=true

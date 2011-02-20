@@ -5,6 +5,16 @@ in the OpenJDK product from release to release.
 CHANGES
 
 
+1.6.0 Build 19 XXX (2011-xx-xx)
+
+  - Fixed: Accessing the network from Java applications would crash on some
+    machines (Odin bug).
+
+  - Fixed: spontaneous 100% CPU load in many Java applications (e.g. GenealogyJ
+    Jeti/2) when throwing NullPointerException as a result of accessing null
+    objects of some application classes (Odin bug).
+
+
 1.6.0 Build 19 Beta 2 (2011-01-12)
 
   - Added a predefined font configuration file to use the Liberation font family

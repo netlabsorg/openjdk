@@ -1887,7 +1887,13 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
           options = (char*)memcpy(NEW_C_HEAP_ARRAY(char, len2), pos+1, len2);
         }
 #ifdef JVMTI_KERNEL
-        if ((strcmp(name, "hprof") == 0) || (strcmp(name, "jdwp") == 0)) {
+        if (
+#ifdef __WIN32OS2__
+            (strcmp(name, "jhprof") == 0) ||
+#else
+            (strcmp(name, "hprof") == 0) ||
+#endif
+            (strcmp(name, "jdwp") == 0)) {
           warning("profiling and debugging agents are not supported with Kernel VM");
         } else
 #endif // JVMTI_KERNEL
@@ -1907,7 +1913,13 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
           options = strcpy(NEW_C_HEAP_ARRAY(char, strlen(pos + 1) + 1), pos + 1);
         }
 #ifdef JVMTI_KERNEL
-        if ((strcmp(name, "hprof") == 0) || (strcmp(name, "jdwp") == 0)) {
+        if (
+#ifdef __WIN32OS2__
+            (strcmp(name, "jhprof") == 0) ||
+#else
+            (strcmp(name, "hprof") == 0) ||
+#endif
+            (strcmp(name, "jdwp") == 0)) {
           warning("profiling and debugging agents are not supported with Kernel VM");
         } else
 #endif // JVMTI_KERNEL

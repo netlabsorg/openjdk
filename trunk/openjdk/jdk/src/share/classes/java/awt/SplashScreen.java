@@ -108,13 +108,12 @@ public final class SplashScreen {
             }
             // SplashScreen class is now a singleton
             if (!wasClosed && theInstance == null) {
-                if (System.getProperty("os.name").startsWith("OS/2")) {
-                    java.security.AccessController.doPrivileged(
-                        new sun.security.action.LoadLibraryAction("splshscr"));
-                } else {
-                    java.security.AccessController.doPrivileged(
-                        new sun.security.action.LoadLibraryAction("splashscreen"));
-                }
+                boolean isOS2 = java.security.AccessController.doPrivileged(
+                    new sun.security.action.GetPropertyAction("os.name")).
+                        startsWith("OS/2");
+                java.security.AccessController.doPrivileged(
+                    new sun.security.action.LoadLibraryAction(isOS2 ? "jsplash"
+                                                                    : "splashscreen"));
                 long ptr = _getInstance();
                 if (ptr != 0 && _isVisible(ptr)) {
                     theInstance = new SplashScreen(ptr);

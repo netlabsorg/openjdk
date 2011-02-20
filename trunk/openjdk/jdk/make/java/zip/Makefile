@@ -28,6 +28,11 @@ BUILDDIR = ../..
 PACKAGE = java.util.zip
 LIBRARY = zip
 PRODUCT = sun
+
+ifeq ($(PLATFORM), os2)
+LIBRARY_SHORT = jzip
+endif
+
 include $(BUILDDIR)/common/Defs.gmk
 
 ZLIB_VERSION = 1.1.3
@@ -72,7 +77,7 @@ ifeq ($(PLATFORM), os2)
 # exports live in .def file
 DEF_FILE = $(OBJDIR)/$(LIBRARY).def
 $(DEF_FILE): $(MAKEFILE_LIST)
-	@$(ECHO) "LIBRARY $(LIBRARY) INITINSTANCE TERMINSTANCE" > $@
+	@$(ECHO) "LIBRARY $(LIBRARY_NAME) INITINSTANCE TERMINSTANCE" > $@
 	@$(ECHO) 'EXPORTS \n \
   ZIP_CRC32 = _ZIP_CRC32 \n \
   ZIP_Open = "_ZIP_Open@8" \n \

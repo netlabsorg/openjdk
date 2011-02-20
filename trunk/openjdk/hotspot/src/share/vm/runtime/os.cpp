@@ -338,7 +338,11 @@ void* os::native_java_library() {
     // Try to load verify dll first. In 1.3 java dll depends on it and is not
     // always able to find it when the loading executable is outside the JDK.
     // In order to keep working with 1.2 we ignore any loading errors.
+#if __WIN32OS2__    
+    dll_build_name(buffer, sizeof(buffer), Arguments::get_dll_dir(), "jverify");
+#else    
     dll_build_name(buffer, sizeof(buffer), Arguments::get_dll_dir(), "verify");
+#endif    
     dll_load(buffer, ebuf, sizeof(ebuf));
 
     // Load java dll

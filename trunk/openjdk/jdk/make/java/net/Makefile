@@ -27,6 +27,11 @@ BUILDDIR = ../..
 PACKAGE = java.net
 LIBRARY = net
 PRODUCT = sun
+
+ifeq ($(PLATFORM), os2) 
+LIBRARY_SHORT = jnet
+endif
+
 include $(BUILDDIR)/common/Defs.gmk
 
 #

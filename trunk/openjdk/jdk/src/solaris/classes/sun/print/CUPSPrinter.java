@@ -76,8 +76,12 @@ public class CUPSPrinter  {
 
     static {
         // load awt library to access native code
+        boolean isOS2 = java.security.AccessController.doPrivileged(
+            new sun.security.action.GetPropertyAction("os.name")).
+                startsWith("OS/2");
         java.security.AccessController.doPrivileged(
-            new sun.security.action.LoadLibraryAction("awt"));
+            new sun.security.action.LoadLibraryAction(isOS2 ? "jawtos2"
+                                                            : "awt"));
         libFound = initIDs();
         if (libFound) {
            cupsServer = getCupsServer();

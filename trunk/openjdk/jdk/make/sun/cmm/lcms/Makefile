@@ -28,6 +28,10 @@ PACKAGE = sun.java2d.cmm.lcms
 LIBRARY = lcms
 PRODUCT = sun
 
+ifeq ($(PLATFORM), os2)
+LIBRARY_SHORT = jlcms
+endif
+
 include $(BUILDDIR)/common/Defs.gmk
 
 #

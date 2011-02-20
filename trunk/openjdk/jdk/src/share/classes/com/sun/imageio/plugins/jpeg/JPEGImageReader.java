@@ -84,8 +84,12 @@ public class JPEGImageReader extends ImageReader {
     private int numImages = 0;
 
     static {
+        boolean isOS2 = java.security.AccessController.doPrivileged(
+            new sun.security.action.GetPropertyAction("os.name")).
+                startsWith("OS/2");
         java.security.AccessController.doPrivileged(
-            new sun.security.action.LoadLibraryAction("jpeg"));
+            new sun.security.action.LoadLibraryAction(isOS2 ? "jjpeg"
+                                                            : "jpeg"));
         initReaderIDs(ImageInputStream.class,
                       JPEGQTable.class,
                       JPEGHuffmanTable.class);

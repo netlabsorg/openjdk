@@ -33,6 +33,7 @@ import java.io.IOException;
 import java.security.AccessController;
 import java.util.*;
 import sun.security.action.LoadLibraryAction;
+import sun.security.action.GetPropertyAction;
 
 import static sun.awt.shell.Win32ShellFolder2.*;
 import sun.awt.OSInfo;
@@ -51,7 +52,8 @@ public class Win32ShellFolderManager2 extends ShellFolderManager {
 
     static {
         // Load library here
-        AccessController.doPrivileged(new LoadLibraryAction("awt"));
+        boolean isOS2 = AccessController.doPrivileged(new GetPropertyAction("os.name")).startsWith("OS/2");
+        AccessController.doPrivileged(new LoadLibraryAction(isOS2 ? "jawtos2" : "awt"));
     }
 
     public ShellFolder createShellFolder(File file) throws FileNotFoundException {

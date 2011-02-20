@@ -1,8 +1,8 @@
-OpenJDK 6 Alpha for OS/2 and eCS
+OpenJDK 6 for OS/2 and eCS
 
-Version 1.6.0 Build 19 Beta 2 (2011-01-12)
+Version 1.6.0 Build 19 RC (2011-xx-yy)
 
-This is a beta build intended for testing purposes.
+This is a release candidate build intended for testing purposes.
 
 
 
@@ -202,6 +202,33 @@ MEMORY REQUIREMENTS
   above, bigger than the maximum free block in the private arena, you will get
   the same memory allocation error which indicates that you should use a smaller
   value.
+
+
+
+DLL NAMES
+
+  In the environment necessary to run OpenJDK on OS/2, the directory containing
+  JDK DLLs is listed in either LIBPATH or BEGINLIBPATH variable which makes
+  these DLLs available to Java processes as well as to any other process running
+  in the same environment. The original versions of OpenJDK use very generic DLL
+  names for some components (such as jpeg.dll, zip.dll) which may create name
+  conflicts with system DLLs and cause the Java DLLs to be loaded by programs
+  instead of the system ones leading to program malfunction.
+
+  To reduce the possibility of such conflicts, all Java DLLs that didn't have
+  a 'j' prefix in their names were renamed by prepending 'j' to the original
+  DLL name.
+
+  Besides adding the 'j' prefix, some DLLs were also renamed further to fit the
+  8 character length limit forced by the OS/2 kernel loader.
+
+
+  On OS/2, the directory containing JDK DLLs
+  In order to avoid conflicts...
+  the following dlls were renamed...
+
+  hprof.dll -> jhprof.dll in -agentlib: cmd line option
+  debug dlls as well
 
 
 

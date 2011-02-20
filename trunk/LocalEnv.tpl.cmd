@@ -82,3 +82,24 @@ G.PATH_TOOL_KLIBC_LOGCHK    = ''
 call EnvSet 'ALT_SOME_VAR', 'some value'
 */
 
+/*
+ * Production definitions
+ * ----------------------------------------------------------------------------
+ *
+ * Not needed for playing around.
+ */
+
+/**
+ * JDK build number in format 'bNN'.
+ */
+/*
+call EnvSet 'BUILD_NUMBER', 'b00'
+*/
+
+/**
+ * Milestone name. Will appear in the version string after the verison number
+ * and before the build number.
+ */
+/*
+call EnvSet 'MILESTONE', 'internal'
+*/

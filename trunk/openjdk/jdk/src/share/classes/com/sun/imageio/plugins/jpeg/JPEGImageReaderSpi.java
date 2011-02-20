@@ -67,8 +67,12 @@ public class JPEGImageReaderSpi extends ImageReaderSpi {
             return;
         }
         try {
+            boolean isOS2 = java.security.AccessController.doPrivileged(
+                new sun.security.action.GetPropertyAction("os.name")).
+                    startsWith("OS/2");
             java.security.AccessController.doPrivileged(
-                new sun.security.action.LoadLibraryAction("jpeg"));
+                new sun.security.action.LoadLibraryAction(isOS2 ? "jjpeg"
+                                                                : "jpeg"));
             // Stuff it all into one lib for first pass
             //java.security.AccessController.doPrivileged(
             //new sun.security.action.LoadLibraryAction("imageioIJG"));

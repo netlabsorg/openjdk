@@ -28,7 +28,9 @@ PACKAGE = java.lang.management
 LIBRARY = management
 PRODUCT = java
 
-LIBRARY_SHORT = mngemnt
+ifeq ($(PLATFORM), os2) 
+LIBRARY_SHORT = jmngmnt
+endif
 
 include $(BUILDDIR)/common/Defs.gmk
 

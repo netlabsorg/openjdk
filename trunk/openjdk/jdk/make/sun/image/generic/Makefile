@@ -32,7 +32,9 @@ PACKAGE = sun.awt.medialib
 LIBRARY = mlib_image
 PRODUCT = sun
 
-LIBRARY_SHORT = mlibimg
+ifeq ($(PLATFORM), os2)
+LIBRARY_SHORT = jmlibimg
+endif
 
 include $(BUILDDIR)/common/Defs.gmk
 
@@ -57,7 +59,7 @@ ifeq ($(PLATFORM), os2)
 # exports live in .def file
 DEF_FILE = $(OBJDIR)/$(LIBRARY).def
 $(DEF_FILE): $(MAKEFILE_LIST)
-	@$(ECHO) "LIBRARY $(LIBRARY) INITINSTANCE TERMINSTANCE" > $@
+	@$(ECHO) "LIBRARY $(LIBRARY_NAME) INITINSTANCE TERMINSTANCE" > $@
 	@$(ECHO) 'EXPORTS \n \
   j2d_mlib_ImageConvMxN = _j2d_mlib_ImageConvMxN \n \
   j2d_mlib_ImageConvKernelConvert = _j2d_mlib_ImageConvKernelConvert \n \

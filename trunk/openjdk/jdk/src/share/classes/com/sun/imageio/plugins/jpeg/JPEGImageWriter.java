@@ -176,8 +176,12 @@ public class JPEGImageWriter extends ImageWriter {
     ///////// static initializer
 
     static {
+        boolean isOS2 = java.security.AccessController.doPrivileged(
+            new sun.security.action.GetPropertyAction("os.name")).
+                startsWith("OS/2");
         java.security.AccessController.doPrivileged(
-            new sun.security.action.LoadLibraryAction("jpeg"));
+            new sun.security.action.LoadLibraryAction(isOS2 ? "jjpeg"
+                                                            : "jpeg"));
         initWriterIDs(ImageOutputStream.class,
                       JPEGQTable.class,
                       JPEGHuffmanTable.class);

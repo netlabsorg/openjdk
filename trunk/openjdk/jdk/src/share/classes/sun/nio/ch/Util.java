@@ -353,10 +353,15 @@ class Util {
             if (loaded)
                 return;
             loaded = true;
-            java.security.AccessController
-                .doPrivileged(new sun.security.action.LoadLibraryAction("net"));
-            java.security.AccessController
-                .doPrivileged(new sun.security.action.LoadLibraryAction("nio"));
+            boolean isOS2 = java.security.AccessController.doPrivileged(
+                new sun.security.action.GetPropertyAction("os.name")).
+                    startsWith("OS/2");
+            java.security.AccessController.doPrivileged(
+                new sun.security.action.LoadLibraryAction(isOS2 ? "jnet"
+                                                                : "net"));
+            java.security.AccessController.doPrivileged(
+                new sun.security.action.LoadLibraryAction(isOS2 ? "jnio"
+                                                                : "nio"));
             // IOUtil must be initialized; Its native methods are called from
             // other places in native nio code so they must be set up.
             IOUtil.initIDs();

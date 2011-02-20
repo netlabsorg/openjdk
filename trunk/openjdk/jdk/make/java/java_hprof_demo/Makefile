@@ -28,6 +28,10 @@ LIBRARY = hprof
 PRODUCT = sun
 LIBRARY_OUTPUT = hprof_jvmti
 
+ifeq ($(PLATFORM), os2)
+LIBRARY_SHORT = jhprof
+endif
+
 # Configure the CFLAGS for this library.
 
 FILES_m = mapfile-vers

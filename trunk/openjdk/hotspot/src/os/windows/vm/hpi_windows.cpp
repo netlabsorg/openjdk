@@ -25,6 +25,12 @@
 # include "incls/_precompiled.incl"
 # include "incls/_hpi_windows.cpp.incl"
 
+#ifdef __WIN32OS2__    
+# define HPI_LIBNAME "jhpi"
+#else
+# define HPI_LIBNAME "hpi"
+#endif
+
 typedef jint (JNICALL *init_t)(GetInterfaceFunc *, void *);
 
 void hpi::initialize_get_interface(vm_calls_t *callbacks)
@@ -39,12 +45,13 @@ void hpi::initialize_get_interface(vm_calls_t *callbacks)
     os::jvm_path(lib_name, sizeof lib_name);
 
 #ifdef PRODUCT
-    const char *hpi_lib = "\\hpi.dll";
+    const char *hpi_lib = "\\" HPI_LIBNAME ".dll";
 #else
     char *ptr = strrchr(lib_name, '\\');
     //  On Win98 GetModuleFileName() returns the path in the upper case.
     assert(_strnicmp(ptr, "\\jvm",4) == 0, "invalid library name");
-    const char *hpi_lib = (_strnicmp(ptr, "\\jvm_g",6) == 0) ? "\\hpi_g.dll" : "\\hpi.dll";
+    const char *hpi_lib = (_strnicmp(ptr, "\\jvm_g",6) == 0) ?
+        "\\" HPI_LIBNAME "_g.dll" : "\\" HPI_LIBNAME ".dll";
 #endif
 
     *(::strrchr(lib_name, '\\')) = '\0';  /* get rid of "\\jvm.dll" */

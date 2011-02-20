@@ -54,7 +54,7 @@ LIB_LOCATION = $(BINDIR)
 DEF_FILE = $(OBJDIR)/$(LIBRARY).def
 
 $(DEF_FILE): $(MAKEFILE_LIST)
-	@$(ECHO) "LIBRARY $(LIBRARY) INITINSTANCE TERMINSTANCE" > $@
+	@$(ECHO) "LIBRARY $(LIBRARY_NAME) INITINSTANCE TERMINSTANCE" > $@
 	@$(ECHO) 'EXPORTS \n \
   Canonicalize = _Canonicalize \n \
   getEncodingFromLangID = _getEncodingFromLangID \n \
