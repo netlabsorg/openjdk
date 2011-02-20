@@ -127,7 +127,7 @@ FILES_cpp = \
 	dxInit.cpp \
 	RegistryKey.cpp \
 	
-ifndef OS2_TEMP # D3D
+ifneq ($(PLATFORM), os2)
 FILES_cpp += \
 	D3DBlitLoops.cpp \
 	D3DContext.cpp \
