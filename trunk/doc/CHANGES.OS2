@@ -5,14 +5,36 @@ in the OpenJDK product from release to release.
 CHANGES
 
 
-1.6.0 Build 19 XXX (2011-xx-xx)
+1.6.0 Build 19 RC (2011-02-21)
+
+  - Ported and enabled the JPDA (Java Platform Debugger Architecture) component
+    which provides a framework for debugging Java applications.
+
+  - Added sound (audio and MIDI) support to Java applications using DART.
+
+  - Added a free implementation of the com.sun.image.codec.jpeg package (taken
+    from the IcedTea project) used by some old Java applications like Jeti/2.
+
+  - Renamed all Java DLLs by adding a 'j' prefix to the names to avoid possible
+    conflicts with system DLLs.
 
   - Fixed: Accessing the network from Java applications would crash on some
     machines (Odin bug).
 
-  - Fixed: spontaneous 100% CPU load in many Java applications (e.g. GenealogyJ
+  - Fixed: Spontaneous 100% CPU load in many Java applications (e.g. GenealogyJ
     Jeti/2) when throwing NullPointerException as a result of accessing null
     objects of some application classes (Odin bug).
+
+  - Fixed: java.util.prefs.Preferences: Use the Open32 registry on OS/2 instead
+    of throwing an exception.
+
+  - Fixed: JVM used PATH instead of LIBPATH to comprise java.library.path
+    resulting in inability to find JNI DLLs in some applications.
+
+  - Fixed: Crash in java.io.WinNTFileSystem.getSpace() (Odin bug).
+
+  - Fixed: Exception java.awt.image.ImagingOpException in many applications due
+    to wrong exports from in jmlibimg.dll.
 
 
 1.6.0 Build 19 Beta 2 (2011-01-12)

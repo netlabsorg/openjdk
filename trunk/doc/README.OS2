@@ -1,6 +1,6 @@
 OpenJDK 6 for OS/2 and eCS
 
-Version 1.6.0 Build 19 RC (2011-xx-yy)
+Version 1.6.0 Build 19 RC (2011-02-21)
 
 This is a release candidate build intended for testing purposes.
 
@@ -27,9 +27,9 @@ In order to use this version of OpenJDK, you will need the following:
 
   - A OS/2 Warp 4 Fixpack 16+, OS/2 Warp 4.5 or eComStation operating system.
 
-  - Odin32 library version 0.6.21558 (2011-01-12) or above:
+  - Odin32 library version 0.6.21577 (2011-02-21) or above:
 
-    ftp://ftp.netlabs.org/pub/odin/odin32bin-20110112-release.wpi
+    ftp://ftp.netlabs.org/pub/odin/odin32bin-20110221-release.wpi
 
 
 
@@ -220,15 +220,23 @@ DLL NAMES
   DLL name.
 
   Besides adding the 'j' prefix, some DLLs were also renamed further to fit the
-  8 character length limit forced by the OS/2 kernel loader.
+  8 character DLL name length limit forced by the OS/2 kernel loader.
 
+  This rename operation is transparent to all Java applications except a few
+  cases which involve custom agent libraries used to enhance the functionality
+  of JDK or JVM. These libraries in particular include:
 
-  On OS/2, the directory containing JDK DLLs
-  In order to avoid conflicts...
-  the following dlls were renamed...
+  Original Name            New Name
+  --------------------------------------------
+  hprof.dll                jhprof.dll
+  dt_shmem.dll             jdtshmem.dll
+  dt_socket.dll            jdtsock.dll
 
-  hprof.dll -> jhprof.dll in -agentlib: cmd line option
-  debug dlls as well
+  In order to use the renamed libraries, you need to substitute the old name
+  with the new name wherever the old name is used in Java documentation,
+  configuration files or command line options. For example, to use the profiler
+  library, you will have to write "-agentlib:jhprof.dll" on the command line
+  instead of "-agentlib:hprof.dll" and so on.
 
 
 
@@ -239,13 +247,8 @@ CURRENT LIMITATIONS
      addressed in further releases. The workaround is to use the OS/2 UNI or
      Warp4 kernel instead.
 
-  2. The JPDA (Java Platform Debugger Architecture) component is missing.
-
-  3. The com.sun.tools.attach package (API to attach to a Java virtual machine)
+  2. The com.sun.tools.attach package (API to attach to a Java virtual machine)
      is missing.
-
-  4. Some other rarely used Java system classes may also be missing in this
-     release.
 
   See the project roadmap for more information on the current progress and
   future plans:
