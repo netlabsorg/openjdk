@@ -165,7 +165,7 @@ else do
 end
 
 if (fProductRelease) then do
-    call EnvSet 'ALT_OUTPUTDIR', UnixSlashes(ScriptDir'\openjdk\build-product-release')
+    call EnvSet 'ALT_OUTPUTDIR', UnixSlashes(ScriptDir'openjdk\build-product-release')
     if (EnvGet('MILESTONE') == '') then do
         call EnvSet 'MILESTONE', 'fcs' /* avoid appearing milestone in version string */
     end
