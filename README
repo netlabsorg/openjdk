@@ -4,7 +4,7 @@ This document contains information about building the OpenJDK 6 source code on O
 
 Requirements (draft)
 
-1a. GCC 4.4.4 + WLINK (ftp://ftp.netlabs.org/pub/qt4/tools/gcc-4_4_4-complete-20100712.zip)
+1a. GCC 4.5.2 (ftp://ftp.netlabs.org/pub/qt4/tools/gcc-4_5_2-complete-20110302.zip)
 1b. ILINK 5.0 (ftp://ftp.software.ibm.com/ps/products/warpzilla/ilink50.zip)
 2.  Odin32 SDK (take from SVN at http://svn.netlabs.org/repos/odin32/trunk,
     configure with configure.cmd --use-oldlib)
@@ -20,8 +20,8 @@ Requirements (draft)
 Copy LocalEnv.tpl.cmd to LocalEnv.cmd and alter according to your environment
 and then use env.cmd to set it up.
 
-Note that you must set the linker type to "VAC308" in gcc444.cmd and make sure
-that you have ILINK.EXE somewhere in PATH (by default, gcc444.cmd is set to
+Note that you must set the linker type to "VAC308" in gcc452.cmd and make sure
+that you have ILINK.EXE somewhere in PATH (by default, gcc452.cmd is set to
 "WLINK" but the latest HLL-enabled version of it is bogus: it creates wrong
 internal fixups when building the release version of AWT.DLL). Note that the
 original ILINK from VAC308 is bogus too (will crash when linking a debug version
@@ -29,7 +29,7 @@ of JVM.DLL) so it should not be used. Note that ILINK 5.0 is also bogus (it
 fails if there is too much external symbols to export) but Java doesn't hit this
 limit so it's the best choice so far.
 
-It is recommended to download ftp://ftp.netlabs.org/pub/qt4/tools/se11.zip to
+It is recommended to download ftp://ftp.netlabs.org/pub/qt4/tools/se12.zip to
 have env.cmd called automatically whenever you enter "se something" in any
 directory inside the project root.
 

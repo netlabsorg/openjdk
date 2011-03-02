@@ -68,7 +68,7 @@ ifeq ($(PLATFORM), os2)
   CXX          = $(COMPILER_PATH)g++
   REQUIRED_CC_VER = 3.2
 
-  LINK         = $(COMPILER_PATH)gcc
+  LINK         = $(COMPILER_PATH)g++
   AR           = $(COMPILER_PATH)emxomfar
   IMPLIB       = $(COMPILER_PATH)emximp
   MAPSYM       = mapsym.exe
