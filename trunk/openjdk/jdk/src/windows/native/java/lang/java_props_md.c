@@ -25,6 +25,7 @@
 
 #ifdef __WIN32OS2__
 #define INCL_DOSMISC
+#define INCL_DOSNLS
 #include <os2wrap2.h>
 #endif
 
@@ -705,7 +706,7 @@ GetJavaProperties(JNIEnv* env)
                         &ver, sizeof(ver));
         sprintf(buf, "%lu.%lu", ver[0], ver[1]);
         sprops.os_version = strdup(buf);
-        sprintf(buf, "%lu", ver[3]);
+        sprintf(buf, "%lu", ver[2]);
         sprops.patch_level = strdup(buf);
 
         sprops.os_arch = "x86";
@@ -882,7 +883,7 @@ GetJavaProperties(JNIEnv* env)
             sprops.user_name = strdup(uname);
         } else {
             char buf[100];
-            int buflen = sizeof(buf);
+            DWORD buflen = sizeof(buf);
             sprops.user_name =
                 GetUserName(buf, &buflen) ? strdup(buf) : "unknown";
         }
@@ -987,7 +988,7 @@ GetJavaProperties(JNIEnv* env)
                 {
                     static char encoding[16];
                     os2_ULONG cp[3], len;
-                    DosQueryCp(sizeof(cp), &cp, &len);
+                    DosQueryCp(sizeof(cp), cp, &len);
                     sprintf(encoding, "Cp%lu", cp[0]);
                     sprops.encoding =  encoding;
                 }
