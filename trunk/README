@@ -4,7 +4,7 @@ This document contains information about building the OpenJDK 6 source code on O
 
 Requirements (draft)
 
-1a. GCC 4.5.2 (ftp://ftp.netlabs.org/pub/qt4/tools/gcc-4_5_2-complete-20110302.zip)
+1a. GCC 4.4.5 (ftp://ftp.netlabs.org/pub/qt4/tools/gcc-4_4_5-complete-20110303.zip)
 1b. ILINK 5.0 (ftp://ftp.software.ibm.com/ps/products/warpzilla/ilink50.zip)
 2.  Odin32 SDK (take from SVN at http://svn.netlabs.org/repos/odin32/trunk,
     configure with configure.cmd --use-oldlib)
