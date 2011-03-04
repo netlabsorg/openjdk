@@ -67,6 +67,11 @@ class AllStatic {
 // Linked list of raw memory chunks
 class Chunk: public CHeapObj {
  public:
+#if defined(__GNUC__) && (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__) >= 40500
+  // make sure op delete(void*, size) isn't treated as a usual deallocation
+  // function in GCC 4.5.x (see http://gcc.gnu.org/bugzilla/show_bug.cgi?id=42115)
+  void operator delete(void* p) { CHeapObj::operator delete(p); }
+#endif
   void* operator new(size_t size, size_t length);
   void  operator delete(void* p, size_t length);
   Chunk(size_t length);

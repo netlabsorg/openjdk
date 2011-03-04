@@ -90,8 +90,8 @@
 #undef select
 #ifdef __EMX__
 // we disable BSD visibility for the compiler so define these manually
-int	finite(double) __pure2;
-int	isnanf(float) __pure2;
+extern "C" int finite(double) __pure2;
+extern "C" int isnanf(float) __pure2;
 #define S_IREAD     S_IRUSR
 #define S_IWRITE    S_IWUSR
 #define S_IEXEC     S_IXUSR
