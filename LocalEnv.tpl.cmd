@@ -29,7 +29,7 @@ G.PATH_TOOL_BOOT_JDK    = 'D:\Dev\openjdk6'
  * Leave this empty if you have GCC 4 already available in your
  * environment.
  */
-G.PATH_TOOL_GCC4_ENV    = 'D:\Dev\gcc444\gcc444.cmd'
+G.PATH_TOOL_GCC4_ENV    = 'D:\Dev\gcc445\gcc445.cmd'
 
 /**
  * Path to Apache Ant. Leave empty if you have it already available
@@ -86,7 +86,7 @@ call EnvSet 'ALT_SOME_VAR', 'some value'
  * Production definitions
  * ----------------------------------------------------------------------------
  *
- * Not needed for playing around.
+ * Not intended for playing around with.
  */
 
 /**
