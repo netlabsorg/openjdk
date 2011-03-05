@@ -15,6 +15,9 @@
 
 /**
  * Path to JDK used for bootstrapping. Must be set.
+ *
+ * Note that when using a previous OpenJDK build here, you must make sure
+ * that all it needs (e.g. a corresponding Odin runtime) is on LIBPATH.
  */
 G.PATH_TOOL_BOOT_JDK    = 'D:\Dev\openjdk6'
 

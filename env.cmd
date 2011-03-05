@@ -185,18 +185,20 @@ call EnvSet 'OS2_TEMP', 'true'
 /*
  * set up Odin32 runtime
  */
-if (fRelease) then do
-    call EnvAddFront 'PATH', G.PATH_LIB_ODIN32'\bin\Release;'G.PATH_LIB_ODIN32'\bin'
-    call EnvAddFront 'BEGINLIBPATH', G.PATH_LIB_ODIN32'\bin\Release;'G.PATH_LIB_ODIN32'\bin'
-end
-else do
-    call EnvAddFront 'PATH', G.PATH_LIB_ODIN32'\bin\Debug;'G.PATH_LIB_ODIN32'\bin'
-    call EnvAddFront 'BEGINLIBPATH', G.PATH_LIB_ODIN32'\bin\Debug;'G.PATH_LIB_ODIN32'\bin'
-    call EnvSet 'WIN32.DEBUGBREAK', '1'
-end
+if (\fMake) then do
+    if (fRelease) then do
+        call EnvAddFront 'PATH', G.PATH_LIB_ODIN32'\bin\Release;'G.PATH_LIB_ODIN32'\bin'
+        call EnvAddFront 'BEGINLIBPATH', G.PATH_LIB_ODIN32'\bin\Release;'G.PATH_LIB_ODIN32'\bin'
+    end
+    else do
+        call EnvAddFront 'PATH', G.PATH_LIB_ODIN32'\bin\Debug;'G.PATH_LIB_ODIN32'\bin'
+        call EnvAddFront 'BEGINLIBPATH', G.PATH_LIB_ODIN32'\bin\Debug;'G.PATH_LIB_ODIN32'\bin'
+        call EnvSet 'WIN32.DEBUGBREAK', '1'
+    end
 
-if (fOdinLog) then call EnvSet 'WIN32LOG_ENABLED', '1'
-else call EnvSet 'WIN32LOG_ENABLED', ''
+    if (fOdinLog) then call EnvSet 'WIN32LOG_ENABLED', '1'
+    else call EnvSet 'WIN32LOG_ENABLED', ''
+end
 
 /*
  * Various Java runtime settings
