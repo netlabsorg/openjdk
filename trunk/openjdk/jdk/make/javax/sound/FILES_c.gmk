@@ -32,7 +32,7 @@ FILES_solaris = \
 	PLATFORM_API_SolarisOS_Ports.c \
 	PLATFORM_API_SolarisOS_PCM.c
 
-FILES_linux = 
+FILES_linux =
 
 FILES_windows = \
 	PLATFORM_API_WinOS_MidiIn.c \
@@ -45,7 +45,12 @@ FILES_os2 = \
 	PLATFORM_API_WinOS_MidiOut.c \
 	PLATFORM_API_WinOS_Util.c \
 	PLATFORM_API_WinOS_Ports.c
-	
+
+ifeq ($(PLATFORM), os2)
+FILES_cpp += \
+	jdk_DllMain.cpp
+endif
+
 FILES_export = \
 	com/sun/media/sound/Platform.java
 
