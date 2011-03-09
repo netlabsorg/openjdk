@@ -339,6 +339,8 @@ ifeq ($(PLATFORM), os2)
 vpath %.c $(PLATFORM_SRC_OS2)/native/$(PKGDIR)
 OTHER_INCLUDES += -I$(PLATFORM_SRC_OS2)/native/common
 OTHER_INCLUDES += -I$(PLATFORM_SRC_OS2)/native/$(PKGDIR)
+# path to common code used by many DLLs
+vpath %.cpp $(PLATFORM_SRC_OS2)/native/common
 endif
 
 vpath %.c $(PLATFORM_SRC)/native/$(PKGDIR)

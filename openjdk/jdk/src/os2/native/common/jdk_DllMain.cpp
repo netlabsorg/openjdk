@@ -2,7 +2,7 @@
  * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
- * Copyright 2010 netlabs.org. OS/2 Parts.
+ * Copyright 2010-2011 netlabs.org. OS/2 Parts.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
@@ -25,38 +25,44 @@
  * have any questions.
  */
 
-// This code performs C++ runtime initialization and registers the DLL
-// with Odin
+// This code performs C++ runtime termination to make sure that the
+// destructors of static objects are destroyed before Odin unloads itself
+// at program termination. This is achieved by registering the DLL with Odin
+// which makes sure it calls the supplied DllMain() routine at the right
+// time. Note that using DosExitList() for this purpose is not a good idea
+// because some Odin services still needed by the destructor code of some JDK
+// classes may already be down when exit list routines are run.
 
 #define INCL_DOSPROCESS
 #include <os2wrap.h> // Odin32 OS/2 api wrappers
 #include <odinlx.h>
 #include <misc.h>
-#include <exitlist.h>
-
-//#include <types.h>
-//#include <stdio.h>
 
 #include <emx/startup.h>
 
-static void APIENTRY cleanup(ULONG reason);
-
 static HMODULE dllHandle = 0;
+
+BOOL WINAPI DllMain(HINSTANCE hinst, DWORD reason, LPVOID reserved)
+{
+    // call destructors when detaching the DLL from the process
+    if (reason == 0)
+        __ctordtorTerm();
+
+    return TRUE;
+}
 
 unsigned long SYSTEM _DLL_InitTerm(unsigned long hModule, unsigned long ulFlag)
 {
-    APIRET rc;
-
     // If ulFlag is zero then the DLL is being loaded so initialization should
     // be performed.  If ulFlag is 1 then the DLL is being freed so termination
     // should be performed. A non-zero value must be returned to indicate success.
 
     // Note that we don't perform CRT initialization and things because this
-    // is done in os_os2_init.cpp of JVM.DLL that is already loaded
+    // is done in os_os2_init.cpp of JVM.DLL that is always loaded first
 
     switch (ulFlag) {
         case 0 :
-            dllHandle = RegisterLxDll(hModule, NULL, NULL,
+            dllHandle = RegisterLxDll(hModule, DllMain, NULL,
                                       ODINNT_MAJOR_VERSION,
                                       ODINNT_MINOR_VERSION,
                                       IMAGE_SUBSYSTEM_WINDOWS_CUI);
@@ -65,16 +71,11 @@ unsigned long SYSTEM _DLL_InitTerm(unsigned long hModule, unsigned long ulFlag)
 
             __ctordtorInit();
 
-            rc = DosExitList(EXITLIST_APPDLL|EXLST_ADD, cleanup);
-            if (rc)
-                break;
-
             return 1;
 
         case 1 :
-            if (dllHandle) {
+            if (dllHandle)
                 UnregisterLxDll(dllHandle);
-            }
             return 1;
 
         default:
@@ -84,11 +85,3 @@ unsigned long SYSTEM _DLL_InitTerm(unsigned long hModule, unsigned long ulFlag)
     // failure
     return 0;
 }
-
-static void APIENTRY cleanup(ULONG /*ulReason*/)
-{
-   __ctordtorTerm();
-   DosExitList(EXLST_EXIT, cleanup);
-   return ;
-}
-

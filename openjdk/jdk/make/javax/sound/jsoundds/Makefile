@@ -46,6 +46,11 @@ FILES_c = \
 FILES_cpp = \
 	PLATFORM_API_WinOS_DirectSound.cpp
 
+ifeq ($(PLATFORM), os2)
+FILES_cpp += \
+	jdk_DllMain.cpp
+endif
+
 FILES_export = \
 	$(DAUDIOFILES_export)
 

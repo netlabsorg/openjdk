@@ -93,7 +93,7 @@ ifeq ($(PLATFORM), os2)
 include FILES_c_windows.gmk
 include FILES_export_windows.gmk
 
-FILES_c += awt_init.c
+FILES_cpp += jdk_DllMain.cpp
 
 #
 # Prune files that are currently unused on Windows (but still used on
