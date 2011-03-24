@@ -1464,6 +1464,10 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen)
   // It may or may not be overwritten below (in the for loop and just above)
   getLastErrorString(ebuf, (size_t) ebuflen);
   ebuf[ebuflen-1]='\0';
+
+  // do not attempt to parse the file under Odin, it's most likely an OS/2 DLL
+  // that has a different format (and arch is always i386 anyway)
+#ifndef __WIN32OS2__
   int file_descriptor=::open(name, O_RDONLY | O_BINARY, 0);
   if (file_descriptor<0)
   {
@@ -1559,6 +1563,7 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen)
       "Can't load this .dll (machine code=0x%x) on a %s-bit platform",
       lib_arch,running_arch_str);
   }
+#endif
 
   return NULL;
 }
