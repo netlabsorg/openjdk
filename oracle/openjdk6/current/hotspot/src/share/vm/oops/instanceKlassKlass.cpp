@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -16,9 +16,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  *
  */
 
@@ -292,36 +292,7 @@ int instanceKlassKlass::oop_adjust_pointers(oop obj) {
 }
 
 #ifndef SERIALGC
-void instanceKlassKlass::oop_copy_contents(PSPromotionManager* pm, oop obj) {
-  assert(!pm->depth_first(), "invariant");
-  instanceKlass* ik = instanceKlass::cast(klassOop(obj));
-  ik->copy_static_fields(pm);
-
-  oop* loader_addr = ik->adr_class_loader();
-  if (PSScavenge::should_scavenge(loader_addr)) {
-    pm->claim_or_forward_breadth(loader_addr);
-  }
-
-  oop* pd_addr = ik->adr_protection_domain();
-  if (PSScavenge::should_scavenge(pd_addr)) {
-    pm->claim_or_forward_breadth(pd_addr);
-  }
-
-  oop* hk_addr = ik->adr_host_klass();
-  if (PSScavenge::should_scavenge(hk_addr)) {
-    pm->claim_or_forward_breadth(hk_addr);
-  }
-
-  oop* sg_addr = ik->adr_signers();
-  if (PSScavenge::should_scavenge(sg_addr)) {
-    pm->claim_or_forward_breadth(sg_addr);
-  }
-
-  klassKlass::oop_copy_contents(pm, obj);
-}
-
 void instanceKlassKlass::oop_push_contents(PSPromotionManager* pm, oop obj) {
-  assert(pm->depth_first(), "invariant");
   instanceKlass* ik = instanceKlass::cast(klassOop(obj));
   ik->push_static_fields(pm);
 
@@ -345,7 +316,12 @@ void instanceKlassKlass::oop_push_contents(PSPromotionManager* pm, oop obj) {
     pm->claim_or_forward_depth(sg_addr);
   }
 
-  klassKlass::oop_copy_contents(pm, obj);
+  oop* bsm_addr = ik->adr_bootstrap_method();
+  if (PSScavenge::should_scavenge(bsm_addr)) {
+    pm->claim_or_forward_depth(bsm_addr);
+  }
+
+  klassKlass::oop_push_contents(pm, obj);
 }
 
 int instanceKlassKlass::oop_update_pointers(ParCompactionManager* cm, oop obj) {
@@ -628,14 +604,13 @@ void instanceKlassKlass::oop_print_on(oop obj, outputStream* st) {
   st->cr();
 }
 
+#endif //PRODUCT
 
 void instanceKlassKlass::oop_print_value_on(oop obj, outputStream* st) {
   assert(obj->is_klass(), "must be klass");
   instanceKlass* ik = instanceKlass::cast(klassOop(obj));
   ik->name()->print_value_on(st);
 }
-
-#endif // PRODUCT
 
 const char* instanceKlassKlass::internal_name() const {
   return "{instance class}";
@@ -703,10 +678,10 @@ void instanceKlassKlass::oop_verify_on(oop obj, outputStream* st) {
     int sib_count = 0;
     while (sib != NULL) {
       if (sib == ik) {
-        fatal1("subclass cycle of length %d", sib_count);
+        fatal(err_msg("subclass cycle of length %d", sib_count));
       }
       if (sib_count >= 100000) {
-        fatal1("suspiciously long subclass list %d", sib_count);
+        fatal(err_msg("suspiciously long subclass list %d", sib_count));
       }
       guarantee(sib->as_klassOop()->is_klass(), "should be klass");
       guarantee(sib->as_klassOop()->is_perm(),  "should be in permspace");

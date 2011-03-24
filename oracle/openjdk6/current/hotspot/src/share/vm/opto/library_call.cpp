@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -16,9 +16,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  *
  */
 
@@ -133,6 +133,7 @@ class LibraryCallKit : public GraphKit {
     return generate_method_call(method_id, true, false);
   }
 
+  Node* make_string_method_node(int opcode, Node* str1, Node* cnt1, Node* str2, Node* cnt2);
   bool inline_string_compareTo();
   bool inline_string_indexOf();
   Node* string_indexOf(Node* string_object, ciTypeArray* target_array, jint offset, jint cache_i, jint md2_i);
@@ -635,6 +636,8 @@ bool LibraryCallKit::try_to_inline() {
 
   case vmIntrinsics::_reverseBytes_i:
   case vmIntrinsics::_reverseBytes_l:
+  case vmIntrinsics::_reverseBytes_s:
+  case vmIntrinsics::_reverseBytes_c:
     return inline_reverseBytes((vmIntrinsics::ID) intrinsic_id());
 
   case vmIntrinsics::_get_AtomicLong:
@@ -796,6 +799,63 @@ Node* LibraryCallKit::generate_current_thread(Node* &tls_output) {
 }
 
 
+//------------------------------make_string_method_node------------------------
+// Helper method for String intrinsic finctions.
+Node* LibraryCallKit::make_string_method_node(int opcode, Node* str1, Node* cnt1, Node* str2, Node* cnt2) {
+  const int value_offset  = java_lang_String::value_offset_in_bytes();
+  const int count_offset  = java_lang_String::count_offset_in_bytes();
+  const int offset_offset = java_lang_String::offset_offset_in_bytes();
+
+  Node* no_ctrl = NULL;
+
+  ciInstanceKlass* klass = env()->String_klass();
+  const TypeOopPtr* string_type = TypeOopPtr::make_from_klass(klass);
+
+  const TypeAryPtr* value_type =
+        TypeAryPtr::make(TypePtr::NotNull,
+                         TypeAry::make(TypeInt::CHAR,TypeInt::POS),
+                         ciTypeArrayKlass::make(T_CHAR), true, 0);
+
+  // Get start addr of string and substring
+  Node* str1_valuea  = basic_plus_adr(str1, str1, value_offset);
+  Node* str1_value   = make_load(no_ctrl, str1_valuea, value_type, T_OBJECT, string_type->add_offset(value_offset));
+  Node* str1_offseta = basic_plus_adr(str1, str1, offset_offset);
+  Node* str1_offset  = make_load(no_ctrl, str1_offseta, TypeInt::INT, T_INT, string_type->add_offset(offset_offset));
+  Node* str1_start   = array_element_address(str1_value, str1_offset, T_CHAR);
+
+  // Pin loads from String::equals() argument since it could be NULL.
+  Node* str2_ctrl = (opcode == Op_StrEquals) ? control() : no_ctrl;
+  Node* str2_valuea  = basic_plus_adr(str2, str2, value_offset);
+  Node* str2_value   = make_load(str2_ctrl, str2_valuea, value_type, T_OBJECT, string_type->add_offset(value_offset));
+  Node* str2_offseta = basic_plus_adr(str2, str2, offset_offset);
+  Node* str2_offset  = make_load(str2_ctrl, str2_offseta, TypeInt::INT, T_INT, string_type->add_offset(offset_offset));
+  Node* str2_start   = array_element_address(str2_value, str2_offset, T_CHAR);
+
+  Node* result = NULL;
+  switch (opcode) {
+  case Op_StrIndexOf:
+    result = new (C, 6) StrIndexOfNode(control(), memory(TypeAryPtr::CHARS),
+                                       str1_start, cnt1, str2_start, cnt2);
+    break;
+  case Op_StrComp:
+    result = new (C, 6) StrCompNode(control(), memory(TypeAryPtr::CHARS),
+                                    str1_start, cnt1, str2_start, cnt2);
+    break;
+  case Op_StrEquals:
+    result = new (C, 5) StrEqualsNode(control(), memory(TypeAryPtr::CHARS),
+                                      str1_start, str2_start, cnt1);
+    break;
+  default:
+    ShouldNotReachHere();
+    return NULL;
+  }
+
+  // All these intrinsics have checks.
+  C->set_has_split_ifs(true); // Has chance for split-if optimization
+
+  return _gvn.transform(result);
+}
+
 //------------------------------inline_string_compareTo------------------------
 bool LibraryCallKit::inline_string_compareTo() {
 
@@ -822,18 +882,17 @@ bool LibraryCallKit::inline_string_compareTo() {
   }
 
   ciInstanceKlass* klass = env()->String_klass();
-  const TypeInstPtr* string_type =
-    TypeInstPtr::make(TypePtr::BotPTR, klass, false, NULL, 0);
+  const TypeOopPtr* string_type = TypeOopPtr::make_from_klass(klass);
+  Node* no_ctrl = NULL;
 
-  Node* compare =
-    _gvn.transform(new (C, 7) StrCompNode(
-                        control(),
-                        memory(TypeAryPtr::CHARS),
-                        memory(string_type->add_offset(value_offset)),
-                        memory(string_type->add_offset(count_offset)),
-                        memory(string_type->add_offset(offset_offset)),
-                        receiver,
-                        argument));
+  // Get counts for string and argument
+  Node* receiver_cnta = basic_plus_adr(receiver, receiver, count_offset);
+  Node* receiver_cnt  = make_load(no_ctrl, receiver_cnta, TypeInt::INT, T_INT, string_type->add_offset(count_offset));
+
+  Node* argument_cnta = basic_plus_adr(argument, argument, count_offset);
+  Node* argument_cnt  = make_load(no_ctrl, argument_cnta, TypeInt::INT, T_INT, string_type->add_offset(count_offset));
+
+  Node* compare = make_string_method_node(Op_StrComp, receiver, receiver_cnt, argument, argument_cnt);
   push(compare);
   return true;
 }
@@ -865,45 +924,73 @@ bool LibraryCallKit::inline_string_equals() {
     return true;
   }
 
+  // paths (plus control) merge
+  RegionNode* region = new (C, 5) RegionNode(5);
+  Node* phi = new (C, 5) PhiNode(region, TypeInt::BOOL);
+
+  // does source == target string?
+  Node* cmp = _gvn.transform(new (C, 3) CmpPNode(receiver, argument));
+  Node* bol = _gvn.transform(new (C, 2) BoolNode(cmp, BoolTest::eq));
+
+  Node* if_eq = generate_slow_guard(bol, NULL);
+  if (if_eq != NULL) {
+    // receiver == argument
+    phi->init_req(2, intcon(1));
+    region->init_req(2, if_eq);
+  }
+
   // get String klass for instanceOf
   ciInstanceKlass* klass = env()->String_klass();
 
-  // two paths (plus control) merge
-  RegionNode* region = new (C, 3) RegionNode(3);
-  Node* phi = new (C, 3) PhiNode(region, TypeInt::BOOL);
+  if (!stopped()) {
+    Node* inst = gen_instanceof(argument, makecon(TypeKlassPtr::make(klass)));
+    Node* cmp  = _gvn.transform(new (C, 3) CmpINode(inst, intcon(1)));
+    Node* bol  = _gvn.transform(new (C, 2) BoolNode(cmp, BoolTest::ne));
 
-  Node* inst = gen_instanceof(argument, makecon(TypeKlassPtr::make(klass)));
-  Node* cmp  = _gvn.transform(new (C, 3) CmpINode(inst, intcon(1)));
-  Node* bol  = _gvn.transform(new (C, 2) BoolNode(cmp, BoolTest::eq));
+    Node* inst_false = generate_guard(bol, NULL, PROB_MIN);
+    //instanceOf == true, fallthrough
 
-  IfNode* iff = create_and_map_if(control(), bol, PROB_MAX, COUNT_UNKNOWN);
+    if (inst_false != NULL) {
+      phi->init_req(3, intcon(0));
+      region->init_req(3, inst_false);
+    }
+  }
 
-  Node* if_true  = _gvn.transform(new (C, 1) IfTrueNode(iff));
-  set_control(if_true);
+  const TypeOopPtr* string_type = TypeOopPtr::make_from_klass(klass);
 
-  const TypeInstPtr* string_type =
-    TypeInstPtr::make(TypePtr::BotPTR, klass, false, NULL, 0);
+  Node* no_ctrl = NULL;
+  Node* receiver_cnt;
+  Node* argument_cnt;
 
-  // instanceOf == true
-  Node* equals =
-    _gvn.transform(new (C, 7) StrEqualsNode(
-                        control(),
-                        memory(TypeAryPtr::CHARS),
-                        memory(string_type->add_offset(value_offset)),
-                        memory(string_type->add_offset(count_offset)),
-                        memory(string_type->add_offset(offset_offset)),
-                        receiver,
-                        argument));
+  if (!stopped()) {
+    // Properly cast the argument to String
+    argument = _gvn.transform(new (C, 2) CheckCastPPNode(control(), argument, string_type));
 
-  phi->init_req(1, _gvn.transform(equals));
-  region->init_req(1, if_true);
+    // Get counts for string and argument
+    Node* receiver_cnta = basic_plus_adr(receiver, receiver, count_offset);
+    receiver_cnt  = make_load(no_ctrl, receiver_cnta, TypeInt::INT, T_INT, string_type->add_offset(count_offset));
 
-  //instanceOf == false, fallthrough
-  Node* if_false = _gvn.transform(new (C, 1) IfFalseNode(iff));
-  set_control(if_false);
+    // Pin load from argument string since it could be NULL.
+    Node* argument_cnta = basic_plus_adr(argument, argument, count_offset);
+    argument_cnt  = make_load(control(), argument_cnta, TypeInt::INT, T_INT, string_type->add_offset(count_offset));
 
-  phi->init_req(2, _gvn.transform(intcon(0)));
-  region->init_req(2, if_false);
+    // Check for receiver count != argument count
+    Node* cmp = _gvn.transform( new(C, 3) CmpINode(receiver_cnt, argument_cnt) );
+    Node* bol = _gvn.transform( new(C, 2) BoolNode(cmp, BoolTest::ne) );
+    Node* if_ne = generate_slow_guard(bol, NULL);
+    if (if_ne != NULL) {
+      phi->init_req(4, intcon(0));
+      region->init_req(4, if_ne);
+    }
+  }
+
+  // Check for count == 0 is done by mach node StrEquals.
+
+  if (!stopped()) {
+    Node* equals = make_string_method_node(Op_StrEquals, receiver, receiver_cnt, argument, argument_cnt);
+    phi->init_req(1, equals);
+    region->init_req(1, control());
+  }
 
   // post merge
   set_control(_gvn.transform(region));
@@ -924,10 +1011,8 @@ bool LibraryCallKit::inline_array_equals() {
   Node *argument1 = pop();
 
   Node* equals =
-    _gvn.transform(new (C, 3) AryEqNode(control(),
-                                        argument1,
-                                        argument2)
-                   );
+    _gvn.transform(new (C, 4) AryEqNode(control(), memory(TypeAryPtr::CHARS),
+                                        argument1, argument2) );
   push(equals);
   return true;
 }
@@ -1005,7 +1090,7 @@ Node* LibraryCallKit::string_indexOf(Node* string_object, ciTypeArray* target_ar
   const int offset_offset = java_lang_String::offset_offset_in_bytes();
 
   ciInstanceKlass* klass = env()->String_klass();
-  const TypeInstPtr* string_type = TypeInstPtr::make(TypePtr::BotPTR, klass, false, NULL, 0);
+  const TypeOopPtr* string_type = TypeOopPtr::make_from_klass(klass);
   const TypeAryPtr*  source_type = TypeAryPtr::make(TypePtr::NotNull, TypeAry::make(TypeInt::CHAR,TypeInt::POS), ciTypeArrayKlass::make(T_CHAR), true, 0);
 
   Node* sourceOffseta = basic_plus_adr(string_object, string_object, offset_offset);
@@ -1020,7 +1105,7 @@ Node* LibraryCallKit::string_indexOf(Node* string_object, ciTypeArray* target_ar
   const TypeAry* target_array_type = TypeAry::make(TypeInt::CHAR, TypeInt::make(0, target_length, Type::WidenMin));
   const TypeAryPtr* target_type = TypeAryPtr::make(TypePtr::BotPTR, target_array_type, target_array->klass(), true, Type::OffsetBot);
 
-  IdealKit kit(gvn(), control(), merged_memory(), false, true);
+  IdealKit kit(this, false, true);
 #define __ kit.
   Node* zero             = __ ConI(0);
   Node* one              = __ ConI(1);
@@ -1089,12 +1174,10 @@ bool LibraryCallKit::inline_string_indexOf() {
   Node *argument = pop();  // pop non-receiver first:  it was pushed second
   Node *receiver = pop();
 
-  Node* alloc = NULL;
-  if (DoEscapeAnalysis && argument->is_Con())
-    alloc = AllocateNode::Ideal_allocation(receiver, &_gvn);
-
   Node* result;
-  if (Matcher::has_match_rule(Op_StrIndexOf) && alloc == NULL &&
+  // Disable the use of pcmpestri until it can be guaranteed that
+  // the load doesn't cross into the uncommited space.
+  if (false && Matcher::has_match_rule(Op_StrIndexOf) &&
       UseSSE42Intrinsics) {
     // Generate SSE4.2 version of indexOf
     // We currently only have match rules that use SSE4.2
@@ -1112,19 +1195,39 @@ bool LibraryCallKit::inline_string_indexOf() {
       return true;
     }
 
-    ciInstanceKlass* klass = env()->String_klass();
-    const TypeInstPtr* string_type =
-      TypeInstPtr::make(TypePtr::BotPTR, klass, false, NULL, 0);
+    // Make the merge point
+    RegionNode* result_rgn = new (C, 3) RegionNode(3);
+    Node*       result_phi = new (C, 3) PhiNode(result_rgn, TypeInt::INT);
+    Node* no_ctrl  = NULL;
 
-    result =
-      _gvn.transform(new (C, 7)
-                     StrIndexOfNode(control(),
-                                    memory(TypeAryPtr::CHARS),
-                                    memory(string_type->add_offset(value_offset)),
-                                    memory(string_type->add_offset(count_offset)),
-                                    memory(string_type->add_offset(offset_offset)),
-                                    receiver,
-                                    argument));
+    ciInstanceKlass* klass = env()->String_klass();
+    const TypeOopPtr* string_type = TypeOopPtr::make_from_klass(klass);
+
+    // Get counts for string and substr
+    Node* source_cnta = basic_plus_adr(receiver, receiver, count_offset);
+    Node* source_cnt  = make_load(no_ctrl, source_cnta, TypeInt::INT, T_INT, string_type->add_offset(count_offset));
+
+    Node* substr_cnta = basic_plus_adr(argument, argument, count_offset);
+    Node* substr_cnt  = make_load(no_ctrl, substr_cnta, TypeInt::INT, T_INT, string_type->add_offset(count_offset));
+
+    // Check for substr count > string count
+    Node* cmp = _gvn.transform( new(C, 3) CmpINode(substr_cnt, source_cnt) );
+    Node* bol = _gvn.transform( new(C, 2) BoolNode(cmp, BoolTest::gt) );
+    Node* if_gt = generate_slow_guard(bol, NULL);
+    if (if_gt != NULL) {
+      result_phi->init_req(2, intcon(-1));
+      result_rgn->init_req(2, if_gt);
+    }
+
+    if (!stopped()) {
+      result = make_string_method_node(Op_StrIndexOf, receiver, source_cnt, argument, substr_cnt);
+      result_phi->init_req(1, result);
+      result_rgn->init_req(1, control());
+    }
+    set_control(_gvn.transform(result_rgn));
+    record_for_igvn(result_rgn);
+    result = _gvn.transform(result_phi);
+
   } else { //Use LibraryCallKit::string_indexOf
     // don't intrinsify is argument isn't a constant string.
     if (!argument->is_Con()) {
@@ -1910,13 +2013,19 @@ bool LibraryCallKit::inline_bitCount(vmIntrinsics::ID id) {
   return true;
 }
 
-//----------------------------inline_reverseBytes_int/long-------------------
+//----------------------------inline_reverseBytes_int/long/char/short-------------------
 // inline Integer.reverseBytes(int)
 // inline Long.reverseBytes(long)
+// inline Character.reverseBytes(char)
+// inline Short.reverseBytes(short)
 bool LibraryCallKit::inline_reverseBytes(vmIntrinsics::ID id) {
-  assert(id == vmIntrinsics::_reverseBytes_i || id == vmIntrinsics::_reverseBytes_l, "not reverse Bytes");
-  if (id == vmIntrinsics::_reverseBytes_i && !Matcher::has_match_rule(Op_ReverseBytesI)) return false;
-  if (id == vmIntrinsics::_reverseBytes_l && !Matcher::has_match_rule(Op_ReverseBytesL)) return false;
+  assert(id == vmIntrinsics::_reverseBytes_i || id == vmIntrinsics::_reverseBytes_l ||
+         id == vmIntrinsics::_reverseBytes_c || id == vmIntrinsics::_reverseBytes_s,
+         "not reverse Bytes");
+  if (id == vmIntrinsics::_reverseBytes_i && !Matcher::has_match_rule(Op_ReverseBytesI))  return false;
+  if (id == vmIntrinsics::_reverseBytes_l && !Matcher::has_match_rule(Op_ReverseBytesL))  return false;
+  if (id == vmIntrinsics::_reverseBytes_c && !Matcher::has_match_rule(Op_ReverseBytesUS)) return false;
+  if (id == vmIntrinsics::_reverseBytes_s && !Matcher::has_match_rule(Op_ReverseBytesS))  return false;
   _sp += arg_size();        // restore stack pointer
   switch (id) {
   case vmIntrinsics::_reverseBytes_i:
@@ -1924,6 +2033,12 @@ bool LibraryCallKit::inline_reverseBytes(vmIntrinsics::ID id) {
     break;
   case vmIntrinsics::_reverseBytes_l:
     push_pair(_gvn.transform(new (C, 2) ReverseBytesLNode(0, pop_pair())));
+    break;
+  case vmIntrinsics::_reverseBytes_c:
+    push(_gvn.transform(new (C, 2) ReverseBytesUSNode(0, pop())));
+    break;
+  case vmIntrinsics::_reverseBytes_s:
+    push(_gvn.transform(new (C, 2) ReverseBytesSNode(0, pop())));
     break;
   default:
     ;
@@ -2177,7 +2292,7 @@ bool LibraryCallKit::inline_unsafe_access(bool is_native_ptr, bool is_store, Bas
         // of it. So we need to emit code to conditionally do the proper type of
         // store.
 
-        IdealKit ideal(gvn(), control(),  merged_memory());
+        IdealKit ideal(this);
 #define __ ideal.
         // QQQ who knows what probability is here??
         __ if_then(heap_base_oop, BoolTest::ne, null(), PROB_UNLIKELY(0.999)); {
@@ -3397,8 +3512,7 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
 
   // Get the header out of the object, use LoadMarkNode when available
   Node* header_addr = basic_plus_adr(obj, oopDesc::mark_offset_in_bytes());
-  Node* header = make_load(NULL, header_addr, TypeRawPtr::BOTTOM, T_ADDRESS);
-  header = _gvn.transform( new (C, 2) CastP2XNode(NULL, header) );
+  Node* header = make_load(control(), header_addr, TypeX_X, TypeX_X->basic_type());
 
   // Test the header to see if it is unlocked.
   Node *lock_mask      = _gvn.MakeConX(markOopDesc::biased_lock_mask_in_place);
@@ -3597,12 +3711,14 @@ bool LibraryCallKit::inline_native_Reflection_getCallerClass() {
 
 // Helper routine for above
 bool LibraryCallKit::is_method_invoke_or_aux_frame(JVMState* jvms) {
+  ciMethod* method = jvms->method();
+
   // Is this the Method.invoke method itself?
-  if (jvms->method()->intrinsic_id() == vmIntrinsics::_invoke)
+  if (method->intrinsic_id() == vmIntrinsics::_invoke)
     return true;
 
   // Is this a helper, defined somewhere underneath MethodAccessorImpl.
-  ciKlass* k = jvms->method()->holder();
+  ciKlass* k = method->holder();
   if (k->is_instance_klass()) {
     ciInstanceKlass* ik = k->as_instance_klass();
     for (; ik != NULL; ik = ik->super()) {
@@ -3611,6 +3727,10 @@ bool LibraryCallKit::is_method_invoke_or_aux_frame(JVMState* jvms) {
         return true;
       }
     }
+  }
+  else if (method->is_method_handle_adapter()) {
+    // This is an internal adapter frame from the MethodHandleCompiler -- skip it
+    return true;
   }
 
   return false;
@@ -4636,7 +4756,7 @@ LibraryCallKit::generate_arraycopy(const TypePtr* adr_type,
       Node* cv = generate_checkcast_arraycopy(adr_type,
                                               dest_elem_klass,
                                               src, src_offset, dest, dest_offset,
-                                              copy_length);
+                                              ConvI2X(copy_length));
       if (cv == NULL)  cv = intcon(-1);  // failure (no stub available)
       checked_control = control();
       checked_i_o     = i_o();
@@ -5081,8 +5201,8 @@ LibraryCallKit::generate_checkcast_arraycopy(const TypePtr* adr_type,
   // super_check_offset, for the desired klass.
   int sco_offset = Klass::super_check_offset_offset_in_bytes() + sizeof(oopDesc);
   Node* p3 = basic_plus_adr(dest_elem_klass, sco_offset);
-  Node* n3 = new(C, 3) LoadINode(NULL, immutable_memory(), p3, TypeRawPtr::BOTTOM);
-  Node* check_offset = _gvn.transform(n3);
+  Node* n3 = new(C, 3) LoadINode(NULL, memory(p3), p3, _gvn.type(p3)->is_ptr());
+  Node* check_offset = ConvI2X(_gvn.transform(n3));
   Node* check_value  = dest_elem_klass;
 
   Node* src_start  = array_element_address(src,  src_offset,  T_OBJECT);

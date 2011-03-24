@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -16,9 +16,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  *
  */
 
@@ -472,9 +472,7 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
             assert( n->req() == 2 &&  n->in(1) != NULL, "Only one data input expected" );
             // Break dead loop data path.
             // Eagerly replace phis with top to avoid phis copies generation.
-            igvn->add_users_to_worklist(n);
-            igvn->hash_delete(n); // Yank from hash before hacking edges
-            igvn->subsume_node(n, top);
+            igvn->replace_node(n, top);
             if( max != outcnt() ) {
               progress = true;
               j = refresh_out_pos(j);
@@ -518,18 +516,17 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         igvn->hash_delete(n); // Remove from worklist before modifying edges
         if( n->is_Phi() ) {   // Collapse all Phis
           // Eagerly replace phis to avoid copies generation.
-          igvn->add_users_to_worklist(n);
-          igvn->hash_delete(n); // Yank from hash before hacking edges
+          Node* in;
           if( cnt == 0 ) {
             assert( n->req() == 1, "No data inputs expected" );
-            igvn->subsume_node(n, parent_ctrl); // replaced by top
+            in = parent_ctrl; // replaced by top
           } else {
             assert( n->req() == 2 &&  n->in(1) != NULL, "Only one data input expected" );
-            Node* in1 = n->in(1);               // replaced by unique input
-            if( n->as_Phi()->is_unsafe_data_reference(in1) )
-              in1 = phase->C->top();            // replaced by top
-            igvn->subsume_node(n, in1);
+            in = n->in(1);               // replaced by unique input
+            if( n->as_Phi()->is_unsafe_data_reference(in) )
+              in = phase->C->top();      // replaced by top
           }
+          igvn->replace_node(n, in);
         }
         else if( n->is_Region() ) { // Update all incoming edges
           assert( !igvn->eqv(n, this), "Must be removed from DefUse edges");
@@ -1532,6 +1529,8 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     return NULL;                // No change
 
   Node *top = phase->C->top();
+  bool new_phi = (outcnt() == 0); // transforming new Phi
+  assert(!can_reshape || !new_phi, "for igvn new phi should be hooked");
 
   // The are 2 situations when only one valid phi's input is left
   // (in addition to Region input).
@@ -1549,6 +1548,12 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         progress = this;        // Record progress
       }
     }
+  }
+
+  if (can_reshape && outcnt() == 0) {
+    // set_req() above may kill outputs if Phi is referenced
+    // only by itself on the dead (top) control path.
+    return top;
   }
 
   Node* uin = unique_input(phase);
@@ -1646,6 +1651,64 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     if (opt != NULL)  return opt;
   }
 
+  if (in(1) != NULL && in(1)->Opcode() == Op_AddP && can_reshape) {
+    // Try to undo Phi of AddP:
+    // (Phi (AddP base base y) (AddP base2 base2 y))
+    // becomes:
+    // newbase := (Phi base base2)
+    // (AddP newbase newbase y)
+    //
+    // This occurs as a result of unsuccessful split_thru_phi and
+    // interferes with taking advantage of addressing modes. See the
+    // clone_shift_expressions code in matcher.cpp
+    Node* addp = in(1);
+    const Type* type = addp->in(AddPNode::Base)->bottom_type();
+    Node* y = addp->in(AddPNode::Offset);
+    if (y != NULL && addp->in(AddPNode::Base) == addp->in(AddPNode::Address)) {
+      // make sure that all the inputs are similar to the first one,
+      // i.e. AddP with base == address and same offset as first AddP
+      bool doit = true;
+      for (uint i = 2; i < req(); i++) {
+        if (in(i) == NULL ||
+            in(i)->Opcode() != Op_AddP ||
+            in(i)->in(AddPNode::Base) != in(i)->in(AddPNode::Address) ||
+            in(i)->in(AddPNode::Offset) != y) {
+          doit = false;
+          break;
+        }
+        // Accumulate type for resulting Phi
+        type = type->meet(in(i)->in(AddPNode::Base)->bottom_type());
+      }
+      Node* base = NULL;
+      if (doit) {
+        // Check for neighboring AddP nodes in a tree.
+        // If they have a base, use that it.
+        for (DUIterator_Fast kmax, k = this->fast_outs(kmax); k < kmax; k++) {
+          Node* u = this->fast_out(k);
+          if (u->is_AddP()) {
+            Node* base2 = u->in(AddPNode::Base);
+            if (base2 != NULL && !base2->is_top()) {
+              if (base == NULL)
+                base = base2;
+              else if (base != base2)
+                { doit = false; break; }
+            }
+          }
+        }
+      }
+      if (doit) {
+        if (base == NULL) {
+          base = new (phase->C, in(0)->req()) PhiNode(in(0), type, NULL);
+          for (uint i = 1; i < req(); i++) {
+            base->init_req(i, in(i)->in(AddPNode::Base));
+          }
+          phase->is_IterGVN()->register_new_node_with_optimizer(base);
+        }
+        return new (phase->C, 4) AddPNode(base, base, y);
+      }
+    }
+  }
+
   // Split phis through memory merges, so that the memory merges will go away.
   // Piggy-back this transformation on the search for a unique input....
   // It will be as if the merged memory is the unique value of the phi.
@@ -1685,8 +1748,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
             // Equivalent code is in MemNode::Ideal_common
             Node *m  = phase->transform(n);
             if (outcnt() == 0) {  // Above transform() may kill us!
-              progress = phase->C->top();
-              break;
+              return top;
             }
             // If transformed to a MergeMem, get the desired slice
             // Otherwise the returned node represents memory for every slice
@@ -2062,7 +2124,7 @@ Node *NeverBranchNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     // if it's not there, there's nothing to do.
     Node* fallthru = proj_out(0);
     if (fallthru != NULL) {
-      phase->is_IterGVN()->subsume_node(fallthru, in(0));
+      phase->is_IterGVN()->replace_node(fallthru, in(0));
     }
     return phase->C->top();
   }

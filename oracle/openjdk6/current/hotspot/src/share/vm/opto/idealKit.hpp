@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 2005, 2009, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -16,9 +16,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  *
  */
 
@@ -95,6 +95,7 @@ class IdealKit: public StackObj {
   bool _delay_all_transforms;              // flag forcing all transforms to be delayed
   Node* _initial_ctrl;                     // saves initial control until variables declared
   Node* _initial_memory;                   // saves initial memory  until variables declared
+  Node* _initial_i_o;                      // saves initial i_o  until variables declared
 
   PhaseGVN& gvn() const { return _gvn; }
   // Create a new cvstate filled with nulls
@@ -129,7 +130,7 @@ class IdealKit: public StackObj {
   Node* memory(uint alias_idx);
 
  public:
-  IdealKit(PhaseGVN &gvn, Node* control, Node* memory, bool delay_all_transforms = false, bool has_declarations = false);
+  IdealKit(GraphKit* gkit, bool delay_all_transforms = false, bool has_declarations = false);
   ~IdealKit() {
     stop();
     drain_delay_transform();
@@ -140,6 +141,8 @@ class IdealKit: public StackObj {
   Node* top()                           { return C->top(); }
   MergeMemNode* merged_memory()         { return _cvstate->in(TypeFunc::Memory)->as_MergeMem(); }
   void set_all_memory(Node* mem)        { _cvstate->set_req(TypeFunc::Memory, mem); }
+  Node* i_o()                           { return _cvstate->in(TypeFunc::I_O); }
+  void set_i_o(Node* c)                 { _cvstate->set_req(TypeFunc::I_O, c); }
   void set(IdealVariable& v, Node* rhs) { _cvstate->set_req(first_var + v.id(), rhs); }
   Node* value(IdealVariable& v)         { return _cvstate->in(first_var + v.id()); }
   void dead(IdealVariable& v)           { set(v, (Node*)NULL); }
@@ -216,6 +219,7 @@ class IdealKit: public StackObj {
                 Node* adr,
                 Node* val,
                 Node* oop_store,
+                int oop_adr_idx,
                 BasicType bt,
                 int adr_idx);
 

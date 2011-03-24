@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 2000, 2007, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -16,9 +16,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  *
  */
 
@@ -60,9 +60,6 @@ define_pd_global(intx, FreqInlineSize,               175);
 define_pd_global(intx, INTPRESSURE,                  48);  // large register set
 define_pd_global(intx, InteriorEntryAlignment,       16);  // = CodeEntryAlignment
 define_pd_global(intx, NewSizeThreadIncrease, ScaleForWordSize(4*K));
-// The default setting 16/16 seems to work best.
-// (For _228_jack 16/16 is 2% better than 4/4, 16/4, 32/32, 32/16, or 16/32.)
-define_pd_global(intx, OptoLoopAlignment,            16);  // = 4*wordSize
 define_pd_global(intx, RegisterCostAreaRatio,        12000);
 define_pd_global(bool, UseTLAB,                      true);
 define_pd_global(bool, ResizeTLAB,                   true);

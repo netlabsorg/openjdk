@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -16,9 +16,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  *
  */
 
@@ -98,6 +98,11 @@ inline void Assembler::flush( Register s1, int simm13a) { emit_data( op(arith_op
 
 inline void Assembler::jmpl( Register s1, Register s2, Register d                          ) { emit_long( op(arith_op) | rd(d) | op3(jmpl_op3) | rs1(s1) | rs2(s2));  has_delay_slot(); }
 inline void Assembler::jmpl( Register s1, int simm13a, Register d, RelocationHolder const& rspec ) { emit_data( op(arith_op) | rd(d) | op3(jmpl_op3) | rs1(s1) | immed(true) | simm(simm13a, 13), rspec);  has_delay_slot(); }
+
+inline void Assembler::ldf(FloatRegisterImpl::Width w, Register s1, RegisterOrConstant s2, FloatRegister d) {
+  if (s2.is_register()) ldf(w, s1, s2.as_register(), d);
+  else                  ldf(w, s1, s2.as_constant(), d);
+}
 
 inline void Assembler::ldf(FloatRegisterImpl::Width w, Register s1, Register s2, FloatRegister d) { emit_long( op(ldst_op) | fd(d, w) | alt_op3(ldf_op3, w) | rs1(s1) | rs2(s2) ); }
 inline void Assembler::ldf(FloatRegisterImpl::Width w, Register s1, int simm13a, FloatRegister d, RelocationHolder const& rspec) { emit_data( op(ldst_op) | fd(d, w) | alt_op3(ldf_op3, w) | rs1(s1) | immed(true) | simm(simm13a, 13), rspec); }
@@ -201,10 +206,15 @@ inline void Assembler::ld(  Register s1, RegisterOrConstant s2, Register d) { ld
 inline void Assembler::ldd( Register s1, RegisterOrConstant s2, Register d) { ldd( Address(s1, s2), d); }
 
 // form effective addresses this way:
-inline void Assembler::add(   Register s1, RegisterOrConstant s2, Register d, int offset) {
-  if (s2.is_register())  add(s1, s2.as_register(), d);
+inline void Assembler::add(Register s1, RegisterOrConstant s2, Register d, int offset) {
+  if (s2.is_register())  add(s1, s2.as_register(),          d);
   else                 { add(s1, s2.as_constant() + offset, d); offset = 0; }
   if (offset != 0)       add(d,  offset,                    d);
+}
+
+inline void Assembler::andn(Register s1, RegisterOrConstant s2, Register d) {
+  if (s2.is_register())  andn(s1, s2.as_register(), d);
+  else                   andn(s1, s2.as_constant(), d);
 }
 
 inline void Assembler::ldstub(  Register s1, Register s2, Register d) { emit_long( op(ldst_op) | rd(d) | op3(ldstub_op3) | rs1(s1) | rs2(s2) ); }
@@ -223,6 +233,11 @@ inline void Assembler::rett( Register s1, int simm13a, relocInfo::relocType rt) 
 inline void Assembler::sethi( int imm22a, Register d, RelocationHolder const& rspec ) { emit_data( op(branch_op) | rd(d) | op2(sethi_op2) | hi22(imm22a), rspec); }
 
   // pp 222
+
+inline void Assembler::stf(    FloatRegisterImpl::Width w, FloatRegister d, Register s1, RegisterOrConstant s2) {
+  if (s2.is_register()) stf(w, d, s1, s2.as_register());
+  else                  stf(w, d, s1, s2.as_constant());
+}
 
 inline void Assembler::stf(    FloatRegisterImpl::Width w, FloatRegister d, Register s1, Register s2) { emit_long( op(ldst_op) | fd(d, w) | alt_op3(stf_op3, w) | rs1(s1) | rs2(s2) ); }
 inline void Assembler::stf(    FloatRegisterImpl::Width w, FloatRegister d, Register s1, int simm13a) { emit_data( op(ldst_op) | fd(d, w) | alt_op3(stf_op3, w) | rs1(s1) | immed(true) | simm(simm13a, 13)); }
@@ -284,6 +299,7 @@ inline void Assembler::stx(Register d, const Address& a, int offset) {
 
 inline void Assembler::stb(Register d, Register s1, RegisterOrConstant s2) { stb(d, Address(s1, s2)); }
 inline void Assembler::sth(Register d, Register s1, RegisterOrConstant s2) { sth(d, Address(s1, s2)); }
+inline void Assembler::stw(Register d, Register s1, RegisterOrConstant s2) { stw(d, Address(s1, s2)); }
 inline void Assembler::stx(Register d, Register s1, RegisterOrConstant s2) { stx(d, Address(s1, s2)); }
 inline void Assembler::std(Register d, Register s1, RegisterOrConstant s2) { std(d, Address(s1, s2)); }
 inline void Assembler::st( Register d, Register s1, RegisterOrConstant s2) { st( d, Address(s1, s2)); }
@@ -634,28 +650,28 @@ inline intptr_t MacroAssembler::load_pc_address( Register reg, int bytes_to_skip
 }
 
 
-inline void MacroAssembler::load_contents(AddressLiteral& addrlit, Register d, int offset) {
+inline void MacroAssembler::load_contents(const AddressLiteral& addrlit, Register d, int offset) {
   assert_not_delayed();
   sethi(addrlit, d);
   ld(d, addrlit.low10() + offset, d);
 }
 
 
-inline void MacroAssembler::load_ptr_contents(AddressLiteral& addrlit, Register d, int offset) {
+inline void MacroAssembler::load_ptr_contents(const AddressLiteral& addrlit, Register d, int offset) {
   assert_not_delayed();
   sethi(addrlit, d);
   ld_ptr(d, addrlit.low10() + offset, d);
 }
 
 
-inline void MacroAssembler::store_contents(Register s, AddressLiteral& addrlit, Register temp, int offset) {
+inline void MacroAssembler::store_contents(Register s, const AddressLiteral& addrlit, Register temp, int offset) {
   assert_not_delayed();
   sethi(addrlit, temp);
   st(s, temp, addrlit.low10() + offset);
 }
 
 
-inline void MacroAssembler::store_ptr_contents(Register s, AddressLiteral& addrlit, Register temp, int offset) {
+inline void MacroAssembler::store_ptr_contents(Register s, const AddressLiteral& addrlit, Register temp, int offset) {
   assert_not_delayed();
   sethi(addrlit, temp);
   st_ptr(s, temp, addrlit.low10() + offset);
@@ -663,7 +679,7 @@ inline void MacroAssembler::store_ptr_contents(Register s, AddressLiteral& addrl
 
 
 // This code sequence is relocatable to any address, even on LP64.
-inline void MacroAssembler::jumpl_to(AddressLiteral& addrlit, Register temp, Register d, int offset) {
+inline void MacroAssembler::jumpl_to(const AddressLiteral& addrlit, Register temp, Register d, int offset) {
   assert_not_delayed();
   // Force fixed length sethi because NativeJump and NativeFarCall don't handle
   // variable length instruction streams.
@@ -672,7 +688,7 @@ inline void MacroAssembler::jumpl_to(AddressLiteral& addrlit, Register temp, Reg
 }
 
 
-inline void MacroAssembler::jump_to(AddressLiteral& addrlit, Register temp, int offset) {
+inline void MacroAssembler::jump_to(const AddressLiteral& addrlit, Register temp, int offset) {
   jumpl_to(addrlit, temp, G0, offset);
 }
 
@@ -696,7 +712,7 @@ inline void MacroAssembler::set_oop_constant(jobject obj, Register d) {
 }
 
 
-inline void MacroAssembler::set_oop(AddressLiteral& obj_addr, Register d) {
+inline void MacroAssembler::set_oop(const AddressLiteral& obj_addr, Register d) {
   assert(obj_addr.rspec().type() == relocInfo::oop_type, "must be an oop reloc");
   set(obj_addr, d);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -16,9 +16,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  *
  */
 
@@ -721,8 +721,8 @@ void ArchDesc::build_pipe_classes(FILE *fp_cpp) {
   fprintf(fp_cpp, "  }\n");
   fprintf(fp_cpp, "#endif\n\n");
 #endif
-  fprintf(fp_cpp, "  assert(this, \"NULL pipeline info\")\n");
-  fprintf(fp_cpp, "  assert(pred, \"NULL predecessor pipline info\")\n\n");
+  fprintf(fp_cpp, "  assert(this, \"NULL pipeline info\");\n");
+  fprintf(fp_cpp, "  assert(pred, \"NULL predecessor pipline info\");\n\n");
   fprintf(fp_cpp, "  if (pred->hasFixedLatency())\n    return (pred->fixedLatency());\n\n");
   fprintf(fp_cpp, "  // If this is not an operand, then assume a dependence with 0 latency\n");
   fprintf(fp_cpp, "  if (opnd > _read_stage_count)\n    return (0);\n\n");
@@ -1382,7 +1382,7 @@ static void generate_peepreplace( FILE *fp, FormDict &globals, PeepMatch *pmatch
                                           inst_num, unmatched_edge);
         }
         // If new instruction captures bottom type
-        if( root_form->captures_bottom_type() ) {
+        if( root_form->captures_bottom_type(globals) ) {
           // Get bottom type from instruction whose result we are replacing
           fprintf(fp, "        root->_bottom_type = inst%d->bottom_type();\n", inst_num);
         }
@@ -1496,7 +1496,7 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
   unsigned      i;
 
   // Generate Expand function header
-  fprintf(fp,"MachNode *%sNode::Expand(State *state, Node_List &proj_list) {\n", node->_ident);
+  fprintf(fp,"MachNode *%sNode::Expand(State *state, Node_List &proj_list, Node* mem) {\n", node->_ident);
   fprintf(fp,"Compile* C = Compile::current();\n");
   // Generate expand code
   if( node->expands() ) {
@@ -1546,15 +1546,16 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
     // Build a mapping from operand index to input edges
     fprintf(fp,"  unsigned idx0 = oper_input_base();\n");
 
-    // The order in which inputs are added to a node is very
+    // The order in which the memory input is added to a node is very
     // strange.  Store nodes get a memory input before Expand is
-    // called and all other nodes get it afterwards so
-    // oper_input_base is wrong during expansion.  This code adjusts
-    // is so that expansion will work correctly.
-    bool missing_memory_edge = node->_matrule->needs_ideal_memory_edge(_globalNames) &&
-                               node->is_ideal_store() == Form::none;
-    if (missing_memory_edge) {
-      fprintf(fp,"  idx0--; // Adjust base because memory edge hasn't been inserted yet\n");
+    // called and other nodes get it afterwards or before depending on
+    // match order so oper_input_base is wrong during expansion.  This
+    // code adjusts it so that expansion will work correctly.
+    int has_memory_edge = node->_matrule->needs_ideal_memory_edge(_globalNames);
+    if (has_memory_edge) {
+      fprintf(fp,"  if (mem == (Node*)1) {\n");
+      fprintf(fp,"    idx0--; // Adjust base because memory edge hasn't been inserted yet\n");
+      fprintf(fp,"  }\n");
     }
 
     for( i = 0; i < node->num_opnds(); i++ ) {
@@ -1611,9 +1612,11 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
         int node_mem_op = node->memory_operand(_globalNames);
         assert( node_mem_op != InstructForm::NO_MEMORY_OPERAND,
                 "expand rule member needs memory but top-level inst doesn't have any" );
-        if (!missing_memory_edge) {
+        if (has_memory_edge) {
           // Copy memory edge
-          fprintf(fp,"  n%d->add_req(_in[1]);\t// Add memory edge\n", cnt);
+          fprintf(fp,"  if (mem != (Node*)1) {\n");
+          fprintf(fp,"    n%d->add_req(_in[1]);\t// Add memory edge\n", cnt);
+          fprintf(fp,"  }\n");
         }
       }
 
@@ -1689,7 +1692,7 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
       } // done iterating over a new instruction's operands
 
       // Invoke Expand() for the newly created instruction.
-      fprintf(fp,"  result = n%d->Expand( state, proj_list );\n", cnt);
+      fprintf(fp,"  result = n%d->Expand( state, proj_list, mem );\n", cnt);
       assert( !new_inst->expands(), "Do not have complete support for recursive expansion");
     } // done iterating over new instructions
     fprintf(fp,"\n");
@@ -2960,7 +2963,7 @@ void ArchDesc::defineClasses(FILE *fp) {
     used |= instr->define_cisc_version(*this, fp);
 
     // Output code to convert to the short branch version, if applicable
-    used |= instr->define_short_branch_methods(fp);
+    used |= instr->define_short_branch_methods(*this, fp);
   }
 
   // Construct the method called by cisc_version() to copy inputs and operands.
@@ -3705,7 +3708,7 @@ void ArchDesc::buildMachNode(FILE *fp_cpp, InstructForm *inst, const char *inden
   }
 
   // Fill in the bottom_type where requested
-  if ( inst->captures_bottom_type() ) {
+  if ( inst->captures_bottom_type(_globalNames) ) {
     fprintf(fp_cpp, "%s node->_bottom_type = _leaf->bottom_type();\n", indent);
   }
   if( inst->is_ideal_if() ) {
@@ -3759,7 +3762,7 @@ bool InstructForm::define_cisc_version(ArchDesc &AD, FILE *fp_cpp) {
     // Create the MachNode object
     fprintf(fp_cpp, "  %sNode *node = new (C) %sNode();\n", name, name);
     // Fill in the bottom_type where requested
-    if ( this->captures_bottom_type() ) {
+    if ( this->captures_bottom_type(AD.globalNames()) ) {
       fprintf(fp_cpp, "  node->_bottom_type = bottom_type();\n");
     }
 
@@ -3795,7 +3798,7 @@ void InstructForm::declare_short_branch_methods(FILE *fp_hpp) {
 
 //---------------------------define_short_branch_methods-----------------------
 // Build definitions for short branch methods
-bool InstructForm::define_short_branch_methods(FILE *fp_cpp) {
+bool InstructForm::define_short_branch_methods(ArchDesc &AD, FILE *fp_cpp) {
   if (has_short_branch_form()) {
     InstructForm *short_branch = short_branch_form();
     const char   *name         = short_branch->_ident;
@@ -3810,7 +3813,7 @@ bool InstructForm::define_short_branch_methods(FILE *fp_cpp) {
       fprintf(fp_cpp, "  node->_fcnt = _fcnt;\n");
     }
     // Fill in the bottom_type where requested
-    if ( this->captures_bottom_type() ) {
+    if ( this->captures_bottom_type(AD.globalNames()) ) {
       fprintf(fp_cpp, "  node->_bottom_type = bottom_type();\n");
     }
 

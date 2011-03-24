@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -16,15 +16,17 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  *
  */
 
 class AdjoiningGenerations;
 class GCTaskManager;
 class PSAdaptiveSizePolicy;
+class GenerationSizer;
+class CollectorPolicy;
 
 class ParallelScavengeHeap : public CollectedHeap {
   friend class VMStructs;
@@ -42,6 +44,8 @@ class ParallelScavengeHeap : public CollectedHeap {
   size_t _perm_gen_alignment;
   size_t _young_gen_alignment;
   size_t _old_gen_alignment;
+
+  GenerationSizer* _collector_policy;
 
   inline size_t set_alignment(size_t& var, size_t val);
 
@@ -71,6 +75,9 @@ class ParallelScavengeHeap : public CollectedHeap {
   ParallelScavengeHeap::Name kind() const {
     return CollectedHeap::ParallelScavengeHeap;
   }
+
+CollectorPolicy* collector_policy() const { return (CollectorPolicy*) _collector_policy; }
+  // GenerationSizer* collector_policy() const { return _collector_policy; }
 
   static PSYoungGen* young_gen()     { return _young_gen; }
   static PSOldGen* old_gen()         { return _old_gen; }
@@ -241,6 +248,13 @@ class ParallelScavengeHeap : public CollectedHeap {
 
   // Mangle the unused parts of all spaces in the heap
   void gen_mangle_unused_area() PRODUCT_RETURN;
+
+  // Call these in sequential code around the processing of strong roots.
+  class ParStrongRootsScope : public MarkingCodeBlobClosure::MarkScope {
+  public:
+    ParStrongRootsScope();
+    ~ParStrongRootsScope();
+  };
 };
 
 inline size_t ParallelScavengeHeap::set_alignment(size_t& var, size_t val)
