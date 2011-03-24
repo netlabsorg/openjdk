@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -16,9 +16,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  *
  */
 
@@ -101,8 +101,8 @@ GrowableArray<MonitorInfo*>* javaVFrame::locked_monitors() {
   bool found_first_monitor = false;
   ObjectMonitor *pending_monitor = thread()->current_pending_monitor();
   ObjectMonitor *waiting_monitor = thread()->current_waiting_monitor();
-  oop pending_obj = (pending_monitor != NULL ? (oop) pending_monitor->object() : NULL);
-  oop waiting_obj = (waiting_monitor != NULL ? (oop) waiting_monitor->object() : NULL);
+  oop pending_obj = (pending_monitor != NULL ? (oop) pending_monitor->object() : (oop) NULL);
+  oop waiting_obj = (waiting_monitor != NULL ? (oop) waiting_monitor->object() : (oop) NULL);
 
   for (int index = (mons->length()-1); index >= 0; index--) {
     MonitorInfo* monitor = mons->at(index);
@@ -124,7 +124,7 @@ GrowableArray<MonitorInfo*>* javaVFrame::locked_monitors() {
 static void print_locked_object_class_name(outputStream* st, Handle obj, const char* lock_state) {
   if (obj.not_null()) {
     st->print("\t- %s <" INTPTR_FORMAT "> ", lock_state, (address)obj());
-    if (obj->klass() == SystemDictionary::class_klass()) {
+    if (obj->klass() == SystemDictionary::Class_klass()) {
       klassOop target_klass = java_lang_Class::as_klassOop(obj());
       st->print_cr("(a java.lang.Class for %s)", instanceKlass::cast(target_klass)->external_name());
     } else {
@@ -244,51 +244,30 @@ StackValueCollection* interpretedVFrame::locals() const {
   StackValueCollection* result = new StackValueCollection(length);
 
   // Get oopmap describing oops and int for current bci
-  if (TaggedStackInterpreter) {
-    for(int i=0; i < length; i++) {
-      // Find stack location
-      intptr_t *addr = locals_addr_at(i);
-
-      // Depending on oop/int put it in the right package
-      StackValue *sv;
-      frame::Tag tag = fr().interpreter_frame_local_tag(i);
-      if (tag == frame::TagReference) {
-        // oop value
-        Handle h(*(oop *)addr);
-        sv = new StackValue(h);
-      } else {
-        // integer
-        sv = new StackValue(*addr);
-      }
-      assert(sv != NULL, "sanity check");
-      result->add(sv);
-    }
+  InterpreterOopMap oop_mask;
+  if (TraceDeoptimization && Verbose) {
+    methodHandle m_h(thread(), method());
+    OopMapCache::compute_one_oop_map(m_h, bci(), &oop_mask);
   } else {
-    InterpreterOopMap oop_mask;
-    if (TraceDeoptimization && Verbose) {
-      methodHandle m_h(thread(), method());
-      OopMapCache::compute_one_oop_map(m_h, bci(), &oop_mask);
-    } else {
-      method()->mask_for(bci(), &oop_mask);
-    }
-    // handle locals
-    for(int i=0; i < length; i++) {
-      // Find stack location
-      intptr_t *addr = locals_addr_at(i);
+    method()->mask_for(bci(), &oop_mask);
+  }
+  // handle locals
+  for(int i=0; i < length; i++) {
+    // Find stack location
+    intptr_t *addr = locals_addr_at(i);
 
-      // Depending on oop/int put it in the right package
-      StackValue *sv;
-      if (oop_mask.is_oop(i)) {
-        // oop value
-        Handle h(*(oop *)addr);
-        sv = new StackValue(h);
-      } else {
-        // integer
-        sv = new StackValue(*addr);
-      }
-      assert(sv != NULL, "sanity check");
-      result->add(sv);
+    // Depending on oop/int put it in the right package
+    StackValue *sv;
+    if (oop_mask.is_oop(i)) {
+      // oop value
+      Handle h(*(oop *)addr);
+      sv = new StackValue(h);
+    } else {
+      // integer
+      sv = new StackValue(*addr);
     }
+    assert(sv != NULL, "sanity check");
+    result->add(sv);
   }
   return result;
 }
@@ -331,53 +310,31 @@ StackValueCollection*  interpretedVFrame::expressions() const {
   int nof_locals = method()->max_locals();
   StackValueCollection* result = new StackValueCollection(length);
 
-  if (TaggedStackInterpreter) {
-    // handle expressions
-    for(int i=0; i < length; i++) {
-      // Find stack location
-      intptr_t *addr = fr().interpreter_frame_expression_stack_at(i);
-      frame::Tag tag = fr().interpreter_frame_expression_stack_tag(i);
-
-      // Depending on oop/int put it in the right package
-      StackValue *sv;
-      if (tag == frame::TagReference) {
-        // oop value
-        Handle h(*(oop *)addr);
-        sv = new StackValue(h);
-      } else {
-        // otherwise
-        sv = new StackValue(*addr);
-      }
-      assert(sv != NULL, "sanity check");
-      result->add(sv);
-    }
+  InterpreterOopMap oop_mask;
+  // Get oopmap describing oops and int for current bci
+  if (TraceDeoptimization && Verbose) {
+    methodHandle m_h(method());
+    OopMapCache::compute_one_oop_map(m_h, bci(), &oop_mask);
   } else {
-    InterpreterOopMap oop_mask;
-    // Get oopmap describing oops and int for current bci
-    if (TraceDeoptimization && Verbose) {
-      methodHandle m_h(method());
-      OopMapCache::compute_one_oop_map(m_h, bci(), &oop_mask);
-    } else {
-      method()->mask_for(bci(), &oop_mask);
-    }
-    // handle expressions
-    for(int i=0; i < length; i++) {
-      // Find stack location
-      intptr_t *addr = fr().interpreter_frame_expression_stack_at(i);
+    method()->mask_for(bci(), &oop_mask);
+  }
+  // handle expressions
+  for(int i=0; i < length; i++) {
+    // Find stack location
+    intptr_t *addr = fr().interpreter_frame_expression_stack_at(i);
 
-      // Depending on oop/int put it in the right package
-      StackValue *sv;
-      if (oop_mask.is_oop(i + nof_locals)) {
-        // oop value
-        Handle h(*(oop *)addr);
-        sv = new StackValue(h);
-      } else {
-        // integer
-        sv = new StackValue(*addr);
-      }
-      assert(sv != NULL, "sanity check");
-      result->add(sv);
+    // Depending on oop/int put it in the right package
+    StackValue *sv;
+    if (oop_mask.is_oop(i + nof_locals)) {
+      // oop value
+      Handle h(*(oop *)addr);
+      sv = new StackValue(h);
+    } else {
+      // integer
+      sv = new StackValue(*addr);
     }
+    assert(sv != NULL, "sanity check");
+    result->add(sv);
   }
   return result;
 }
@@ -430,8 +387,10 @@ void vframeStreamCommon::security_get_caller_frame(int depth) {
       // This is Method.invoke() -- skip it
     } else if (use_new_reflection &&
               Klass::cast(method()->method_holder())
-                 ->is_subclass_of(SystemDictionary::reflect_method_accessor_klass())) {
+                 ->is_subclass_of(SystemDictionary::reflect_MethodAccessorImpl_klass())) {
       // This is an auxilary frame -- skip it
+    } else if (method()->is_method_handle_adapter()) {
+      // This is an internal adapter frame from the MethodHandleCompiler -- skip it
     } else {
       // This is non-excluded frame, we need to count it against the depth
       if (depth-- <= 0) {
@@ -490,8 +449,8 @@ void vframeStreamCommon::skip_prefixed_method_and_wrappers() {
 void vframeStreamCommon::skip_reflection_related_frames() {
   while (!at_end() &&
          (JDK_Version::is_gte_jdk14x_version() && UseNewReflection &&
-          (Klass::cast(method()->method_holder())->is_subclass_of(SystemDictionary::reflect_method_accessor_klass()) ||
-           Klass::cast(method()->method_holder())->is_subclass_of(SystemDictionary::reflect_constructor_accessor_klass())))) {
+          (Klass::cast(method()->method_holder())->is_subclass_of(SystemDictionary::reflect_MethodAccessorImpl_klass()) ||
+           Klass::cast(method()->method_holder())->is_subclass_of(SystemDictionary::reflect_ConstructorAccessorImpl_klass())))) {
     next();
   }
 }

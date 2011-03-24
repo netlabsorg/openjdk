@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 2005, 2009, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -16,9 +16,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  *
  */
 
@@ -34,15 +34,16 @@
 const uint IdealKit::first_var = TypeFunc::Parms + 1;
 
 //----------------------------IdealKit-----------------------------------------
-IdealKit::IdealKit(PhaseGVN &gvn, Node* control, Node* mem, bool delay_all_transforms, bool has_declarations) :
-  _gvn(gvn), C(gvn.C) {
-  _initial_ctrl = control;
-  _initial_memory = mem;
+IdealKit::IdealKit(GraphKit* gkit, bool delay_all_transforms, bool has_declarations) :
+  _gvn(gkit->gvn()), C(gkit->C) {
+  _initial_ctrl = gkit->control();
+  _initial_memory = gkit->merged_memory();
+  _initial_i_o = gkit->i_o();
   _delay_all_transforms = delay_all_transforms;
   _var_ct = 0;
   _cvstate = NULL;
   // We can go memory state free or else we need the entire memory state
-  assert(mem == NULL || mem->Opcode() == Op_MergeMem, "memory must be pre-split");
+  assert(_initial_memory == NULL || _initial_memory->Opcode() == Op_MergeMem, "memory must be pre-split");
   int init_size = 5;
   _pending_cvstates = new (C->node_arena()) GrowableArray<Node*>(C->node_arena(), init_size, 0, 0);
   _delay_transform  = new (C->node_arena()) GrowableArray<Node*>(C->node_arena(), init_size, 0, 0);
@@ -266,6 +267,7 @@ void IdealKit::declarations_done() {
   _cvstate = new_cvstate();   // initialize current cvstate
   set_ctrl(_initial_ctrl);    // initialize control in current cvstate
   set_all_memory(_initial_memory);// initialize memory in current cvstate
+  set_i_o(_initial_i_o);      // initialize i_o in current cvstate
   DEBUG_ONLY(_state->push(BlockS));
 }
 
@@ -378,7 +380,7 @@ Node* IdealKit::store(Node* ctl, Node* adr, Node *val, BasicType bt,
 
 // Card mark store. Must be ordered so that it will come after the store of
 // the oop.
-Node* IdealKit::storeCM(Node* ctl, Node* adr, Node *val, Node* oop_store,
+Node* IdealKit::storeCM(Node* ctl, Node* adr, Node *val, Node* oop_store, int oop_adr_idx,
                         BasicType bt,
                         int adr_idx) {
   assert(adr_idx != Compile::AliasIdxTop, "use other store_to_memory factory" );
@@ -388,7 +390,7 @@ Node* IdealKit::storeCM(Node* ctl, Node* adr, Node *val, Node* oop_store,
 
   // Add required edge to oop_store, optimizer does not support precedence edges.
   // Convert required edge to precedence edge before allocation.
-  Node* st = new (C, 5) StoreCMNode(ctl, mem, adr, adr_type, val, oop_store);
+  Node* st = new (C, 5) StoreCMNode(ctl, mem, adr, adr_type, val, oop_store, oop_adr_idx);
 
   st = transform(st);
   set_memory(st, adr_idx);
@@ -407,6 +409,9 @@ void IdealKit::do_memory_merge(Node* merging, Node* join) {
   // Get the region for the join state
   Node* join_region = join->in(TypeFunc::Control);
   assert(join_region != NULL, "join region must exist");
+  if (join->in(TypeFunc::I_O) == NULL ) {
+    join->set_req(TypeFunc::I_O,  merging->in(TypeFunc::I_O));
+  }
   if (join->in(TypeFunc::Memory) == NULL ) {
     join->set_req(TypeFunc::Memory,  merging->in(TypeFunc::Memory));
     return;
@@ -452,6 +457,20 @@ void IdealKit::do_memory_merge(Node* merging, Node* join) {
       // this updates join_m with the phi
       mms.set_memory(phi);
     }
+  }
+
+  Node* join_io    = join->in(TypeFunc::I_O);
+  Node* merging_io = merging->in(TypeFunc::I_O);
+  if (join_io != merging_io) {
+    PhiNode* phi;
+    if (join_io->is_Phi() && join_io->as_Phi()->region() == join_region) {
+      phi = join_io->as_Phi();
+    } else {
+      phi = PhiNode::make(join_region, join_io, Type::ABIO);
+      phi = (PhiNode*) delay_transform(phi);
+      join->set_req(TypeFunc::I_O, phi);
+    }
+    phi->set_req(slot, merging_io);
   }
 }
 

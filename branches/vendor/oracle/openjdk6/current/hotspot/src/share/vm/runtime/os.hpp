@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -16,9 +16,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  *
  */
 
@@ -60,15 +60,18 @@ enum ThreadPriority {        // JLS 20.20.1-3
 typedef void (*java_call_t)(JavaValue* value, methodHandle* method, JavaCallArguments* args, Thread* thread);
 
 class os: AllStatic {
- private:
+ public:
   enum { page_sizes_max = 9 }; // Size of _page_sizes array (8 plus a sentinel)
 
+ private:
   static OSThread*          _starting_thread;
   static address            _polling_page;
   static volatile int32_t * _mem_serialize_page;
   static uintptr_t          _serialize_page_mask;
+ public:
   static size_t             _page_sizes[page_sizes_max];
 
+ private:
   static void init_page_sizes(size_t default_page_size) {
     _page_sizes[0] = default_page_size;
     _page_sizes[1] = 0; // sentinel
@@ -76,8 +79,9 @@ class os: AllStatic {
 
  public:
 
-  static void init(void);                       // Called before command line parsing
+  static void init(void);                      // Called before command line parsing
   static jint init_2(void);                    // Called after command line parsing
+  static void init_3(void);                    // Called at the end of vm init
 
   // File names are case-insensitive on windows only
   // Override me as needed
@@ -141,6 +145,7 @@ class os: AllStatic {
   static int processor_count() {
     return _processor_count;
   }
+  static void set_processor_count(int count) { _processor_count = count; }
 
   // Returns the number of CPUs this process is currently allowed to run on.
   // Note that on some OSes this can change dynamically.
@@ -215,6 +220,9 @@ class os: AllStatic {
 
   static bool   guard_memory(char* addr, size_t bytes);
   static bool   unguard_memory(char* addr, size_t bytes);
+  static bool   create_stack_guard_pages(char* addr, size_t bytes);
+  static bool   remove_stack_guard_pages(char* addr, size_t bytes);
+
   static char*  map_memory(int fd, const char* file_name, size_t file_offset,
                            char *addr, size_t bytes, bool read_only = false,
                            bool allow_exec = false);
@@ -316,7 +324,8 @@ class os: AllStatic {
     pgc_thread,        // Parallel GC thread
     java_thread,
     compiler_thread,
-    watcher_thread
+    watcher_thread,
+    os_thread
   };
 
   static bool create_thread(Thread* thread,
@@ -445,6 +454,8 @@ class os: AllStatic {
   static void print_signal_handlers(outputStream* st, char* buf, size_t buflen);
   static void print_date_and_time(outputStream* st);
 
+  static void print_location(outputStream* st, intptr_t x, bool print_pc = false);
+
   // The following two functions are used by fatal error handler to trace
   // native (C) frames. They are not part of frame.hpp/frame.cpp because
   // frame.hpp/cpp assume thread is JavaThread, and also because different
@@ -473,6 +484,9 @@ class os: AllStatic {
 
   // Fills in path to jvm.dll/libjvm.so (this info used to find hpi).
   static void     jvm_path(char *buf, jint buflen);
+
+  // Returns true if we are running in a headless jre.
+  static bool     is_headless_jre();
 
   // JNI names
   static void     print_jni_name_prefix_on(outputStream* st, int args_size);
@@ -574,8 +588,8 @@ class os: AllStatic {
   // Platform dependent stuff
   #include "incls/_os_pd.hpp.incl"
 
-  // debugging support (mostly used by debug.cpp)
-  static bool find(address pc) PRODUCT_RETURN0; // OS specific function to make sense out of an address
+  // debugging support (mostly used by debug.cpp but also fatal error handler)
+  static bool find(address pc, outputStream* st = tty); // OS specific function to make sense out of an address
 
   static bool dont_yield();                     // when true, JVM_Yield() is nop
   static void print_statistics();

@@ -1,12 +1,12 @@
 #
-# Copyright 2007 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License version 2 only, as
-# published by the Free Software Foundation.  Sun designates this
+# published by the Free Software Foundation.  Oracle designates this
 # particular file as subject to the "Classpath" exception as provided
-# by Sun in the LICENSE file that accompanied this code.
+# by Oracle in the LICENSE file that accompanied this code.
 #
 # This code is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -18,17 +18,17 @@
 # 2 along with this work; if not, write to the Free Software Foundation,
 # Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 #
-# Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
-# CA 95054 USA or visit www.sun.com if you need additional information or
-# have any questions.
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
 #
 
 # Makefile for langtools: wrapper around Ant build.xml file
 
 #
-# On Solaris, the 'make' utility from Sun will not work with these makefiles.
-#    This little rule is only understood by Sun's make, and is harmless
-#    when seen by the GNU make tool. If using Sun's make, this causes the
+# On Solaris, the standard 'make' utility will not work with these makefiles.
+#    This little rule is only understood by Solaris make, and is harmless
+#    when seen by the GNU make tool. If using Solaris make, this causes the
 #    make command to fail.
 #
 SUN_MAKE_TEST:sh = @echo "ERROR: PLEASE USE GNU VERSION OF MAKE"; exit 33
@@ -40,15 +40,16 @@ SUN_MAKE_TEST:sh = @echo "ERROR: PLEASE USE GNU VERSION OF MAKE"; exit 33
 
 SYSTEM_UNAME := $(shell uname)
 
+# Where is unwanted output to be delivered?
+# On Windows, MKS uses the special file "NUL", cygwin uses the customary unix file.
 ifeq ($(SYSTEM_UNAME), Windows_NT)
 DEV_NULL = NUL
 else
+DEV_NULL = /dev/null 
+endif
+
 ifneq (,$(findstring CYGWIN,$(SYSTEM_UNAME)))
-DEV_NULL = NUL
 USING_CYGWIN = true
-else
-DEV_NULL = /dev/null
-endif 
 endif
 
 ifdef USING_CYGWIN
@@ -185,7 +186,7 @@ $(ANT_TARGETS): $(OUTPUTDIR)/build/ant-diagnostics.log
 
 #-------------------------------------------------------------------
 #
-# Targets for Sun's internal JPRT build system
+# Targets for Oracle's internal JPRT build system
 
 CD = cd
 ZIP = zip
