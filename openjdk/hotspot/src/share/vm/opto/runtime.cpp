@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -16,9 +16,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  *
  */
 
@@ -645,6 +645,24 @@ const TypeFunc* OptoRuntime::generic_arraycopy_Type() {
 }
 
 
+const TypeFunc* OptoRuntime::array_fill_Type() {
+  // create input type (domain): pointer, int, size_t
+  const Type** fields = TypeTuple::fields(3 LP64_ONLY( + 1));
+  int argp = TypeFunc::Parms;
+  fields[argp++] = TypePtr::NOTNULL;
+  fields[argp++] = TypeInt::INT;
+  fields[argp++] = TypeX_X;               // size in whatevers (size_t)
+  LP64_ONLY(fields[argp++] = Type::HALF); // other half of long length
+  const TypeTuple *domain = TypeTuple::make(argp, fields);
+
+  // create result type
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms+0] = NULL; // void
+  const TypeTuple *range = TypeTuple::make(TypeFunc::Parms, fields);
+
+  return TypeFunc::make(domain, range);
+}
+
 //------------- Interpreter state access for on stack replacement
 const TypeFunc* OptoRuntime::osr_end_Type() {
   // create input type (domain)
@@ -706,6 +724,11 @@ JRT_LEAF(void, OptoRuntime::profile_receiver_type_C(DataLayout* data, oopDesc* r
     // vc->set_receiver_count(empty_row, DataLayout::counter_increment);
     int count_off = ReceiverTypeData::receiver_count_cell_index(empty_row);
     *(mdp + count_off) = DataLayout::counter_increment;
+  } else {
+    // Receiver did not match any saved receiver and there is no empty row for it.
+    // Increment total counter to indicate polymorphic case.
+    intptr_t* count_p = (intptr_t*)(((byte*)(data)) + in_bytes(CounterData::count_offset()));
+    *count_p += DataLayout::counter_increment;
   }
 JRT_END
 
@@ -790,7 +813,7 @@ JRT_ENTRY_NO_ASYNC(address, OptoRuntime::handle_exception_C_helper(JavaThread* t
   NOT_PRODUCT(Exceptions::debug_check_abort(exception));
 
   #ifdef ASSERT
-    if (!(exception->is_a(SystemDictionary::throwable_klass()))) {
+    if (!(exception->is_a(SystemDictionary::Throwable_klass()))) {
       // should throw an exception here
       ShouldNotReachHere();
     }
@@ -810,7 +833,7 @@ JRT_ENTRY_NO_ASYNC(address, OptoRuntime::handle_exception_C_helper(JavaThread* t
     // we are switching to old paradigm: search for exception handler in caller_frame
     // instead in exception handler of caller_frame.sender()
 
-    if (JvmtiExport::can_post_exceptions()) {
+    if (JvmtiExport::can_post_on_exceptions()) {
       // "Full-speed catching" is not necessary here,
       // since we're notifying the VM on every catch.
       // Force deoptimization and the rest of the lookup
@@ -858,6 +881,9 @@ JRT_ENTRY_NO_ASYNC(address, OptoRuntime::handle_exception_C_helper(JavaThread* t
     thread->set_exception_pc(pc);
     thread->set_exception_handler_pc(handler_address);
     thread->set_exception_stack_size(0);
+
+    // Check if the exception PC is a MethodHandle call site.
+    thread->set_is_method_handle_return(nm->is_method_handle_return(pc));
   }
 
   // Restore correct return pc.  Was saved above.
@@ -936,7 +962,7 @@ address OptoRuntime::rethrow_C(oopDesc* exception, JavaThread* thread, address r
 #endif
   assert (exception != NULL, "should have thrown a NULLPointerException");
 #ifdef ASSERT
-  if (!(exception->is_a(SystemDictionary::throwable_klass()))) {
+  if (!(exception->is_a(SystemDictionary::Throwable_klass()))) {
     // should throw an exception here
     ShouldNotReachHere();
   }
@@ -944,7 +970,7 @@ address OptoRuntime::rethrow_C(oopDesc* exception, JavaThread* thread, address r
 
   thread->set_vm_result(exception);
   // Frame not compiled (handles deoptimization blob)
-  return SharedRuntime::raw_exception_handler_for_return_address(ret_pc);
+  return SharedRuntime::raw_exception_handler_for_return_address(thread, ret_pc);
 }
 
 
@@ -972,8 +998,8 @@ void OptoRuntime::deoptimize_caller_frame(JavaThread *thread, bool doit) {
     assert(stub_frame.is_runtime_frame() || exception_blob()->contains(stub_frame.pc()), "sanity check");
     frame caller_frame = stub_frame.sender(&reg_map);
 
-    VM_DeoptimizeFrame deopt(thread, caller_frame.id());
-    VMThread::execute(&deopt);
+    // bypass VM_DeoptimizeFrame and deoptimize the frame directly
+    Deoptimization::deoptimize_frame(thread, caller_frame.id());
   }
 }
 

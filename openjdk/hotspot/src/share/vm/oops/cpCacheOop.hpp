@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 1998, 2009, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -16,9 +16,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  *
  */
 
@@ -110,6 +110,7 @@
 class ConstantPoolCacheEntry VALUE_OBJ_CLASS_SPEC {
   friend class VMStructs;
   friend class constantPoolCacheKlass;
+  friend class constantPoolOopDesc;  //resolve_constant_at_impl => set_f1
 
  private:
   volatile intx     _indices;  // constant pool index & rewrite bytecodes
@@ -154,7 +155,8 @@ class ConstantPoolCacheEntry VALUE_OBJ_CLASS_SPEC {
   };
 
   // Initialization
-  void set_initial_state(int index);             // sets entry to initial state
+  void initialize_entry(int original_index);     // initialize primary entry
+  void initialize_secondary_entry(int main_index); // initialize secondary entry
 
   void set_field(                                // sets entry to resolved field state
     Bytecodes::Code get_code,                    // the bytecode used for reading the field
@@ -180,8 +182,12 @@ class ConstantPoolCacheEntry VALUE_OBJ_CLASS_SPEC {
 
   void set_dynamic_call(
     Handle call_site,                            // Resolved java.dyn.CallSite (f1)
-    int extra_data                               // (f2)
+    methodHandle signature_invoker               // determines signature information
   );
+
+  // For JVM_CONSTANT_InvokeDynamic cache entries:
+  void initialize_bootstrap_method_index_in_cache(int bsm_cache_index);
+  int  bootstrap_method_index_in_cache();
 
   void set_parameter_size(int value) {
     assert(parameter_size() == 0 || parameter_size() == value,
@@ -205,6 +211,7 @@ class ConstantPoolCacheEntry VALUE_OBJ_CLASS_SPEC {
       case Bytecodes::_getfield        :    // fall through
       case Bytecodes::_invokespecial   :    // fall through
       case Bytecodes::_invokestatic    :    // fall through
+      case Bytecodes::_invokedynamic   :    // fall through
       case Bytecodes::_invokeinterface : return 1;
       case Bytecodes::_putstatic       :    // fall through
       case Bytecodes::_putfield        :    // fall through
@@ -232,6 +239,7 @@ class ConstantPoolCacheEntry VALUE_OBJ_CLASS_SPEC {
   Bytecodes::Code bytecode_1() const             { return Bytecodes::cast((_indices >> 16) & 0xFF); }
   Bytecodes::Code bytecode_2() const             { return Bytecodes::cast((_indices >> 24) & 0xFF); }
   volatile oop  f1() const                       { return _f1; }
+  bool is_f1_null() const                        { return (oop)_f1 == NULL; }  // classifies a CPC entry as unbound
   intx f2() const                                { return _f2; }
   int  field_index() const;
   int  parameter_size() const                    { return _flags & 0xFF; }
@@ -251,6 +259,7 @@ class ConstantPoolCacheEntry VALUE_OBJ_CLASS_SPEC {
 
   // Code generation support
   static WordSize size()                         { return in_WordSize(sizeof(ConstantPoolCacheEntry) / HeapWordSize); }
+  static ByteSize size_in_bytes()                { return in_ByteSize(sizeof(ConstantPoolCacheEntry)); }
   static ByteSize indices_offset()               { return byte_offset_of(ConstantPoolCacheEntry, _indices); }
   static ByteSize f1_offset()                    { return byte_offset_of(ConstantPoolCacheEntry, _f1); }
   static ByteSize f2_offset()                    { return byte_offset_of(ConstantPoolCacheEntry, _f2); }
@@ -321,6 +330,7 @@ class constantPoolCacheOopDesc: public oopDesc {
   ConstantPoolCacheEntry* base() const           { return (ConstantPoolCacheEntry*)((address)this + in_bytes(base_offset())); }
 
   friend class constantPoolCacheKlass;
+  friend class ConstantPoolCacheEntry;
 
  public:
   // Initialization
@@ -329,7 +339,8 @@ class constantPoolCacheOopDesc: public oopDesc {
   // Secondary indexes.
   // They must look completely different from normal indexes.
   // The main reason is that byte swapping is sometimes done on normal indexes.
-  // Also, it is helpful for debugging to tell the two apart.
+  // Also, some of the CP accessors do different things for secondary indexes.
+  // Finally, it is helpful for debugging to tell the two apart.
   static bool is_secondary_index(int i) { return (i < 0); }
   static int  decode_secondary_index(int i) { assert(is_secondary_index(i),  ""); return ~i; }
   static int  encode_secondary_index(int i) { assert(!is_secondary_index(i), ""); return ~i; }
@@ -337,18 +348,35 @@ class constantPoolCacheOopDesc: public oopDesc {
   // Accessors
   void set_constant_pool(constantPoolOop pool)   { oop_store_without_check((oop*)&_constant_pool, (oop)pool); }
   constantPoolOop constant_pool() const          { return _constant_pool; }
-  ConstantPoolCacheEntry* entry_at(int i) const  { assert(0 <= i && i < length(), "index out of bounds"); return base() + i; }
+  // Fetches the entry at the given index.
+  // The entry may be either primary or secondary.
+  // In either case the index must not be encoded or byte-swapped in any way.
+  ConstantPoolCacheEntry* entry_at(int i) const {
+    assert(0 <= i && i < length(), "index out of bounds");
+    return base() + i;
+  }
+  // Fetches the secondary entry referred to by index.
+  // The index may be a secondary index, and must not be byte-swapped.
+  ConstantPoolCacheEntry* secondary_entry_at(int i) const {
+    int raw_index = i;
+    if (is_secondary_index(i)) {  // correct these on the fly
+      raw_index = decode_secondary_index(i);
+    }
+    assert(entry_at(raw_index)->is_secondary_entry(), "not a secondary entry");
+    return entry_at(raw_index);
+  }
+  // Given a primary or secondary index, fetch the corresponding primary entry.
+  // Indirect through the secondary entry, if the index is encoded as a secondary index.
+  // The index must not be byte-swapped.
   ConstantPoolCacheEntry* main_entry_at(int i) const {
-    ConstantPoolCacheEntry* e;
+    int primary_index = i;
     if (is_secondary_index(i)) {
       // run through an extra level of indirection:
-      i = decode_secondary_index(i);
-      e = entry_at(i);
-      i = e->main_entry_index();
+      int raw_index = decode_secondary_index(i);
+      primary_index = entry_at(raw_index)->main_entry_index();
     }
-    e = entry_at(i);
-    assert(!e->is_secondary_entry(), "only one level of indirection");
-    return e;
+    assert(!entry_at(primary_index)->is_secondary_entry(), "only one level of indirection");
+    return entry_at(primary_index);
   }
 
   // GC support
@@ -359,6 +387,12 @@ class constantPoolCacheOopDesc: public oopDesc {
 
   // Code generation
   static ByteSize base_offset()                  { return in_ByteSize(sizeof(constantPoolCacheOopDesc)); }
+  static ByteSize entry_offset(int raw_index) {
+    int index = raw_index;
+    if (is_secondary_index(raw_index))
+      index = decode_secondary_index(raw_index);
+    return (base_offset() + ConstantPoolCacheEntry::size_in_bytes() * index);
+  }
 
   // RedefineClasses() API support:
   // If any entry of this constantPoolCache points to any of

@@ -1,5 +1,5 @@
 //
-// Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
+// Copyright (c) 2000, 2009, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -16,9 +16,9 @@
 // 2 along with this work; if not, write to the Free Software Foundation,
 // Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
 //
-// Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
-// CA 95054 USA or visit www.sun.com if you need additional information or
-// have any questions.
+// Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+// or visit www.oracle.com if you need additional information or have any
+// questions.
 //
 //
 
@@ -89,6 +89,21 @@ adlcVMDeps.hpp                          allocation.hpp
 
 allocation.hpp                          c2_globals.hpp
 
+bcEscapeAnalyzer.cpp                    bcEscapeAnalyzer.hpp
+bcEscapeAnalyzer.cpp                    bitMap.inline.hpp
+bcEscapeAnalyzer.cpp                    bytecode.hpp
+bcEscapeAnalyzer.cpp                    ciConstant.hpp
+bcEscapeAnalyzer.cpp                    ciField.hpp
+bcEscapeAnalyzer.cpp                    ciMethodBlocks.hpp
+bcEscapeAnalyzer.cpp                    ciStreams.hpp
+
+bcEscapeAnalyzer.hpp                    allocation.hpp
+bcEscapeAnalyzer.hpp                    ciMethod.hpp
+bcEscapeAnalyzer.hpp                    ciMethodData.hpp
+bcEscapeAnalyzer.hpp                    dependencies.hpp
+bcEscapeAnalyzer.hpp                    growableArray.hpp
+bcEscapeAnalyzer.hpp                    vectset.hpp
+
 block.cpp                               allocation.inline.hpp
 block.cpp                               block.hpp
 block.cpp                               cfgnode.hpp
@@ -155,6 +170,9 @@ callGenerator.cpp                       callnode.hpp
 callGenerator.cpp                       cfgnode.hpp
 callGenerator.cpp                       compileLog.hpp
 callGenerator.cpp                       connode.hpp
+callGenerator.cpp                       ciCPCache.hpp
+callGenerator.cpp                       ciMethodHandle.hpp
+callGenerator.cpp                       javaClasses.hpp
 callGenerator.cpp                       parse.hpp
 callGenerator.cpp                       rootnode.hpp
 callGenerator.cpp                       runtime.hpp
@@ -236,6 +254,7 @@ chaitin_<os_family>.cpp                 machnode.hpp
 ciEnv.cpp                               compileLog.hpp
 ciEnv.cpp                               runtime.hpp
 
+ciMethod.cpp                            bcEscapeAnalyzer.hpp
 ciMethod.cpp                            ciTypeFlow.hpp
 ciMethod.cpp                            methodOop.hpp
 
@@ -391,6 +410,9 @@ divnode.hpp                             type.hpp
 
 doCall.cpp                              addnode.hpp
 doCall.cpp                              callGenerator.hpp
+doCall.cpp                              ciCallSite.hpp
+doCall.cpp                              ciCPCache.hpp
+doCall.cpp                              ciMethodHandle.hpp
 doCall.cpp                              cfgnode.hpp
 doCall.cpp                              compileLog.hpp
 doCall.cpp                              linkResolver.hpp
@@ -500,6 +522,7 @@ idealKit.hpp                            addnode.hpp
 idealKit.hpp                            cfgnode.hpp
 idealKit.hpp                            connode.hpp
 idealKit.hpp                            divnode.hpp
+idealKit.hpp                            graphKit.hpp
 idealKit.hpp                            mulnode.hpp
 idealKit.hpp                            phaseX.hpp
 idealKit.hpp                            subnode.hpp
@@ -595,12 +618,14 @@ locknode.hpp                            subnode.hpp
 
 loopTransform.cpp                       addnode.hpp
 loopTransform.cpp                       allocation.inline.hpp
+loopTransform.cpp                       callnode.hpp
 loopTransform.cpp                       connode.hpp
 loopTransform.cpp                       compileLog.hpp
 loopTransform.cpp                       divnode.hpp
 loopTransform.cpp                       loopnode.hpp
 loopTransform.cpp                       mulnode.hpp
 loopTransform.cpp                       rootnode.hpp
+loopTransform.cpp                       runtime.hpp
 loopTransform.cpp                       subnode.hpp
 
 loopUnswitch.cpp                        allocation.inline.hpp
@@ -768,6 +793,7 @@ output.cpp                              allocation.inline.hpp
 output.cpp                              assembler.inline.hpp
 output.cpp                              callnode.hpp
 output.cpp                              cfgnode.hpp
+output.cpp                              compileBroker.hpp
 output.cpp                              debugInfo.hpp
 output.cpp                              debugInfoRec.hpp
 output.cpp                              handles.inline.hpp
@@ -887,6 +913,7 @@ postaloc.cpp                            machnode.hpp
 reg_split.cpp                           addnode.hpp
 reg_split.cpp                           allocation.inline.hpp
 reg_split.cpp                           callnode.hpp
+reg_split.cpp                           c2compiler.hpp
 reg_split.cpp                           cfgnode.hpp
 reg_split.cpp                           chaitin.hpp
 reg_split.cpp                           loopnode.hpp

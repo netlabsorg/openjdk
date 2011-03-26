@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -16,9 +16,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  *
  */
 
@@ -186,7 +186,7 @@ void vframeArrayElement::unpack_on_stack(int callee_parameters,
   int popframe_preserved_args_size_in_bytes = 0;
   int popframe_preserved_args_size_in_words = 0;
   if (is_top_frame) {
-  JvmtiThreadState *state = thread->jvmti_thread_state();
+    JvmtiThreadState *state = thread->jvmti_thread_state();
     if (JvmtiExport::can_pop_frame() &&
         (thread->has_pending_popframe() || thread->popframe_forcing_deopt_reexecution())) {
       if (thread->has_pending_popframe()) {
@@ -223,7 +223,7 @@ void vframeArrayElement::unpack_on_stack(int callee_parameters,
         break;
       case Deoptimization::Unpack_exception:
         // exception is pending
-        pc = SharedRuntime::raw_exception_handler_for_return_address(pc);
+        pc = SharedRuntime::raw_exception_handler_for_return_address(thread, pc);
         // [phh] We're going to end up in some handler or other, so it doesn't
         // matter what mdp we point to.  See exception_handler_for_exception()
         // in interpreterRuntime.cpp.
@@ -309,11 +309,6 @@ void vframeArrayElement::unpack_on_stack(int callee_parameters,
       default:
         ShouldNotReachHere();
     }
-    if (TaggedStackInterpreter) {
-      // Write tag to the stack
-      iframe()->interpreter_frame_set_expression_stack_tag(i,
-                                  frame::tag_for_basic_type(value->type()));
-    }
   }
 
 
@@ -335,11 +330,6 @@ void vframeArrayElement::unpack_on_stack(int callee_parameters,
       default:
         ShouldNotReachHere();
     }
-    if (TaggedStackInterpreter) {
-      // Write tag to stack
-      iframe()->interpreter_frame_set_local_tag(i,
-                                  frame::tag_for_basic_type(value->type()));
-    }
   }
 
   if (is_top_frame && JvmtiExport::can_pop_frame() && thread->popframe_forcing_deopt_reexecution()) {
@@ -354,9 +344,8 @@ void vframeArrayElement::unpack_on_stack(int callee_parameters,
       void* saved_args = thread->popframe_preserved_args();
       assert(saved_args != NULL, "must have been saved by interpreter");
 #ifdef ASSERT
-      int stack_words = Interpreter::stackElementWords();
       assert(popframe_preserved_args_size_in_words <=
-             iframe()->interpreter_frame_expression_stack_size()*stack_words,
+             iframe()->interpreter_frame_expression_stack_size()*Interpreter::stackElementWords,
              "expression stack size should have been extended");
 #endif // ASSERT
       int top_element = iframe()->interpreter_frame_expression_stack_size()-1;
@@ -366,9 +355,9 @@ void vframeArrayElement::unpack_on_stack(int callee_parameters,
       } else {
         base = iframe()->interpreter_frame_expression_stack();
       }
-      Copy::conjoint_bytes(saved_args,
-                           base,
-                           popframe_preserved_args_size_in_bytes);
+      Copy::conjoint_jbytes(saved_args,
+                            base,
+                            popframe_preserved_args_size_in_bytes);
       thread->popframe_free_preserved_args();
     }
   }
@@ -381,7 +370,6 @@ void vframeArrayElement::unpack_on_stack(int callee_parameters,
     RegisterMap map(thread);
     vframe* f = vframe::new_vframe(iframe(), &map, thread);
     f->print();
-    iframe()->interpreter_frame_print_on(tty);
 
     tty->print_cr("locals size     %d", locals()->size());
     tty->print_cr("expression size %d", expressions()->size());
@@ -582,7 +570,7 @@ void vframeArray::print_on_2(outputStream* st)  {
 }
 
 void vframeArrayElement::print(outputStream* st) {
-  st->print_cr(" - interpreter_frame -> sp: ", INTPTR_FORMAT, iframe()->sp());
+  st->print_cr(" - interpreter_frame -> sp: " INTPTR_FORMAT, iframe()->sp());
 }
 
 void vframeArray::print_value_on(outputStream* st) const {

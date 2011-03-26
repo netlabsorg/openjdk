@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 1998, 2009, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -16,9 +16,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  *
  */
 
@@ -74,6 +74,7 @@
 # endif
 
 #ifdef LINUX
+#define __STDC_LIMIT_MACROS
 #include <inttypes.h>
 #include <signal.h>
 #include <ucontext.h>
@@ -81,6 +82,8 @@
 #endif // LINUX
 
 #ifdef OS2
+#define __STDC_LIMIT_MACROS
+#include <stdint.h>
 #include <sys/types.h>
 #ifdef __WIN32OS2__
 #include <excpt.h>
@@ -92,6 +95,7 @@
 // we disable BSD visibility for the compiler so define these manually
 extern "C" int finite(double) __pure2;
 extern "C" int isnanf(float) __pure2;
+typedef unsigned short u_short;
 #define S_IREAD     S_IRUSR
 #define S_IWRITE    S_IWUSR
 #define S_IEXEC     S_IXUSR
@@ -257,8 +261,16 @@ extern "C" {
 
 #define DEBUG_EXCEPTION ::abort();
 
+#ifdef ARM
+#ifdef SOLARIS
+#define BREAKPOINT __asm__ volatile (".long 0xe1200070")
+#else
+#define BREAKPOINT __asm__ volatile (".long 0xe7f001f0")
+#endif
+#else
 extern "C" void breakpoint();
 #define BREAKPOINT ::breakpoint()
+#endif
 
 // checking for nanness
 #ifdef SOLARIS
@@ -275,6 +287,12 @@ inline int g_isnan(double f) { return isnan(f); }
 #else
 #error "missing platform-specific definition here"
 #endif
+
+// GCC 4.3 does not allow 0.0/0.0 to produce a NAN value
+#if (__GNUC__ == 4) && (__GNUC_MINOR__ > 2)
+#define CAN_USE_NAN_DEFINE 1
+#endif
+
 
 // Checking for finiteness
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -16,9 +16,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  *
  */
 
@@ -32,12 +32,17 @@
 void Rewriter::compute_index_maps() {
   const int length  = _pool->length();
   init_cp_map(length);
+  jint tag_mask = 0;
   for (int i = 0; i < length; i++) {
     int tag = _pool->tag_at(i).value();
+    tag_mask |= (1 << tag);
     switch (tag) {
       case JVM_CONSTANT_InterfaceMethodref:
       case JVM_CONSTANT_Fieldref          : // fall through
       case JVM_CONSTANT_Methodref         : // fall through
+      case JVM_CONSTANT_MethodHandle      : // fall through
+      case JVM_CONSTANT_MethodType        : // fall through
+      case JVM_CONSTANT_InvokeDynamic     : // fall through
         add_cp_cache_entry(i);
         break;
     }
@@ -45,17 +50,9 @@ void Rewriter::compute_index_maps() {
 
   guarantee((int)_cp_cache_map.length()-1 <= (int)((u2)-1),
             "all cp cache indexes fit in a u2");
+
+  _have_invoke_dynamic = ((tag_mask & (1 << JVM_CONSTANT_InvokeDynamic)) != 0);
 }
-
-
-int Rewriter::add_extra_cp_cache_entry(int main_entry) {
-  // Hack: We put it on the map as an encoded value.
-  // The only place that consumes this is ConstantPoolCacheEntry::set_initial_state
-  int encoded = constantPoolCacheOopDesc::encode_secondary_index(main_entry);
-  int plain_secondary_index = _cp_cache_map.append(encoded);
-  return constantPoolCacheOopDesc::encode_secondary_index(plain_secondary_index);
-}
-
 
 
 // Creates a constant pool cache given a CPC map
@@ -67,6 +64,28 @@ void Rewriter::make_constant_pool_cache(TRAPS) {
   constantPoolCacheOop cache =
       oopFactory::new_constantPoolCache(length, methodOopDesc::IsUnsafeConc, CHECK);
   cache->initialize(_cp_cache_map);
+
+  // Don't bother to the next pass if there is no JVM_CONSTANT_InvokeDynamic.
+  if (_have_invoke_dynamic) {
+    for (int i = 0; i < length; i++) {
+      int pool_index = cp_cache_entry_pool_index(i);
+      if (pool_index >= 0 &&
+          _pool->tag_at(pool_index).is_invoke_dynamic()) {
+        int bsm_index = _pool->invoke_dynamic_bootstrap_method_ref_index_at(pool_index);
+        if (bsm_index != 0) {
+          assert(_pool->tag_at(bsm_index).is_method_handle(), "must be a MH constant");
+          // There is a CP cache entry holding the BSM for these calls.
+          int bsm_cache_index = cp_entry_to_cp_cache(bsm_index);
+          cache->entry_at(i)->initialize_bootstrap_method_index_in_cache(bsm_cache_index);
+        } else {
+          // There is no CP cache entry holding the BSM for these calls.
+          // We will need to look for a class-global BSM, later.
+          guarantee(AllowTransitionalJSR292, "");
+        }
+      }
+    }
+  }
+
   _pool->set_cache(cache);
   cache->set_constant_pool(_pool());
 }
@@ -113,21 +132,20 @@ void Rewriter::rewrite_Object_init(methodHandle method, TRAPS) {
 
 
 // Rewrite a classfile-order CP index into a native-order CPC index.
-int Rewriter::rewrite_member_reference(address bcp, int offset) {
+void Rewriter::rewrite_member_reference(address bcp, int offset) {
   address p = bcp + offset;
   int  cp_index    = Bytes::get_Java_u2(p);
   int  cache_index = cp_entry_to_cp_cache(cp_index);
   Bytes::put_native_u2(p, cache_index);
-  return cp_index;
 }
 
 
-void Rewriter::rewrite_invokedynamic(address bcp, int offset, int delete_me) {
+void Rewriter::rewrite_invokedynamic(address bcp, int offset) {
   address p = bcp + offset;
   assert(p[-1] == Bytecodes::_invokedynamic, "");
   int cp_index = Bytes::get_Java_u2(p);
   int cpc  = maybe_add_cp_cache_entry(cp_index);  // add lazily
-  int cpc2 = add_extra_cp_cache_entry(cpc);
+  int cpc2 = add_secondary_cp_cache_entry(cpc);
 
   // Replace the trailing four bytes with a CPC index for the dynamic
   // call site.  Unlike other CPC entries, there is one per bytecode,
@@ -137,8 +155,29 @@ void Rewriter::rewrite_invokedynamic(address bcp, int offset, int delete_me) {
   // all these entries.  That is the main reason invokedynamic
   // must have a five-byte instruction format.  (Of course, other JVM
   // implementations can use the bytes for other purposes.)
-  Bytes::put_native_u4(p, cpc2);
+  Bytes::put_native_u4(p, constantPoolCacheOopDesc::encode_secondary_index(cpc2));
   // Note: We use native_u4 format exclusively for 4-byte indexes.
+}
+
+
+// Rewrite some ldc bytecodes to _fast_aldc
+void Rewriter::maybe_rewrite_ldc(address bcp, int offset, bool is_wide) {
+  assert((*bcp) == (is_wide ? Bytecodes::_ldc_w : Bytecodes::_ldc), "");
+  address p = bcp + offset;
+  int cp_index = is_wide ? Bytes::get_Java_u2(p) : (u1)(*p);
+  constantTag tag = _pool->tag_at(cp_index).value();
+  if (tag.is_method_handle() || tag.is_method_type()) {
+    int cache_index = cp_entry_to_cp_cache(cp_index);
+    if (is_wide) {
+      (*bcp) = Bytecodes::_fast_aldc_w;
+      assert(cache_index == (u2)cache_index, "");
+      Bytes::put_native_u2(p, cache_index);
+    } else {
+      (*bcp) = Bytecodes::_fast_aldc;
+      assert(cache_index == (u1)cache_index, "");
+      (*p) = (u1)cache_index;
+    }
+  }
 }
 
 
@@ -188,7 +227,7 @@ void Rewriter::scan_method(methodOop method) {
         case Bytecodes::_lookupswitch   : {
 #ifndef CC_INTERP
           Bytecode_lookupswitch* bc = Bytecode_lookupswitch_at(bcp);
-          bc->set_code(
+          (*bcp) = (
             bc->number_of_pairs() < BinarySwitchThreshold
             ? Bytecodes::_fast_linearswitch
             : Bytecodes::_fast_binaryswitch
@@ -207,7 +246,13 @@ void Rewriter::scan_method(methodOop method) {
           rewrite_member_reference(bcp, prefix_length+1);
           break;
         case Bytecodes::_invokedynamic:
-          rewrite_invokedynamic(bcp, prefix_length+1, int(sizeof"@@@@DELETE ME"));
+          rewrite_invokedynamic(bcp, prefix_length+1);
+          break;
+        case Bytecodes::_ldc:
+          maybe_rewrite_ldc(bcp, prefix_length+1, false);
+          break;
+        case Bytecodes::_ldc_w:
+          maybe_rewrite_ldc(bcp, prefix_length+1, true);
           break;
         case Bytecodes::_jsr            : // fall through
         case Bytecodes::_jsr_w          : nof_jsrs++;                   break;
@@ -257,15 +302,22 @@ methodHandle Rewriter::rewrite_jsrs(methodHandle method, TRAPS) {
 
 void Rewriter::rewrite(instanceKlassHandle klass, TRAPS) {
   ResourceMark rm(THREAD);
-  Rewriter     rw(klass, CHECK);
+  Rewriter     rw(klass, klass->constants(), klass->methods(), CHECK);
   // (That's all, folks.)
 }
 
-Rewriter::Rewriter(instanceKlassHandle klass, TRAPS)
+
+void Rewriter::rewrite(instanceKlassHandle klass, constantPoolHandle cpool, objArrayHandle methods, TRAPS) {
+  ResourceMark rm(THREAD);
+  Rewriter     rw(klass, cpool, methods, CHECK);
+  // (That's all, folks.)
+}
+
+
+Rewriter::Rewriter(instanceKlassHandle klass, constantPoolHandle cpool, objArrayHandle methods, TRAPS)
   : _klass(klass),
-    // gather starting points
-    _pool(   THREAD, klass->constants()),
-    _methods(THREAD, klass->methods())
+    _pool(cpool),
+    _methods(methods)
 {
   assert(_pool->cache() == NULL, "constant pool cache must not be set yet");
 
@@ -311,5 +363,19 @@ Rewriter::Rewriter(instanceKlassHandle klass, TRAPS)
 
     // Set up method entry points for compiler and interpreter.
     m->link_method(m, CHECK);
+
+#ifdef ASSERT
+    if (StressMethodComparator) {
+      static int nmc = 0;
+      for (int j = i; j >= 0 && j >= i-4; j--) {
+        if ((++nmc % 1000) == 0)  tty->print_cr("Have run MethodComparator %d times...", nmc);
+        bool z = MethodComparator::methods_EMCP(m(), (methodOop)_methods->obj_at(j));
+        if (j == i && !z) {
+          tty->print("MethodComparator FAIL: "); m->print(); m->print_codes();
+          assert(z, "method must compare equal to itself");
+        }
+      }
+    }
+#endif //ASSERT
   }
 }

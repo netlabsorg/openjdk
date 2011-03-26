@@ -1,12 +1,12 @@
 /*
- * Copyright 1996-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Sun designates this
+ * published by the Free Software Foundation.  Oracle designates this
  * particular file as subject to the "Classpath" exception as provided
- * by Sun in the LICENSE file that accompanied this code.
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -18,9 +18,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  */
 
 
@@ -275,9 +275,9 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
      * This is necessary so that processing of close_notify alerts
      * from the peer are handled properly.
      */
-    private Object              handshakeLock;
-    ReentrantLock               writeLock;
-    private Object              readLock;
+    final private Object        handshakeLock = new Object();
+    final ReentrantLock         writeLock = new ReentrantLock();
+    final private Object        readLock = new Object();
 
     private InputRecord         inrec;
 
@@ -287,6 +287,13 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
     private MAC                 readMAC, writeMAC;
     private CipherBox           readCipher, writeCipher;
     // NOTE: compression state would be saved here
+
+    /*
+     * security parameters for secure renegotiation.
+     */
+    private boolean             secureRenegotiation;
+    private byte[]              clientVerifyData;
+    private byte[]              serverVerifyData;
 
     /*
      * The authentication context holds all information used to establish
@@ -525,11 +532,13 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
         writeCipher = CipherBox.NULL;
         writeMAC = MAC.NULL;
 
+        // initial security parameters for secure renegotiation
+        secureRenegotiation = false;
+        clientVerifyData = new byte[0];
+        serverVerifyData = new byte[0];
+
         enabledCipherSuites = CipherSuiteList.getDefault();
         enabledProtocols = ProtocolList.getDefault();
-        handshakeLock = new Object();
-        writeLock = new ReentrantLock();
-        readLock = new Object();
         inrec = null;
 
         // save the acc
@@ -911,6 +920,12 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
                             connectionState = cs_DATA;
                         }
                     } else if (handshaker.isDone()) {
+                        // reset the parameters for secure renegotiation.
+                        secureRenegotiation =
+                                        handshaker.isSecureRenegotiation();
+                        clientVerifyData = handshaker.getClientVerifyData();
+                        serverVerifyData = handshaker.getServerVerifyData();
+
                         sess = handshaker.getSession();
                         handshaker = null;
                         connectionState = cs_DATA;
@@ -1088,11 +1103,14 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
         }
         if (roleIsServer) {
             handshaker = new ServerHandshaker(this, sslContext,
-                        enabledProtocols, doClientAuth,
-                        connectionState == cs_RENEGOTIATE, protocolVersion);
+                    enabledProtocols, doClientAuth,
+                    protocolVersion, connectionState == cs_HANDSHAKE,
+                    secureRenegotiation, clientVerifyData, serverVerifyData);
         } else {
             handshaker = new ClientHandshaker(this, sslContext,
-                        enabledProtocols, protocolVersion);
+                    enabledProtocols,
+                    protocolVersion, connectionState == cs_HANDSHAKE,
+                    secureRenegotiation, clientVerifyData, serverVerifyData);
         }
         handshaker.enabledCipherSuites = enabledCipherSuites;
         handshaker.setEnableSessionCreation(enableSessionCreation);
@@ -1197,8 +1215,16 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
             break;
 
         case cs_DATA:
-            if (!Handshaker.renegotiable) {
-                throw new SSLHandshakeException("renegotiation is not allowed");
+            if (!secureRenegotiation && !Handshaker.allowUnsafeRenegotiation) {
+                throw new SSLHandshakeException(
+                        "Insecure renegotiation is not allowed");
+            }
+
+            if (!secureRenegotiation) {
+                if (debug != null && Debug.isOn("handshake")) {
+                    System.out.println(
+                        "Warning: Using insecure renegotiation");
+                }
             }
 
             // initialize the handshaker, move to cs_RENEGOTIATE
