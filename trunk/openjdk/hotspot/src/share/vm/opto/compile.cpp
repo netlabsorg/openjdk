@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -16,9 +16,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  *
  */
 
@@ -465,6 +465,7 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
                   _code_buffer("Compile::Fill_buffer"),
                   _orig_pc_slot(0),
                   _orig_pc_slot_offset_in_bytes(0),
+                  _has_method_handle_invokes(false),
                   _node_bundling_limit(0),
                   _node_bundling_base(NULL),
                   _java_calls(0),
@@ -636,34 +637,6 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
   if (failing())  return;
   NOT_PRODUCT( verify_graph_edges(); )
 
-  // Perform escape analysis
-  if (_do_escape_analysis && ConnectionGraph::has_candidates(this)) {
-    TracePhase t2("escapeAnalysis", &_t_escapeAnalysis, true);
-    // Add ConP#NULL and ConN#NULL nodes before ConnectionGraph construction.
-    PhaseGVN* igvn = initial_gvn();
-    Node* oop_null = igvn->zerocon(T_OBJECT);
-    Node* noop_null = igvn->zerocon(T_NARROWOOP);
-
-    _congraph = new(comp_arena()) ConnectionGraph(this);
-    bool has_non_escaping_obj = _congraph->compute_escape();
-
-#ifndef PRODUCT
-    if (PrintEscapeAnalysis) {
-      _congraph->dump();
-    }
-#endif
-    // Cleanup.
-    if (oop_null->outcnt() == 0)
-      igvn->hash_delete(oop_null);
-    if (noop_null->outcnt() == 0)
-      igvn->hash_delete(noop_null);
-
-    if (!has_non_escaping_obj) {
-      _congraph = NULL;
-    }
-
-    if (failing())  return;
-  }
   // Now optimize
   Optimize();
   if (failing())  return;
@@ -759,6 +732,7 @@ Compile::Compile( ciEnv* ci_env,
     _do_escape_analysis(false),
     _failure_reason(NULL),
     _code_buffer("Compile::Fill_buffer"),
+    _has_method_handle_invokes(false),
     _node_bundling_limit(0),
     _node_bundling_base(NULL),
     _java_calls(0),
@@ -869,7 +843,6 @@ void Compile::Init(int aliaslevel) {
   set_has_split_ifs(false);
   set_has_loops(has_method() && method()->has_loops()); // first approximation
   set_has_stringbuilder(false);
-  _deopt_happens = true;  // start out assuming the worst
   _trap_can_recompile = false;  // no traps emitted yet
   _major_progress = true; // start out assuming good things will happen
   set_has_unsafe_access(false);
@@ -931,7 +904,8 @@ void Compile::Init(int aliaslevel) {
   probe_alias_cache(NULL)->_index = AliasIdxTop;
 
   _intrinsics = NULL;
-  _macro_nodes = new GrowableArray<Node*>(comp_arena(), 8,  0, NULL);
+  _macro_nodes = new(comp_arena()) GrowableArray<Node*>(comp_arena(), 8,  0, NULL);
+  _predicate_opaqs = new(comp_arena()) GrowableArray<Node*>(comp_arena(), 8,  0, NULL);
   register_library_intrinsics();
 }
 
@@ -1553,6 +1527,19 @@ void Compile::Finish_Warm() {
   }
 }
 
+//---------------------cleanup_loop_predicates-----------------------
+// Remove the opaque nodes that protect the predicates so that all unused
+// checks and uncommon_traps will be eliminated from the ideal graph
+void Compile::cleanup_loop_predicates(PhaseIterGVN &igvn) {
+  if (predicate_count()==0) return;
+  for (int i = predicate_count(); i > 0; i--) {
+    Node * n = predicate_opaque1_node(i-1);
+    assert(n->Opcode() == Op_Opaque1, "must be");
+    igvn.replace_node(n, n->in(1));
+  }
+  assert(predicate_count()==0, "should be clean!");
+  igvn.optimize();
+}
 
 //------------------------------Optimize---------------------------------------
 // Given a graph, optimize it.
@@ -1586,6 +1573,20 @@ void Compile::Optimize() {
 
   if (failing())  return;
 
+  // Perform escape analysis
+  if (_do_escape_analysis && ConnectionGraph::has_candidates(this)) {
+    TracePhase t2("escapeAnalysis", &_t_escapeAnalysis, true);
+    ConnectionGraph::do_analysis(this, &igvn);
+
+    if (failing())  return;
+
+    igvn.optimize();
+    print_method("Iter GVN 3", 2);
+
+    if (failing())  return;
+
+  }
+
   // Loop transforms on the ideal graph.  Range Check Elimination,
   // peeling, unrolling, etc.
 
@@ -1594,7 +1595,7 @@ void Compile::Optimize() {
   if((loop_opts_cnt > 0) && (has_loops() || has_split_ifs())) {
     {
       TracePhase t2("idealLoop", &_t_idealLoop, true);
-      PhaseIdealLoop ideal_loop( igvn, NULL, true );
+      PhaseIdealLoop ideal_loop( igvn, true, UseLoopPredicate);
       loop_opts_cnt--;
       if (major_progress()) print_method("PhaseIdealLoop 1", 2);
       if (failing())  return;
@@ -1602,7 +1603,7 @@ void Compile::Optimize() {
     // Loop opts pass if partial peeling occurred in previous pass
     if(PartialPeelLoop && major_progress() && (loop_opts_cnt > 0)) {
       TracePhase t3("idealLoop", &_t_idealLoop, true);
-      PhaseIdealLoop ideal_loop( igvn, NULL, false );
+      PhaseIdealLoop ideal_loop( igvn, false, UseLoopPredicate);
       loop_opts_cnt--;
       if (major_progress()) print_method("PhaseIdealLoop 2", 2);
       if (failing())  return;
@@ -1610,9 +1611,14 @@ void Compile::Optimize() {
     // Loop opts pass for loop-unrolling before CCP
     if(major_progress() && (loop_opts_cnt > 0)) {
       TracePhase t4("idealLoop", &_t_idealLoop, true);
-      PhaseIdealLoop ideal_loop( igvn, NULL, false );
+      PhaseIdealLoop ideal_loop( igvn, false, UseLoopPredicate);
       loop_opts_cnt--;
       if (major_progress()) print_method("PhaseIdealLoop 3", 2);
+    }
+    if (!failing()) {
+      // Verify that last round of loop opts produced a valid graph
+      NOT_PRODUCT( TracePhase t2("idealLoopVerify", &_t_idealLoopVerify, TimeCompiler); )
+      PhaseIdealLoop::verify(igvn);
     }
   }
   if (failing())  return;
@@ -1643,15 +1649,31 @@ void Compile::Optimize() {
   // peeling, unrolling, etc.
   if(loop_opts_cnt > 0) {
     debug_only( int cnt = 0; );
+    bool loop_predication = UseLoopPredicate;
     while(major_progress() && (loop_opts_cnt > 0)) {
       TracePhase t2("idealLoop", &_t_idealLoop, true);
       assert( cnt++ < 40, "infinite cycle in loop optimization" );
-      PhaseIdealLoop ideal_loop( igvn, NULL, true );
+      PhaseIdealLoop ideal_loop( igvn, true, loop_predication);
       loop_opts_cnt--;
       if (major_progress()) print_method("PhaseIdealLoop iterations", 2);
       if (failing())  return;
+      // Perform loop predication optimization during first iteration after CCP.
+      // After that switch it off and cleanup unused loop predicates.
+      if (loop_predication) {
+        loop_predication = false;
+        cleanup_loop_predicates(igvn);
+        if (failing())  return;
+      }
     }
   }
+
+  {
+    // Verify that all previous optimizations produced a valid graph
+    // at least to this point, even if no loop optimizations were done.
+    NOT_PRODUCT( TracePhase t2("idealLoopVerify", &_t_idealLoopVerify, TimeCompiler); )
+    PhaseIdealLoop::verify(igvn);
+  }
+
   {
     NOT_PRODUCT( TracePhase t2("macroExpand", &_t_macroExpand, TimeCompiler); )
     PhaseMacroExpand  mex(igvn);
@@ -1839,6 +1861,7 @@ void Compile::dump_asm(int *pcs, uint pc_limit) {
           !n->is_Phi() &&       // a few noisely useless nodes
           !n->is_Proj() &&
           !n->is_MachTemp() &&
+          !n->is_SafePointScalarObject() &&
           !n->is_Catch() &&     // Would be nice to print exception table targets
           !n->is_MergeMem() &&  // Not very interesting
           !n->is_top() &&       // Debug info table constants
@@ -1963,6 +1986,17 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc ) {
     }
   }
 
+#ifdef ASSERT
+  if( n->is_Mem() ) {
+    Compile* C = Compile::current();
+    int alias_idx = C->get_alias_index(n->as_Mem()->adr_type());
+    assert( n->in(0) != NULL || alias_idx != Compile::AliasIdxRaw ||
+            // oop will be recorded in oop map if load crosses safepoint
+            n->is_Load() && (n->as_Load()->bottom_type()->isa_oopptr() ||
+                             LoadNode::is_immutable_value(n->in(MemNode::Address))),
+            "raw memory operations should have control edge");
+  }
+#endif
   // Count FPU ops and common calls, implements item (3)
   switch( nop ) {
   // Count all float operations that may use FPU
@@ -2139,14 +2173,14 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc ) {
 
 #ifdef _LP64
   case Op_CastPP:
-    if (n->in(1)->is_DecodeN() && Universe::narrow_oop_use_implicit_null_checks()) {
+    if (n->in(1)->is_DecodeN() && Matcher::gen_narrow_oop_implicit_null_checks()) {
       Compile* C = Compile::current();
       Node* in1 = n->in(1);
       const Type* t = n->bottom_type();
       Node* new_in1 = in1->clone();
       new_in1->as_DecodeN()->set_type(t);
 
-      if (!Matcher::clone_shift_expressions) {
+      if (!Matcher::narrow_oop_use_complex_address()) {
         //
         // x86, ARM and friends can handle 2 adds in addressing mode
         // and Matcher can fold a DecodeN node into address by using
@@ -2194,8 +2228,12 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc ) {
         new_in2 = in2->in(1);
       } else if (in2->Opcode() == Op_ConP) {
         const Type* t = in2->bottom_type();
-        if (t == TypePtr::NULL_PTR && Universe::narrow_oop_use_implicit_null_checks()) {
-          new_in2 = ConNode::make(C, TypeNarrowOop::NULL_PTR);
+        if (t == TypePtr::NULL_PTR) {
+          // Don't convert CmpP null check into CmpN if compressed
+          // oops implicit null check is not generated.
+          // This will allow to generate normal oop implicit null check.
+          if (Matcher::gen_narrow_oop_implicit_null_checks())
+            new_in2 = ConNode::make(C, TypeNarrowOop::NULL_PTR);
           //
           // This transformation together with CastPP transformation above
           // will generated code for implicit NULL checks for compressed oops.
@@ -2252,9 +2290,9 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc ) {
 
   case Op_DecodeN:
     assert(!n->in(1)->is_EncodeP(), "should be optimized out");
-    // DecodeN could be pinned on Sparc where it can't be fold into
+    // DecodeN could be pinned when it can't be fold into
     // an address expression, see the code for Op_CastPP above.
-    assert(n->in(0) == NULL || !Matcher::clone_shift_expressions, "no control except on sparc");
+    assert(n->in(0) == NULL || !Matcher::narrow_oop_use_complex_address(), "no control");
     break;
 
   case Op_EncodeP: {
@@ -2459,6 +2497,10 @@ static void final_graph_reshaping_walk( Node_Stack &nstack, Node *root, Final_Re
     }
   }
 
+  // Skip next transformation if compressed oops are not used.
+  if (!UseCompressedOops || !Matcher::gen_narrow_oop_implicit_null_checks())
+    return;
+
   // Go over safepoints nodes to skip DecodeN nodes for debug edges.
   // It could be done for an uncommon traps or any safepoints/calls
   // if the DecodeN node is referenced only in a debug info.
@@ -2593,7 +2635,7 @@ bool Compile::final_graph_reshaping() {
 
   // If original bytecodes contained a mixture of floats and doubles
   // check if the optimizer has made it homogenous, item (3).
-  if( Use24BitFPMode && Use24BitFP &&
+  if( Use24BitFPMode && Use24BitFP && UseSSE == 0 &&
       frc.get_float_count() > 32 &&
       frc.get_double_count() == 0 &&
       (10 * frc.get_call_count() < frc.get_float_count()) ) {

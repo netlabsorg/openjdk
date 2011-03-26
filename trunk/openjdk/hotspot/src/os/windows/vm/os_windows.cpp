@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -16,9 +16,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  *
  */
 
@@ -778,7 +778,7 @@ jlong offset() {
   java_origin.wMilliseconds  = 0;
   FILETIME jot;
   if (!SystemTimeToFileTime(&java_origin, &jot)) {
-    fatal1("Error = %d\nWindows error", GetLastError());
+    fatal(err_msg("Error = %d\nWindows error", GetLastError()));
   }
   _calculated_offset = jlong_from(jot.dwHighDateTime, jot.dwLowDateTime);
   _has_calculated_offset = 1;
@@ -1052,15 +1052,16 @@ os::closedir(DIR *dirp)
 
 const char* os::dll_file_extension() { return ".dll"; }
 
-const char * os::get_temp_directory()
-{
-    static char path_buf[MAX_PATH];
-    if (GetTempPath(MAX_PATH, path_buf)>0)
-      return path_buf;
-    else{
-      path_buf[0]='\0';
-      return path_buf;
-    }
+// This must be hard coded because it's the system's temporary
+// directory not the java application's temp directory, ala java.io.tmpdir.
+const char* os::get_temp_directory() {
+  static char path_buf[MAX_PATH];
+  if (GetTempPath(MAX_PATH, path_buf)>0)
+    return path_buf;
+  else{
+    path_buf[0]='\0';
+    return path_buf;
+  }
 }
 
 static bool file_exists(const char* filename) {
@@ -1634,12 +1635,17 @@ void os::print_os_info(outputStream* st) {
             st->print(" Windows Server 2008");
         if (si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_AMD64)
             st->print(" , 64 bit");
-      } else { // os_vers == 6001
+      } else if (os_vers == 6001) {
         if (osvi.wProductType == VER_NT_WORKSTATION) {
             st->print(" Windows 7");
         } else {
             st->print(" Windows Server 2008 R2");
         }
+        if (si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_AMD64)
+            st->print(" , 64 bit");
+      } else { // future os
+        // Unrecognized windows, print out its major and minor versions
+        st->print(" Windows NT %d.%d", osvi.dwMajorVersion, osvi.dwMinorVersion);
         if (si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_AMD64)
             st->print(" , 64 bit");
       }
@@ -2904,6 +2910,14 @@ bool os::release_memory(char* addr, size_t bytes) {
   return VirtualFree(addr, 0, MEM_RELEASE) != 0;
 }
 
+bool os::create_stack_guard_pages(char* addr, size_t size) {
+  return os::commit_memory(addr, size);
+}
+
+bool os::remove_stack_guard_pages(char* addr, size_t size) {
+  return os::uncommit_memory(addr, size);
+}
+
 // Set protections specified
 bool os::protect_memory(char* addr, size_t bytes, ProtType prot,
                         bool is_committed) {
@@ -3262,7 +3276,7 @@ void os::win32::initialize_system_info() {
   _vm_allocation_granularity = si.dwAllocationGranularity;
   _processor_type  = si.dwProcessorType;
   _processor_level = si.wProcessorLevel;
-  _processor_count = si.dwNumberOfProcessors;
+  set_processor_count(si.dwNumberOfProcessors);
 
 #ifdef __WIN32OS2__
   MEMORYSTATUS ms;
@@ -3562,6 +3576,9 @@ jint os::init_2(void) {
   return JNI_OK;
 }
 
+void os::init_3(void) {
+  return;
+}
 
 // Mark the polling page as unreadable
 void os::make_polling_page_unreadable(void) {
@@ -4213,7 +4230,7 @@ bool os::check_heap(bool force) {
       }
       int err = GetLastError();
       if (err != ERROR_NO_MORE_ITEMS && err != ERROR_CALL_NOT_IMPLEMENTED) {
-        fatal1("heap walk aborted with error %d", err);
+        fatal(err_msg("heap walk aborted with error %d", err));
       }
       HeapUnlock(heap);
     }
@@ -4223,12 +4240,10 @@ bool os::check_heap(bool force) {
 }
 
 
-#ifndef PRODUCT
-bool os::find(address addr) {
+bool os::find(address addr, outputStream* st) {
   // Nothing yet
   return false;
 }
-#endif
 
 LONG WINAPI os::win32::serialize_fault_filter(struct _EXCEPTION_POINTERS* e) {
   DWORD exception_code = e->ExceptionRecord->ExceptionCode;
@@ -4282,3 +4297,8 @@ static int getLastErrorString(char *buf, size_t len)
     }
     return 0;
 }
+
+
+// We don't build a headless jre for Windows
+bool os::is_headless_jre() { return false; }
+

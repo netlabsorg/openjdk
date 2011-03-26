@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -16,9 +16,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  *
  */
 
@@ -46,18 +46,8 @@ class ConcurrentMarkThread;
 class ConcurrentG1Refine;
 class ConcurrentZFThread;
 
-// If want to accumulate detailed statistics on work queues
-// turn this on.
-#define G1_DETAILED_STATS 0
-
-#if G1_DETAILED_STATS
-#  define IF_G1_DETAILED_STATS(code) code
-#else
-#  define IF_G1_DETAILED_STATS(code)
-#endif
-
-typedef GenericTaskQueue<StarTask>    RefToScanQueue;
-typedef GenericTaskQueueSet<StarTask> RefToScanQueueSet;
+typedef OverflowTaskQueue<StarTask>         RefToScanQueue;
+typedef GenericTaskQueueSet<RefToScanQueue> RefToScanQueueSet;
 
 typedef int RegionIdx_t;   // needs to hold [ 0..max_regions() )
 typedef int CardIdx_t;     // needs to hold [ 0..CardsPerRegion )
@@ -81,33 +71,29 @@ private:
 
   HeapRegion* _head;
 
-  HeapRegion* _scan_only_head;
-  HeapRegion* _scan_only_tail;
+  HeapRegion* _survivor_head;
+  HeapRegion* _survivor_tail;
+
+  HeapRegion* _curr;
+
   size_t      _length;
-  size_t      _scan_only_length;
+  size_t      _survivor_length;
 
   size_t      _last_sampled_rs_lengths;
   size_t      _sampled_rs_lengths;
-  HeapRegion* _curr;
-  HeapRegion* _curr_scan_only;
 
-  HeapRegion* _survivor_head;
-  HeapRegion* _survivor_tail;
-  size_t      _survivor_length;
-
-  void          empty_list(HeapRegion* list);
+  void         empty_list(HeapRegion* list);
 
 public:
   YoungList(G1CollectedHeap* g1h);
 
-  void          push_region(HeapRegion* hr);
-  void          add_survivor_region(HeapRegion* hr);
-  HeapRegion*   pop_region();
-  void          empty_list();
-  bool          is_empty() { return _length == 0; }
-  size_t        length() { return _length; }
-  size_t        scan_only_length() { return _scan_only_length; }
-  size_t        survivor_length() { return _survivor_length; }
+  void         push_region(HeapRegion* hr);
+  void         add_survivor_region(HeapRegion* hr);
+
+  void         empty_list();
+  bool         is_empty() { return _length == 0; }
+  size_t       length() { return _length; }
+  size_t       survivor_length() { return _survivor_length; }
 
   void rs_length_sampling_init();
   bool rs_length_sampling_more();
@@ -120,22 +106,21 @@ public:
 
   // for development purposes
   void reset_auxilary_lists();
+  void clear() { _head = NULL; _length = 0; }
+
+  void clear_survivors() {
+    _survivor_head    = NULL;
+    _survivor_tail    = NULL;
+    _survivor_length  = 0;
+  }
+
   HeapRegion* first_region() { return _head; }
-  HeapRegion* first_scan_only_region() { return _scan_only_head; }
   HeapRegion* first_survivor_region() { return _survivor_head; }
   HeapRegion* last_survivor_region() { return _survivor_tail; }
-  HeapRegion* par_get_next_scan_only_region() {
-    MutexLockerEx x(ParGCRareEvent_lock, Mutex::_no_safepoint_check_flag);
-    HeapRegion* ret = _curr_scan_only;
-    if (ret != NULL)
-      _curr_scan_only = ret->get_next_young_region();
-    return ret;
-  }
 
   // debugging
   bool          check_list_well_formed();
-  bool          check_list_empty(bool ignore_scan_only_list,
-                                 bool check_sample = true);
+  bool          check_list_empty(bool check_sample = true);
   void          print();
 };
 
@@ -232,6 +217,9 @@ private:
   // current collection.
   HeapRegion* _gc_alloc_region_list;
 
+  // Determines PLAB size for a particular allocation purpose.
+  static size_t desired_plab_sz(GCAllocPurpose purpose);
+
   // When called by par thread, require par_alloc_during_gc_lock() to be held.
   void push_gc_alloc_region(HeapRegion* hr);
 
@@ -278,6 +266,18 @@ private:
   void setup_surviving_young_words();
   void update_surviving_young_words(size_t* surv_young_words);
   void cleanup_surviving_young_words();
+
+  // It decides whether an explicit GC should start a concurrent cycle
+  // instead of doing a STW GC. Currently, a concurrent cycle is
+  // explicitly started if:
+  // (a) cause == _gc_locker and +GCLockerInvokesConcurrent, or
+  // (b) cause == _java_lang_system_gc and +ExplicitGCInvokesConcurrent.
+  bool should_do_concurrent_full_gc(GCCause::Cause cause);
+
+  // Keeps track of how many "full collections" (i.e., Full GCs or
+  // concurrent cycles) we have completed. The number of them we have
+  // started is maintained in _total_full_collections in CollectedHeap.
+  volatile unsigned int _full_collections_completed;
 
 protected:
 
@@ -358,13 +358,14 @@ protected:
   // GC pause.
   void  retire_alloc_region(HeapRegion* alloc_region, bool par);
 
-  // Helper function for two callbacks below.
-  // "full", if true, indicates that the GC is for a System.gc() request,
-  // and should collect the entire heap.  If "clear_all_soft_refs" is true,
-  // all soft references are cleared during the GC.  If "full" is false,
-  // "word_size" describes the allocation that the GC should
-  // attempt (at least) to satisfy.
-  void do_collection(bool full, bool clear_all_soft_refs,
+  // - if explicit_gc is true, the GC is for a System.gc() or a heap
+  // inspection request and should collect the entire heap
+  // - if clear_all_soft_refs is true, all soft references are cleared
+  // during the GC
+  // - if explicit_gc is false, word_size describes the allocation that
+  // the GC should attempt (at least) to satisfy
+  void do_collection(bool explicit_gc,
+                     bool clear_all_soft_refs,
                      size_t word_size);
 
   // Callback from VM_G1CollectFull operation.
@@ -402,8 +403,7 @@ public:
     assert(_in_cset_fast_test_base != NULL, "sanity");
     assert(r->in_collection_set(), "invariant");
     int index = r->hrs_index();
-    assert(0 <= (size_t) index && (size_t) index < _in_cset_fast_test_length,
-           "invariant");
+    assert(0 <= index && (size_t) index < _in_cset_fast_test_length, "invariant");
     assert(!_in_cset_fast_test_base[index], "invariant");
     _in_cset_fast_test_base[index] = true;
   }
@@ -428,6 +428,32 @@ public:
     }
   }
 
+  void clear_cset_fast_test() {
+    assert(_in_cset_fast_test_base != NULL, "sanity");
+    memset(_in_cset_fast_test_base, false,
+        _in_cset_fast_test_length * sizeof(bool));
+  }
+
+  // This is called at the end of either a concurrent cycle or a Full
+  // GC to update the number of full collections completed. Those two
+  // can happen in a nested fashion, i.e., we start a concurrent
+  // cycle, a Full GC happens half-way through it which ends first,
+  // and then the cycle notices that a Full GC happened and ends
+  // too. The outer parameter is a boolean to help us do a bit tighter
+  // consistency checking in the method. If outer is false, the caller
+  // is the inner caller in the nesting (i.e., the Full GC). If outer
+  // is true, the caller is the outer caller in this nesting (i.e.,
+  // the concurrent cycle). Further nesting is not currently
+  // supported. The end of the this call also notifies the
+  // FullGCCount_lock in case a Java thread is waiting for a full GC
+  // to happen (e.g., it called System.gc() with
+  // +ExplicitGCInvokesConcurrent).
+  void increment_full_collections_completed(bool outer);
+
+  unsigned int full_collections_completed() {
+    return _full_collections_completed;
+  }
+
 protected:
 
   // Shrink the garbage-first heap by at most the given size (in bytes!).
@@ -435,13 +461,19 @@ protected:
   virtual void shrink(size_t expand_bytes);
   void shrink_helper(size_t expand_bytes);
 
+  #if TASKQUEUE_STATS
+  static void print_taskqueue_stats_hdr(outputStream* const st = gclog_or_tty);
+  void print_taskqueue_stats(outputStream* const st = gclog_or_tty) const;
+  void reset_taskqueue_stats();
+  #endif // TASKQUEUE_STATS
+
   // Do an incremental collection: identify a collection set, and evacuate
   // its live objects elsewhere.
   virtual void do_collection_pause();
 
   // The guts of the incremental collection pause, executed by the vm
   // thread.
-  virtual void do_collection_pause_at_safepoint();
+  virtual void do_collection_pause_at_safepoint(double target_pause_time_ms);
 
   // Actually do the work of evacuating the collection set.
   virtual void evacuate_collection_set();
@@ -469,9 +501,19 @@ protected:
   // A function to check the consistency of dirty card logs.
   void check_ct_logs_at_safepoint();
 
+  // A DirtyCardQueueSet that is used to hold cards that contain
+  // references into the current collection set. This is used to
+  // update the remembered sets of the regions in the collection
+  // set in the event of an evacuation failure.
+  DirtyCardQueueSet _into_cset_dirty_card_queue_set;
+
   // After a collection pause, make the regions in the CS into free
   // regions.
   void free_collection_set(HeapRegion* cs_head);
+
+  // Abandon the current collection set without recording policy
+  // statistics or updating free lists.
+  void abandon_collection_set(HeapRegion* cs_head);
 
   // Applies "scan_non_heap_roots" to roots outside the heap,
   // "scan_rs" to roots inside the heap (having done "set_region" to
@@ -485,15 +527,8 @@ protected:
                                SharedHeap::ScanningOption so,
                                OopClosure* scan_non_heap_roots,
                                OopsInHeapRegionClosure* scan_rs,
-                               OopsInHeapRegionClosure* scan_so,
                                OopsInGenClosure* scan_perm,
                                int worker_i);
-
-  void scan_scan_only_set(OopsInHeapRegionClosure* oc,
-                          int worker_i);
-  void scan_scan_only_region(HeapRegion* hr,
-                             OopsInHeapRegionClosure* oc,
-                             int worker_i);
 
   // Apply "blk" to all the weak roots of the system.  These include
   // JNI weak roots, the code cache, system dictionary, symbol table,
@@ -623,10 +658,17 @@ protected:
 public:
   void set_refine_cte_cl_concurrency(bool concurrent);
 
-  RefToScanQueue *task_queue(int i);
+  RefToScanQueue *task_queue(int i) const;
 
   // A set of cards where updates happened during the GC
   DirtyCardQueueSet& dirty_card_queue_set() { return _dirty_card_queue_set; }
+
+  // A DirtyCardQueueSet that is used to hold cards that contain
+  // references into the current collection set. This is used to
+  // update the remembered sets of the regions in the collection
+  // set in the event of an evacuation failure.
+  DirtyCardQueueSet& into_cset_dirty_card_queue_set()
+        { return _into_cset_dirty_card_queue_set; }
 
   // Create a G1CollectedHeap with the specified policy.
   // Must call the initialize method afterwards.
@@ -682,7 +724,9 @@ public:
     OrderAccess::fence();
   }
 
-  void iterate_dirty_card_closure(bool concurrent, int worker_i);
+  void iterate_dirty_card_closure(CardTableEntryClosure* cl,
+                                  DirtyCardQueue* into_cset_dcq,
+                                  bool concurrent, int worker_i);
 
   // The shared block offset table array.
   G1BlockOffsetSharedArray* bot_shared() const { return _bot_shared; }
@@ -692,7 +736,7 @@ public:
 
   // Reserved (g1 only; super method includes perm), capacity and the used
   // portion in bytes.
-  size_t g1_reserved_obj_bytes() { return _g1_reserved.byte_size(); }
+  size_t g1_reserved_obj_bytes() const { return _g1_reserved.byte_size(); }
   virtual size_t capacity() const;
   virtual size_t used() const;
   // This should be called when we're not holding the heap lock. The
@@ -854,7 +898,7 @@ public:
     return _g1_committed;
   }
 
-  NOT_PRODUCT( bool is_in_closed_subset(const void* p) const; )
+  NOT_PRODUCT(bool is_in_closed_subset(const void* p) const;)
 
   // Dirty card table entries covering a list of young regions.
   void dirtyCardsForYoungRegions(CardTableModRefBS* ct_bs, HeapRegion* list);
@@ -988,7 +1032,7 @@ public:
   virtual bool supports_tlab_allocation() const;
   virtual size_t tlab_capacity(Thread* thr) const;
   virtual size_t unsafe_max_tlab_alloc(Thread* thr) const;
-  virtual HeapWord* allocate_new_tlab(size_t size);
+  virtual HeapWord* allocate_new_tlab(size_t word_size);
 
   // Can a compiler initialize a new object without store barriers?
   // This permission only extends from the creation of a new object
@@ -1004,7 +1048,12 @@ public:
   // storage in the heap comes from a young region or not.
   // See ReduceInitialCardMarks.
   virtual bool can_elide_tlab_store_barriers() const {
-    return true;
+    // 6920090: Temporarily disabled, because of lingering
+    // instabilities related to RICM with G1. In the
+    // interim, the option ReduceInitialCardMarksForG1
+    // below is left solely as a debugging device at least
+    // until 6920109 fixes the instabilities.
+    return ReduceInitialCardMarksForG1;
   }
 
   virtual bool card_mark_must_follow_store() const {
@@ -1026,6 +1075,8 @@ public:
   // However, non-generational G1 (-XX:-G1Gen) appears to have
   // bit-rotted so was not tested below.
   virtual bool can_elide_initializing_store_barrier(oop new_obj) {
+    // Re 6920090, 6920109 above.
+    assert(ReduceInitialCardMarksForG1, "Else cannot be here");
     assert(G1Gen || !is_in_young(new_obj),
            "Non-generational G1 should never return true below");
     return is_in_young(new_obj);
@@ -1048,7 +1099,12 @@ public:
 
   // Returns "true" iff the given word_size is "very large".
   static bool isHumongous(size_t word_size) {
-    return word_size >= _humongous_object_threshold_in_words;
+    // Note this has to be strictly greater-than as the TLABs
+    // are capped at the humongous thresold and we want to
+    // ensure that we don't try to allocate a TLAB as
+    // humongous and that we don't allocate a humongous
+    // object in a TLAB.
+    return word_size > _humongous_object_threshold_in_words;
   }
 
   // Update mod union table with the set of dirty cards.
@@ -1121,36 +1177,14 @@ public:
   void set_region_short_lived_locked(HeapRegion* hr);
   // add appropriate methods for any other surv rate groups
 
-  void young_list_rs_length_sampling_init() {
-    _young_list->rs_length_sampling_init();
-  }
-  bool young_list_rs_length_sampling_more() {
-    return _young_list->rs_length_sampling_more();
-  }
-  void young_list_rs_length_sampling_next() {
-    _young_list->rs_length_sampling_next();
-  }
-  size_t young_list_sampled_rs_lengths() {
-    return _young_list->sampled_rs_lengths();
-  }
-
-  size_t young_list_length()   { return _young_list->length(); }
-  size_t young_list_scan_only_length() {
-                                      return _young_list->scan_only_length(); }
-
-  HeapRegion* pop_region_from_young_list() {
-    return _young_list->pop_region();
-  }
-
-  HeapRegion* young_list_first_region() {
-    return _young_list->first_region();
-  }
+  YoungList* young_list() { return _young_list; }
 
   // debugging
   bool check_young_list_well_formed() {
     return _young_list->check_list_well_formed();
   }
-  bool check_young_list_empty(bool ignore_scan_only_list,
+
+  bool check_young_list_empty(bool check_heap,
                               bool check_sample = true);
 
   // *** Stuff related to concurrent marking.  It's not clear to me that so
@@ -1355,12 +1389,18 @@ private:
     return BitsPerWord << shifter();
   }
 
-  static size_t gclab_word_size() {
-    return G1ParallelGCAllocBufferSize / HeapWordSize;
+  size_t gclab_word_size() const {
+    return _gclab_word_size;
   }
 
-  static size_t bitmap_size_in_bits() {
-    size_t bits_in_bitmap = gclab_word_size() >> shifter();
+  // Calculates actual GCLab size in words
+  size_t gclab_real_word_size() const {
+    return bitmap_size_in_bits(pointer_delta(_real_end_word, _start_word))
+           / BitsPerWord;
+  }
+
+  static size_t bitmap_size_in_bits(size_t gclab_word_size) {
+    size_t bits_in_bitmap = gclab_word_size >> shifter();
     // We are going to ensure that the beginning of a word in this
     // bitmap also corresponds to the beginning of a word in the
     // global marking bitmap. To handle the case where a GCLab
@@ -1370,13 +1410,13 @@ private:
     return bits_in_bitmap + BitsPerWord - 1;
   }
 public:
-  GCLabBitMap(HeapWord* heap_start)
-    : BitMap(bitmap_size_in_bits()),
+  GCLabBitMap(HeapWord* heap_start, size_t gclab_word_size)
+    : BitMap(bitmap_size_in_bits(gclab_word_size)),
       _cm(G1CollectedHeap::heap()->concurrent_mark()),
       _shifter(shifter()),
       _bitmap_word_covers_words(bitmap_word_covers_words()),
       _heap_start(heap_start),
-      _gclab_word_size(gclab_word_size()),
+      _gclab_word_size(gclab_word_size),
       _real_start_word(NULL),
       _real_end_word(NULL),
       _start_word(NULL)
@@ -1471,7 +1511,7 @@ public:
       mark_bitmap->mostly_disjoint_range_union(this,
                                 0, // always start from the start of the bitmap
                                 _start_word,
-                                size_in_words());
+                                gclab_real_word_size());
       _cm->grayRegionIfNecessary(MemRegion(_real_start_word, _real_end_word));
 
 #ifndef PRODUCT
@@ -1483,9 +1523,10 @@ public:
     }
   }
 
-  static size_t bitmap_size_in_words() {
-    return (bitmap_size_in_bits() + BitsPerWord - 1) / BitsPerWord;
+  size_t bitmap_size_in_words() const {
+    return (bitmap_size_in_bits(gclab_word_size()) + BitsPerWord - 1) / BitsPerWord;
   }
+
 };
 
 class G1ParGCAllocBuffer: public ParGCAllocBuffer {
@@ -1495,10 +1536,10 @@ private:
   GCLabBitMap _bitmap;
 
 public:
-  G1ParGCAllocBuffer() :
-    ParGCAllocBuffer(G1ParallelGCAllocBufferSize / HeapWordSize),
+  G1ParGCAllocBuffer(size_t gclab_word_size) :
+    ParGCAllocBuffer(gclab_word_size),
     _during_marking(G1CollectedHeap::heap()->mark_in_progress()),
-    _bitmap(G1CollectedHeap::heap()->reserved_region().start()),
+    _bitmap(G1CollectedHeap::heap()->reserved_region().start(), gclab_word_size),
     _retired(false)
   { }
 
@@ -1534,11 +1575,10 @@ protected:
   CardTableModRefBS* _ct_bs;
   G1RemSet* _g1_rem;
 
-  typedef GrowableArray<StarTask> OverflowQueue;
-  OverflowQueue* _overflowed_refs;
-
-  G1ParGCAllocBuffer _alloc_buffers[GCAllocPurposeCount];
-  ageTable           _age_table;
+  G1ParGCAllocBuffer  _surviving_alloc_buffer;
+  G1ParGCAllocBuffer  _tenured_alloc_buffer;
+  G1ParGCAllocBuffer* _alloc_buffers[GCAllocPurposeCount];
+  ageTable            _age_table;
 
   size_t           _alloc_buffer_waste;
   size_t           _undo_waste;
@@ -1550,11 +1590,7 @@ protected:
   int _hash_seed;
   int _queue_num;
 
-  int _term_attempts;
-#if G1_DETAILED_STATS
-  int _pushes, _pops, _steals, _steal_attempts;
-  int _overflow_pushes;
-#endif
+  size_t _term_attempts;
 
   double _start;
   double _start_strong_roots;
@@ -1568,7 +1604,7 @@ protected:
   // this points into the array, as we use the first few entries for padding
   size_t* _surviving_young_words;
 
-#define PADDING_ELEM_NUM (64 / sizeof(size_t))
+#define PADDING_ELEM_NUM (DEFAULT_CACHE_LINE_SIZE / sizeof(size_t))
 
   void   add_to_alloc_buffer_waste(size_t waste) { _alloc_buffer_waste += waste; }
 
@@ -1603,20 +1639,19 @@ public:
   }
 
   RefToScanQueue*   refs()            { return _refs;             }
-  OverflowQueue*    overflowed_refs() { return _overflowed_refs;  }
   ageTable*         age_table()       { return &_age_table;       }
 
   G1ParGCAllocBuffer* alloc_buffer(GCAllocPurpose purpose) {
-    return &_alloc_buffers[purpose];
+    return _alloc_buffers[purpose];
   }
 
-  size_t alloc_buffer_waste()                    { return _alloc_buffer_waste; }
-  size_t undo_waste()                            { return _undo_waste; }
+  size_t alloc_buffer_waste() const              { return _alloc_buffer_waste; }
+  size_t undo_waste() const                      { return _undo_waste; }
 
   template <class T> void push_on_queue(T* ref) {
     assert(ref != NULL, "invariant");
     assert(has_partial_array_mask(ref) ||
-           _g1h->obj_in_cs(oopDesc::load_decode_heap_oop(ref)), "invariant");
+           _g1h->is_in_g1_reserved(oopDesc::load_decode_heap_oop(ref)), "invariant");
 #ifdef ASSERT
     if (has_partial_array_mask(ref)) {
       oop p = clear_partial_array_mask(ref);
@@ -1624,12 +1659,7 @@ public:
       assert(_g1h->obj_in_cs(p), "Should be in CS");
     }
 #endif
-    if (!refs()->push(ref)) {
-      overflowed_refs()->push(ref);
-      IF_G1_DETAILED_STATS(note_overflow_push());
-    } else {
-      IF_G1_DETAILED_STATS(note_push());
-    }
+    refs()->push(ref);
   }
 
   void pop_from_queue(StarTask& ref) {
@@ -1637,10 +1667,9 @@ public:
       assert((oop*)ref != NULL, "pop_local() returned true");
       assert(UseCompressedOops || !ref.is_narrow(), "Error");
       assert(has_partial_array_mask((oop*)ref) ||
-             _g1h->obj_in_cs(ref.is_narrow() ? oopDesc::load_decode_heap_oop((narrowOop*)ref)
-                                             : oopDesc::load_decode_heap_oop((oop*)ref)),
-             "invariant");
-      IF_G1_DETAILED_STATS(note_pop());
+             _g1h->is_in_g1_reserved(ref.is_narrow() ? oopDesc::load_decode_heap_oop((narrowOop*)ref)
+                                                     : oopDesc::load_decode_heap_oop((oop*)ref)),
+              "invariant");
     } else {
       StarTask null_task;
       ref = null_task;
@@ -1648,18 +1677,19 @@ public:
   }
 
   void pop_from_overflow_queue(StarTask& ref) {
-    StarTask new_ref = overflowed_refs()->pop();
+    StarTask new_ref;
+    refs()->pop_overflow(new_ref);
     assert((oop*)new_ref != NULL, "pop() from a local non-empty stack");
     assert(UseCompressedOops || !new_ref.is_narrow(), "Error");
     assert(has_partial_array_mask((oop*)new_ref) ||
-           _g1h->obj_in_cs(new_ref.is_narrow() ? oopDesc::load_decode_heap_oop((narrowOop*)new_ref)
-                                               : oopDesc::load_decode_heap_oop((oop*)new_ref)),
-             "invariant");
+           _g1h->is_in_g1_reserved(new_ref.is_narrow() ? oopDesc::load_decode_heap_oop((narrowOop*)new_ref)
+                                                       : oopDesc::load_decode_heap_oop((oop*)new_ref)),
+           "invariant");
     ref = new_ref;
   }
 
-  int refs_to_scan()                             { return refs()->size();                 }
-  int overflowed_refs_to_scan()                  { return overflowed_refs()->length();    }
+  int refs_to_scan()            { return (int)refs()->size(); }
+  int overflowed_refs_to_scan() { return (int)refs()->overflow_stack()->size(); }
 
   template <class T> void update_rs(HeapRegion* from, T* p, int tid) {
     if (G1DeferredRSUpdate) {
@@ -1672,15 +1702,15 @@ public:
   HeapWord* allocate_slow(GCAllocPurpose purpose, size_t word_sz) {
 
     HeapWord* obj = NULL;
-    if (word_sz * 100 <
-        (size_t)(G1ParallelGCAllocBufferSize / HeapWordSize) *
-                                                  ParallelGCBufferWastePct) {
+    size_t gclab_word_size = _g1h->desired_plab_sz(purpose);
+    if (word_sz * 100 < gclab_word_size * ParallelGCBufferWastePct) {
       G1ParGCAllocBuffer* alloc_buf = alloc_buffer(purpose);
+      assert(gclab_word_size == alloc_buf->word_sz(),
+             "dynamic resizing is not supported");
       add_to_alloc_buffer_waste(alloc_buf->words_remaining());
       alloc_buf->retire(false, false);
 
-      HeapWord* buf =
-        _g1h->par_allocate_during_gc(purpose, G1ParallelGCAllocBufferSize / HeapWordSize);
+      HeapWord* buf = _g1h->par_allocate_during_gc(purpose, gclab_word_size);
       if (buf == NULL) return NULL; // Let caller handle allocation failure.
       // Otherwise.
       alloc_buf->set_buf(buf);
@@ -1728,22 +1758,8 @@ public:
   int* hash_seed() { return &_hash_seed; }
   int  queue_num() { return _queue_num; }
 
-  int term_attempts()   { return _term_attempts; }
-  void note_term_attempt()  { _term_attempts++; }
-
-#if G1_DETAILED_STATS
-  int pushes()          { return _pushes; }
-  int pops()            { return _pops; }
-  int steals()          { return _steals; }
-  int steal_attempts()  { return _steal_attempts; }
-  int overflow_pushes() { return _overflow_pushes; }
-
-  void note_push()          { _pushes++; }
-  void note_pop()           { _pops++; }
-  void note_steal()         { _steals++; }
-  void note_steal_attempt() { _steal_attempts++; }
-  void note_overflow_push() { _overflow_pushes++; }
-#endif
+  size_t term_attempts() const  { return _term_attempts; }
+  void note_term_attempt() { _term_attempts++; }
 
   void start_strong_roots() {
     _start_strong_roots = os::elapsedTime();
@@ -1751,7 +1767,7 @@ public:
   void end_strong_roots() {
     _strong_roots_time += (os::elapsedTime() - _start_strong_roots);
   }
-  double strong_roots_time() { return _strong_roots_time; }
+  double strong_roots_time() const { return _strong_roots_time; }
 
   void start_term_time() {
     note_term_attempt();
@@ -1760,11 +1776,16 @@ public:
   void end_term_time() {
     _term_time += (os::elapsedTime() - _start_term);
   }
-  double term_time() { return _term_time; }
+  double term_time() const { return _term_time; }
 
-  double elapsed() {
+  double elapsed_time() const {
     return os::elapsedTime() - _start;
   }
+
+  static void
+    print_termination_stats_hdr(outputStream* const st = gclog_or_tty);
+  void
+    print_termination_stats(int i, outputStream* const st = gclog_or_tty) const;
 
   size_t* surviving_young_words() {
     // We add on to hide entry 0 which accumulates surviving words for
@@ -1774,9 +1795,9 @@ public:
 
   void retire_alloc_buffers() {
     for (int ap = 0; ap < GCAllocPurposeCount; ++ap) {
-      size_t waste = _alloc_buffers[ap].words_remaining();
+      size_t waste = _alloc_buffers[ap]->words_remaining();
       add_to_alloc_buffer_waste(waste);
-      _alloc_buffers[ap].retire(true, false);
+      _alloc_buffers[ap]->retire(true, false);
     }
   }
 
@@ -1818,12 +1839,12 @@ public:
           assert(UseCompressedOops, "Error");
           narrowOop* p = (narrowOop*)ref_to_scan;
           assert(!has_partial_array_mask(p) &&
-                 _g1h->obj_in_cs(oopDesc::load_decode_heap_oop(p)), "sanity");
+                 _g1h->is_in_g1_reserved(oopDesc::load_decode_heap_oop(p)), "sanity");
           deal_with_reference(p);
         } else {
           oop* p = (oop*)ref_to_scan;
-          assert((has_partial_array_mask(p) && _g1h->obj_in_cs(clear_partial_array_mask(p))) ||
-                 _g1h->obj_in_cs(oopDesc::load_decode_heap_oop(p)), "sanity");
+          assert((has_partial_array_mask(p) && _g1h->is_in_g1_reserved(clear_partial_array_mask(p))) ||
+                 _g1h->is_in_g1_reserved(oopDesc::load_decode_heap_oop(p)), "sanity");
           deal_with_reference(p);
         }
       }
@@ -1837,12 +1858,12 @@ public:
             assert(UseCompressedOops, "Error");
             narrowOop* p = (narrowOop*)ref_to_scan;
             assert(!has_partial_array_mask(p) &&
-                   _g1h->obj_in_cs(oopDesc::load_decode_heap_oop(p)), "sanity");
+                    _g1h->is_in_g1_reserved(oopDesc::load_decode_heap_oop(p)), "sanity");
             deal_with_reference(p);
           } else {
             oop* p = (oop*)ref_to_scan;
             assert((has_partial_array_mask(p) && _g1h->obj_in_cs(clear_partial_array_mask(p))) ||
-                  _g1h->obj_in_cs(oopDesc::load_decode_heap_oop(p)), "sanity");
+                   _g1h->is_in_g1_reserved(oopDesc::load_decode_heap_oop(p)), "sanity");
             deal_with_reference(p);
           }
         }

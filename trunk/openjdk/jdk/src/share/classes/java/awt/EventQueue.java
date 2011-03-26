@@ -1,12 +1,12 @@
 /*
- * Copyright 1996-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 1996, 2007, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Sun designates this
+ * published by the Free Software Foundation.  Oracle designates this
  * particular file as subject to the "Classpath" exception as provided
- * by Sun in the LICENSE file that accompanied this code.
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -18,9 +18,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  */
 
 package java.awt;
@@ -42,6 +42,12 @@ import sun.awt.AppContext;
 import sun.awt.AWTAutoShutdown;
 import sun.awt.PeerEvent;
 import sun.awt.SunToolkit;
+
+import java.security.AccessControlContext;
+import java.security.ProtectionDomain;
+
+import sun.misc.SharedSecrets;
+import sun.misc.JavaSecurityAccess;
 
 /**
  * <code>EventQueue</code> is a platform-independent class
@@ -554,6 +560,9 @@ public class EventQueue {
         return null;
     }
 
+    private static final JavaSecurityAccess javaSecurityAccess =
+        SharedSecrets.getJavaSecurityAccess();
+
     /**
      * Dispatches an event. The manner in which the event is
      * dispatched depends upon the type of the event and the
@@ -592,13 +601,49 @@ public class EventQueue {
      * @throws NullPointerException if <code>event</code> is <code>null</code>
      * @since           1.2
      */
-    protected void dispatchEvent(AWTEvent event) {
+    protected void dispatchEvent(final AWTEvent event) {
+        final Object src = event.getSource();
+        final PrivilegedAction<Void> action = new PrivilegedAction<Void>() {
+            public Void run() {
+                dispatchEventImpl(event, src);
+                return null;
+            }
+        };
+
+        final AccessControlContext stack = AccessController.getContext();
+        final AccessControlContext srcAcc = getAccessControlContextFrom(src);
+        final AccessControlContext eventAcc = event.getAccessControlContext();
+        if (srcAcc == null) {
+            javaSecurityAccess.doIntersectionPrivilege(action, stack, eventAcc);
+        } else {
+            javaSecurityAccess.doIntersectionPrivilege(
+                new PrivilegedAction<Void>() {
+                    public Void run() {
+                        javaSecurityAccess.doIntersectionPrivilege(action, eventAcc);
+                        return null;
+                    }
+                }, stack, srcAcc);
+        }
+    }
+
+    private static AccessControlContext getAccessControlContextFrom(Object src) {
+        return src instanceof Component ?
+            ((Component)src).getAccessControlContext() :
+            src instanceof MenuComponent ?
+                ((MenuComponent)src).getAccessControlContext() :
+                src instanceof TrayIcon ?
+                    ((TrayIcon)src).getAccessControlContext() :
+                    null;
+    }
+
+    /**
+     * Called from dispatchEvent() under a correct AccessControlContext  
+     */
+    private void dispatchEventImpl(final AWTEvent event, final Object src) {
         event.isPosted = true;
-        Object src = event.getSource();
         if (event instanceof ActiveEvent) {
             // This could become the sole method of dispatching in time.
             setCurrentEventAndMostRecentTimeImpl(event);
-
             ((ActiveEvent)event).dispatch();
         } else if (src instanceof Component) {
             ((Component)src).dispatchEvent(event);

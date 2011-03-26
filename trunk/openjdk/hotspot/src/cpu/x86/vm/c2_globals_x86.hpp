@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 2000, 2007, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -16,9 +16,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  *
  */
 
@@ -80,7 +80,6 @@ define_pd_global(intx, CodeCacheExpansionSize,       32*K);
 // Ergonomics related flags
 define_pd_global(uint64_t,MaxRAM,                    4ULL*G);
 #endif // AMD64
-define_pd_global(intx, OptoLoopAlignment,            16);
 define_pd_global(intx, RegisterCostAreaRatio,        16000);
 
 // Peephole and CISC spilling both break the graph, and so makes the

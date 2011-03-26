@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2010 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -16,9 +16,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  *
  */
 
@@ -270,7 +270,6 @@ int               JvmtiExport::_field_access_count                        = 0;
 int               JvmtiExport::_field_modification_count                  = 0;
 
 bool              JvmtiExport::_can_access_local_variables                = false;
-bool              JvmtiExport::_can_examine_or_deopt_anywhere             = false;
 bool              JvmtiExport::_can_hotswap_or_post_breakpoint            = false;
 bool              JvmtiExport::_can_modify_any_class                      = false;
 bool              JvmtiExport::_can_walk_any_space                        = false;
@@ -656,7 +655,7 @@ static inline klassOop oop_to_klassOop(oop obj) {
   klassOop k = obj->klass();
 
   // if the object is a java.lang.Class then return the java mirror
-  if (k == SystemDictionary::class_klass()) {
+  if (k == SystemDictionary::Class_klass()) {
     if (!java_lang_Class::is_primitive(obj)) {
       k = java_lang_Class::as_klassOop(obj);
       assert(k != NULL, "class for non-primitive mirror must exist");
@@ -727,6 +726,32 @@ GrowableArray<jmethodID>* JvmtiExport::_pending_compiled_method_unload_method_id
 GrowableArray<const void *>* JvmtiExport::_pending_compiled_method_unload_code_begins;
 JavaThread* JvmtiExport::_current_poster;
 
+void JvmtiExport::post_compiled_method_unload_internal(JavaThread* self, jmethodID method, const void *code_begin) {
+  EVT_TRIG_TRACE(JVMTI_EVENT_COMPILED_METHOD_UNLOAD,
+                 ("JVMTI [%s] method compile unload event triggered",
+                  JvmtiTrace::safe_get_thread_name(self)));
+
+  // post the event for each environment that has this event enabled.
+  JvmtiEnvIterator it;
+  for (JvmtiEnv* env = it.first(); env != NULL; env = it.next(env)) {
+    if (env->is_enabled(JVMTI_EVENT_COMPILED_METHOD_UNLOAD)) {
+
+      EVT_TRACE(JVMTI_EVENT_COMPILED_METHOD_UNLOAD,
+                ("JVMTI [%s] class compile method unload event sent jmethodID " PTR_FORMAT,
+                 JvmtiTrace::safe_get_thread_name(self), method));
+
+      ResourceMark rm(self);
+
+      JvmtiEventMark jem(self);
+      JvmtiJavaThreadEventTransition jet(self);
+      jvmtiEventCompiledMethodUnload callback = env->callbacks()->CompiledMethodUnload;
+      if (callback != NULL) {
+        (*callback)(env->jvmti_external(), method, code_begin);
+      }
+    }
+  }
+}
+
 // post any pending CompiledMethodUnload events
 
 void JvmtiExport::post_pending_compiled_method_unload_events() {
@@ -789,26 +814,7 @@ void JvmtiExport::post_pending_compiled_method_unload_events() {
   // flag, cleanup _current_poster to indicate that no thread is now servicing the
   // pending events list, and finally notify any thread that might be waiting.
   for (;;) {
-    EVT_TRIG_TRACE(JVMTI_EVENT_COMPILED_METHOD_UNLOAD,
-                   ("JVMTI [%s] method compile unload event triggered",
-                   JvmtiTrace::safe_get_thread_name(self)));
-
-    // post the event for each environment that has this event enabled.
-    JvmtiEnvIterator it;
-    for (JvmtiEnv* env = it.first(); env != NULL; env = it.next(env)) {
-      if (env->is_enabled(JVMTI_EVENT_COMPILED_METHOD_UNLOAD)) {
-        EVT_TRACE(JVMTI_EVENT_COMPILED_METHOD_UNLOAD,
-                  ("JVMTI [%s] class compile method unload event sent jmethodID " PTR_FORMAT,
-                  JvmtiTrace::safe_get_thread_name(self), method));
-
-        JvmtiEventMark jem(self);
-        JvmtiJavaThreadEventTransition jet(self);
-        jvmtiEventCompiledMethodUnload callback = env->callbacks()->CompiledMethodUnload;
-        if (callback != NULL) {
-          (*callback)(env->jvmti_external(), method, code_begin);
-        }
-      }
-    }
+    post_compiled_method_unload_internal(self, method, code_begin);
 
     // event posted, now re-grab monitor and get the next event
     // If there's no next event then we are done. If this is the first
@@ -877,7 +883,7 @@ void JvmtiExport::post_raw_breakpoint(JavaThread *thread, methodOop method, addr
 bool              JvmtiExport::_can_get_source_debug_extension            = false;
 bool              JvmtiExport::_can_maintain_original_method_order        = false;
 bool              JvmtiExport::_can_post_interpreter_events               = false;
-bool              JvmtiExport::_can_post_exceptions                       = false;
+bool              JvmtiExport::_can_post_on_exceptions                    = false;
 bool              JvmtiExport::_can_post_breakpoint                       = false;
 bool              JvmtiExport::_can_post_field_access                     = false;
 bool              JvmtiExport::_can_post_field_modification               = false;
@@ -908,6 +914,7 @@ bool              JvmtiExport::_should_post_garbage_collection_finish     = fals
 bool              JvmtiExport::_should_post_object_free                   = false;
 bool              JvmtiExport::_should_post_resource_exhausted            = false;
 bool              JvmtiExport::_should_post_vm_object_alloc               = false;
+bool              JvmtiExport::_should_post_on_exceptions                 = false;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -1864,17 +1871,25 @@ void JvmtiExport::post_compiled_method_load(JvmtiEnv* env, const jmethodID metho
 }
 
 // used at a safepoint to post a CompiledMethodUnload event
-void JvmtiExport::post_compiled_method_unload_at_safepoint(jmethodID mid, const void *code_begin) {
-  assert(SafepointSynchronize::is_at_safepoint(), "must be executed at a safepoint");
-
-  // create list lazily
-  if (_pending_compiled_method_unload_method_ids == NULL) {
-    _pending_compiled_method_unload_method_ids = new (ResourceObj::C_HEAP) GrowableArray<jmethodID>(10,true);
-    _pending_compiled_method_unload_code_begins = new (ResourceObj::C_HEAP) GrowableArray<const void *>(10,true);
+void JvmtiExport::post_compiled_method_unload(jmethodID mid, const void *code_begin) {
+  if (SafepointSynchronize::is_at_safepoint()) {
+    // Class unloading can cause nmethod unloading which is reported
+    // by the VMThread.  These must be batched to be processed later.
+    if (_pending_compiled_method_unload_method_ids == NULL) {
+      // create list lazily
+      _pending_compiled_method_unload_method_ids = new (ResourceObj::C_HEAP) GrowableArray<jmethodID>(10,true);
+      _pending_compiled_method_unload_code_begins = new (ResourceObj::C_HEAP) GrowableArray<const void *>(10,true);
+    }
+    _pending_compiled_method_unload_method_ids->append(mid);
+    _pending_compiled_method_unload_code_begins->append(code_begin);
+    _have_pending_compiled_method_unload_events = true;
+  } else {
+    // Unloading caused by the sweeper can be reported synchronously.
+    if (have_pending_compiled_method_unload_events()) {
+      post_pending_compiled_method_unload_events();
+    }
+    post_compiled_method_unload_internal(JavaThread::current(), mid, code_begin);
   }
-  _pending_compiled_method_unload_method_ids->append(mid);
-  _pending_compiled_method_unload_code_begins->append(code_begin);
-  _have_pending_compiled_method_unload_events = true;
 }
 
 void JvmtiExport::post_dynamic_code_generated_internal(const char *name, const void *code_begin, const void *code_end) {
@@ -1969,7 +1984,7 @@ void JvmtiExport::record_vm_internal_object_allocation(oop obj) {
       if (collector != NULL && collector->is_enabled()) {
         // Don't record classes as these will be notified via the ClassLoad
         // event.
-        if (obj->klass() != SystemDictionary::class_klass()) {
+        if (obj->klass() != SystemDictionary::Class_klass()) {
           collector->record_allocation(obj);
         }
       }

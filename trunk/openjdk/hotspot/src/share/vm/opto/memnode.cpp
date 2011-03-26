@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -16,9 +16,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  *
  */
 
@@ -123,6 +123,13 @@ Node *MemNode::optimize_simple_memory_chain(Node *mchain, const TypePtr *t_adr, 
       } else {
         assert(false, "unexpected projection");
       }
+    } else if (result->is_ClearArray()) {
+      if (!ClearArrayNode::step_through(&result, instance_id, phase)) {
+        // Can not bypass initialization of the instance
+        // we are looking for.
+        break;
+      }
+      // Otherwise skip it (the call updated 'result' value).
     } else if (result->is_MergeMem()) {
       result = step_through_mergemem(phase, result->as_MergeMem(), t_adr, NULL, tty);
     }
@@ -186,14 +193,15 @@ static Node *step_through_mergemem(PhaseGVN *phase, MergeMemNode *mmem,  const T
     }
   }
 #endif
-  // TypeInstPtr::NOTNULL+any is an OOP with unknown offset - generally
+  // TypeOopPtr::NOTNULL+any is an OOP with unknown offset - generally
   // means an array I have not precisely typed yet.  Do not do any
   // alias stuff with it any time soon.
-  const TypeOopPtr *tinst = tp->isa_oopptr();
+  const TypeOopPtr *toop = tp->isa_oopptr();
   if( tp->base() != Type::AnyPtr &&
-      !(tinst &&
-        tinst->klass()->is_java_lang_Object() &&
-        tinst->offset() == Type::OffsetBot) ) {
+      !(toop &&
+        toop->klass() != NULL &&
+        toop->klass()->is_java_lang_Object() &&
+        toop->offset() == Type::OffsetBot) ) {
     // compress paths and change unreachable cycles to TOP
     // If not, we can update the input infinitely along a MergeMem cycle
     // Equivalent code in PhiNode::Ideal
@@ -248,11 +256,19 @@ Node *MemNode::Ideal_common(PhaseGVN *phase, bool can_reshape) {
   if( t_adr == Type::TOP )              return NodeSentinel; // caller will return NULL
 
   if( can_reshape && igvn != NULL &&
-      (igvn->_worklist.member(address) || phase->type(address) != adr_type()) ) {
+      (igvn->_worklist.member(address) ||
+       igvn->_worklist.size() > 0 && (phase->type(address) != adr_type())) ) {
     // The address's base and type may change when the address is processed.
     // Delay this mem node transformation until the address is processed.
     phase->is_IterGVN()->_worklist.push(this);
     return NodeSentinel; // caller will return NULL
+  }
+
+  // Do NOT remove or optimize the next lines: ensure a new alias index
+  // is allocated for an oop pointer type before Escape Analysis.
+  // Note: C++ will not remove it since the call has side effect.
+  if ( t_adr->isa_oopptr() ) {
+    int alias_idx = phase->C->get_alias_index(t_adr->is_ptr());
   }
 
 #ifdef ASSERT
@@ -530,6 +546,15 @@ Node* MemNode::find_previous_store(PhaseTransform* phase) {
       } else if (mem->is_Proj() && mem->in(0)->is_MemBar()) {
         mem = mem->in(0)->in(TypeFunc::Memory);
         continue;           // (a) advance through independent MemBar memory
+      } else if (mem->is_ClearArray()) {
+        if (ClearArrayNode::step_through(&mem, (uint)addr_t->instance_id(), phase)) {
+          // (the call updated 'mem' value)
+          continue;         // (a) advance through independent allocation memory
+        } else {
+          // Can not bypass initialization of the instance
+          // we are looking for.
+          return mem;
+        }
       } else if (mem->is_MergeMem()) {
         int alias_idx = phase->C->get_alias_index(adr_type());
         mem = mem->as_MergeMem()->memory_at(alias_idx);
@@ -792,6 +817,16 @@ void LoadNode::dump_spec(outputStream *st) const {
 }
 #endif
 
+#ifdef ASSERT
+//----------------------------is_immutable_value-------------------------------
+// Helper function to allow a raw load without control edge for some cases
+bool LoadNode::is_immutable_value(Node* adr) {
+  return (adr->is_AddP() && adr->in(AddPNode::Base)->is_top() &&
+          adr->in(AddPNode::Address)->Opcode() == Op_ThreadLocal &&
+          (adr->in(AddPNode::Offset)->find_intptr_t_con(-1) ==
+           in_bytes(JavaThread::osthread_offset())));
+}
+#endif
 
 //----------------------------LoadNode::make-----------------------------------
 // Polymorphic factory method:
@@ -805,6 +840,11 @@ Node *LoadNode::make( PhaseGVN& gvn, Node *ctl, Node *mem, Node *adr, const Type
   assert(!(adr_type->isa_aryptr() &&
            adr_type->offset() == arrayOopDesc::length_offset_in_bytes()),
          "use LoadRangeNode instead");
+  // Check control edge of raw loads
+  assert( ctl != NULL || C->get_alias_index(adr_type) != Compile::AliasIdxRaw ||
+          // oop will be recorded in oop map if load crosses safepoint
+          rt->isa_oopptr() || is_immutable_value(adr),
+          "raw memory operations should have control edge");
   switch (bt) {
   case T_BOOLEAN: return new (C, 3) LoadUBNode(ctl, mem, adr, adr_type, rt->is_int()    );
   case T_BYTE:    return new (C, 3) LoadBNode (ctl, mem, adr, adr_type, rt->is_int()    );
@@ -1509,8 +1549,8 @@ const Type *LoadNode::Value( PhaseTransform *phase ) const {
         adr->is_AddP() && off != Type::OffsetBot) {
       // For constant Strings treat the fields as compile time constants.
       Node* base = adr->in(AddPNode::Base);
-      if (base->Opcode() == Op_ConP) {
-        const TypeOopPtr* t = phase->type(base)->isa_oopptr();
+      const TypeOopPtr* t = phase->type(base)->isa_oopptr();
+      if (t != NULL && t->singleton()) {
         ciObject* string = t->const_oop();
         ciConstant constant = string->as_instance()->field_value_by_offset(off);
         if (constant.basic_type() == T_INT) {
@@ -2041,6 +2081,8 @@ Node* LoadRangeNode::Identity( PhaseTransform *phase ) {
 // Polymorphic factory method:
 StoreNode* StoreNode::make( PhaseGVN& gvn, Node* ctl, Node* mem, Node* adr, const TypePtr* adr_type, Node* val, BasicType bt ) {
   Compile* C = gvn.C;
+  assert( C->get_alias_index(adr_type) != Compile::AliasIdxRaw ||
+          ctl != NULL, "raw memory operations should have control edge");
 
   switch (bt) {
   case T_BOOLEAN:
@@ -2334,6 +2376,22 @@ Node *StoreCMNode::Identity( PhaseTransform *phase ) {
   return this;
 }
 
+//=============================================================================
+//------------------------------Ideal---------------------------------------
+Node *StoreCMNode::Ideal(PhaseGVN *phase, bool can_reshape){
+  Node* progress = StoreNode::Ideal(phase, can_reshape);
+  if (progress != NULL) return progress;
+
+  Node* my_store = in(MemNode::OopStore);
+  if (my_store->is_MergeMem()) {
+    Node* mem = my_store->as_MergeMem()->memory_at(oop_alias_idx());
+    set_req(MemNode::OopStore, mem);
+    return this;
+  }
+
+  return NULL;
+}
+
 //------------------------------Value-----------------------------------------
 const Type *StoreCMNode::Value( PhaseTransform *phase ) const {
   // Either input is TOP ==> the result is TOP
@@ -2431,6 +2489,31 @@ Node *ClearArrayNode::Ideal(PhaseGVN *phase, bool can_reshape){
   return mem;
 }
 
+//----------------------------step_through----------------------------------
+// Return allocation input memory edge if it is different instance
+// or itself if it is the one we are looking for.
+bool ClearArrayNode::step_through(Node** np, uint instance_id, PhaseTransform* phase) {
+  Node* n = *np;
+  assert(n->is_ClearArray(), "sanity");
+  intptr_t offset;
+  AllocateNode* alloc = AllocateNode::Ideal_allocation(n->in(3), phase, offset);
+  // This method is called only before Allocate nodes are expanded during
+  // macro nodes expansion. Before that ClearArray nodes are only generated
+  // in LibraryCallKit::generate_arraycopy() which follows allocations.
+  assert(alloc != NULL, "should have allocation");
+  if (alloc->_idx == instance_id) {
+    // Can not bypass initialization of the instance we are looking for.
+    return false;
+  }
+  // Otherwise skip it.
+  InitializeNode* init = alloc->initialization();
+  if (init != NULL)
+    *np = init->in(TypeFunc::Memory);
+  else
+    *np = alloc->in(TypeFunc::Memory);
+  return true;
+}
+
 //----------------------------clear_memory-------------------------------------
 // Generate code to initialize object storage to zero.
 Node* ClearArrayNode::clear_memory(Node* ctl, Node* mem, Node* dest,
@@ -2519,7 +2602,7 @@ Node* ClearArrayNode::clear_memory(Node* ctl, Node* mem, Node* dest,
 //=============================================================================
 // Do we match on this edge? No memory edges
 uint StrCompNode::match_edge(uint idx) const {
-  return idx == 5 || idx == 6;
+  return idx == 2 || idx == 3; // StrComp (Binary str1 cnt1) (Binary str2 cnt2)
 }
 
 //------------------------------Ideal------------------------------------------
@@ -2529,9 +2612,10 @@ Node *StrCompNode::Ideal(PhaseGVN *phase, bool can_reshape){
   return remove_dead_region(phase, can_reshape) ? this : NULL;
 }
 
+//=============================================================================
 // Do we match on this edge? No memory edges
 uint StrEqualsNode::match_edge(uint idx) const {
-  return idx == 5 || idx == 6;
+  return idx == 2 || idx == 3; // StrEquals (Binary str1 str2) cnt
 }
 
 //------------------------------Ideal------------------------------------------
@@ -2544,7 +2628,7 @@ Node *StrEqualsNode::Ideal(PhaseGVN *phase, bool can_reshape){
 //=============================================================================
 // Do we match on this edge? No memory edges
 uint StrIndexOfNode::match_edge(uint idx) const {
-  return idx == 5 || idx == 6;
+  return idx == 2 || idx == 3; // StrIndexOf (Binary str1 cnt1) (Binary str2 cnt2)
 }
 
 //------------------------------Ideal------------------------------------------
@@ -2554,6 +2638,11 @@ Node *StrIndexOfNode::Ideal(PhaseGVN *phase, bool can_reshape){
   return remove_dead_region(phase, can_reshape) ? this : NULL;
 }
 
+//=============================================================================
+// Do we match on this edge? No memory edges
+uint AryEqNode::match_edge(uint idx) const {
+  return idx == 2 || idx == 3; // StrEquals ary1 ary2
+}
 //------------------------------Ideal------------------------------------------
 // Return a node which is more "ideal" than the current node.  Strip out
 // control copies
@@ -2598,7 +2687,30 @@ MemBarNode* MemBarNode::make(Compile* C, int opcode, int atp, Node* pn) {
 // Return a node which is more "ideal" than the current node.  Strip out
 // control copies
 Node *MemBarNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  return remove_dead_region(phase, can_reshape) ? this : NULL;
+  if (remove_dead_region(phase, can_reshape)) return this;
+
+  // Eliminate volatile MemBars for scalar replaced objects.
+  if (can_reshape && req() == (Precedent+1) &&
+      (Opcode() == Op_MemBarAcquire || Opcode() == Op_MemBarVolatile)) {
+    // Volatile field loads and stores.
+    Node* my_mem = in(MemBarNode::Precedent);
+    if (my_mem != NULL && my_mem->is_Mem()) {
+      const TypeOopPtr* t_oop = my_mem->in(MemNode::Address)->bottom_type()->isa_oopptr();
+      // Check for scalar replaced object reference.
+      if( t_oop != NULL && t_oop->is_known_instance_field() &&
+          t_oop->offset() != Type::OffsetBot &&
+          t_oop->offset() != Type::OffsetTop) {
+        // Replace MemBar projections by its inputs.
+        PhaseIterGVN* igvn = phase->is_IterGVN();
+        igvn->replace_node(proj_out(TypeFunc::Memory), in(TypeFunc::Memory));
+        igvn->replace_node(proj_out(TypeFunc::Control), in(TypeFunc::Control));
+        // Must return either the original node (now dead) or a new node
+        // (Do not return a top here, since that would break the uniqueness of top.)
+        return new (phase->C, 1) ConINode(TypeInt::ZERO);
+      }
+    }
+  }
+  return NULL;
 }
 
 //------------------------------Value------------------------------------------
@@ -3473,10 +3585,12 @@ Node* InitializeNode::complete_stores(Node* rawctl, Node* rawmem, Node* rawptr,
     intptr_t size_limit = phase->find_intptr_t_con(size_in_bytes, max_jint);
     if (zeroes_done + BytesPerLong >= size_limit) {
       assert(allocation() != NULL, "");
-      Node* klass_node = allocation()->in(AllocateNode::KlassNode);
-      ciKlass* k = phase->type(klass_node)->is_klassptr()->klass();
-      if (zeroes_done == k->layout_helper())
-        zeroes_done = size_limit;
+      if (allocation()->Opcode() == Op_Allocate) {
+        Node* klass_node = allocation()->in(AllocateNode::KlassNode);
+        ciKlass* k = phase->type(klass_node)->is_klassptr()->klass();
+        if (zeroes_done == k->layout_helper())
+          zeroes_done = size_limit;
+      }
     }
     if (zeroes_done < size_limit) {
       rawmem = ClearArrayNode::clear_memory(rawctl, rawmem, rawptr,

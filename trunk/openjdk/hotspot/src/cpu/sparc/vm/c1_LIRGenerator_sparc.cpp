@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 2005, 2009, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -16,9 +16,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  *
  */
 
@@ -144,17 +144,17 @@ LIR_Address* LIRGenerator::generate_address(LIR_Opr base, LIR_Opr index,
   if (index->is_register()) {
     // apply the shift and accumulate the displacement
     if (shift > 0) {
-      LIR_Opr tmp = new_register(T_INT);
+      LIR_Opr tmp = new_pointer_register();
       __ shift_left(index, shift, tmp);
       index = tmp;
     }
     if (disp != 0) {
-      LIR_Opr tmp = new_register(T_INT);
+      LIR_Opr tmp = new_pointer_register();
       if (Assembler::is_simm13(disp)) {
-        __ add(tmp, LIR_OprFact::intConst(disp), tmp);
+        __ add(tmp, LIR_OprFact::intptrConst(disp), tmp);
         index = tmp;
       } else {
-        __ move(LIR_OprFact::intConst(disp), tmp);
+        __ move(LIR_OprFact::intptrConst(disp), tmp);
         __ add(tmp, index, tmp);
         index = tmp;
       }
@@ -162,8 +162,8 @@ LIR_Address* LIRGenerator::generate_address(LIR_Opr base, LIR_Opr index,
     }
   } else if (disp != 0 && !Assembler::is_simm13(disp)) {
     // index is illegal so replace it with the displacement loaded into a register
-    index = new_register(T_INT);
-    __ move(LIR_OprFact::intConst(disp), index);
+    index = new_pointer_register();
+    __ move(LIR_OprFact::intptrConst(disp), index);
     disp = 0;
   }
 
@@ -221,7 +221,7 @@ LIR_Address* LIRGenerator::emit_array_address(LIR_Opr array_opr, LIR_Opr index_o
   if (needs_card_mark) {
     LIR_Opr ptr = new_pointer_register();
     __ add(base_opr, LIR_OprFact::intptrConst(offset), ptr);
-    return new LIR_Address(ptr, 0, type);
+    return new LIR_Address(ptr, type);
   } else {
     return new LIR_Address(base_opr, offset, type);
   }
@@ -231,7 +231,7 @@ LIR_Address* LIRGenerator::emit_array_address(LIR_Opr array_opr, LIR_Opr index_o
 void LIRGenerator::increment_counter(address counter, int step) {
   LIR_Opr pointer = new_pointer_register();
   __ move(LIR_OprFact::intptrConst(counter), pointer);
-  LIR_Address* addr = new LIR_Address(pointer, 0, T_INT);
+  LIR_Address* addr = new LIR_Address(pointer, T_INT);
   increment_counter(addr, step);
 }
 
@@ -409,7 +409,7 @@ void LIRGenerator::do_MonitorExit(MonitorExit* x) {
   LIR_Opr lock      = FrameMap::G1_opr;
   LIR_Opr hdr       = FrameMap::G3_opr;
   LIR_Opr obj_temp  = FrameMap::G4_opr;
-  monitor_exit(obj_temp, lock, hdr, x->monitor_no());
+  monitor_exit(obj_temp, lock, hdr, LIR_OprFact::illegalOpr, x->monitor_no());
 }
 
 
@@ -896,7 +896,7 @@ void LIRGenerator::do_NewTypeArray(NewTypeArray* x) {
   LIR_Opr len = length.result();
   BasicType elem_type = x->elt_type();
 
-  __ oop2reg(ciTypeArrayKlass::make(elem_type)->encoding(), klass_reg);
+  __ oop2reg(ciTypeArrayKlass::make(elem_type)->constant_encoding(), klass_reg);
 
   CodeStub* slow_path = new NewTypeArrayStub(klass_reg, len, reg, info);
   __ allocate_array(reg, len, tmp1, tmp2, tmp3, tmp4, elem_type, klass_reg, slow_path);
@@ -1159,7 +1159,7 @@ void LIRGenerator::put_Object_unsafe(LIR_Opr src, LIR_Opr offset, LIR_Opr data,
       if (type == T_ARRAY || type == T_OBJECT) {
         LIR_Opr tmp = new_pointer_register();
         __ add(base_op, index_op, tmp);
-        addr = new LIR_Address(tmp, 0, type);
+        addr = new LIR_Address(tmp, type);
       } else {
         addr = new LIR_Address(base_op, index_op, type);
       }

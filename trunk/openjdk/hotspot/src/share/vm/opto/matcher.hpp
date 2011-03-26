@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -16,9 +16,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  *
  */
 
@@ -117,8 +117,9 @@ public:
   static const int base2reg[];        // Map Types to machine register types
   // Convert ideal machine register to a register mask for spill-loads
   static const RegMask *idealreg2regmask[];
-  RegMask *idealreg2spillmask[_last_machine_leaf];
-  RegMask *idealreg2debugmask[_last_machine_leaf];
+  RegMask *idealreg2spillmask  [_last_machine_leaf];
+  RegMask *idealreg2debugmask  [_last_machine_leaf];
+  RegMask *idealreg2mhdebugmask[_last_machine_leaf];
   void init_spill_mask( Node *ret );
   // Convert machine register number to register mask
   static uint mreg2regmask_max;
@@ -297,6 +298,8 @@ public:
   // Register for MODL projection of divmodL
   static RegMask modL_proj_mask();
 
+  static const RegMask method_handle_invoke_SP_save_mask();
+
   // Java-Interpreter calling convention
   // (what you use when calling between compiled-Java and Interpreted-Java
 
@@ -349,6 +352,38 @@ public:
   // registers?  True for Intel but false for most RISCs
   static const bool clone_shift_expressions;
 
+  static bool narrow_oop_use_complex_address();
+
+  // Generate implicit null check for narrow oops if it can fold
+  // into address expression (x64).
+  //
+  // [R12 + narrow_oop_reg<<3 + offset] // fold into address expression
+  // NullCheck narrow_oop_reg
+  //
+  // When narrow oops can't fold into address expression (Sparc) and
+  // base is not null use decode_not_null and normal implicit null check.
+  // Note, decode_not_null node can be used here since it is referenced
+  // only on non null path but it requires special handling, see
+  // collect_null_checks():
+  //
+  // decode_not_null narrow_oop_reg, oop_reg // 'shift' and 'add base'
+  // [oop_reg + offset]
+  // NullCheck oop_reg
+  //
+  // With Zero base and when narrow oops can not fold into address
+  // expression use normal implicit null check since only shift
+  // is needed to decode narrow oop.
+  //
+  // decode narrow_oop_reg, oop_reg // only 'shift'
+  // [oop_reg + offset]
+  // NullCheck oop_reg
+  //
+  inline static bool gen_narrow_oop_implicit_null_checks() {
+    return Universe::narrow_oop_use_implicit_null_checks() &&
+           (narrow_oop_use_complex_address() ||
+            Universe::narrow_oop_base() != NULL);
+  }
+
   // Is it better to copy float constants, or load them directly from memory?
   // Intel can load a float constant from a direct address, requiring no
   // extra registers.  Most RISCs will have to materialize an address into a
@@ -370,8 +405,8 @@ public:
   // to implement the UseStrictFP mode.
   static const bool strict_fp_requires_explicit_rounding;
 
-  // Do floats take an entire double register or just half?
-  static const bool float_in_double;
+  // Are floats conerted to double when stored to stack during deoptimization?
+  static bool float_in_double();
   // Do ints take an entire long register or just half?
   static const bool int_in_long;
 

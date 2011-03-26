@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -16,9 +16,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  *
  */
 
@@ -38,6 +38,7 @@ class Node_Notes;
 class OptoReg;
 class PhaseCFG;
 class PhaseGVN;
+class PhaseIterGVN;
 class PhaseRegAlloc;
 class PhaseCCP;
 class PhaseCCP_DCE;
@@ -145,7 +146,6 @@ class Compile : public Phase {
   int                   _orig_pc_slot_offset_in_bytes;
 
   int                   _major_progress;        // Count of something big happening
-  bool                  _deopt_happens;         // TRUE if de-optimization CAN happen
   bool                  _has_loops;             // True if the method _may_ have some loops
   bool                  _has_split_ifs;         // True if the method _may_ have some split-if
   bool                  _has_unsafe_access;     // True if the method _may_ produce faults in unsafe loads or stores.
@@ -165,6 +165,9 @@ class Compile : public Phase {
   bool                  _parsed_irreducible_loop; // True if ciTypeFlow detected irreducible loops during parsing
 #endif
 
+  // JSR 292
+  bool                  _has_method_handle_invokes; // True if this method has MethodHandle invokes.
+
   // Compilation environment.
   Arena                 _comp_arena;            // Arena with lifetime equivalent to Compile
   ciEnv*                _env;                   // CI interface
@@ -172,6 +175,7 @@ class Compile : public Phase {
   const char*           _failure_reason;        // for record_failure/failing pattern
   GrowableArray<CallGenerator*>* _intrinsics;   // List of intrinsics.
   GrowableArray<Node*>* _macro_nodes;           // List of nodes which need to be expanded before matching.
+  GrowableArray<Node*>* _predicate_opaqs;       // List of Opaque1 nodes for the loop predicates.
   ConnectionGraph*      _congraph;
 #ifndef PRODUCT
   IdealGraphPrinter*    _printer;
@@ -295,7 +299,6 @@ class Compile : public Phase {
   void          set_freq_inline_size(int n)     { _freq_inline_size = n; }
   int               freq_inline_size() const    { return _freq_inline_size; }
   void          set_max_inline_size(int n)      { _max_inline_size = n; }
-  bool              deopt_happens() const       { return _deopt_happens; }
   bool              has_loops() const           { return _has_loops; }
   void          set_has_loops(bool z)           { _has_loops = z; }
   bool              has_split_ifs() const       { return _has_split_ifs; }
@@ -334,6 +337,10 @@ class Compile : public Phase {
   void          set_parsed_irreducible_loop(bool z) { _parsed_irreducible_loop = z; }
 #endif
 
+  // JSR 292
+  bool              has_method_handle_invokes() const { return _has_method_handle_invokes;     }
+  void          set_has_method_handle_invokes(bool z) {        _has_method_handle_invokes = z; }
+
   void begin_method() {
 #ifndef PRODUCT
     if (_printer) _printer->begin_method(this);
@@ -351,8 +358,11 @@ class Compile : public Phase {
   }
 
   int           macro_count()                   { return _macro_nodes->length(); }
+  int           predicate_count()               { return _predicate_opaqs->length();}
   Node*         macro_node(int idx)             { return _macro_nodes->at(idx); }
+  Node*         predicate_opaque1_node(int idx) { return _predicate_opaqs->at(idx);}
   ConnectionGraph* congraph()                   { return _congraph;}
+  void set_congraph(ConnectionGraph* congraph)  { _congraph = congraph;}
   void add_macro_node(Node * n) {
     //assert(n->is_macro(), "must be a macro node");
     assert(!_macro_nodes->contains(n), " duplicate entry in expand list");
@@ -363,7 +373,19 @@ class Compile : public Phase {
     // that the node is in the array before attempting to remove it
     if (_macro_nodes->contains(n))
       _macro_nodes->remove(n);
+    // remove from _predicate_opaqs list also if it is there
+    if (predicate_count() > 0 && _predicate_opaqs->contains(n)){
+      _predicate_opaqs->remove(n);
+    }
   }
+  void add_predicate_opaq(Node * n) {
+    assert(!_predicate_opaqs->contains(n), " duplicate entry in predicate opaque1");
+    assert(_macro_nodes->contains(n), "should have already been in macro list");
+    _predicate_opaqs->append(n);
+  }
+  // remove the opaque nodes that protect the predicates so that the unused checks and
+  // uncommon traps will be eliminated from the graph.
+  void cleanup_loop_predicates(PhaseIterGVN &igvn);
 
   // Compilation environment.
   Arena*            comp_arena()                { return &_comp_arena; }

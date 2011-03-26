@@ -1,5 +1,5 @@
 /*
- * Copyright 2004-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 2004, 2008, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -16,9 +16,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  */
 
 import java.awt.*;
@@ -31,6 +31,9 @@ import java.awt.dnd.*;
 import java.awt.datatransfer.*;
 
 public abstract class TestXEmbedServer {
+    // vertical position of server AND client windows
+    private static final int VERTICAL_POSITION = 200;
+
     private static final Logger log = Logger.getLogger("test.xembed");
     Frame f;
     Canvas client;
@@ -161,10 +164,10 @@ public abstract class TestXEmbedServer {
         dummy = new JFrame("Dummy");
         dummy.getContentPane().add(new JButton("Button"));
         dummy.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
-        dummy.setBounds(0, 0, 100, 100);
+        dummy.setBounds(0, VERTICAL_POSITION, 100, 100);
         dummy.setVisible(true);
 
-        f.setBounds(300, 0, 800, 300);
+        f.setBounds(300, VERTICAL_POSITION, 800, 300);
         f.setVisible(true);
     }
 
