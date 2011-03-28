@@ -1,0 +1,16 @@
+// Platform file for OS/2 platform
+// Note that we simply reuse the Windows platform sources so far
+
+os_family = windows
+
+arch = x86
+
+arch_model = x86_32
+
+os_arch = windows_x86
+
+os_arch_model = windows_x86_32
+
+lib_arch = i386
+
+compiler = gcc
