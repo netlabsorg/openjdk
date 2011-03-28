@@ -32,7 +32,7 @@ G.PATH_TOOL_BOOT_JDK    = 'D:\Dev\openjdk6'
  * Leave this empty if you have GCC 4 already available in your
  * environment.
  */
-G.PATH_TOOL_GCC4_ENV    = 'D:\Dev\gcc445\gcc445.cmd'
+G.PATH_TOOL_GCC4_ENV    = 'D:\Dev\gcc452\gcc452.cmd'
 
 /**
  * Path to Apache Ant. Leave empty if you have it already available
