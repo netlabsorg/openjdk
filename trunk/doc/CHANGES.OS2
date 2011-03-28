@@ -5,6 +5,33 @@ in the OpenJDK product from release to release.
 CHANGES
 
 
+1.6.0 Build 22 RC2 (2011-03-28)
+
+  - Updated OpenJDK sources to b22 (release February 2011). The main changes in
+    b22 are the latest round of security updates; in addition, there are a few
+    copyright and licensing fixes. A detailed list of all the changes in b22 is
+    available here:
+
+    http://blogs.sun.com/darcy/resource/OpenJDK_6/openjdk6-b22-changes-summary.html.
+
+  - Fixed and improved system tray support. Requires the Extended system tray
+    widget for XCenter/eCenter (see README.OS2 for a download link).
+
+  - Fixed: Sound did not work in LIBPATHSTRICT=T mode (Odin bug).
+
+  - Fixed: SIGABRT that would unexcpectedly terminate some Java applications,
+    e.g. IzPack based installers (GCC compiler bug).
+
+  - Fixed: Crash during Drag'n'Drop operations in some Java applications, e.g.
+    JAlbum (Odin bug).
+
+  - Fixed DLL loading code in the JVM that would print a useless message when
+    one of the required DLLs is not found.
+
+  - A bunch of smaller fixes in Odin libraries that should improve OpenJDK
+    behavior.
+
+
 1.6.0 Build 19 RC (2011-02-21)
 
   - Ported and enabled the JPDA (Java Platform Debugger Architecture) component
