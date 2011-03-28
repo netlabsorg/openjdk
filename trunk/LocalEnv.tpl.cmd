@@ -75,6 +75,28 @@ G.PATH_TOOL_KLIBC_DEBUG     = ''
  */
 G.PATH_TOOL_KLIBC_LOGCHK    = ''
 
+/*
+ * Additional environment settings
+ * ----------------------------------------------------------------------------
+ *
+ * Controls various aspects of the build process.
+ */
+
+/**
+ * Directory where to find JAXP/JAXWS source bundles. If this is not set (or if
+ * the specified directory doesn't contain the bundles), ALLOW_DOWNLOADS below
+ * must be set to 'true'.
+ */
+/*
+call EnvSet 'ALT_DROPS_DIR', 'D:/Coding/java_src_drops'
+*/
+
+/**
+ * Instructs the build process to download JAXP/JAXWS source bundles if they
+ * are missing when building JAXP/JAXWS.
+ */
+call EnvSet 'ALLOW_DOWNLOADS', 'true'
+
 /**
  * Here you may put any additional environment variable definitions needed for
  * your local environment or for the OpenJDK make files using the form shown
