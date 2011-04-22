@@ -36,21 +36,43 @@ else do
 end
 
 /*
- * get flags
+ * get options
  */
+
 aFlags = ''
-if (left(aArgs, 1) == '-') then do
-    parse var aArgs '-'aFlags aArgs
+fTargets = ''
+aNewArgs = ''
+
+do i = 1 to words(aArgs)
+    a = word(aArgs, i)
+    if (left(a, 1) == '-') then do
+        f = substr(a, 2, 1)
+        select
+            when f == 't' then do
+                fTargets = substr(a, 3)
+            end
+            otherwise do
+                aFlags = aFlags || substr(a, 2)
+            end
+        end
+    end
+    else do
+        aNewArgs = aNewArgs' 'a
+    end
 end
+aArgs = strip(aNewArgs)
+drop aNewArgs
 
 if (verify(aFlags, 'Hh?', 'M')) then do
     say 'Flags for 'ScriptFile':'
-    say ' -r    Start commands in release environment'
-    say ' -l    Use debug version of LIBC DLL'
-    say ' -L    Use log check version of LIBC DLL'
-    say ' -j    Enable java launcher debug output'
-    say ' -o    Enable Odin extended logging'
-    say ' -R    Start commands in PRODUCT RELEASE environment'
+    say ' -r        Start commands in release environment'
+    say ' -l        Use debug version of LIBC DLL'
+    say ' -L        Use log check version of LIBC DLL'
+    say ' -j        Enable java launcher debug output'
+    say ' -o        Enable Odin extended logging'
+    say ' -R        Start commands in PRODUCT RELEASE environment'
+    say ' -t<list>  Narrow down the list of targets (possble values are'
+    say '           jdk,hotspot,jaxp,jaxws,corba,langtools)'
 
     if (UnderSE) then call EnvSet 'SE_CMD_ARGS', 'exit'
     exit
@@ -62,6 +84,8 @@ fLibcLogChk     = pos('L', aFlags) \= 0
 fJavaDebug      = pos('j', aFlags) \= 0
 fOdinLog        = pos('o', aFlags) \= 0
 fProductRelease = pos('R', aFlags) \= 0
+
+fTargets = translate(fTargets, ' ', ',')
 
 if (fProductRelease) then fRelease = 1
 
@@ -147,6 +171,18 @@ call EnvSetIfEmpty 'ALT_ODINSDK_PATH', UnixSlashes(G.PATH_LIB_ODIN32)
 call EnvSetIfEmpty 'ALT_FREETYPE_HEADERS_PATH', UnixSlashes(ScriptDir'libs\freetype\include')
 call EnvSetIfEmpty 'ALT_FREETYPE_LIB_PATH', UnixSlashes(ScriptDir'libs\freetype\lib')
 call EnvSetIfEmpty 'ALT_JDK_IMPORT_PATH', UnixSlashes(G.PATH_JDK_IMPORT)
+
+if (fTargets \== '') then do
+    call EnvSet 'SKIP_BUILD_JDK', 'true'
+    call EnvSet 'SKIP_BUILD_HOTSPOT', 'true'
+    call EnvSet 'SKIP_BUILD_JAXP', 'true'
+    call EnvSet 'SKIP_BUILD_JAXWS', 'true'
+    call EnvSet 'SKIP_BUILD_CORBA', 'true'
+    call EnvSet 'SKIP_BUILD_LANGTOOLS', 'true'
+    do i = 1 to words(fTargets)
+        call EnvSet 'SKIP_BUILD_'translate(word(fTargets, i))
+    end
+end
 
 /**
  * generate include file dependencies for C/C++ sources.

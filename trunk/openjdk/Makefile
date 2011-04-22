@@ -96,33 +96,45 @@ generic_build_repo_series::
 	$(MKDIR) -p $(OUTPUTDIR)/j2sdk-image
 
 ifeq ($(BUILD_LANGTOOLS), true)
+ifneq ($(SKIP_BUILD_LANGTOOLS), true)
   generic_build_repo_series:: langtools
   clobber:: langtools-clobber
 endif
+endif
 
 ifeq ($(BUILD_CORBA), true)
+ifneq ($(SKIP_BUILD_CORBA), true)
   generic_build_repo_series:: corba
   clobber:: corba-clobber
 endif
+endif
 
 ifeq ($(BUILD_JAXP), true)
+ifneq ($(SKIP_BUILD_JAXP), true)
   generic_build_repo_series:: jaxp
   clobber:: jaxp-clobber
 endif
+endif
 
 ifeq ($(BUILD_JAXWS), true)
+ifneq ($(SKIP_BUILD_JAXWS), true)
   generic_build_repo_series:: jaxws
   clobber:: jaxws-clobber
 endif
+endif
 
 ifeq ($(BUILD_HOTSPOT), true)
+ifneq ($(SKIP_BUILD_HOTSPOT), true)
   generic_build_repo_series:: $(HOTSPOT) 
   clobber:: hotspot-clobber
 endif
+endif
 
 ifeq ($(BUILD_JDK), true)
+ifneq ($(SKIP_BUILD_JDK), true)
   generic_build_repo_series:: $(JDK_JAVA_EXE)
   clobber:: jdk-clobber
+endif
 endif
 
 # The debug build, fastdebug or debug. Needs special handling.
