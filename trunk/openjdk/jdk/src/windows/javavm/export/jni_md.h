@@ -40,11 +40,15 @@ typedef signed char jbyte;
 
 #ifdef __cplusplus
 
+inline void jsafe_cast_POD_type_only(...) {}
+
 /* template for safe type casting: the generic version lets the compiler
  * decide (as if no template was used); specific instantiations deal with
- * special cases which are guaranteed to be safe */
+ * special cases which are guaranteed to be safe. Note that it cannot be used
+ * with non-POD types as otherwise it would implicitly call the copy ctor which
+ * may have various unwanted side effects */
 template<typename TR, typename TS>
-inline TR jsafe_cast(TS ts) { return ts; }
+inline TR jsafe_cast(TS ts) { jsafe_cast_POD_type_only(ts); return ts; }
 
 #ifdef __EMX__
 /* sizeof(jchar) = sizeof(wchar_t) in GCC but the types are not relative
