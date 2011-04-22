@@ -339,6 +339,18 @@ $(TZMAP): $(TZMAPFILE)
 	$(CHMOD) 444 $@
 endif
 
+#
+# On OS/2, save .MAP and .SYM files for JAVA.DLL under a different
+# name since they clash with those from JAVA.EXE built later
+#
+ifeq ($(PLATFORM), os2)
+build: $(BINDIR)/$(LIBRARY).dll.map $(BINDIR)/$(LIBRARY).dll.sym
+$(BINDIR)/$(LIBRARY).dll.map: $(BINDIR)/$(LIBRARY).map
+	$(CP) $^ $@
+$(BINDIR)/$(LIBRARY).dll.sym: $(BINDIR)/$(LIBRARY).sym
+	$(CP) $^ $@
+endif
+
 build: $(LIBDIR)/$(PROPS) $(LIBDIR)/$(CAL_PROPS) $(TZMAP)
 
 $(LIBDIR)/$(PROPS): $(PLATFORM_SRC)/lib/$(PROPS)
