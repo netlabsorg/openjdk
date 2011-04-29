@@ -310,7 +310,7 @@ class DTDBuilder extends DTD {
             DataOutputStream str = new DataOutputStream(new FileOutputStream(argv[1]));
             dtd.save(str, argv[0]);
             str.close();
-        } catch (IOException ex) {
+        } catch (IOException e) {
             System.err.println("Could not save BDTD file "+argv[1]);
             e.printStackTrace(System.err);
             System.exit(1);
