@@ -29,6 +29,7 @@ import javax.swing.text.html.parser.*;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.FileNotFoundException;
 import java.io.BufferedInputStream;
@@ -288,6 +289,11 @@ class DTDBuilder extends DTD {
             return;
         }
 
+        if (argv.length < 2) {
+            System.err.println("Must specify arguments: <dtd_file> <output_file>");
+            return;
+        }
+
         DTDBuilder dtd = null;
         try {
             dtd = new DTDBuilder(argv[0]);
@@ -301,11 +307,12 @@ class DTDBuilder extends DTD {
             System.exit(1);
         }
         try {
-            DataOutputStream str = new DataOutputStream(System.out);
+            DataOutputStream str = new DataOutputStream(new FileOutputStream(argv[1]));
             dtd.save(str, argv[0]);
             str.close();
         } catch (IOException ex) {
-            ex.printStackTrace();
+            System.err.println("Could not save BDTD file "+argv[1]);
+            e.printStackTrace(System.err);
             System.exit(1);
         }
     }

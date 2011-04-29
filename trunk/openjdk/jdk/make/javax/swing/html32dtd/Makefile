@@ -38,7 +38,7 @@ DTDDATA            = $(BUILDDIR)/tools/dtdbuilder/dtds
 $(HTML32DTD): $(DTDBUILDER_JARFILE)
 	@$(prep-target)
 	($(BOOT_JAVA_CMD) -Ddtd_home=$(DTDDATA) \
-		-jar $(DTDBUILDER_JARFILE) html32 > $@) || exit 1
+		-jar $(DTDBUILDER_JARFILE) html32 $@) || exit 1
 	@$(java-vm-cleanup)
 
 all build: $(HTML32DTD)

@@ -81,7 +81,7 @@ public class ParserDelegator extends HTMLEditorKit.Parser implements Serializabl
                 dtd.putDTDHash(name, dtd);
             }
         } catch (Exception e) {
-            System.out.println(e);
+            e.printStackTrace();
         }
         return dtd;
     }
