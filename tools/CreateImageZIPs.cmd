@@ -2,7 +2,7 @@
 
 ver_id = 'openjdk6_b22'
 
-build_id = 'rc2-20110328'
+build_id = 'wse-20110512'
 
 src_path = '..'
 
