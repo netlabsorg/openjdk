@@ -5,6 +5,18 @@ in the OpenJDK product from release to release.
 CHANGES
 
 
+1.6.0 Build 22 WSE (2011-05-12)
+
+  - Fixed: Opening the print dialog would crash the Java application.
+
+  - Fixed: Printed text was flipped along the base line on output.
+
+  - Fixed: The dtdbuilder tool would write the binary DTD to stdout causing
+    "\n" to "\r\n" expansion on OS/2 and thus breaking the resulting file which
+    in turn would completely break support of HTML text in Swing components
+    [vendor bug, regresion Build 22 (RC2)].
+
+
 1.6.0 Build 22 RC2 (2011-03-28)
 
   - Updated OpenJDK sources to b22 (release February 2011). The main changes in
