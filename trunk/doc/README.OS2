@@ -1,8 +1,9 @@
 OpenJDK 6 for OS/2 and eCS
 
-Version 1.6.0 Build 22 RC2 (2011-03-28)
+Version 1.6.0 Build 22 WSE (2011-05-12)
 
-This is a release candidate build intended for testing purposes.
+This is a special Warpstock Europe 2011 build that contains some important
+improvements over RC2.
 
 
 
@@ -27,9 +28,9 @@ In order to use this version of OpenJDK, you will need the following:
 
   - A OS/2 Warp 4 Fixpack 16+, OS/2 Warp 4.5 or eComStation operating system.
 
-  - Odin32 library version 0.6.21606 (2011-03-28) or above:
+  - Odin32 library version 0.6.21632 (2011-05-12) or above:
 
-    ftp://ftp.netlabs.org/pub/odin/odin32bin-20110328-release.wpi
+    ftp://ftp.netlabs.org/pub/odin/odin32bin-20110512-release.wpi
 
   - Extended system tray widget for XCenter version 0.1.1 or above (optional,
     but required for system tray support in Java applications):
