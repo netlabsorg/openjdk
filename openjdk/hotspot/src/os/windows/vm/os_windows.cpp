@@ -3424,6 +3424,14 @@ void os::init(void) {
     fatal("DuplicateHandle failed\n");
   }
   main_thread_id = (int) GetCurrentThreadId();
+
+#ifdef __WIN32OS2__
+  // The mprotect-based memory barrier technique seems be very unstable under
+  // the SMP kernel on OS/2 for some reason. This needs more investigation and
+  // hence we force the old mode using the fence instructions for the time
+  // being. See #118 for more details.
+  UseMembar = true;
+#endif
 }
 
 // To install functions for atexit processing
