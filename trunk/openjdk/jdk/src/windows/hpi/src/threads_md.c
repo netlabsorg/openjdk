@@ -67,6 +67,10 @@ static void RecordNTTIB(sys_thread_t *tid)
 {
 #ifndef _WIN64
     PNT_TIB nt_tib;
+#ifdef __WIN32OS2__
+    struct _TEB  *WINAPI GetThreadTEB(void);
+    nt_tib = (PNT_TIB)GetThreadTEB();
+#else /* __WIN32OS2__ */
 #ifdef __EMX__
     asm("movl %%fs:0x18, %%eax\n\t"
         "mov %%eax, %0\n\t"
@@ -77,6 +81,7 @@ static void RecordNTTIB(sys_thread_t *tid)
         mov nt_tib, eax;
     }
 #endif /* __EMX__ */
+#endif /* __WIN32OS2__ */
     tid->nt_tib = nt_tib;
 #else
     tid->nt_tib = 0;
