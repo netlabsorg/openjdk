@@ -4253,8 +4253,11 @@ LONG WINAPI os::win32::serialize_fault_filter(struct _EXCEPTION_POINTERS* e) {
     PEXCEPTION_RECORD exceptionRecord = e->ExceptionRecord;
     address addr = (address) exceptionRecord->ExceptionInformation[1];
 
-    if (os::is_memory_serialize_page(thread, addr))
+    if ( os::is_memory_serialize_page(thread, addr) ) {
+      // Block current thread until the memory serialize page permission restored.
+      os::block_on_serialize_page_trap();
       return EXCEPTION_CONTINUE_EXECUTION;
+    }
   }
 
   return EXCEPTION_CONTINUE_SEARCH;
