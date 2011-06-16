@@ -252,12 +252,7 @@ CURRENT LIMITATIONS
      have two applications using the same OpenJDK installation but different JVM
      types (client or server) running at the same time.
 
-  2. OpenJDK will not work correctly under the OS/2 SMP kernel (Java process
-     hangs are very likely). This is a known problem of Odin32 which will be
-     addressed in further releases. The workaround is to use the OS/2 UNI or
-     Warp4 kernel instead.
-
-  3. The com.sun.tools.attach package (API to attach to a Java virtual machine)
+  2. The com.sun.tools.attach package (API to attach to a Java virtual machine)
      is missing.
 
   See the project roadmap for more information on the current progress and
