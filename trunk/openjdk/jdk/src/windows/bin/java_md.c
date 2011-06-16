@@ -25,6 +25,7 @@
 
 #ifdef __WIN32OS2__
 #define INCL_DOSMISC
+#define INCL_DOSMODULEMGR
 #include <os2wrap2.h>
 #endif
 
@@ -230,12 +231,61 @@ LoadJavaVM(const char *jvmpath, InvocationFunctions *ifn)
         return JNI_FALSE;
     }
 
-#if __WIN32OS2__
+#ifdef __WIN32OS2__
+    /*
+     * Native OS/2 LX DLLs support importing functions from other DLLs using
+     * relocation fixup records which differs from the Win32 PE format that does
+     * this through the IAT (import address table - a table of function
+     * pointers). As a result, if DLL_A imports something from DLL_B, then when
+     * DLL_A is loaded by a process, it will load a particular version of DLL_B
+     * to call its functions and all other processes that load DLL_A will get
+     * the same calls to that particular version of DLL_B (from within DLL_A)
+     * even though they supply their own version of DLL_B. In case of Java this
+     * means that if there is a Java process using e.g. server/JVM.DLL and
+     * another process is requesting client/JVM.DLL, this second process will
+     * eventually crash because all Java DLLs statically linked to JVM.DLL (e.g.
+     * JVERIFY.DLL, JZIP.DLL) which it loads later will be calling functions
+     * from server/JVM.DLL but that DLL is *not* initialized within this process
+     * (no surprise, it loaded and initialized client/JVM.DLL instead). In order
+     * to avoid such crashes we have to give a corresponding error message and
+     * terminate, there is no other solution so far.
+     */
+    {
+        /* Try to load JVM.DLL by name -- if successful, it will give us the DLL
+         * that will be used by JVERIFY/JZIP and others with static linking. */
+        jboolean ok = JNI_TRUE;
+        os2_CHAR buf[os2_CCHMAXPATH];
+        os2_HMODULE hmod = 0;
+        os2_APIRET arc = DosLoadModule(buf, sizeof(buf), "JVM", &hmod);
+        if (arc == os2_NO_ERROR) {
+            /* success, check if it's the same DLL as we loaded above (we use
+             * DosLoadModule to get the OS/2 DLL handle (which differs from the
+             * Win32 one) instead of DosQueryModuleName to avoid string
+             * comparison problems such as separators, case etc.)*/
+            os2_HMODULE hmod2 = 0;
+            arc = DosLoadModule(buf, sizeof(buf), jvmpath, &hmod2);
+            if (arc == os2_NO_ERROR) {
+                if (hmod != hmod2) {
+                    ok = JNI_FALSE;
+                    ReportErrorMessage2("Error: %s: this JVM conflicts with "
+                                        "a different type of JVM loaded by "
+                                        "another process. You may only use one "
+                                        "JVM type of a given Java installation "
+                                        "at a time", (char *)jvmpath, JNI_TRUE);
+                }
+                DosFreeModule(hmod2);
+            }
+            DosFreeModule(hmod);
+        }
+        if (!ok)
+            return JNI_FALSE;
+    }
+
     /*
      * Add the JRE bin path to BEGINLIBPATH to make sure that other DLLs
      * statically linked to the various JRE DLLs (so that they refer to them by
      * name in the import tables) are able to find it. This is necessary because
-     * on OS/2, loading a DLL by full path does NOT make it available for other
+     * on OS/2, loading a DLL by full path does NOT make it available to other
      * DLLs by name -- a normal procedure of searching it in LIBPATH and
      * BEGINLIBPATH/ENDLIBPATH is always performed in this case.
      */
@@ -315,7 +365,7 @@ int
 main(int argc, char ** argv)
 {
     EnableSEH();
-    return RegisterLxExe(WinMain, NULL);
+    return RegisterLxExe((WINMAIN)WinMain, NULL);
 }
 
 #else /* __WIN32OS2__ */

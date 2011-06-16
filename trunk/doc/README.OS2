@@ -248,12 +248,16 @@ DLL NAMES
 
 CURRENT LIMITATIONS
 
-  1. OpenJDK will not work correctly under the OS/2 SMP kernel (Java process
+  1. Due to the way how importing from DLLs works in OS/2, it is not possible to
+     have two applications using the same OpenJDK installation but different JVM
+     types (client or server) running at the same time.
+
+  2. OpenJDK will not work correctly under the OS/2 SMP kernel (Java process
      hangs are very likely). This is a known problem of Odin32 which will be
      addressed in further releases. The workaround is to use the OS/2 UNI or
      Warp4 kernel instead.
 
-  2. The com.sun.tools.attach package (API to attach to a Java virtual machine)
+  3. The com.sun.tools.attach package (API to attach to a Java virtual machine)
      is missing.
 
   See the project roadmap for more information on the current progress and
