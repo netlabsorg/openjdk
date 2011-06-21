@@ -28,6 +28,14 @@ In order to use this version of OpenJDK, you will need the following:
 
   - A OS/2 Warp 4 Fixpack 16+, OS/2 Warp 4.5 or eComStation operating system.
 
+  - LIBC library version 0.6.3 (you probably have it already installed):
+
+    ftp://ftp.netlabs.org/pub/libc/libc-0_6_3-csd3.wpi
+
+  - GCC core libraries version 4.5.2:
+
+    http://download.smedley.info/gcc452.zip
+
   - Odin32 library version 0.6.21632 (2011-05-12) or above:
 
     ftp://ftp.netlabs.org/pub/odin/odin32bin-20110512-release.wpi
@@ -80,14 +88,20 @@ FONT SELECTION
   respectively). In order to use the Liberation font family instead of the
   default Type1 fonts, do the following:
 
-  1. Download the latest binary (TTF) archive of Liberation fonts from:
+  1. Install Liberation fonts either from this WPI archive:
 
-     https://fedorahosted.org/liberation-fonts/
+     http://hobbes.nmsu.edu/download/pub/multimedia/fonts/truetype/liberation_106.wpi
 
-  2. Copy all *.TTF files from the archive to a directory and install them
-     normally (for example, using the OS/2 Font Palette object).
+     or manually by performing these steps:
 
-  3. Go to the directory "<SDK>\bin\jre\lib" (where <SDK> is where you installed
+     1.1. Download the latest binary (TTF) archive of Liberation fonts from:
+
+          https://fedorahosted.org/liberation-fonts/
+
+     1.2. Copy all *.TTF files from the archive to a directory and install
+          them normally (for example, using the OS/2 Font Palette object).
+
+  2. Go to the directory "<SDK>\bin\jre\lib" (where <SDK> is where you installed
      SDK package) or "<JRE>\lib" (where <JRE is where you installed the JRE
      package) and copy the file "fontconfig.liberation.bfc" to "fontconfig.bfc".
      It is safe to overwrite the target file.
