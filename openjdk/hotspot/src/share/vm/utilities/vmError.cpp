@@ -305,6 +305,11 @@ void VMError::report(outputStream* st) {
   // don't allocate large buffer on stack
   static char buf[O_BUFLEN];
 
+  // Many methods returning informational strings (such as JavaThread::
+  // get_thread_name() and methodOopDesc::name_and_sig_as_C_stringuses())
+  // allocate them using the ResourceArea instance which needs a ResourceMark
+  ResourceMark rm;
+
   BEGIN
 
   STEP(10, "(printing fatal error message)")
