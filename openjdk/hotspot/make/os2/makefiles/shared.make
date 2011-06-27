@@ -30,12 +30,17 @@ ifndef DIR
 DIR=.
 endif
 
+MAKE_JOBS=
+ifdef HOTSPOT_BUILD_JOBS
+MAKE_JOBS=-j$(HOTSPOT_BUILD_JOBS)
+endif
+
 ifdef SUBDIRS
 $(SUBDIRS): FORCE
 	@if [ ! -d $@ ]; then mkdir -p $@; fi; \
 	if [ ! -r $@/local.make ]; then echo \# Empty > $@/local.make; fi; \
 	echo $(MAKE) $(ACTION) in $(DIR)/$@; \
-	cd $@; $(MAKE) -f $(WorkSpace)/make/os2/makefiles/$@.make $(ACTION) DIR=$(DIR)/$@ BUILD_FLAVOR=$(BUILD_FLAVOR)
+	cd $@; $(MAKE) $(MAKE_JOBS) -f $(WorkSpace)/make/os2/makefiles/$@.make $(ACTION) DIR=$(DIR)/$@ BUILD_FLAVOR=$(BUILD_FLAVOR)
 endif
 
 # Creates the needed directory
@@ -57,7 +62,7 @@ pure:: clean
 
 $(DEFAULTACTIONS) $(ACTIONS)::
 ifdef SUBDIRS
-	@$(MAKE) ACTION=$@ DIR=$(DIR)
+	@$(MAKE) $(MAKE_JOBS) ACTION=$@ DIR=$(DIR)
 endif
 
 FORCE:
