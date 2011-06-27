@@ -63,7 +63,7 @@ static os2_HMODULE jvmHmod = os2_NULLHANDLE;
 // check if addr is inside jvm.dll
 bool os::address_is_in_vm(address addr) {
     os2_HMODULE hmod;
-    char buf[CCHMAXPATH];
+    char buf[os2_CCHMAXPATH];
     os2_ULONG obj, offs;
     os2_APIRET arc;
     if (jvmHmod == os2_NULLHANDLE) {
