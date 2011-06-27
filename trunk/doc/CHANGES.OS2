@@ -5,6 +5,16 @@ in the OpenJDK product from release to release.
 CHANGES
 
 
+1.6.0 Build 22 GA (2011-06-27)
+
+  - Fixed crashing of Java applications on SMP systems.
+
+  - Don't allow to use two different JVM types at a time (as it is not possible
+    due to OS/2 LX DLL format limitations) and give an error message instead.
+
+  - A number of minor fixes in JVM and Odin libraries.
+
+
 1.6.0 Build 22 WSE (2011-05-12)
 
   - Fixed: Opening the print dialog would crash the Java application.

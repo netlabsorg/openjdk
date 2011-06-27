@@ -1,9 +1,8 @@
 OpenJDK 6 for OS/2 and eCS
 
-Version 1.6.0 Build 22 WSE (2011-05-12)
+Version 1.6.0 Build 22 GA (2011-06-27)
 
-This is a special Warpstock Europe 2011 build that contains some important
-improvements over RC2.
+This is an official release of Build 22 intended for general use.
 
 
 
@@ -36,9 +35,9 @@ In order to use this version of OpenJDK, you will need the following:
 
     http://download.smedley.info/gcc452.zip
 
-  - Odin32 library version 0.6.21632 (2011-05-12) or above:
+  - Odin32 library version 0.6.21659 (2011-06-27) or above:
 
-    ftp://ftp.netlabs.org/pub/odin/odin32bin-20110512-release.wpi
+    ftp://ftp.netlabs.org/pub/odin/odin32bin-20110627-release.wpi
 
   - Extended system tray widget for XCenter version 0.1.1 or above (optional,
     but required for system tray support in Java applications):
@@ -88,9 +87,9 @@ FONT SELECTION
   respectively). In order to use the Liberation font family instead of the
   default Type1 fonts, do the following:
 
-  1. Install Liberation fonts either from this WPI archive:
+  1. Install Liberation fonts either from a WPI archive you can find here:
 
-     http://hobbes.nmsu.edu/download/pub/multimedia/fonts/truetype/liberation_106.wpi
+     http://hobbes.nmsu.edu/h-search.php?key=Liberation
 
      or manually by performing these steps:
 
