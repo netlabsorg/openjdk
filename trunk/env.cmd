@@ -184,6 +184,12 @@ if (fTargets \== '') then do
     end
 end
 
+if (G.MAKE_JOBS \= '' && G.MAKE_JOBS \= '1') then do
+    call EnvSet 'COMPILE_APPROACH', 'parallel'
+    call EnvSet 'ALT_PARALLEL_COMPILE_JOBS', G.MAKE_JOBS
+    call EnvSet 'HOTSPOT_BUILD_JOBS', G.MAKE_JOBS
+end
+
 /**
  * generate include file dependencies for C/C++ sources.
  */

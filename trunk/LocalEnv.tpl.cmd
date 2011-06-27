@@ -58,6 +58,13 @@ G.PATH_JDK_IMPORT       = G.PATH_TOOL_BOOT_JDK
  */
 G.LOG_FILE              = 'se.log' /* ScriptDir'se.log' */
 
+/**
+ * The number of make jobs to run in parallel. A value of N+1 (where N is
+ * the number of CPUs on the build machine) will greatly improve the build
+ * speed.
+ */
+G.MAKE_JOBS             = '2'
+
 /*
  * Advanced definitions
  * ----------------------------------------------------------------------------
