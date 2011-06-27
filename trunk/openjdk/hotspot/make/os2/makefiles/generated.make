@@ -34,9 +34,9 @@ include $(WorkSpace)/make/os2/makefiles/jvmti.make
 include $(WorkSpace)/make/os2/makefiles/sa.make
 
 ifeq ($(filter-out compiler2 tiered,$(Variant)),)
-default:: includeDB.current Dependencies incls/ad_$(Platform_arch_model).cpp incls/dfa_$(Platform_arch_model).cpp $(JvmtiGeneratedFiles)
+default:: includeDB.current incls/ad_$(Platform_arch_model).cpp incls/dfa_$(Platform_arch_model).cpp $(JvmtiGeneratedFiles)
 else
-default:: includeDB.current Dependencies $(JvmtiGeneratedFiles)
+default:: includeDB.current $(JvmtiGeneratedFiles)
 endif
 
 # core plus serial gc
@@ -78,7 +78,7 @@ IncludeDBs=$(IncludeDBs_core) $(WorkSpace)/src/share/vm/includeDB_compiler1 \
            $(WorkSpace)/src/share/vm/includeDB_compiler2
 endif
 
-includeDB.current Dependencies: classes/MakeDeps.class $(IncludeDBs)
+includeDB.current: classes/MakeDeps.class $(IncludeDBs)
 	cat $(IncludeDBs) > includeDB
 	if [ -d incls ]; then rm -rf incls; fi
 	mkdir -p incls
