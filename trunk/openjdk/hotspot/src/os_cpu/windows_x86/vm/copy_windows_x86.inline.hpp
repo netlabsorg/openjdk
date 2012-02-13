@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,9 @@
  * questions.
  *
  */
+
+#ifndef OS_CPU_WINDOWS_X86_VM_COPY_WINDOWS_X86_INLINE_HPP
+#define OS_CPU_WINDOWS_X86_VM_COPY_WINDOWS_X86_INLINE_HPP
 
 #ifdef __EMX__
 
@@ -172,3 +175,5 @@ static void pd_arrayof_conjoint_oops(HeapWord* from, HeapWord* to, size_t count)
 }
 
 #endif // __EMX__
+
+#endif // OS_CPU_WINDOWS_X86_VM_COPY_WINDOWS_X86_INLINE_HPP
