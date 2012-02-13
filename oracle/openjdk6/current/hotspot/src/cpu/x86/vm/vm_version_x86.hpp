@@ -22,6 +22,12 @@
  *
  */
 
+#ifndef CPU_X86_VM_VM_VERSION_X86_HPP
+#define CPU_X86_VM_VM_VERSION_X86_HPP
+
+#include "runtime/globals_extension.hpp"
+#include "runtime/vm_version.hpp"
+
 class VM_Version : public Abstract_VM_Version {
 public:
   // cpuid result register layouts.  These are all unions of a uint32_t
@@ -182,7 +188,8 @@ protected:
      CPU_FXSR   = (1 << 2),
      CPU_HT     = (1 << 3),
      CPU_MMX    = (1 << 4),
-     CPU_3DNOW  = (1 << 5), // 3DNow comes from cpuid 0x80000001 (EDX)
+     CPU_3DNOW_PREFETCH  = (1 << 5), // Processor supports 3dnow prefetch and prefetchw instructions
+                                     // may not necessarily support other 3dnow instructions
      CPU_SSE    = (1 << 6),
      CPU_SSE2   = (1 << 7),
      CPU_SSE3   = (1 << 8), // SSE3 comes from cpuid 1 (ECX)
@@ -296,14 +303,14 @@ protected:
       result |= CPU_CX8;
     if (_cpuid_info.std_cpuid1_edx.bits.cmov != 0)
       result |= CPU_CMOV;
-    if (_cpuid_info.std_cpuid1_edx.bits.fxsr != 0 || is_amd() &&
-        _cpuid_info.ext_cpuid1_edx.bits.fxsr != 0)
+    if (_cpuid_info.std_cpuid1_edx.bits.fxsr != 0 || (is_amd() &&
+        _cpuid_info.ext_cpuid1_edx.bits.fxsr != 0))
       result |= CPU_FXSR;
     // HT flag is set for multi-core processors also.
     if (threads_per_core() > 1)
       result |= CPU_HT;
-    if (_cpuid_info.std_cpuid1_edx.bits.mmx != 0 || is_amd() &&
-        _cpuid_info.ext_cpuid1_edx.bits.mmx != 0)
+    if (_cpuid_info.std_cpuid1_edx.bits.mmx != 0 || (is_amd() &&
+        _cpuid_info.ext_cpuid1_edx.bits.mmx != 0))
       result |= CPU_MMX;
     if (_cpuid_info.std_cpuid1_edx.bits.sse != 0)
       result |= CPU_SSE;
@@ -322,8 +329,9 @@ protected:
 
     // AMD features.
     if (is_amd()) {
-      if (_cpuid_info.ext_cpuid1_edx.bits.tdnow != 0)
-        result |= CPU_3DNOW;
+      if ((_cpuid_info.ext_cpuid1_edx.bits.tdnow != 0) ||
+          (_cpuid_info.ext_cpuid1_ecx.bits.prefetchw != 0))
+        result |= CPU_3DNOW_PREFETCH;
       if (_cpuid_info.ext_cpuid1_ecx.bits.lzcnt != 0)
         result |= CPU_LZCNT;
       if (_cpuid_info.ext_cpuid1_ecx.bits.sse4a != 0)
@@ -440,11 +448,14 @@ public:
   //
   // AMD features
   //
-  static bool supports_3dnow()    { return (_cpuFeatures & CPU_3DNOW) != 0; }
+  static bool supports_3dnow_prefetch()    { return (_cpuFeatures & CPU_3DNOW_PREFETCH) != 0; }
   static bool supports_mmx_ext()  { return is_amd() && _cpuid_info.ext_cpuid1_edx.bits.mmx_amd != 0; }
-  static bool supports_3dnow2()   { return is_amd() && _cpuid_info.ext_cpuid1_edx.bits.tdnow2 != 0; }
   static bool supports_lzcnt()    { return (_cpuFeatures & CPU_LZCNT) != 0; }
   static bool supports_sse4a()    { return (_cpuFeatures & CPU_SSE4A) != 0; }
+
+  // Intel Core and newer cpus have fast IDIV instruction (excluding Atom).
+  static bool has_fast_idiv()     { return is_intel() && cpu_family() == 6 &&
+                                           supports_sse3() && _model != 0x1C; }
 
   static bool supports_compare_and_exchange() { return true; }
 
@@ -516,3 +527,5 @@ public:
     return count >= 0 ? count : 1;
   }
 };
+
+#endif // CPU_X86_VM_VM_VERSION_X86_HPP
