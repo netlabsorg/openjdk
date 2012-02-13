@@ -22,8 +22,18 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_loopTransform.cpp.incl"
+#include "precompiled.hpp"
+#include "compiler/compileLog.hpp"
+#include "memory/allocation.inline.hpp"
+#include "opto/addnode.hpp"
+#include "opto/callnode.hpp"
+#include "opto/connode.hpp"
+#include "opto/divnode.hpp"
+#include "opto/loopnode.hpp"
+#include "opto/mulnode.hpp"
+#include "opto/rootnode.hpp"
+#include "opto/runtime.hpp"
+#include "opto/subnode.hpp"
 
 //------------------------------is_loop_exit-----------------------------------
 // Given an IfNode, return the loop-exiting projection or NULL if both
@@ -2146,6 +2156,14 @@ bool PhaseIdealLoop::loop_predication_impl(IdealLoopTree *loop) {
     cl = loop->_head->as_CountedLoop();
     // do nothing for iteration-splitted loops
     if (!cl->is_normal_loop()) return false;
+    // Avoid RCE if Counted loop is broken or loop's test is '!='.
+    if (cl->loopexit() == NULL) {
+      cl = NULL;
+    } else {
+      BoolTest::mask bt = cl->loopexit()->test_trip();
+      if (bt != BoolTest::lt && bt != BoolTest::gt)
+        cl = NULL;
+    }
   }
 
   // Too many traps seen?
@@ -2292,7 +2310,7 @@ bool PhaseIdealLoop::loop_predication_impl(IdealLoopTree *loop) {
       if (TraceLoopPredicate) tty->print_cr("lower bound check if: %d", lower_bound_iff->_idx);
 
       // Test the upper bound
-      Node* upper_bound_bol = rc_predicate(ctrl, scale, offset, init, limit, stride, rng, true);
+      Node* upper_bound_bol = rc_predicate(lower_bound_proj, scale, offset, init, limit, stride, rng, true);
       IfNode* upper_bound_iff = upper_bound_proj->in(0)->as_If();
       _igvn.hash_delete(upper_bound_iff);
       upper_bound_iff->set_req(1, upper_bound_bol);

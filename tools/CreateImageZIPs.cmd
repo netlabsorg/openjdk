@@ -1,5 +1,8 @@
 /*REXX*/
 
+say 'Don''t pack ct.sym!'
+exit
+
 ver_id = 'openjdk6_b22'
 
 build_id = 'ga-20110627'
