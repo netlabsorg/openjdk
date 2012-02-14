@@ -32,7 +32,7 @@ G.PATH_TOOL_BOOT_JDK    = 'D:\Dev\openjdk6'
  * Leave this empty if you have GCC 4 already available in your
  * environment.
  */
-G.PATH_TOOL_GCC4_ENV    = 'D:\Dev\gcc452\gcc452.cmd'
+/*G.PATH_TOOL_GCC4_ENV    = 'D:\Dev\gcc452\gcc452.cmd'*/
 
 /**
  * Path to Apache Ant. Leave empty if you have it already available
@@ -41,9 +41,17 @@ G.PATH_TOOL_GCC4_ENV    = 'D:\Dev\gcc452\gcc452.cmd'
 G.PATH_TOOL_ANT         = 'D:\Dev\java\apache-ant-1.8.1'
 
 /**
- * Path to Odin32 SDK. Must be set.
+ * Path to the Odin32 SDK. Must be set. Assumes the source build and should
+ * point to the root of the source tree. The locaiton of separate parts, if
+ * differs from the default layout, can be individually tailored below.
  */
-G.PATH_LIB_ODIN32       = 'D:\Coding\odin32'
+G.PATH_SDK_ODIN32_SRCTREE   = 'D:\Coding\odin\odin32'
+
+G.PATH_SDK_ODIN32_HEADERS   = G.PATH_SDK_ODIN32_SRCTREE'\include'
+G.PATH_SDK_ODIN32_LIBS      = G.PATH_SDK_ODIN32_SRCTREE'\out\os2.x86\release\stage\lib'
+G.PATH_SDK_ODIN32_DBGLIBS   = G.PATH_SDK_ODIN32_SRCTREE'\out\os2.x86\debug\stage\lib'
+G.PATH_SDK_ODIN32_BIN       = G.PATH_SDK_ODIN32_SRCTREE'\out\os2.x86\release\stage\bin'
+G.PATH_SDK_ODIN32_DBGBIN    = G.PATH_SDK_ODIN32_SRCTREE'\out\os2.x86\debug\stage\bin'
 
 /**
  * Path to the previous Java SDK where components not built from the

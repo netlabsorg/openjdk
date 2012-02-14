@@ -76,13 +76,12 @@ MAPSYM = mapsym.exe
 CPP_FLAGS += -D__WIN32OS2__ -D__i386__ -DSTRICT -D_POSIX_SOURCE \
              -D_POSIX_C_SOURCE=200112 -D_EMX_SOURCE -D_XOPEN_SOURCE=600 \
         	 -D_SVID_SOURCE
-CPP_FLAGS += -I$(ALT_ODINSDK_PATH)/include/Win -I$(ALT_ODINSDK_PATH)/include
+CPP_FLAGS += -I$(ALT_ODINSDK_HEADERS_PATH)/Win -I$(ALT_ODINSDK_HEADERS_PATH)
 
-PRODUCT_LINK_FLAGS      += -L$(ALT_ODINSDK_PATH)/lib/Release -L$(ALT_ODINSDK_PATH)/lib
-FASTDEBUG_LINK_FLAGS    += -L$(ALT_ODINSDK_PATH)/lib/Debug -L$(ALT_ODINSDK_PATH)/lib
-DEBUG_LINK_FLAGS        += -L$(ALT_ODINSDK_PATH)/lib/Debug -L$(ALT_ODINSDK_PATH)/lib
+PRODUCT_LINK_FLAGS      += -L$(ALT_ODINSDK_LIB_PATH)
+FASTDEBUG_LINK_FLAGS    += -L$(firstword $(ALT_ODINSDK_DBGLIB_PATH) $(ALT_ODINSDK_LIB_PATH))
+DEBUG_LINK_FLAGS        += -L$(firstword $(ALT_ODINSDK_DBGLIB_PATH) $(ALT_ODINSDK_LIB_PATH))
 
 LINK_FLAGS  += -lkernel32.lib -luser32.lib -lgdi32.lib -lwinspool.lib \
                -lcomdlg32.lib -ladvapi32.lib -lshell32.lib -lole32.lib \
-               -loleaut32.lib -lWsock32.lib -lwinmm.lib \
-               -llibwrap0.lib -llibwrap1.lib
+               -loleaut32.lib -lWsock32.lib -lwinmm.lib -llibwrap.lib

@@ -111,10 +111,12 @@ interpret LocalEnv
 /*
  * setup GCC
  */
-if (G.PATH_TOOL_GCC4_ENV \== '') then do
-    cmdline = 'call' G.PATH_TOOL_GCC4_ENV
-    cmdline
-    drop cmdline
+if (symbol('G.PATH_TOOL_GCC4_ENV') == 'VAR') then do
+    if (G.PATH_TOOL_GCC4_ENV \== '') then do
+        cmdline = 'call' G.PATH_TOOL_GCC4_ENV
+        cmdline
+        drop cmdline
+    end
 end
 
 if (\fMake) then do
@@ -167,7 +169,9 @@ call EnvSet 'JAVA_HOME', ''
  * various variables for OpenJDK make files
  */
 call EnvSetIfEmpty 'ALT_BOOTDIR', UnixSlashes(G.PATH_TOOL_BOOT_JDK)
-call EnvSetIfEmpty 'ALT_ODINSDK_PATH', UnixSlashes(G.PATH_LIB_ODIN32)
+call EnvSetIfEmpty 'ALT_ODINSDK_HEADERS_PATH', UnixSlashes(G.PATH_SDK_ODIN32_HEADERS)
+call EnvSetIfEmpty 'ALT_ODINSDK_LIB_PATH', UnixSlashes(G.PATH_SDK_ODIN32_LIBS)
+call EnvSetIfEmpty 'ALT_ODINSDK_DBGLIB_PATH', UnixSlashes(G.PATH_SDK_ODIN32_DBGLIBS)
 call EnvSetIfEmpty 'ALT_FREETYPE_HEADERS_PATH', UnixSlashes(ScriptDir'libs\freetype\include')
 call EnvSetIfEmpty 'ALT_FREETYPE_LIB_PATH', UnixSlashes(ScriptDir'libs\freetype\lib')
 call EnvSetIfEmpty 'ALT_JDK_IMPORT_PATH', UnixSlashes(G.PATH_JDK_IMPORT)
@@ -229,12 +233,12 @@ call EnvSet 'OS2_TEMP', 'true'
  */
 if (\fMake) then do
     if (fRelease) then do
-        call EnvAddFront 'PATH', G.PATH_LIB_ODIN32'\bin\Release;'G.PATH_LIB_ODIN32'\bin'
-        call EnvAddFront 'BEGINLIBPATH', G.PATH_LIB_ODIN32'\bin\Release;'G.PATH_LIB_ODIN32'\bin'
+        call EnvAddFront 'PATH', G.PATH_SDK_ODIN32_BIN';'G.PATH_LIB_ODIN32_SRCTREE'\bin'
+        call EnvAddFront 'BEGINLIBPATH', G.PATH_SDK_ODIN32_BIN';'G.PATH_LIB_ODIN32_SRCTREE'\bin'
     end
     else do
-        call EnvAddFront 'PATH', G.PATH_LIB_ODIN32'\bin\Debug;'G.PATH_LIB_ODIN32'\bin'
-        call EnvAddFront 'BEGINLIBPATH', G.PATH_LIB_ODIN32'\bin\Debug;'G.PATH_LIB_ODIN32'\bin'
+        call EnvAddFront 'PATH', G.PATH_SDK_ODIN32_DBGBIN';'G.PATH_LIB_ODIN32_SRCTREE'\bin'
+        call EnvAddFront 'BEGINLIBPATH', G.PATH_SDK_ODIN32_DBGBIN';'G.PATH_LIB_ODIN32_SRCTREE'\bin'
         call EnvSet 'WIN32.DEBUGBREAK', '1'
     end
 
@@ -277,7 +281,7 @@ if (\UnderSE) then do
     end
 end
 else do
-    if (G.LOG_FILE \== '') then do
+    if (G.LOG_FILE \== '' & aArgs \= '') then do
         /* copy all output to the log file */
         aArgs = aArgs '2>&1 | tee' G.LOG_FILE
     end

@@ -163,14 +163,13 @@ endif
 CPPFLAGS_COMMON += -D__WIN32OS2__ -D__i386__ -DSTRICT -D_POSIX_SOURCE \
                    -D_POSIX_C_SOURCE=200112 -D_EMX_SOURCE -D_XOPEN_SOURCE=600 \
 				   -D_SVID_SOURCE
-CPPFLAGS_COMMON += -I$(ODINSDK_PATH)/include/Win -I$(ODINSDK_PATH)/include \
+CPPFLAGS_COMMON += -I$(ODINSDK_HEADERS_PATH)/Win -I$(ODINSDK_HEADERS_PATH) \
                    -DWINE_LARGE_INTEGER
 
-LDFLAGS_OPT     += -L$(ODINSDK_PATH)/lib/Release -L$(ODINSDK_PATH)/lib
-LDFLAGS_DBG     += -L$(ODINSDK_PATH)/lib/Debug -L$(ODINSDK_PATH)/lib
+LDFLAGS_OPT     += -L$(ODINSDK_LIB_PATH)
+LDFLAGS_DBG     += -L$(firstword $(ODINSDK_DBGLIB_PATH) $(ODINSDK_LIB_PATH))
 LDFLAGS_COMMON  += -lkernel32.lib -luser32.lib -ladvapi32.lib \
-				   -lminivcrt.lib -lntdll.lib \
-				   -llibwrap0.lib -llibwrap1.lib
+				   -lminivcrt.lib -lntdll.lib -llibwrap.lib
 
 #
 # Path and option to link against the VM, if you have to. 
