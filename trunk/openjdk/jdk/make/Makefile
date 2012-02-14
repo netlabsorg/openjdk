@@ -105,7 +105,9 @@ MSDEVTOOLS_PATH.desc       = Root directory of VC++ tools (e.g. rc.exe)
 MSVCRT_DLL_PATH.desc       = Directory containing mscvrt.dll
 UNICOWS_DLL_PATH.desc      = Directory containing unicows.dll
 UNICOWS_LIB_PATH.desc      = Directory containing unicows.lib
-ODINSDK_PATH.desc          = Root directory of Odin32 SDK (OS/2)
+ODINSDK_HEADERS_PATH.desc  = Include directory of Odin32 SDK (OS/2)
+ODINSDK_LIB_PATH.desc      = Library directory of Odin32 SDK (OS/2)
+ODINSDK_DBGLIB_PATH.desc   = Debug Library directory of Odin32 SDK (OS/2, optional)
 
 # Make variables to print out (description and value)
 VARIABLE_PRINTVAL_LIST +=       \
@@ -158,10 +160,12 @@ endif
 ifeq ($(PLATFORM), os2)
 
 VARIABLE_PRINTVAL_LIST +=       \
-    ODINSDK_PATH
+    ODINSDK_HEADERS_PATH        \
+    ODINSDK_LIB_PATH
 
 VARIABLE_CHECKDIR_LIST +=       \
-    ODINSDK_PATH
+    ODINSDK_HEADERS_PATH        \
+    ODINSDK_LIB_PATH
 
 endif
 

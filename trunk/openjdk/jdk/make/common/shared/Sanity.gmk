@@ -1311,22 +1311,20 @@ endif
 ######################################################
 sane-odinsdk:
 ifeq ($(PLATFORM), os2)
-	@if [ ! -r $(ODINSDK_PATH)/include/odin.h  ]; then \
+	@if [ ! -r $(ODINSDK_HEADERS_PATH)/odin.h  ]; then \
 	$(ECHO) "ERROR: You do not have access to a valid Odin32 SDK include dir.\n" \
-	  "      The value of ODINSDK_PATH must point a valid Odin32 SDK dir.\n" \
+	  "      The value of ODINSDK_HEADERS_PATH must point a valid Odin32 SDK dir.\n" \
 	  "      Please check your access to \n" \
-	  "          $(ODINSDK_PATH)/include \n" \
-	  "      and/or check your value of ALT_ODINSDK_PATH.\n" \
+	  "          $(ODINSDK_HEADERS_PATH) \n" \
+	  "      and/or check your value of ALT_ODINSDK_HEADERS_PATH.\n" \
 	  "" >> $(ERROR_FILE) ; \
 	fi
-	@if [ ! -r $(ODINSDK_PATH)/lib/odincrt.lib -a \
-	      ! -r $(ODINSDK_PATH)/lib/Release/odincrt.lib ]; then \
+	@if [ ! -r $(ODINSDK_LIB_PATH)/odincrt.lib ]; then \
 	$(ECHO) "ERROR: You do not have access to a valid Odin32 SDK lib dir.\n" \
-	  "      The value of ODINSDK_PATH must point a valid Odin32 SDK dir.\n" \
+	  "      The value of ODINSDK_LIB_PATH must point a valid Odin32 SDK dir.\n" \
 	  "      Please check your access to \n" \
-	  "          $(ODINSDK_PATH)/lib          or \n" \
-	  "          $(ODINSDK_PATH)/lib/Release \n" \
-	  "      and/or check your value of ALT_ODINSDK_PATH.\n" \
+	  "          $(ODINSDK_LIB_PATH)/lib \n" \
+	  "      and/or check your value of ALT_ODINSDK_LIB_PATH.\n" \
 	  "" >> $(ERROR_FILE) ; \
 	fi
 endif

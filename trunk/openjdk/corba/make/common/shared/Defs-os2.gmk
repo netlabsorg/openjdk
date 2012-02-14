@@ -141,13 +141,29 @@ ifndef ALT_BOOTDIR
   _BOOTDIR2  =$(USRJDKINSTANCES_PATH)/jdk$(PREVIOUS_JDK_VERSION)
 endif
 
-# ODINSDK_PATH: Path to the root directory of Odin32 SDK
-ifdef ALT_ODINSDK_PATH
-  xALT_ODINSDK_PATH :="$(subst \,/,$(ALT_ODINSDK_PATH))"
-  ODINSDK_PATH      :=$(call FullPath,$(xALT_ODINSDK_PATH))
+# ODINSDK_HEADERS_PATH: Include directory of Odin32 SDK (OS/2)
+ifdef ALT_ODINSDK_HEADERS_PATH
+  xALT_ODINSDK_HEADERS_PATH :="$(subst \,/,$(ALT_ODINSDK_HEADERS_PATH))"
+  ODINSDK_HEADERS_PATH      :=$(call FullPath,$(xALT_ODINSDK_HEADERS_PATH))
 endif
-ODINSDK_PATH :=$(call AltCheckSpaces,ODINSDK_PATH)
-ODINSDK_PATH :=$(call AltCheckValue,ODINSDK_PATH)
+ODINSDK_HEADERS_PATH :=$(call AltCheckSpaces,ODINSDK_HEADERS_PATH)
+ODINSDK_HEADERS_PATH :=$(call AltCheckValue,ODINSDK_HEADERS_PATH)
+
+# ODINSDK_LIB_PATH: Library directory of Odin32 SDK (OS/2)
+ifdef ALT_ODINSDK_LIB_PATH
+  xALT_ODINSDK_LIB_PATH :="$(subst \,/,$(ALT_ODINSDK_LIB_PATH))"
+  ODINSDK_LIB_PATH      :=$(call FullPath,$(xALT_ODINSDK_LIB_PATH))
+endif
+ODINSDK_LIB_PATH :=$(call AltCheckSpaces,ODINSDK_LIB_PATH)
+ODINSDK_LIB_PATH :=$(call AltCheckValue,ODINSDK_LIB_PATH)
+
+# ODINSDK_DBGLIB_PATH: Debug Library directory of Odin32 SDK (OS/2)
+ifdef ALT_ODINSDK_DBGLIB_PATH
+  xALT_ODINSDK_DBGLIB_PATH :="$(subst \,/,$(ALT_ODINSDK_DBGLIB_PATH))"
+  ODINSDK_DBGLIB_PATH      :=$(call FullPath,$(xALT_ODINSDK_DBGLIB_PATH))
+endif
+ODINSDK_DBGLIB_PATH :=$(call AltCheckSpaces,ODINSDK_DBGLIB_PATH)
+ODINSDK_DBGLIB_PATH :=$(call AltCheckValue,ODINSDK_DBGLIB_PATH)
 
 # Import JDK images allow for partial builds, components not built are
 #    imported (or copied from) these import areas when needed.
