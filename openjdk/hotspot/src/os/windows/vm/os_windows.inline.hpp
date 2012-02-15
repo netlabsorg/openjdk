@@ -28,8 +28,13 @@
 #include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
 #ifdef TARGET_OS_ARCH_windows_x86
-# include "atomic_windows_x86.inline.hpp"
-# include "orderAccess_windows_x86.inline.hpp"
+# ifdef TARGET_OS_FAMILY_os2
+#  include "atomic_os2_x86.inline.hpp"
+#  include "orderAccess_os2_x86.inline.hpp"
+# else
+#  include "atomic_windows_x86.inline.hpp"
+#  include "orderAccess_windows_x86.inline.hpp"
+# endif
 #endif
 
 inline const char* os::file_separator()                { return "\\"; }

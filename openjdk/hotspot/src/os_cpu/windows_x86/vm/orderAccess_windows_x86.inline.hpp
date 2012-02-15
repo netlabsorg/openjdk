@@ -25,12 +25,6 @@
 #ifndef OS_CPU_WINDOWS_X86_VM_ORDERACCESS_WINDOWS_X86_INLINE_HPP
 #define OS_CPU_WINDOWS_X86_VM_ORDERACCESS_WINDOWS_X86_INLINE_HPP
 
-#ifdef __EMX__
-
-#include "../../linux_x86/vm/orderAccess_linux_x86.inline.hpp"
-
-#else // __EMX__
-
 #include "runtime/atomic.hpp"
 #include "runtime/orderAccess.hpp"
 #include "vm_version_x86.hpp"
@@ -221,7 +215,5 @@ inline void     OrderAccess::release_store_ptr_fence(volatile void*     p, void*
 }
 
 #pragma warning(default: 4035) // Enables warnings reporting missing return statement
-
-#endif // __EMX__
 
 #endif // OS_CPU_WINDOWS_X86_VM_ORDERACCESS_WINDOWS_X86_INLINE_HPP

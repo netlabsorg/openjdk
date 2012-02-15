@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,26 +22,13 @@
  *
  */
 
-#ifndef OS_WINDOWS_VM_THREAD_WINDOWS_INLINE_HPP
-#define OS_WINDOWS_VM_THREAD_WINDOWS_INLINE_HPP
+#ifndef OS_CPU_OS2_X86_VM_ORDERACCESS_OS2_X86_INLINE_HPP
+#define OS_CPU_OS2_X86_VM_ORDERACCESS_OS2_X86_INLINE_HPP
 
-#include "runtime/atomic.hpp"
-#include "runtime/prefetch.hpp"
-#include "runtime/thread.hpp"
-#include "runtime/threadLocalStorage.hpp"
-#ifdef TARGET_OS_ARCH_windows_x86
-# ifdef TARGET_OS_FAMILY_os2
-#  include "atomic_os2_x86.inline.hpp"
-#  include "orderAccess_os2_x86.inline.hpp"
-# else
-#  include "atomic_windows_x86.inline.hpp"
-#  include "orderAccess_windows_x86.inline.hpp"
-# endif
-# include "prefetch_windows_x86.inline.hpp"
+#ifdef TARGET_COMPILER_gcc
+#include "../../linux_x86/vm/orderAccess_linux_x86.inline.hpp"
+#else
+#error "Compiler not supported."
 #endif
 
-// Contains inlined functions for class Thread and ThreadLocalStorage
-
-inline void ThreadLocalStorage::pd_invalidate_all()            { return; }
-
-#endif // OS_WINDOWS_VM_THREAD_WINDOWS_INLINE_HPP
+#endif // OS_CPU_OS2_X86_VM_ORDERACCESS_OS2_X86_INLINE_HPP

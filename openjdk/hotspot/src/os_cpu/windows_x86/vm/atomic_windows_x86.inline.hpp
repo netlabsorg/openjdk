@@ -25,12 +25,6 @@
 #ifndef OS_CPU_WINDOWS_X86_VM_ATOMIC_WINDOWS_X86_INLINE_HPP
 #define OS_CPU_WINDOWS_X86_VM_ATOMIC_WINDOWS_X86_INLINE_HPP
 
-#ifdef __EMX__
-
-#include "../../linux_x86/vm/atomic_linux_x86.inline.hpp"
-
-#else // __EMX__
-
 #include "orderAccess_windows_x86.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
@@ -290,7 +284,5 @@ inline void Atomic::store(jlong store_value, jlong* dest) {
 #endif // AMD64
 
 #pragma warning(default: 4035) // Enables warnings reporting missing return statement
-
-#endif // __EMX__
 
 #endif // OS_CPU_WINDOWS_X86_VM_ATOMIC_WINDOWS_X86_INLINE_HPP

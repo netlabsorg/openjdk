@@ -45,7 +45,11 @@
 # include "orderAccess_solaris_sparc.inline.hpp"
 #endif
 #ifdef TARGET_OS_ARCH_windows_x86
-# include "orderAccess_windows_x86.inline.hpp"
+# ifdef TARGET_OS_FAMILY_os2
+#  include "orderAccess_os2_x86.inline.hpp"
+# else
+#  include "orderAccess_windows_x86.inline.hpp"
+# endif
 #endif
 
 // Simple TaskQueue stats that are collected by default in debug builds.
