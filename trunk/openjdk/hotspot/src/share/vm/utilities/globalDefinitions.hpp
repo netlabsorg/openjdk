@@ -239,7 +239,7 @@ inline address_word  mask_address_bits(address x, int m)      { return address_w
 inline address_word  castable_address(address x)              { return address_word(x) ; }
 inline address_word  castable_address(void* x)                { return address_word(x) ; }
 
-#ifdef __EMX__
+#ifdef TARGET_COMPILER_gcc
 // GCC 4.4.4 forbids implicit cast from function pointers to void*
 template <class T>
 inline address_word  castable_address(T x)                    { return reinterpret_cast<address_word>(x) ; }

@@ -3498,7 +3498,7 @@ void nx_check_protection() {
   char code[] = { (char)0xC3 }; // ret
   void *code_ptr = (void *)code;
   __try {
-#ifdef __EMX__
+#ifdef TARGET_COMPILER_gcc
     __asm__("call *%0" : : "m"(code_ptr));
 #else
     __asm call code_ptr
@@ -3605,7 +3605,7 @@ jint os::init_2(void) {
   if (ForceFloatExceptions) {
 #ifndef  _WIN64
     static long fp_control_word = 0;
-#ifdef __EMX__
+#ifdef TARGET_COMPILER_gcc
     __asm__("fstcw %0" : "=m"(fp_control_word));
 #else
     __asm { fstcw fp_control_word }
@@ -3618,7 +3618,7 @@ jint os::init_2(void) {
     const long denorm    = 0x02;
     const long invalid   = 0x01;
     fp_control_word |= invalid;
-#ifdef __EMX__
+#ifdef TARGET_COMPILER_gcc
     __asm__("fldcw %0" : : "m"(fp_control_word));
 #else
     __asm { fldcw fp_control_word }

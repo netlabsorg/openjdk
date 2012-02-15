@@ -92,7 +92,7 @@ void os::os_exception_wrapper(java_call_t f, JavaValue* value, methodHandle* met
 
     if ( ThreadLocalStorage::get_thread_ptr_offset() == 0 ) {
       int thread_ptr_offset;
-#ifdef __EMX__
+#ifdef TARGET_COMPILER_gcc
       __asm__("leal %1, %%eax; "
               "subl %%fs:0, %%eax; "
               "movl %%eax, %0; "
@@ -112,7 +112,7 @@ void os::os_exception_wrapper(java_call_t f, JavaValue* value, methodHandle* met
     // inlined version of this routine.
     else {
       int test_thread_ptr_offset;
-#ifdef __EMX__
+#ifdef TARGET_COMPILER_gcc
       __asm__("leal %1, %%eax; "
               "subl %%fs:0, %%eax; "
               "movl %%eax, %0; "
@@ -388,7 +388,7 @@ frame os::get_sender_for_C_frame(frame* fr) {
 #ifndef AMD64
 intptr_t* _get_previous_fp() {
   intptr_t **frameptr;
-#ifdef __EMX__
+#ifdef TARGET_COMPILER_gcc
   __asm("movl %%ebp, %0" : "=m"(frameptr));
 #else
   __asm {
@@ -550,7 +550,7 @@ extern "C" int SpinPause () {
    // pause == rep:nop
    // On systems that don't support pause a rep:nop
    // is executed as a nop.  The rep: prefix is ignored.
-#ifdef __EMX__
+#ifdef TARGET_COMPILER_gcc
    __asm__("pause; ");
 #else
    _asm {
@@ -565,7 +565,7 @@ extern "C" int SpinPause () {
 void os::setup_fpu() {
 #ifndef AMD64
   int fpu_cntrl_word = StubRoutines::fpu_cntrl_wrd_std();
-#ifdef __EMX__
+#ifdef TARGET_COMPILER_gcc
   __asm__("fldcw %0; " : : "m"(fpu_cntrl_word));
 #else  
   __asm fldcw fpu_cntrl_word;
