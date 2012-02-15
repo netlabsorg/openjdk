@@ -109,12 +109,11 @@ ifeq ($(EMXOMFLD_TYPE), VAC308)
   LINK_FLAGS += -Zlinker /DLL
 endif
 
-CPP_DONT_USE_PCH =
 ifneq ($(USE_PRECOMPILED_HEADER),0)
 $(error Please add the rule for the PCH file!)
-CPP_FLAGS = # grab the PCH rule from linux/makefiles/gcc.make
+CPP_FLAGS += # grab the PCH rule from linux/makefiles/gcc.make
 else
-CPP_FLAGS= -DDONT_USE_PRECOMPILED_HEADER
+CPP_FLAGS += -DDONT_USE_PRECOMPILED_HEADER
 endif
 
 # Where to find the include files for the virtual machine
