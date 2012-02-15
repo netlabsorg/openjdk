@@ -25,12 +25,6 @@
 #ifndef OS_CPU_WINDOWS_X86_VM_BYTES_WINDOWS_X86_INLINE_HPP
 #define OS_CPU_WINDOWS_X86_VM_BYTES_WINDOWS_X86_INLINE_HPP
 
-#ifdef __EMX__
-
-#include "../../linux_x86/vm/bytes_linux_x86.inline.hpp"
-
-#else // __EMX__
-
 #pragma warning(disable: 4035) // Disable warning 4035: no return value
 
 // Efficient swapping of data bytes from Java byte
@@ -89,7 +83,5 @@ inline u8 Bytes::swap_u8(u8 x) {
 #endif // AMD64
 
 #pragma warning(default: 4035) // Enable warning 4035: no return value
-
-#endif // __EMX__
 
 #endif // OS_CPU_WINDOWS_X86_VM_BYTES_WINDOWS_X86_INLINE_HPP

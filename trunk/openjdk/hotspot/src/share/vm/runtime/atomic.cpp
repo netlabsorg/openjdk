@@ -49,7 +49,11 @@
 # include "atomic_solaris_sparc.inline.hpp"
 #endif
 #ifdef TARGET_OS_ARCH_windows_x86
-# include "atomic_windows_x86.inline.hpp"
+# ifdef TARGET_OS_FAMILY_os2
+#  include "atomic_os2_x86.inline.hpp"
+# else
+#  include "atomic_windows_x86.inline.hpp"
+# endif
 #endif
 
 jbyte Atomic::cmpxchg(jbyte exchange_value, volatile jbyte* dest, jbyte compare_value) {

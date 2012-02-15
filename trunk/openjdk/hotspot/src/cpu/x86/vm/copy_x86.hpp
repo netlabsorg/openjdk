@@ -35,7 +35,11 @@
 # include "copy_solaris_x86.inline.hpp"
 #endif
 #ifdef TARGET_OS_ARCH_windows_x86
-# include "copy_windows_x86.inline.hpp"
+# ifdef TARGET_OS_FAMILY_os2
+#  include "copy_os2_x86.inline.hpp"
+# else
+#  include "copy_windows_x86.inline.hpp"
+# endif
 #endif
 
 
