@@ -150,7 +150,7 @@ class Win32AttachOperation: public AttachOperation {
   }
 
  public:
-#ifdef __EMX__
+#ifdef TARGET_COMPILER_gcc
   void complete(jint result, bufferedStream* result_stream);
 #else
   void Win32AttachOperation::complete(jint result, bufferedStream* result_stream);

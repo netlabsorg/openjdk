@@ -45,7 +45,7 @@
   #define JNICALL __stdcall
 
   typedef int jint;
-#ifdef __EMX__
+#ifdef TARGET_COMPILER_gcc
   typedef __int64_t jlong;
 #else
   typedef __int64 jlong;

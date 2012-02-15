@@ -32,7 +32,7 @@
 #include <misc.h>
 
 #include <types.h>
-#ifdef __EMX__
+#ifdef TARGET_COMPILER_gcc
 #include <emx/startup.h>
 #endif
 
@@ -57,7 +57,7 @@ unsigned long SYSTEM _DLL_InitTerm(unsigned long hModule, unsigned long ulFlag)
 
     switch (ulFlag) {
     case 0 :
-#ifdef __EMX__
+#ifdef TARGET_COMPILER_gcc
         // initialize the C library
         if (_CRT_init())
           break;
@@ -84,7 +84,7 @@ unsigned long SYSTEM _DLL_InitTerm(unsigned long hModule, unsigned long ulFlag)
         if (dllHandle) {
           UnregisterLxDll(dllHandle);
         }
-#ifdef __EMX__
+#ifdef TARGET_COMPILER_gcc
         // destroy C++ statics
         __ctordtorTerm();
         _CRT_term();

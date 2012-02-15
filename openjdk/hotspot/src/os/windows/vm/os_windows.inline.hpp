@@ -42,7 +42,7 @@ inline const char* os::line_separator()                { return "\r\n"; }
 inline const char* os::path_separator()                { return ";"; }
 inline const char* os::dll_file_extension()            { return ".dll"; }
 
-#ifdef __EMX__
+#ifdef TARGET_COMPILER_gcc
 inline const char* os::jlong_format_specifier()        { return "%lld"; }
 inline const char* os::julong_format_specifier()       { return "%llu"; }
 #else
