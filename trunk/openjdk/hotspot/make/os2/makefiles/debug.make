@@ -1,5 +1,5 @@
 #
-# Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,12 @@ AOUT = $(HS_FNAME)
 SAWINDBG = sawindbg.dll
 GENERATED = ../generated
 
-default:: _build_pch_file.obj $(AOUT) checkAndBuildSA
+# Allow the user to turn off precompiled headers from the command line.
+ifneq ($(USE_PRECOMPILED_HEADER),0)
+BUILD_PCH_FILE=_build_pch_file.obj
+endif
+
+default:: $(BUILD_PCH_FILE) $(AOUT) launcher checkAndBuildSA
 
 include ../local.make
 include $(WorkSpace)/make/os2/makefiles/compile.make
@@ -38,8 +43,6 @@ LINK_FLAGS += $(DEBUG_LINK_FLAGS)
 
 include $(WorkSpace)/make/os2/makefiles/vm.make
 include local.make
-
-include $(GENERATED)/Dependencies
 
 # _Copy functions, assembled from .s file
 # Not included in includeDB because it has no dependencies
@@ -59,3 +62,4 @@ $(AOUT): $(Res_Files) $(Obj_Files) $(Def_File)
 
 include $(WorkSpace)/make/os2/makefiles/shared.make
 include $(WorkSpace)/make/os2/makefiles/sa.make
+include $(WorkSpace)/make/os2/makefiles/launcher.make

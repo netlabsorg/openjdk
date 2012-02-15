@@ -224,9 +224,11 @@ end
 if (fJavaDebug & \fMake) then call EnvSet '_JAVA_LAUNCHER_DEBUG', '1'
 
 /*
- * @todo temporarily disable some components
+ * @todo temporarily disable some things we don't support
  */
 call EnvSet 'OS2_TEMP', 'true'
+/* precompiled support is broken in GCC4 */
+call EnvSet 'USE_PRECOMPILED_HEADER', '0'
 
 /*
  * set up Odin32 runtime

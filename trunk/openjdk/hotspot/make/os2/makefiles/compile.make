@@ -55,6 +55,14 @@ PRODUCT_OPT_OPTION   = $(DEBUG_OPT_OPTION)
 FASTDEBUG_OPT_OPTION = $(DEBUG_OPT_OPTION)
 endif
 
+# Used for platform dispatching
+CPP_FLAGS += -DTARGET_OS_FAMILY_windows
+CPP_FLAGS += -DTARGET_ARCH_$(Platform_arch)
+CPP_FLAGS += -DTARGET_ARCH_MODEL_$(Platform_arch_model)
+CPP_FLAGS += -DTARGET_OS_ARCH_windows_$(Platform_arch)
+CPP_FLAGS += -DTARGET_OS_ARCH_MODEL_windows_$(Platform_arch_model)
+CPP_FLAGS += -DTARGET_COMPILER_gcc
+
 # Generic linker settings
 LINK = g++
 LINK_FLAGS = \

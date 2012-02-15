@@ -23,7 +23,7 @@
 #
 
 include ../local.make
-include $(WorkSpace)/make/os2/makefiles/makedeps.make
+include $(WorkSpace)/make/os2/makefiles/projectcreator.make
 include local.make
 
 # Pick up rules for building JVMTI (JSR-163)
@@ -33,66 +33,25 @@ include $(WorkSpace)/make/os2/makefiles/jvmti.make
 # Pick up rules for building SA
 include $(WorkSpace)/make/os2/makefiles/sa.make
 
+AdlcOutDir=adfiles
+
 ifeq ($(filter-out compiler2 tiered,$(Variant)),)
-default:: includeDB.current incls/ad_$(Platform_arch_model).cpp incls/dfa_$(Platform_arch_model).cpp $(JvmtiGeneratedFiles)
+default:: $(AdlcOutDir)/ad_$(Platform_arch_model).cpp $(AdlcOutDir)/dfa_$(Platform_arch_model).cpp $(JvmtiGeneratedFiles) buildobjfiles
 else
-default:: includeDB.current $(JvmtiGeneratedFiles)
+default:: $(JvmtiGeneratedFiles) buildobjfiles
 endif
 
-# core plus serial gc
-IncludeDBs_base=$(WorkSpace)/src/share/vm/includeDB_core \
-           $(WorkSpace)/src/share/vm/includeDB_jvmti \
-           $(WorkSpace)/src/share/vm/includeDB_gc \
-           $(WorkSpace)/src/share/vm/gc_implementation/includeDB_gc_serial
+buildobjfiles:
+	@ sh $(WorkSpace)/make/windows/create_obj_files.sh $(Variant) $(Platform_arch) $(Platform_arch_model) $(WorkSpace) .	> objfiles.make
 
-# parallel gc
-IncludeDBs_gc= $(WorkSpace)/src/share/vm/includeDB_gc_parallel \
-           $(WorkSpace)/src/share/vm/gc_implementation/includeDB_gc_parallelScavenge \
-           $(WorkSpace)/src/share/vm/gc_implementation/includeDB_gc_shared \
-           $(WorkSpace)/src/share/vm/gc_implementation/includeDB_gc_parNew \
-           $(WorkSpace)/src/share/vm/gc_implementation/includeDB_gc_concurrentMarkSweep \
-           $(WorkSpace)/src/share/vm/gc_implementation/includeDB_gc_g1
-
-IncludeDBs_core=$(IncludeDBs_base) $(IncludeDBs_gc) \
-                $(WorkSpace)/src/share/vm/includeDB_features
-
-ifeq ($(Variant),core)
-IncludeDBs=$(IncludeDBs_core)
-endif
-
-ifeq ($(Variant),kernel)
-IncludeDBs=$(IncludeDBs_base) $(WorkSpace)/src/share/vm/includeDB_compiler1
-endif
-
-ifeq ($(Variant),compiler1)
-IncludeDBs=$(IncludeDBs_core) $(WorkSpace)/src/share/vm/includeDB_compiler1
-endif
-
-
-ifeq ($(Variant),compiler2)
-IncludeDBs=$(IncludeDBs_core) $(WorkSpace)/src/share/vm/includeDB_compiler2
-endif
-
-ifeq ($(Variant),tiered)
-IncludeDBs=$(IncludeDBs_core) $(WorkSpace)/src/share/vm/includeDB_compiler1 \
-           $(WorkSpace)/src/share/vm/includeDB_compiler2
-endif
-
-includeDB.current: classes/MakeDeps.class $(IncludeDBs)
-	cat $(IncludeDBs) > includeDB
-	if [ -d incls ]; then rm -rf incls; fi
-	mkdir -p incls
-	$(RUN_JAVA) -Djava.class.path=classes MakeDeps OS2Platform $(WorkSpace)/make/os2/platform_$(BUILDARCH) includeDB $(MakeDepsOptions)
-	rm -f includeDB.current
-	cp includeDB includeDB.current
-
-classes/MakeDeps.class: $(MakeDepsSources)
+classes/ProjectCreator.class: $(ProjectCreatorSources)
 	if [ -d classes ]; then rm -rf classes; fi
 	mkdir -p classes
-	$(COMPILE_JAVAC) -classpath $(WorkSpace)/src/share/tools/MakeDeps -d classes $(MakeDepsSources)
+	$(COMPILE_JAVAC) -classpath $(WorkSpace)/src/share/tools/ProjectCreator -d classes $(ProjectCreatorSources)
 
 ifeq ($(filter-out compiler2 tiered,$(Variant)),)
 
+include $(WorkSpace)/make/os2/makefiles/compile.make
 include $(WorkSpace)/make/os2/makefiles/adlc.make
 
 endif

@@ -50,7 +50,9 @@ BUILDARCH=i486
 ARCH_TEXT=
 
 ifndef CC_INTERP
+ifndef FORCE_TIERED
 FORCE_TIERED=1
+endif
 endif
 
 ifeq ($(BUILDARCH),i486)
@@ -66,7 +68,7 @@ ifeq ($(Variant),compiler1)
 VARIANT_TEXT=Client
 else
   ifeq ($(Variant),compiler2)
-    ifdef FORCE_TIERED
+    ifeq ($(FORCE_TIERED),1)
 VARIANT_TEXT=Server
 realVariant=tiered
     else
