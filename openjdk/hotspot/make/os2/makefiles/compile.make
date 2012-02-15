@@ -30,6 +30,10 @@ CXX_FLAGS = $(CPP_FLAGS) -Zomf -march=i486 -mtune=generic
 # We compile a lot of MSVC code which seems to silently tolerate these
 CXX_FLAGS += -Wno-sign-compare -Wno-write-strings
 
+CXX_FLAGS += -fno-rtti
+CXX_FLAGS += -fno-exceptions
+CXX_FLAGS += -fcheck-new
+
 # Based on BUILDARCH we add some flags and select the default compiler name
 ifeq ($(BUILDARCH),i486)
 CPP_FLAGS += -DIA32
