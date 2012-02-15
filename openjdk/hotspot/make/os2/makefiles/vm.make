@@ -22,6 +22,8 @@
 #
 #
 
+include ../generated/objfiles.make
+
 ifdef RELEASE
 ifdef DEVELOP
 CPP_FLAGS += -DASSERT
@@ -107,8 +109,29 @@ ifeq ($(EMXOMFLD_TYPE), VAC308)
   LINK_FLAGS += -Zlinker /DLL
 endif
 
-Src_Dirs = \
-  ../generated/incls                    \
+CPP_DONT_USE_PCH =
+ifneq ($(USE_PRECOMPILED_HEADER),0)
+$(error Please add the rule for the PCH file!)
+CPP_FLAGS = # grab the PCH rule from linux/makefiles/gcc.make
+else
+CPP_FLAGS= -DDONT_USE_PRECOMPILED_HEADER
+endif
+
+# Where to find the include files for the virtual machine
+CPP_FLAGS += \
+  -I../generated \
+  -I"$(WorkSpace)/src/share/vm" \
+  -I"$(WorkSpace)/src/share/vm/prims" \
+  -I"$(WorkSpace)/src/os/windows/vm" \
+  -I"$(WorkSpace)/src/os/os2/vm" \
+  -I"$(WorkSpace)/src/os_cpu/windows_$(Platform_arch)/vm" \
+  -I"$(WorkSpace)/src/os_cpu/os2_$(Platform_arch)/vm" \
+  -I"$(WorkSpace)/src/cpu/$(Platform_arch)/vm" \
+
+# Where to find the source code for the virtual machine
+Src_Dirs_V = \
+  ../generated                          \
+  ../generated/adfiles                  \
   ../generated/jvmtifiles               \
   $(WorkSpace)/src/share/vm/c1          \
   $(WorkSpace)/src/share/vm/compiler    \
@@ -137,15 +160,7 @@ Src_Dirs = \
   $(WorkSpace)/src/os_cpu/os2_$(Platform_arch)/vm \
   $(WorkSpace)/src/cpu/$(Platform_arch)/vm \
   $(WorkSpace)/src/share/vm/opto
-
-# @todo PCH once GCC 4 for OS/2 supports it well
-CPP_FLAGS += # PCH output: "vm.pch" PCH sources: "incls/_precompiled.incl"
-
-# Where to find the include files for the virtual machine
-CPP_FLAGS += -I../generated $(Src_Dirs:%=-I'%')
-
-# Where to find the source code for the virtual machine
-VPATH += $(Src_Dirs:%=%;)
+VPATH += $(Src_Dirs_V:%=%;)
 
 # Special case files not using precompiled header files.
 
@@ -167,8 +182,3 @@ bytecodeInterpreterWithChecks.obj: ../generated/jvmtifiles/bytecodeInterpreterWi
 	$(CXX) $(CXX_FLAGS) -c $< -o $@
 
 default::
-
-# @todo PCH once GCC 4 for OS/2 supports it well
-_build_pch_file.obj:
-	@#echo '#include "incls/_precompiled.incl"' > ../generated/_build_pch_file.cpp
-	@#$(CXX) $(CXX_FLAGS) PCH output: "vm.pch", PCH sources (create mode): "incls/_precompiled.incl" -c ../generated/_build_pch_file.cpp -o $@

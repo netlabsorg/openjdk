@@ -22,8 +22,6 @@
 #
 #
 
-include $(WorkSpace)/make/os2/makefiles/compile.make
-
 # adlc is an internal tool, always generate the debug version with assert()
 CXX_FLAGS += -DASSERT
 CXX_FLAGS += $(DEBUG_OPT_OPTION)
@@ -38,24 +36,13 @@ ADLC=adlc
 endif
 
 CPP_INCLUDE_DIRS=\
-  -I'../generated'                          \
-  -I'$(WorkSpace)/src/share/vm/compiler'    \
-  -I'$(WorkSpace)/src/share/vm/code'        \
-  -I'$(WorkSpace)/src/share/vm/interpreter' \
-  -I'$(WorkSpace)/src/share/vm/classfile'   \
-  -I'$(WorkSpace)/src/share/vm/asm'         \
-  -I'$(WorkSpace)/src/share/vm/memory'      \
-  -I'$(WorkSpace)/src/share/vm/oops'        \
-  -I'$(WorkSpace)/src/share/vm/prims'       \
-  -I'$(WorkSpace)/src/share/vm/runtime'     \
-  -I'$(WorkSpace)/src/share/vm/utilities'   \
-  -I'$(WorkSpace)/src/share/vm/libadt'      \
-  -I'$(WorkSpace)/src/share/vm/opto'        \
-  -I'$(WorkSpace)/src/os/windows/vm'          \
+  -I'../generated' \
+  -I'$(WorkSpace)/src/share/vm/' \
+  -I'$(WorkSpace)/src/os/windows/vm' \
   -I'$(WorkSpace)/src/cpu/$(Platform_arch)/vm'
 
-# NOTE! If you add any files here, you must also update GENERATED_NAMES_IN_INCL
-# and MakeDepsIDEOptions in makedeps.make.
+# NOTE! If you add any files here, you must also update GENERATED_NAMES_IN_DIR
+# and ProjectCreatorIDEOptions in projectcreator.make.
 GENERATED_NAMES=\
   ad_$(Platform_arch_model).cpp \
   ad_$(Platform_arch_model).hpp \
@@ -70,7 +57,7 @@ GENERATED_NAMES=\
   dfa_$(Platform_arch_model).cpp
 
 # NOTE! This must be kept in sync with GENERATED_NAMES
-GENERATED_NAMES_IN_INCL=$(GENERATED_NAMES:%=incls/%)
+GENERATED_NAMES_IN_DIR=$(GENERATED_NAMES:%=$(AdlcOutDir)/%)
 
 VPATH += $(WorkSpace)/src/share/vm/adlc;$(WorkSpace)/src/share/vm/opto
 
@@ -81,10 +68,14 @@ adlc.exe: main.obj adlparse.obj archDesc.obj arena.obj dfa.obj dict2.obj filebuf
           forms.obj formsopt.obj formssel.obj opcodes.obj output_c.obj output_h.obj
 	$(LINK) $(LINK_FLAGS) -o $@ $^
 
-$(GENERATED_NAMES_IN_INCL): $(Platform_arch_model).ad adlc.exe includeDB.current
+.NOTPARALLEL: $(GENERATED_NAMES_IN_DIR)
+
+$(GENERATED_NAMES_IN_DIR): $(Platform_arch_model).ad adlc.exe
 	rm -f $(GENERATED_NAMES)
+	if [ -d $(AdlcOutDir) ]; then rm -rf $(AdlcOutDir); fi
+	mkdir -p $(AdlcOutDir)
 	$(ADLC) $(ADLCFLAGS) $(Platform_arch_model).ad
-	mv $(GENERATED_NAMES) incls/
+	mv $(GENERATED_NAMES) $(AdlcOutDir)/
 
 $(Platform_arch_model).ad: $(WorkSpace)/src/cpu/$(Platform_arch)/vm/$(Platform_arch_model).ad $(WorkSpace)/src/os_cpu/windows_$(Platform_arch)/vm/windows_$(Platform_arch_model).ad
 	rm -f $(Platform_arch_model).ad

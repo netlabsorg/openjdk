@@ -25,22 +25,20 @@
 
 include $(WorkSpace)/make/os2/makefiles/rules.make
 
-# NOTE: unfortunately the MakeDepsSources list must be kept
+# NOTE: unfortunately the ProjectCreatorSources list must be kept
 # synchronized between this and the Solaris version
-# (make/solaris/makefiles/makedeps.make).
+# (make/solaris/makefiles/projectcreator.make).
 
-MakeDepsSources=\
-        $(WorkSpace)\src\share\tools\MakeDeps\Database.java \
-        $(WorkSpace)\src\share\tools\MakeDeps\DirectoryTree.java \
-        $(WorkSpace)\src\share\tools\MakeDeps\DirectoryTreeNode.java \
-        $(WorkSpace)\src\share\tools\MakeDeps\FileFormatException.java \
-        $(WorkSpace)\src\share\tools\MakeDeps\FileList.java \
-        $(WorkSpace)\src\share\tools\MakeDeps\FileName.java \
-        $(WorkSpace)\src\share\tools\MakeDeps\Macro.java \
-        $(WorkSpace)\src\share\tools\MakeDeps\MacroDefinitions.java \
-        $(WorkSpace)\src\share\tools\MakeDeps\MakeDeps.java \
-        $(WorkSpace)\src\share\tools\MakeDeps\MetroWerksMacPlatform.java \
-        $(WorkSpace)\src\share\tools\MakeDeps\Platform.java \
-        $(WorkSpace)\src\share\tools\MakeDeps\OS2Platform.java
+ProjectCreatorSources=\
+        $(WorkSpace)\src\share\tools\ProjectCreator\DirectoryTree.java \
+        $(WorkSpace)\src\share\tools\ProjectCreator\DirectoryTreeNode.java \
+        $(WorkSpace)\src\share\tools\ProjectCreator\FileFormatException.java \
+        $(WorkSpace)\src\share\tools\ProjectCreator\Macro.java \
+        $(WorkSpace)\src\share\tools\ProjectCreator\MacroDefinitions.java \
+        $(WorkSpace)\src\share\tools\ProjectCreator\ProjectCreator.java \
+        $(WorkSpace)\src\share\tools\ProjectCreator\OS2Platform.java \
+        $(WorkSpace)\src\share\tools\ProjectCreator\Util.java \
+        $(WorkSpace)\src\share\tools\ProjectCreator\BuildConfig.java \
+        $(WorkSpace)\src\share\tools\ProjectCreator\ArgsParser.java
 
-MakeDepsOptions=
+ProjectCreatorSources=
