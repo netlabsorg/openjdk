@@ -30,8 +30,8 @@
 #define INCL_DOSERRORS
 #include <os2wrap2.h>
 
-// do not include precompiled header file
-# include "incls/_os_windows.cpp.incl"
+// no precompiled headers
+#include "runtime/osThread.hpp"
 
 #define MIN2(x, y) (((x) < (y))? (x) : (y))
 
