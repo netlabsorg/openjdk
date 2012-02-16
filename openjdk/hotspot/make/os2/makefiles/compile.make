@@ -79,14 +79,14 @@ LINK_FLAGS = \
 
 ifeq ($(EMXOMFLD_TYPE), WLINK)
   LINK_FLAGS += -Zlinker "DISABLE 1121"
+  MAPSYM = wmapsym.cmd
 endif
 ifeq ($(EMXOMFLD_TYPE), VAC308)
   LINK_FLAGS += -Zlinker /OPTFUNC
+  MAPSYM = mapsym.exe
 endif
  
 IMPLIB = emximp
-
-MAPSYM = mapsym.exe
 
 # Odin SDK
 
@@ -95,9 +95,9 @@ CPP_FLAGS += -D__WIN32OS2__ -D__i386__ -DSTRICT -D_POSIX_SOURCE \
         	 -D_SVID_SOURCE
 CPP_FLAGS += -I$(ALT_ODINSDK_HEADERS_PATH)/Win -I$(ALT_ODINSDK_HEADERS_PATH)
 
-PRODUCT_LINK_FLAGS      += -L$(ALT_ODINSDK_LIB_PATH)
-FASTDEBUG_LINK_FLAGS    += -L$(firstword $(ALT_ODINSDK_DBGLIB_PATH) $(ALT_ODINSDK_LIB_PATH))
-DEBUG_LINK_FLAGS        += -L$(firstword $(ALT_ODINSDK_DBGLIB_PATH) $(ALT_ODINSDK_LIB_PATH))
+PRODUCT_LINK_FLAGS      += -s -L$(ALT_ODINSDK_LIB_PATH)
+FASTDEBUG_LINK_FLAGS    += -s -L$(firstword $(ALT_ODINSDK_DBGLIB_PATH) $(ALT_ODINSDK_LIB_PATH))
+DEBUG_LINK_FLAGS        += -g -L$(firstword $(ALT_ODINSDK_DBGLIB_PATH) $(ALT_ODINSDK_LIB_PATH))
 
 LINK_FLAGS  += -lkernel32.lib -luser32.lib -lgdi32.lib -lwinspool.lib \
                -lcomdlg32.lib -ladvapi32.lib -lshell32.lib -lole32.lib \
