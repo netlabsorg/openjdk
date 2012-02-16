@@ -23,12 +23,16 @@
 #
 
 # Generic compiler settings
+CC = gcc
 CXX = g++
 
-CXX_FLAGS = $(CPP_FLAGS) -Zomf -march=i486 -mtune=generic
+CC_FLAGS = $(C_FLAGS) $(CPP_FLAGS)
+CXX_FLAGS = $(C_FLAGS) $(CPP_FLAGS)
+
+C_FLAGS = -Zomf -march=i486 -mtune=generic
 
 # We compile a lot of MSVC code which seems to silently tolerate these
-CXX_FLAGS += -Wno-sign-compare -Wno-write-strings
+C_FLAGS += -Wno-sign-compare -Wno-write-strings
 
 CXX_FLAGS += -fno-rtti
 CXX_FLAGS += -fno-exceptions

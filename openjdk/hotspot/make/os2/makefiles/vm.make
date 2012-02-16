@@ -180,6 +180,6 @@ bytecodeInterpreterWithChecks.obj: ../generated/jvmtifiles/bytecodeInterpreterWi
 	$(CXX) $(CXX_FLAGS) -c $< -o $@
 
 %.obj: %.s
-	$(CXX) $(CXX_FLAGS) -c $< -o $@
+	$(CXX) $(CPP_FLAGS) -c $< -o $@
 
 default::

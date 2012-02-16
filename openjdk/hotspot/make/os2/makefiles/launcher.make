@@ -32,12 +32,12 @@ LAUNCHER_FLAGS = $(ARCHFLAG) \
 	-D_CRT_SECURE_NO_WARNINGS \
 	-D_CRT_SECURE_NO_DEPRECATE \
 	-DLINK_INTO_LIBJVM \
-	-I$(WorkSpace)\src\os\windows\launcher \
-	-I$(WorkSpace)\src\share\tools\launcher \
-	-I$(WorkSpace)\src\share\vm\prims \
-	-I$(WorkSpace)\src\share\vm \
-	-I$(WorkSpace)\src\cpu\$(Platform_arch)\vm \
-	-I$(WorkSpace)\src\os\windows\vm
+	-I$(WorkSpace)/src/os/windows/launcher \
+	-I$(WorkSpace)/src/share/tools/launcher \
+	-I$(WorkSpace)/src/share/vm/prims \
+	-I$(WorkSpace)/src/share/vm \
+	-I$(WorkSpace)/src/cpu/$(Platform_arch)/vm \
+	-I$(WorkSpace)/src/os/windows/vm
 
 LAUNCHER_LINK_FLAGS += -l$(HS_INTERNAL_NAME).lib -g -Zlinker /PM:VIO
 
@@ -55,10 +55,10 @@ launcher-out:
 	mkdir -p $(LAUNCHER_OUT)
 
 $(LAUNCHER_OUT)/%.obj: $(LAUNCHERDIR_SHARE)/%.c | launcher-out
-	$(QUIETLY) $(CXX) $(CXX_FLAGS) -g -o $@ -c $< $(LAUNCHER_FLAGS)
+	$(QUIETLY) $(CC) $(CC_FLAGS) $(LAUNCHER_FLAGS) -g -o $@ -c $<
 
 $(LAUNCHER_OUT)/%.obj: $(LAUNCHERDIR)/%.c | launcher-out
-	$(QUIETLY) $(CXX) $(CXX_FLAGS) -g -o $@ -c $< $(LAUNCHER_FLAGS)
+	$(QUIETLY) $(CC) $(CC_FLAGS) $(LAUNCHER_FLAGS) -g -o $@ -c $<
 
 launcher: $(OBJS)
 	echo $(JAVA_HOME) > jdkpath.txt  
