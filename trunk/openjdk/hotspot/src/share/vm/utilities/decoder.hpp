@@ -32,10 +32,22 @@
 #include <windows.h>
 #include <imagehlp.h>
 
+#ifdef __WIN32OS2__
+#define DWORDXX DWORD
+#define PDWORDXX PDWORD
+#define IMAGEHLP_SYMBOLXX IMAGEHLP_SYMBOL
+#define PIMAGEHLP_SYMBOLXX PIMAGEHLP_SYMBOL
+#else
+#define DWORDXX DWORD64
+#define PDWORDXX PDWORD64
+#define IMAGEHLP_SYMBOLXX IMAGEHLP_SYMBOL64
+#define PIMAGEHLP_SYMBOLXX PIMAGEHLP_SYMBOL64
+#endif
+
 // functions needed for decoding symbols
 typedef DWORD (WINAPI *pfn_SymSetOptions)(DWORD);
 typedef BOOL  (WINAPI *pfn_SymInitialize)(HANDLE, PCTSTR, BOOL);
-typedef BOOL  (WINAPI *pfn_SymGetSymFromAddr64)(HANDLE, DWORD64, PDWORD64, PIMAGEHLP_SYMBOL64);
+typedef BOOL  (WINAPI *pfn_SymGetSymFromAddrXX)(HANDLE, DWORDXX, PDWORDXX, PIMAGEHLP_SYMBOLXX);
 typedef DWORD (WINAPI *pfn_UndecorateSymbolName)(const char*, char*, DWORD, DWORD);
 
 #else
@@ -92,7 +104,7 @@ class Decoder: public StackObj {
 #ifdef TARGET_OS_FAMILY_windows
   static HMODULE                   _dbghelp_handle;
   static bool                      _can_decode_in_vm;
-  static pfn_SymGetSymFromAddr64   _pfnSymGetSymFromAddr64;
+  static pfn_SymGetSymFromAddrXX   _pfnSymGetSymFromAddrXX;
   static pfn_UndecorateSymbolName  _pfnUndecorateSymbolName;
 #else
   static ElfFile*                  _opened_elf_files;
