@@ -33,7 +33,7 @@
 
 #define BUFFER_SIZE 30
 
-#if defined(_WINDOWS) || defined(OS2)
+#ifdef TARGET_OS_FAMILY_windows
 GetBooleanField_t JNI_FastGetField::jni_fast_GetBooleanField_fp;
 GetByteField_t    JNI_FastGetField::jni_fast_GetByteField_fp;
 GetCharField_t    JNI_FastGetField::jni_fast_GetCharField_fp;
@@ -113,7 +113,7 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
   }
   __ jcc (Assembler::notEqual, slow);
 
-#if !defined(_WINDOWS) && !defined(__WIN32OS2__)
+#ifndef TARGET_OS_FAMILY_windows
   __ ret (0);
 #else
   // __stdcall calling convention
@@ -135,7 +135,7 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
 
   __ flush ();
 
-#if !defined(_WINDOWS) && !defined(OS2)
+#ifndef TARGET_OS_FAMILY_windows
   return fast_entry;
 #else
   switch (type) {
@@ -230,7 +230,7 @@ address JNI_FastGetField::generate_fast_get_long_field() {
 
   __ pop (rsi);
 
-#if !defined(_WINDOWS) && !defined(__WIN32OS2__)
+#ifndef TARGET_OS_FAMILY_windows
   __ ret (0);
 #else
   // __stdcall calling convention
@@ -247,7 +247,7 @@ address JNI_FastGetField::generate_fast_get_long_field() {
 
   __ flush ();
 
-#if !defined(_WINDOWS) && !defined(OS2)
+#ifndef TARGET_OS_FAMILY_windows
   return fast_entry;
 #else
   jni_fast_GetLongField_fp = (GetLongField_t) fast_entry;
@@ -324,7 +324,7 @@ address JNI_FastGetField::generate_fast_get_float_field0(BasicType type) {
   }
   __ jcc (Assembler::notEqual, slow_with_pop);
 
-#if !defined(_WINDOWS) && !defined(__WIN32OS2__)
+#ifndef TARGET_OS_FAMILY_windows
   __ ret (0);
 #else
   // __stdcall calling convention
@@ -348,7 +348,7 @@ address JNI_FastGetField::generate_fast_get_float_field0(BasicType type) {
 
   __ flush ();
 
-#if !defined(_WINDOWS) && !defined(OS2)
+#ifndef TARGET_OS_FAMILY_windows
   return fast_entry;
 #else
   switch (type) {

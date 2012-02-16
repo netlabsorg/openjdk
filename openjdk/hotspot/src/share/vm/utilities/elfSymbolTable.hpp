@@ -25,7 +25,7 @@
 #ifndef __ELF_SYMBOL_TABLE_HPP
 #define __ELF_SYMBOL_TABLE_HPP
 
-#ifndef _WINDOWS
+#ifndef TARGET_OS_FAMILY_windows
 
 
 #include "memory/allocation.hpp"
@@ -65,7 +65,7 @@ class ElfSymbolTable: public CHeapObj {
   Decoder::decoder_status  m_status;
 };
 
-#endif // _WINDOWS
+#endif // TARGET_OS_FAMILY_windows
 
 #endif // __ELF_SYMBOL_TABLE_HPP
 

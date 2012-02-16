@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 
-#ifndef _WINDOWS
+#ifndef TARGET_OS_FAMILY_windows
 
 #include <string.h>
 #include <stdio.h>
@@ -195,4 +195,4 @@ ElfStringTable* ElfFile::get_string_table(int index) {
   return NULL;
 }
 
-#endif // _WINDOWS
+#endif // TARGET_OS_FAMILY_windows

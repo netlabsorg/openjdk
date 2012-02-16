@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 
-#ifndef _WINDOWS
+#ifndef TARGET_OS_FAMILY_windows
 
 #include "memory/allocation.inline.hpp"
 #include "utilities/elfStringTable.hpp"
@@ -85,5 +85,5 @@ const char* ElfStringTable::string_at(int pos) {
   }
 }
 
-#endif // _WINDOWS
+#endif // TARGET_OS_FAMILY_windows
 

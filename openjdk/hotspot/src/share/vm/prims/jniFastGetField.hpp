@@ -66,7 +66,7 @@ class JNI_FastGetField : AllStatic {
   static address generate_fast_get_float_field0(BasicType type);
 
  public:
-#if (defined(_WINDOWS) && !defined(_WIN64)) || defined(OS2)
+#ifdef TARGET_OS_ARCH_MODEL_windows_x86_32
   static GetBooleanField_t jni_fast_GetBooleanField_fp;
   static GetByteField_t    jni_fast_GetByteField_fp;
   static GetCharField_t    jni_fast_GetCharField_fp;

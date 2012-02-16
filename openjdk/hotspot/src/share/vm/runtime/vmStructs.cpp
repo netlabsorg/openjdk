@@ -2345,7 +2345,7 @@ VMStructs::init() {
   // NOTE: taken out because this was just not working on everyone's
   // Solstice NFS setup. If everyone switches to local workspaces on
   // Win32, we can put this back in.
-#ifndef _WINDOWS
+#ifndef TARGET_OS_FAMILY_windows
   debug_only(VM_STRUCTS(ENSURE_FIELD_TYPE_PRESENT, \
                         CHECK_NO_OP, \
                         CHECK_NO_OP, \
