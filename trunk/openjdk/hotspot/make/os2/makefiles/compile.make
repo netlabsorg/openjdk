@@ -72,6 +72,10 @@ CPP_FLAGS += -DTARGET_COMPILER_gcc
 # Additional define for differences not covered by TARGET_COMPILER_gcc
 CPP_FLAGS += -DTARGET_OS_FAMILY_os2
 
+# Generate dependencies
+CPP_FLAGS += -MMD -MP -MF $(@:%=%.d)
+SUFFIXES += .d
+
 # Generic linker settings
 LINK = g++
 LINK_FLAGS = \

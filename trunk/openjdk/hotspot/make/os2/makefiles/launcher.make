@@ -46,21 +46,19 @@ LAUNCHERDIR_SHARE = $(WorkSpace)/src/share/tools/launcher
 
 LAUNCHER_OUT = launcher
 
-SUFFIXES += .d
-
 OBJS := $(LAUNCHER_OUT)/java.obj $(LAUNCHER_OUT)/java_md.obj $(LAUNCHER_OUT)/jli_util.obj
 
-DEPFILES := $(patsubst %.obj,%.d,$(OBJS))
--include $(DEPFILES)
+# Include dependencies
+-include $(LAUNCHER_OUT)/*.d
 
 launcher-out:
 	mkdir -p $(LAUNCHER_OUT)
 
 $(LAUNCHER_OUT)/%.obj: $(LAUNCHERDIR_SHARE)/%.c | launcher-out
-	$(QUIETLY) $(CXX) $(CXX_FLAGS) -g -o $@ -c $< -MMD $(LAUNCHER_FLAGS)
+	$(QUIETLY) $(CXX) $(CXX_FLAGS) -g -o $@ -c $< $(LAUNCHER_FLAGS)
 
 $(LAUNCHER_OUT)/%.obj: $(LAUNCHERDIR)/%.c | launcher-out
-	$(QUIETLY) $(CXX) $(CXX_FLAGS) -g -o $@ -c $< -MMD $(LAUNCHER_FLAGS)
+	$(QUIETLY) $(CXX) $(CXX_FLAGS) -g -o $@ -c $< $(LAUNCHER_FLAGS)
 
 launcher: $(OBJS)
 	echo $(JAVA_HOME) > jdkpath.txt  
