@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 
-#ifndef _WINDOWS
+#ifndef TARGET_OS_FAMILY_windows
 
 #include "memory/allocation.inline.hpp"
 #include "utilities/elfSymbolTable.hpp"
@@ -122,4 +122,4 @@ Decoder::decoder_status ElfSymbolTable::lookup(address addr, int* stringtableInd
   return m_status;
 }
 
-#endif // _WINDOWS
+#endif // TARGET_OS_FAMILY_windows

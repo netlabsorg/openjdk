@@ -28,7 +28,7 @@
 
 #include "memory/allocation.hpp"
 
-#ifdef _WINDOWS
+#ifdef TARGET_OS_FAMILY_windows
 #include <windows.h>
 #include <imagehlp.h>
 
@@ -42,7 +42,7 @@ typedef DWORD (WINAPI *pfn_UndecorateSymbolName)(const char*, char*, DWORD, DWOR
 
 class ElfFile;
 
-#endif // _WINDOWS
+#endif // TARGET_OS_FAMILY_windows
 
 
 class Decoder: public StackObj {
@@ -69,7 +69,7 @@ class Decoder: public StackObj {
   static void initialize();
   static void uninitialize();
 
-#ifdef _WINDOWS
+#ifdef TARGET_OS_FAMILY_windows
   static decoder_status    decode(address addr, char *buf, int buflen, int *offset);
 #else
   static decoder_status    decode(address addr, const char* filepath, char *buf, int buflen, int *offset);
@@ -79,24 +79,24 @@ class Decoder: public StackObj {
 
   static decoder_status    get_status() { return _decoder_status; };
 
-#ifndef _WINDOWS
+#ifndef TARGET_OS_FAMILY_windows
  private:
   static ElfFile*         get_elf_file(const char* filepath);
-#endif // _WINDOWS
+#endif // TARGET_OS_FAMILY_windows
 
 
  private:
   static decoder_status     _decoder_status;
   static bool               _initialized;
 
-#ifdef _WINDOWS
+#ifdef TARGET_OS_FAMILY_windows
   static HMODULE                   _dbghelp_handle;
   static bool                      _can_decode_in_vm;
   static pfn_SymGetSymFromAddr64   _pfnSymGetSymFromAddr64;
   static pfn_UndecorateSymbolName  _pfnUndecorateSymbolName;
 #else
   static ElfFile*                  _opened_elf_files;
-#endif // _WINDOWS
+#endif // TARGET_OS_FAMILY_windows
 };
 
 #endif // __DECODER_HPP

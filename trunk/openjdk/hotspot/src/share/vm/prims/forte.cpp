@@ -630,7 +630,7 @@ void AsyncGetCallTrace(ASGCT_CallTrace *trace, jint depth, void* ucontext) {
 }
 
 
-#if !defined(_WINDOWS) && !defined(OS2)
+#ifndef TARGET_OS_FAMILY_windows
 // Support for the Forte(TM) Peformance Tools collector.
 //
 // The method prototype is derived from libcollector.h. For more
@@ -649,17 +649,17 @@ void    collector_func_load(char* name,
 #pragma weak collector_func_load
 #define collector_func_load(x0,x1,x2,x3,x4,x5,x6) \
         ( collector_func_load ? collector_func_load(x0,x1,x2,x3,x4,x5,x6),0 : 0 )
-#endif // !_WINDOWS && !OS2
+#endif // !TARGET_OS_FAMILY_windows
 
 } // end extern "C"
 #endif // !IA64
 
 void Forte::register_stub(const char* name, address start, address end) {
-#if !defined(_WINDOWS) && !defined(OS2) && !defined(IA64)
+#if !defined(TARGET_OS_FAMILY_windows) && !defined(IA64)
   assert(pointer_delta(end, start, sizeof(jbyte)) < INT_MAX,
          "Code size exceeds maximum range");
 
   collector_func_load((char*)name, NULL, NULL, start,
     pointer_delta(end, start, sizeof(jbyte)), 0, NULL);
-#endif // !_WINDOWS && !OS2 && !IA64
+#endif // !TARGET_OS_FAMILY_windows && !IA64
 }

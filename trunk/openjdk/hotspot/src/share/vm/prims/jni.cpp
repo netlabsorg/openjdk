@@ -3185,7 +3185,7 @@ void quicken_jni_functions() {
   // Replace Get<Primitive>Field with fast versions
   if (UseFastJNIAccessors && !JvmtiExport::can_post_field_access()
       && !VerifyJNIFields && !TraceJNICalls && !CountJNICalls && !CheckJNICalls
-#if defined(_WINDOWS) && defined(IA32) && defined(COMPILER2)
+#if defined(TARGET_OS_FAMILY_windows) && defined(IA32) && defined(COMPILER2)
       // windows x86 currently needs SEH wrapper and the gain of the fast
       // versions currently isn't certain for server vm on uniprocessor.
       && os::is_MP()

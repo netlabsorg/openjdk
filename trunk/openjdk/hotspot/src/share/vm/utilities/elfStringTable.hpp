@@ -25,7 +25,7 @@
 #ifndef __ELF_STRING_TABLE_HPP
 #define __ELF_STRING_TABLE_HPP
 
-#ifndef _WINDOWS
+#ifndef TARGET_OS_FAMILY_windows
 
 #include "memory/allocation.hpp"
 #include "utilities/decoder.hpp"
@@ -76,7 +76,7 @@ class ElfStringTable: CHeapObj {
   Decoder::decoder_status  m_status;
 };
 
-#endif // _WINDOWS
+#endif // TARGET_OS_FAMILY_windows
 
 #endif // __ELF_STRING_TABLE_HPP
 

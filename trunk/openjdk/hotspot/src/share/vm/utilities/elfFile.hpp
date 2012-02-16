@@ -25,7 +25,7 @@
 #ifndef __ELF_FILE_HPP
 #define __ELF_FILE_HPP
 
-#ifndef _WINDOWS
+#ifndef TARGET_OS_FAMILY_windows
 
 #include <elf.h>
 #include <stdio.h>
@@ -134,7 +134,7 @@ class ElfFile: public CHeapObj {
   Decoder::decoder_status  m_status;
 };
 
-#endif // _WINDOWS
+#endif // TARGET_OS_FAMILY_windows
 
 #endif // __ELF_FILE_HPP
 

@@ -29,7 +29,7 @@
 Decoder::decoder_status  Decoder::_decoder_status = Decoder::no_error;
 bool                     Decoder::_initialized = false;
 
-#ifndef _WINDOWS
+#ifndef TARGET_OS_FAMILY_windows
 
 // Implementation of common functionalities among Solaris and Linux
 #include "utilities/elfFile.hpp"
