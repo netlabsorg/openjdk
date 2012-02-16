@@ -23,7 +23,7 @@
 #
 
 
-LAUNCHER_FLAGS = $(CPP_FLAGS) $(ARCHFLAG) \
+LAUNCHER_FLAGS = $(ARCHFLAG) \
 	-DFULL_VERSION=\"$(HOTSPOT_RELEASE_VERSION)\" \
 	-DJDK_MAJOR_VERSION=\"$(JDK_MAJOR_VERSION)\" \
 	-DJDK_MINOR_VERSION=\"$(JDK_MINOR_VERSION)\" \
@@ -39,7 +39,7 @@ LAUNCHER_FLAGS = $(CPP_FLAGS) $(ARCHFLAG) \
 	-I$(WorkSpace)\src\cpu\$(Platform_arch)\vm \
 	-I$(WorkSpace)\src\os\windows\vm
 
-LINK_FLAGS += -l$(HS_INTERNAL_NAME).lib -g -Zlinker /PM:VIO
+LAUNCHER_LINK_FLAGS += -l$(HS_INTERNAL_NAME).lib -g -Zlinker /PM:VIO
 
 LAUNCHERDIR = $(WorkSpace)/src/os/windows/launcher
 LAUNCHERDIR_SHARE = $(WorkSpace)/src/share/tools/launcher
@@ -57,13 +57,13 @@ launcher-out:
 	mkdir -p $(LAUNCHER_OUT)
 
 $(LAUNCHER_OUT)/%.obj: $(LAUNCHERDIR_SHARE)/%.c | launcher-out
-	$(QUIETLY) $(CXX) $(CXXFLAGS) -g -o $@ -c $< -MMD $(LAUNCHER_FLAGS)
+	$(QUIETLY) $(CXX) $(CXX_FLAGS) -g -o $@ -c $< -MMD $(LAUNCHER_FLAGS)
 
 $(LAUNCHER_OUT)/%.obj: $(LAUNCHERDIR)/%.c | launcher-out
-	$(QUIETLY) $(CXX) $(CXXFLAGS) -g -o $@ -c $< -MMD $(LAUNCHER_FLAGS)
+	$(QUIETLY) $(CXX) $(CXX_FLAGS) -g -o $@ -c $< -MMD $(LAUNCHER_FLAGS)
 
 launcher: $(OBJS)
 	echo $(JAVA_HOME) > jdkpath.txt  
-	$(LINK) $(LINK_FLAGS) -o hotspot.exe $(OBJS)
+	$(LINK) $(LINK_FLAGS) $(LAUNCHER_LINK_FLAGS) -o hotspot.exe $(OBJS)
 
 
