@@ -27,6 +27,10 @@
 #define _WIN32_WINNT 0x500
 #endif
 
+#ifdef __WIN32OS2__
+#include <os2wrap2.h>
+#endif
+
 // no precompiled headers
 #include "classfile/classLoader.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -103,13 +107,21 @@
 #include <tlhelp32.h>
 #include <vdmdbg.h>
 
+#ifdef __EMX__
+
 #ifdef __WIN32OS2__
 #include <mmsystem.h>
 #include <wincon.h>
 #include <basetsd.h>
+#include <winsock.h>
 #define _M_IX86
-#define _lseeki64 lseek
 #endif
+
+#define _stati64 stat
+#define _fstati64 fstat
+#define _lseeki64 lseek
+
+#endif /* EMX */
 
 // for timer info max values which include all bits
 #define ALL_64_BITS CONST64(0xFFFFFFFFFFFFFFFF)
@@ -4032,7 +4044,7 @@ char * os::native_path(char *path) {
 
   #ifdef DEBUG
     jio_fprintf(stderr, "sysNativePath: %s\n", path);
-  #endif DEBUG
+  #endif
   return path;
 }
 
@@ -4040,24 +4052,28 @@ char * os::native_path(char *path) {
 // from src/windows/hpi/src/sys_api_md.c
 
 int os::ftruncate(int fd, jlong length) {
-  HANDLE h = (HANDLE)::_get_osfhandle(fd);
-  long high = (long)(length >> 32);
-  DWORD ret;
+#ifdef __EMX__
+    return ftruncate(fd, length);
+#else /* __EMX__ */
+    HANDLE h = (HANDLE)::_get_osfhandle(fd);
+    long high = (long)(length >> 32);
+    DWORD ret;
 
-  if (h == (HANDLE)(-1)) {
-    return -1;
-  }
-
-  ret = ::SetFilePointer(h, (long)(length), &high, FILE_BEGIN);
-  if ((ret == 0xFFFFFFFF) && (::GetLastError() != NO_ERROR)) {
+    if (h == (HANDLE)(-1)) {
       return -1;
-  }
+    }
 
-  if (::SetEndOfFile(h) == FALSE) {
-    return -1;
-  }
+    ret = ::SetFilePointer(h, (long)(length), &high, FILE_BEGIN);
+    if ((ret == 0xFFFFFFFF) && (::GetLastError() != NO_ERROR)) {
+        return -1;
+    }
 
-  return 0;
+    if (::SetEndOfFile(h) == FALSE) {
+      return -1;
+    }
+
+    return 0;
+#endif /* __EMX__ */
 }
 
 
@@ -4066,6 +4082,9 @@ int os::ftruncate(int fd, jlong length) {
 // except for the legacy workaround for a bug in Win 98
 
 int os::fsync(int fd) {
+#ifdef __EMX__
+    return fsync(fd);
+#else /* __EMX__ */
   HANDLE handle = (HANDLE)::_get_osfhandle(fd);
 
   if ( (!::FlushFileBuffers(handle)) &&
@@ -4074,13 +4093,18 @@ int os::fsync(int fd) {
     return -1;
   }
   return 0;
+#endif /* __EMX__ */
 }
 
 static int nonSeekAvailable(int, long *);
 static int stdinAvailable(int, long *);
 
+#ifndef S_ISCHR
 #define S_ISCHR(mode)   (((mode) & _S_IFCHR) == _S_IFCHR)
+#endif
+#ifndef S_ISFIFO
 #define S_ISFIFO(mode)  (((mode) & _S_IFIFO) == _S_IFIFO)
+#endif
 
 // This code is a copy of JDK's sysAvailable
 // from src/windows/hpi/src/sys_api_md.c
@@ -4126,6 +4150,19 @@ static int nonSeekAvailable(int fd, long *pbytes) {
     * Standard Input is a special case.
     *
     */
+#ifdef __WIN32OS2__
+    os2_AVAILDATA avail = { 0, 0 };
+    os2_ULONG pipeState;
+    os2_APIRET arc = DosPeekNPipe(0, NULL, 0, NULL, &avail, &pipeState);
+    // note that even if ERROR_INVALID_PARAMETER, it seems to return the
+    // correct values in avail and state (undocumented)
+    if (arc != NO_ERROR && arc != ERROR_INVALID_PARAMETER) {
+        *pbytes = avail.cbpipe;
+        return TRUE;
+    }
+
+    return FALSE;
+#else
   HANDLE han;
 
   if ((han = (HANDLE) ::_get_osfhandle(fd)) == (HANDLE)(-1)) {
@@ -4145,6 +4182,7 @@ static int nonSeekAvailable(int fd, long *pbytes) {
     *pbytes = 0;
   }
   return TRUE;
+#endif
 }
 
 #define MAX_INPUT_EVENTS 2000
@@ -4762,7 +4800,7 @@ static bool winsock2Available = FALSE;
 
 
 static void initSockFnTable() {
-  int (PASCAL FAR* WSAStartupPtr)(WORD, LPWSADATA);
+  int (FAR PASCAL * WSAStartupPtr)(WORD, LPWSADATA);
   WSADATA wsadata;
 
   ::mutexInit(&sockFnTableMutex);
@@ -4781,7 +4819,7 @@ static void initSockFnTable() {
     }
 
     /* If we loaded a DLL, then we might as well initialize it.  */
-    WSAStartupPtr = (int (PASCAL FAR *)(WORD, LPWSADATA))
+    WSAStartupPtr = (int (FAR PASCAL *)(WORD, LPWSADATA))
     ::GetProcAddress(hWinsock, "WSAStartup");
 
     if (WSAStartupPtr(MAKEWORD(1,1), &wsadata) != 0) {
