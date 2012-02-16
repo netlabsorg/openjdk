@@ -22,6 +22,9 @@
 #
 #
 
+# Include dependencies
+-include *.d
+
 include ../generated/objfiles.make
 
 ifdef RELEASE
@@ -83,7 +86,7 @@ AGCT_EXPORT=_AsyncGetCallTrace \n  AsyncGetCallTrace = _AsyncGetCallTrace \n
 endif
 
 Def_File = vm.def
-$(Def_File): $(MAKEFILE_LIST)
+$(Def_File): $(MAKEFILE)
 	@echo -e 'LIBRARY jvm INITINSTANCE TERMINSTANCE \n \
 EXPORTS \n \
   JNI_GetDefaultJavaVMInitArgs = "_JNI_GetDefaultJavaVMInitArgs@4" \n \
