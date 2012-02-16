@@ -1,5 +1,5 @@
 # 
-# Copyright (c) 2004, 2007, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
 # 
 
 
-# NOTE: This file is basically a copy of linux_x86_32.s with unnecessary
-# functions thrown away
+# NOTE: This file is a copy of linux_x86_32.s with unnecessary
+# functions thrown away and underscores added
 	
 
         # NOTE WELL!  The __Copy functions are called directly
@@ -42,6 +42,7 @@
 	.globl __mmx_Copy_arrayof_conjoint_jshorts
 
         .globl __Atomic_cmpxchg_long
+        .globl __Atomic_move_long
 
 	.text
 
@@ -628,5 +629,17 @@ __Atomic_cmpxchg_long:
 1:      cmpxchg8b (%edi)
         popl     %edi
         popl     %ebx
+        ret
+
+
+        # Support for jlong Atomic::load and Atomic::store.
+        # void _Atomic_move_long(volatile jlong* src, volatile jlong* dst)
+        .p2align 4,,15
+	.type    __Atomic_move_long,@function
+__Atomic_move_long:
+        movl     4(%esp), %eax   # src
+        fildll    (%eax)
+        movl     8(%esp), %eax   # dest
+        fistpll   (%eax)
         ret
 
