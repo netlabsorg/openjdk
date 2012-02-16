@@ -38,7 +38,7 @@ default:: $(BUILD_PCH_FILE) $(AOUT) launcher checkAndBuildSA
 include ../local.make
 include $(WorkSpace)/make/os2/makefiles/compile.make
 
-CXX_FLAGS += $(DEBUG_OPT_OPTION)
+C_FLAGS += $(DEBUG_OPT_OPTION)
 LINK_FLAGS += $(DEBUG_LINK_FLAGS)
 
 include $(WorkSpace)/make/os2/makefiles/vm.make
