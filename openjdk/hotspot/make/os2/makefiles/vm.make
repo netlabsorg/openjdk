@@ -129,7 +129,6 @@ CPP_FLAGS += \
 
 # Where to find the source code for the virtual machine
 Src_Dirs_V = \
-  ../generated                          \
   ../generated/adfiles                  \
   ../generated/jvmtifiles               \
   $(WorkSpace)/src/share/vm/c1          \
