@@ -62,4 +62,6 @@ $(AOUT): $(Res_Files) $(Obj_Files) $(Def_File)
 
 include $(WorkSpace)/make/os2/makefiles/shared.make
 include $(WorkSpace)/make/os2/makefiles/sa.make
+
+# Disable gamma launcher for the time being (see #157)
 include $(WorkSpace)/make/os2/makefiles/launcher.make
