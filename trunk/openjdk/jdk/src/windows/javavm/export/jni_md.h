@@ -30,13 +30,15 @@
 #define JNIIMPORT __declspec(dllimport)
 #define JNICALL __stdcall
 
-typedef long jint;
-#ifdef __EMX__
+#ifdef __GNUC__
+typedef int jint;
 typedef __int64_t jlong;
+typedef char jbyte;
 #else
+typedef long jint;
 typedef __int64 jlong;
-#endif
 typedef signed char jbyte;
+#endif
 
 #ifdef __cplusplus
 
@@ -50,7 +52,7 @@ inline void jsafe_cast_POD_type_only(...) {}
 template<typename TR, typename TS>
 inline TR jsafe_cast(TS ts) { jsafe_cast_POD_type_only(ts); return ts; }
 
-#ifdef __EMX__
+#ifdef __GNUC__
 /* sizeof(jchar) = sizeof(wchar_t) in GCC but the types are not relative
  * (as opposed to MSVC) so an explicit cast is required */
 typedef unsigned short jchar;
