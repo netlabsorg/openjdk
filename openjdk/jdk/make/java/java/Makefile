@@ -73,10 +73,6 @@ $(DEF_FILE): $(MAKEFILE_LIST)
   _jio_snprintf \n \
   jio_fprintf = _jio_fprintf \n \
   jio_snprintf = _jio_snprintf \n \
-  JNU_CallMethodByName = "_JNU_CallMethodByName@0" \n \
-  JNU_CallStaticMethodByName = "_JNU_CallStaticMethodByName@0" \n \
-  JNU_NewObjectByName = "_JNU_NewObjectByName@0" \n \
-  JNU_SetFieldByName = "_JNU_SetFieldByName@0" \n \
   NewStringPlatform = _NewStringPlatform \n \
   VerifyClassCodesForMajorVersion = _VerifyClassCodesForMajorVersion \n \
   VerifyClassCodes = _VerifyClassCodes \n \
