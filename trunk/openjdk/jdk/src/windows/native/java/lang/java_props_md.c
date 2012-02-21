@@ -40,7 +40,7 @@
 #include "locale_str.h"
 #include "java_props.h"
 
-#ifdef __EMX__
+#ifdef __GNUC__
 #define boolean int
 #endif
 

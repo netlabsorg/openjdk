@@ -239,7 +239,7 @@ JNICALL Java_java_io_WinNTFileSystem_checkAccess(JNIEnv *env, jobject this,
                                                  jobject file, jint access)
 {
     jboolean rv = JNI_FALSE;
-    int mode;
+    int mode = 0;
     WCHAR *pathbuf = fileToNTPath(env, file, ids.path);
     if (pathbuf == NULL)
         return JNI_FALSE;

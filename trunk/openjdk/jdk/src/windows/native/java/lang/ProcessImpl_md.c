@@ -33,6 +33,10 @@
 #include <windows.h>
 #include <io.h>
 
+#ifdef __WIN32OS2__
+#include <string.h>
+#endif
+
 #define PIPE_SIZE 4096
 
 char *
