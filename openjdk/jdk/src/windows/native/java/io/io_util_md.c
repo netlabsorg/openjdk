@@ -45,7 +45,7 @@
 #include <winerror.h>
 #endif
 
-extern jboolean onNT = JNI_FALSE;
+jboolean onNT = JNI_FALSE;
 
 static int MAX_INPUT_EVENTS = 2000;
 
@@ -338,7 +338,7 @@ handleNonSeekAvailable(jlong fd, long *pbytes) {
         return FALSE;
     }
 
-    if (! PeekNamedPipe(han, NULL, 0, NULL, pbytes, NULL)) {
+    if (! PeekNamedPipe(han, NULL, 0, NULL, (LPDWORD)pbytes, NULL)) {
         /* PeekNamedPipe fails when at EOF.  In that case we
          * simply make *pbytes = 0 which is consistent with the
          * behavior we get on Solaris when an fd is at EOF.
@@ -534,7 +534,7 @@ handleClose(JNIEnv *env, jobject this, jfieldID fid)
     FD fd = GET_FD(this, fid);
     HANDLE h = (HANDLE)fd;
 
-    if (fd == INVALID_HANDLE_VALUE) {
+    if (h == INVALID_HANDLE_VALUE) {
         return 0;
     }
 

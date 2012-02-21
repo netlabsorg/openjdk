@@ -177,7 +177,7 @@ Java_java_io_Win32FileSystem_checkAccess(JNIEnv *env, jobject this,
                                          jobject file, jint a)
 {
     jboolean rv = JNI_FALSE;
-    int mode;
+    int mode = 0;
     switch (a) {
     case java_io_FileSystem_ACCESS_READ:
     case java_io_FileSystem_ACCESS_EXECUTE:
@@ -345,7 +345,7 @@ JNIEXPORT jobjectArray JNICALL
 Java_java_io_Win32FileSystem_list(JNIEnv *env, jobject this,
                                   jobject file)
 {
-    DIR *dir;
+    DIR *dir = NULL;
     struct dirent *ptr;
     int len, maxlen;
     jobjectArray rv, old;

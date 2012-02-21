@@ -124,7 +124,7 @@ GCC_WARNINGS	= -W -Wall $(GCC_STYLE) $(GCC_INHIBIT)
 
 # We compile a lot of MSVC code which seems to silently tolerate this
 GCC_WARNINGS += -Wno-sign-compare
-GCC_WARNINGS_C += -Wno-pointer-to-int-cast -Wno-int-to-pointer-cast
+GCC_WARNINGS_C += -Wno-pointer-to-int-cast -Wno-int-to-pointer-cast -Wno-missing-field-initializers
 GCC_WARNINGS_CXX += -Wno-write-strings
 
 #

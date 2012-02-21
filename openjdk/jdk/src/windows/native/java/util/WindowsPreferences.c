@@ -104,7 +104,7 @@ extern "C" {
 
         buffer = (char*)malloc(valueSize);
 
-        if (RegQueryValueEx((HKEY)hKey, valueNameStr, NULL, &valueType, buffer,
+        if (RegQueryValueEx((HKEY)hKey, valueNameStr, NULL, &valueType, (LPBYTE)buffer,
             &valueSize) != ERROR_SUCCESS) {
             free(buffer);
             (*env)->ReleaseByteArrayElements(env, valueName, valueNameStr, 0);
@@ -137,7 +137,7 @@ extern "C" {
         dataStr = (*env)->GetByteArrayElements(env, data, NULL);
         valueNameStr = (*env)->GetByteArrayElements(env, valueName, NULL);
         error_code = RegSetValueEx((HKEY)hKey, valueNameStr, 0,
-                                                        REG_SZ, dataStr, size);
+                                                        REG_SZ, (LPBYTE)dataStr, size);
         (*env)->ReleaseByteArrayElements(env, data, dataStr, 0);
         (*env)->ReleaseByteArrayElements(env, valueName, valueNameStr, 0);
         return error_code;
@@ -164,8 +164,8 @@ extern "C" {
         int subKeysNumber = -1;
         int errorCode = -1;
         errorCode = RegQueryInfoKey((HKEY)hKey, NULL, NULL, NULL,
-                 &subKeysNumber, &maxSubKeyLength, NULL,
-                 &valuesNumber, &maxValueNameLength,
+                 (LPDWORD)&subKeysNumber, (LPDWORD)&maxSubKeyLength, NULL,
+                 (LPDWORD)&valuesNumber, (LPDWORD)&maxValueNameLength,
                  NULL, NULL, NULL);
         tmp[0]= subKeysNumber;
         tmp[1]= (int)errorCode;
@@ -183,7 +183,7 @@ extern "C" {
         jbyteArray result;
         char* buffer = NULL;
         buffer = (char*)malloc(maxKeyLength);
-        if (RegEnumKeyEx((HKEY) hKey, subKeyIndex, buffer, &size, NULL, NULL,
+        if (RegEnumKeyEx((HKEY) hKey, subKeyIndex, buffer, (LPDWORD)&size, NULL, NULL,
                                                  NULL, NULL) != ERROR_SUCCESS){
         free(buffer);
         return NULL;
@@ -202,7 +202,7 @@ extern "C" {
           int error_code;
           buffer = (char*)malloc(maxValueNameLength);
           error_code = RegEnumValue((HKEY) hKey, valueIndex, buffer,
-                                             &size, NULL, NULL, NULL, NULL);
+                                             (LPDWORD)&size, NULL, NULL, NULL, NULL);
           if (error_code!= ERROR_SUCCESS){
             free(buffer);
             return NULL;

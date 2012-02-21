@@ -84,7 +84,7 @@ JNIEXPORT jboolean JNICALL Java_sun_security_provider_NativeSeedGenerator_native
 
     numBytes = (*env)->GetArrayLength(env, randArray);
     randBytes = (*env)->GetByteArrayElements(env, randArray, NULL);
-    if (genRandom(hCryptProv, numBytes, randBytes)) {
+    if (genRandom(hCryptProv, numBytes, (BYTE*)randBytes)) {
         result = JNI_TRUE;
     }
     (*env)->ReleaseByteArrayElements(env, randArray, randBytes, 0);

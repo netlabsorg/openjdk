@@ -51,7 +51,7 @@ environmentBlock9x(JNIEnv *env)
 
     if ((bytes = (*env)->NewByteArray(env, i)) == NULL) return NULL;
     (*env)->SetByteArrayRegion(env, bytes, 0, i, blockA);
-    FreeEnvironmentStringsA(blockA);
+    FreeEnvironmentStringsA((LPSTR)blockA);
     return (*env)->NewObject(env, JNU_ClassString(env),
                              String_init_ID, bytes);
 }
@@ -73,6 +73,6 @@ Java_java_lang_ProcessEnvironment_environmentBlock(JNIEnv *env, jclass klass)
             ;
 
     envblock = (*env)->NewString(env, blockW, i);
-    FreeEnvironmentStringsW(blockW);
+    FreeEnvironmentStringsW((LPWSTR)blockW);
     return envblock;
 }

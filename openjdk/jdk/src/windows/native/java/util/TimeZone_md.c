@@ -27,8 +27,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "TimeZone_md.h"
+#include "jvm.h"
 
-#ifdef __EMX__
+#ifdef __GNUC__
 #include <wchar.h>
 #include <string.h>
 #endif
@@ -109,7 +110,7 @@ getValueInRegistry(HKEY hKey,
 
     valSize = sizeof(val);
     ret = RegQueryValueExA(hKey, (char *) keyNames[keyIndex + 1], NULL,
-                           typePtr, val, &valSize);
+                           typePtr, (LPBYTE) val, &valSize);
     if (ret != ERROR_SUCCESS) {
         return ret;
     }
@@ -141,7 +142,7 @@ static void customZoneName(LONG bias, char *buffer) {
         sign = 1;
     }
     if (gmtOffset != 0) {
-        sprintf(buffer, "GMT%c%02d:%02d",
+        sprintf(buffer, "GMT%c%02ld:%02ld",
                 ((sign >= 0) ? '+' : '-'),
                 gmtOffset / 60,
                 gmtOffset % 60);
@@ -292,7 +293,7 @@ static int getWinTimeZone(char *winZoneName, char *winMapID)
 
         size = sizeof(szValue);
         ret = getValueInRegistry(hSubKey, STD_NAME, &valueType,
-                                 szValue, &size);
+                                 (LPBYTE) szValue, &size);
         if (ret != ERROR_SUCCESS) {
             /*
              * NT 4.0 SP3 fails here since it doesn't have the "Std"
@@ -351,7 +352,7 @@ static int getWinTimeZone(char *winZoneName, char *winMapID)
      * duplicated key names later.
      */
     valueSize = MAX_MAPID_LENGTH;
-    ret = RegQueryValueExA(hSubKey, "MapID", NULL, &valueType, winMapID, &valueSize);
+    ret = RegQueryValueExA(hSubKey, "MapID", NULL, &valueType, (LPBYTE)winMapID, &valueSize);
     (void) RegCloseKey(hSubKey);
     (void) RegCloseKey(hKey);
 
