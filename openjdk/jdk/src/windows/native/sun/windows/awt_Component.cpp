@@ -5249,7 +5249,7 @@ void AwtComponent::SynthesizeMouseMessage(JNIEnv *env, jobject mouseEvent)
     WORD wLow = 0;
     jint wheelAmt = 0;
     jint id = (env)->GetIntField(mouseEvent, AwtAWTEvent::idID);
-    UINT message;
+    UINT message = 0;
     switch (id) {
       case java_awt_event_MouseEvent_MOUSE_PRESSED: {
           switch (button) {

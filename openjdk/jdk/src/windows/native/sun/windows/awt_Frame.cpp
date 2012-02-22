@@ -146,7 +146,7 @@ AwtFrame* AwtFrame::Create(jobject self, jobject parent)
 
     PDATA pData;
     HWND hwndParent = NULL;
-    AwtFrame* frame;
+    AwtFrame* frame = NULL;
     jclass cls = NULL;
     jclass inputMethodWindowCls = NULL;
     jobject target = NULL;
@@ -871,7 +871,7 @@ MsgRouting AwtFrame::WmSize(UINT type, int w, int h)
 
 MsgRouting AwtFrame::WmActivate(UINT nState, BOOL fMinimized, HWND opposite)
 {
-    jint type;
+    jint type = 0;
     BOOL doActivateFrame = TRUE;
 
     if (nState != WA_INACTIVE) {

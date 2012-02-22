@@ -45,16 +45,19 @@
 // The MSLU module handle.  Only initialized on Win9x/ME.
 HMODULE UnicowsLoader::hmodUnicows = NULL;
 
+extern "C"
+{
 // MSLU loader entry point, which is called when the module
 // is initialized.
-extern "C" HMODULE (__stdcall *_PfnLoadUnicows)(void) =
+HMODULE (__stdcall *_PfnLoadUnicows)(void) =
         &UnicowsLoader::LoadUnicows;
 
 // Overriede APIs that are not supported by MSLU.
-extern "C" FARPROC Unicows_GetPrinterW =
+FARPROC Unicows_GetPrinterW =
         (FARPROC)&UnicowsLoader::GetPrinterWImpl;
-extern "C" FARPROC Unicows_EnumPrintersW =
+FARPROC Unicows_EnumPrintersW =
         (FARPROC)&UnicowsLoader::EnumPrintersWImpl;
+}
 
 HMODULE __stdcall UnicowsLoader::LoadUnicows(void)
 {

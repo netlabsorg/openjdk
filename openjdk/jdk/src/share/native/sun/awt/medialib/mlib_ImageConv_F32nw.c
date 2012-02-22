@@ -71,7 +71,7 @@
 #define DEF_VARS(type)                                          \
   GET_SRC_DST_PARAMETERS(type);                                 \
   type     *sl;                                                 \
-  type     *dl, *dp;                                            \
+  type     *dl, *dp = 0;                                        \
   mlib_s32 i, j, c
 
 /***************************************************************/

@@ -26,6 +26,10 @@
 #include <string.h>
 #include <stdlib.h>
 
+#ifdef __EMX__
+#include <strings.h> // strcasecmp
+#endif
+
 #include "jni.h"
 #include "manifest_info.h"
 #include "JarFacade.h"

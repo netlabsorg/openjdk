@@ -124,7 +124,7 @@ void AwtLabel::DoPaint(HDC hDC, RECT& r)
 
         if (env->EnsureLocalCapacity(3) < 0)
             return;
-        long x,y;
+        long x = 0, y;
         SIZE size;
 
         /* self is sun.awt.windows.WLabelPeer  */

@@ -429,7 +429,7 @@ Java_java_net_TwoStacksPlainDatagramSocketImpl_bind0(JNIEnv *env, jobject this,
     jobject fdObj = (*env)->GetObjectField(env, this, pdsi_fdID);
     jobject fd1Obj = (*env)->GetObjectField(env, this, pdsi_fd1ID);
 
-    int fd, fd1, family;
+    int fd, fd1 = -1, family;
     int ipv6_supported = ipv6_available();
 
     SOCKETADDRESS lcladdr;
@@ -934,7 +934,7 @@ Java_java_net_TwoStacksPlainDatagramSocketImpl_peekData(JNIEnv *env, jobject thi
     jbyteArray packetBuffer;
     jint packetBufferOffset, packetBufferLen;
 
-    int fd, fd1, fduse, nsockets=0, errorCode;
+    int fd = -1, fd1 = -1, fduse, nsockets=0, errorCode;
     int port;
     jbyteArray data;
 
@@ -1209,7 +1209,7 @@ Java_java_net_TwoStacksPlainDatagramSocketImpl_receive0(JNIEnv *env, jobject thi
     /* as a result of the changes for ipv6, peek() or peekData()
      * must be called prior to receive() so that fduse can be set.
      */
-    int fd, fd1, fduse, errorCode;
+    int fd = -1, fd1 = -1, fduse, errorCode;
     jbyteArray data;
 
     int datalen;

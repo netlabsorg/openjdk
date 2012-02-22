@@ -31,10 +31,6 @@
 #include <malloc.h>
 #include <sys/types.h>
 
-#ifdef __EMX__
-#define min(a, b) ((a) < (b) ? (a) : (b))
-#endif
-
 #include "java_net_SocketOutputStream.h"
 
 #include "net_util.h"

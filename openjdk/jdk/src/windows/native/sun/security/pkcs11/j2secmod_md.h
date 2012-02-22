@@ -25,11 +25,17 @@
 
 #include <windows.h>
 
+#ifdef __EMX__
+#define DECLSPEC_DLLIMPORT
+#else
+#define DECLSPEC_DLLIMPORT __declspec(dllimport)
+#endif
+
 // in nss.h:
 // extern PRBool NSS_VersionCheck(const char *importedVersion);
 // extern SECStatus NSS_Init(const char *configdir);
-typedef int __declspec(dllimport) (*FPTR_VersionCheck)(const char *importedVersion);
-typedef int __declspec(dllimport) (*FPTR_Init)(const char *configdir);
+typedef int DECLSPEC_DLLIMPORT (*FPTR_VersionCheck)(const char *importedVersion);
+typedef int DECLSPEC_DLLIMPORT (*FPTR_Init)(const char *configdir);
 
 // in secmod.h
 //extern SECMODModule *SECMOD_LoadModule(char *moduleSpec,SECMODModule *parent,
@@ -37,6 +43,6 @@ typedef int __declspec(dllimport) (*FPTR_Init)(const char *configdir);
 //char **SECMOD_GetModuleSpecList(SECMODModule *module);
 //extern SECMODModuleList *SECMOD_GetDBModuleList(void);
 
-typedef void __declspec(dllimport) *(*FPTR_LoadModule)(char *moduleSpec, void *parent, int recurse);
-typedef char __declspec(dllimport) **(*FPTR_GetModuleSpecList)(void *module);
-typedef void __declspec(dllimport) *(*FPTR_GetDBModuleList)(void);
+typedef void DECLSPEC_DLLIMPORT *(*FPTR_LoadModule)(char *moduleSpec, void *parent, int recurse);
+typedef char DECLSPEC_DLLIMPORT **(*FPTR_GetModuleSpecList)(void *module);
+typedef void DECLSPEC_DLLIMPORT *(*FPTR_GetDBModuleList)(void);

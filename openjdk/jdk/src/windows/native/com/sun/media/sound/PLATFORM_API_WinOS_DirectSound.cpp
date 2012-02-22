@@ -794,7 +794,7 @@ void* DS_createSoundBuffer(DS_Info* info,
 #ifndef __WIN32OS2__
     DSCBUFFERDESC dscbdesc;
 #endif
-    HRESULT res;
+    HRESULT res = 0;
     WAVEFORMATEXTENSIBLE format;
     void* buffer;
 
@@ -1075,7 +1075,7 @@ void DS_CheckUnderrun(DS_Info* info, DWORD playCursor, DWORD writeCursor) {
 int DS_GetAvailable(DS_Info* info,
                     DWORD* playCursor, DWORD* writeCursor,
                     int* bufferSize, BOOL fromPlayCursor) {
-    int available;
+    int available = 0;
     int newReadPos;
 
     TRACE2("DS_GetAvailable: fromPlayCursor=%d,  deviceID=%d\n", fromPlayCursor, info->deviceID);

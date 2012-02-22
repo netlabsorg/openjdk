@@ -341,6 +341,7 @@ JNIEXPORT int JNICALL NET_BindV6(struct ipv6bind* b);
 
 extern jint NET_Wait(JNIEnv *env, jint fd, jint flags, jint timeout);
 extern int NET_Socket (int domain, int type, int protocol);
+extern void NET_ThrowSocketException(JNIEnv *env, char* msg);
 extern void NET_ThrowByNameWithLastError(JNIEnv *env, const char *name,
                                          const char *defaultDetail);
 

@@ -628,7 +628,7 @@ OGLBufImgOps_EnableLookupOp(OGLContext *oglc, jlong pSrcOps,
     GLhandleARB lookupProgram;
     GLfloat foff;
     GLint loc;
-    void *bands[4];
+    void *bands[4] = {0};
     int i;
     jint flags = 0;
 

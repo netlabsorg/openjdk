@@ -402,7 +402,7 @@ GetStringFromRegistry(HKEY key, const char *name, char *buf, jint bufsize)
     if (RegQueryValueEx(key, name, 0, &type, 0, &size) == 0
         && type == REG_SZ
         && (size < (unsigned int)bufsize)) {
-        if (RegQueryValueEx(key, name, 0, 0, buf, &size) == 0) {
+        if (RegQueryValueEx(key, name, 0, 0, (LPBYTE)buf, &size) == 0) {
             return JNI_TRUE;
         }
     }
@@ -692,7 +692,8 @@ ProcessDir(manifest_info* info, HKEY top_key) {
         }
         JLI_MemFree(best);
         len = MAXNAMELEN;
-        if (RegQueryValueEx(ver_key, "JavaHome", NULL, NULL, (LPBYTE)name, &len)
+        if (RegQueryValueEx(ver_key, "JavaHome", NULL, NULL, (LPBYTE)name,
+                            (LPDWORD)&len)
           != ERROR_SUCCESS) {
             if (ver_key != NULL)
                 RegCloseKey(ver_key);
@@ -974,7 +975,7 @@ ExecJRE(char *jre, char **argv) {
         char    *cmdline;
         char    *p;
         char    *np;
-        char    *ocl;
+        const char *ocl;
         char    *ccl;
         char    *unquoted;
         DWORD   exitCode;
@@ -1190,7 +1191,7 @@ ContinueInNewThread(int (JNICALL *continuation)(void *), jlong stack_size, void 
     }
     if (thread_handle) {
       WaitForSingleObject(thread_handle, INFINITE);
-      GetExitCodeThread(thread_handle, &rslt);
+      GetExitCodeThread(thread_handle, (LPDWORD)&rslt);
       CloseHandle(thread_handle);
     } else {
       rslt = continuation(args);

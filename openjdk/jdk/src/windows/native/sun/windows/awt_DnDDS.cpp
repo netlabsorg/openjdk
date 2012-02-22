@@ -1177,7 +1177,7 @@ AwtDragSource::ADSIStreamProxy::ADSIStreamProxy(AwtDragSource* parent, jbyteArra
 
     m_parent = parent;
 
-    m_buffer = (signed char *)safe_Calloc(sizeof(signed char), m_blen = blen);
+    m_buffer = (jbyte *)safe_Calloc(sizeof(jbyte), m_blen = blen);
 
     env->GetByteArrayRegion(buffer, 0, blen, m_buffer);
 

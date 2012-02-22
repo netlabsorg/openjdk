@@ -914,7 +914,7 @@ Java_sun_awt_windows_WPrinterJob_initPrinter(JNIEnv *env, jobject self) {
     // check for collation
     HGLOBAL hDevNames = AwtPrintControl::getPrintHDName(env, self);
     if (hDevNames != NULL) {
-        DWORD dmFields;
+        DWORD dmFields = 0;
         DEVNAMES *devnames = (DEVNAMES *)::GlobalLock(hDevNames);
 
         if (devnames != NULL) {

@@ -123,8 +123,8 @@ GCC_STYLE	=
 GCC_WARNINGS	= -W -Wall $(GCC_STYLE) $(GCC_INHIBIT)
 
 # We compile a lot of MSVC code which seems to silently tolerate this
-GCC_WARNINGS += -Wno-sign-compare
-GCC_WARNINGS_C += -Wno-pointer-to-int-cast -Wno-int-to-pointer-cast -Wno-missing-field-initializers
+GCC_WARNINGS += -Wno-sign-compare -Wno-type-limits -Wno-missing-field-initializers -Wno-missing-braces
+GCC_WARNINGS_C += -Wno-pointer-to-int-cast -Wno-int-to-pointer-cast
 GCC_WARNINGS_CXX += -Wno-write-strings
 
 #
@@ -144,6 +144,10 @@ CFLAGS_DBG      = -g
 CXXFLAGS_COMMON = -DCC_NOEX $(GCC_WARNINGS) $(GCC_WARNINGS_CXX) -march=i486 -mtune=generic -Zomf
 CXXFLAGS_OPT	= $(CFLAGS_OPT)
 CXXFLAGS_DBG	= $(CFLAGS_DBG)
+
+# Some code uses very unstrict aliasing turn this optimization off
+CFLAGS_COMMON += -fno-strict-aliasing
+CXXFLAGS_COMMON += -fno-strict-aliasing
 
 #
 # Preprocessor macro definitions
@@ -172,7 +176,7 @@ endif
 
 CPPFLAGS_COMMON += -D__WIN32OS2__ -D__i386__ -DSTRICT -D_POSIX_SOURCE \
                    -D_POSIX_C_SOURCE=200112 -D_EMX_SOURCE -D_XOPEN_SOURCE=600 \
-				   -D_SVID_SOURCE
+				   -D_SVID_SOURCE -DOS2EMX_PLAIN_CHAR
 CPPFLAGS_COMMON += -I$(ODINSDK_HEADERS_PATH)/Win -I$(ODINSDK_HEADERS_PATH) \
                    -DWINE_LARGE_INTEGER
 

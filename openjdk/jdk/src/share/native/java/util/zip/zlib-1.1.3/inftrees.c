@@ -152,7 +152,7 @@ uIntf *v;               /* working area: values in order of bit length */
   uInt mask;                    /* (1 << w) - 1, to avoid cc -O bug on HP */
   register uIntf *p;            /* pointer into c[], b[], or v[] */
   inflate_huft *q;              /* points to current table */
-  struct inflate_huft_s r;      /* table entry for structure assignment */
+  struct inflate_huft_s r = {0};/* table entry for structure assignment */
   inflate_huft *u[BMAX];        /* table stack */
   register int w;               /* bits before this table == (l * h) */
   uInt x[BMAX+1];               /* bit offsets, then code stack */

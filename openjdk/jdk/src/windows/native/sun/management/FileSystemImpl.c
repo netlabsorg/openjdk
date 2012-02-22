@@ -208,7 +208,7 @@ static SID* getFileOwner(JNIEnv* env, SECURITY_DESCRIPTOR* sd) {
  */
 static ACL* getFileDACL(JNIEnv* env, SECURITY_DESCRIPTOR* sd) {
     ACL *acl;
-    int defaulted, present;
+    BOOL defaulted, present;
 
     if (!(*GetSecurityDescriptorDacl_func)(sd, &present, &acl, &defaulted)) {
         JNU_ThrowIOExceptionWithLastError(env, "GetSecurityDescriptorDacl failed");

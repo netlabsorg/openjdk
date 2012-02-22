@@ -438,7 +438,7 @@ DDrawSurface* DDraw::CreateDDOffScreenSurface(DWORD width, DWORD height,
     J2dTraceLn(J2D_TRACE_INFO, "DDraw::CreateDDOffScreenSurface");
 
     DXSurface *dxSurface;
-    DWORD dwFlags, ddsCaps;
+    DWORD dwFlags, ddsCaps = 0;
 
     // Create the offscreen surface
     dwFlags = DDSD_CAPS | DDSD_HEIGHT | DDSD_WIDTH;

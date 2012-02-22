@@ -774,15 +774,15 @@ Java_sun_awt_windows_WTextComponentPeer_getCharacterBounds(JNIEnv *env, jobject 
     PDATA pData;
     JNI_CHECK_PEER_RETURN_NULL(self);
     AwtComponent* c = (AwtComponent*)pData;
-/*
-    int line = 0;
-    int lineIndex = 0;
-    while (lineIndex < i) {
-        lineIndex = c->SendMessage(EM_LINEINDEX, 1 + line++);
-    }
-    line--;     // line is now the line which contains our character at position 'i'
-    int offsetIndex = i - lineIndex;    // offsetIndex is now distance in on the line
-* /
+
+//    int line = 0;
+//    int lineIndex = 0;
+//    while (lineIndex < i) {
+//        lineIndex = c->SendMessage(EM_LINEINDEX, 1 + line++);
+//    }
+//    line--;     // line is now the line which contains our character at position 'i'
+//    int offsetIndex = i - lineIndex;    // offsetIndex is now distance in on the line
+
     POINT p;
 
     c->SendMessage(EM_POSFROMCHAR, (WPARAM) &p, (LPARAM) i);    // x coord is meaningful; y may not be
@@ -792,17 +792,16 @@ Java_sun_awt_windows_WTextComponentPeer_getCharacterBounds(JNIEnv *env, jobject 
     jint charWidth;
     jint charHeight;
 
-/*
-    HFONT font = c->SendMessage(WM_GETFONT);
-    if (GetCharWidth32(c->hdc, i, i, &charWidth) != 0) {        // [[[FIXME]]] need to get hDC!
+//    HFONT font = c->SendMessage(WM_GETFONT);
+//    if (GetCharWidth32(c->hdc, i, i, &charWidth) != 0) {        // [[[FIXME]]] need to get hDC!
+//
+//        JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
+//        jobject rect = JNU_NewObjectByName(env, "java/awt/Rectangle", "(IIII)V",
+//                                           (jint) p.x, (jint) p.y, charWidth, charHeight);
+//
+//        return rect;
+//    }
 
-        JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
-        jobject rect = JNU_NewObjectByName(env, "java/awt/Rectangle", "(IIII)V",
-                                           (jint) p.x, (jint) p.y, charWidth, charHeight);
-
-        return rect;
-    }
-* /
     return (jobject) 0;
 
     CATCH_BAD_ALLOC_RET(0);

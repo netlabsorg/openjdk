@@ -70,7 +70,7 @@
 /***************************************************************/
 #define DEF_VARS(type)                                          \
   GET_SRC_DST_PARAMETERS(type);                                 \
-  type     *sl, *sp, *sl1, *dl, *dp;                            \
+  type     *sl, *sp = 0, *sl1, *dl, *dp = 0;                    \
   mlib_d64 *pbuff = buff, *buff0, *buff1, *buff2, *buffT;       \
   mlib_s32 i, j, c;                                             \
   mlib_d64 scalef, d0, d1
@@ -78,7 +78,7 @@
 /***************************************************************/
 #define DEF_VARS_MxN(type)                                      \
   GET_SRC_DST_PARAMETERS(type);                                 \
-  type     *sl, *sp, *dl, *dp;                                  \
+  type     *sl, *sp = 0, *dl, *dp = 0;                          \
   mlib_d64 *pbuff = buff;                                       \
   mlib_s32 i, j, c
 

@@ -230,7 +230,7 @@ JNIEXPORT void JNICALL Java_sun_awt_shell_Win32ShellFolder2_initializeCom
     HRESULT hr = ::CoInitialize(NULL);
     if (FAILED(hr)) {
         char c[64];
-        sprintf(c, "Could not initialize COM: HRESULT=0x%08X", hr);
+        sprintf(c, "Could not initialize COM: HRESULT=0x%08lX", hr);
         JNU_ThrowInternalError(env, c);
     }
 }
@@ -624,7 +624,7 @@ JNIEXPORT jlong JNICALL Java_sun_awt_shell_Win32ShellFolder2_getLinkLocation
     HRESULT hres;
     STRRET strret;
     OLECHAR olePath[MAX_PATH]; // wide-char version of path name
-    LPWSTR wstr;
+    LPWSTR wstr = NULL;
 
     IShellFolder* pParent = (IShellFolder*)parentIShellFolder;
     if (pParent == NULL) {
@@ -958,7 +958,7 @@ JNIEXPORT jintArray JNICALL Java_sun_awt_shell_Win32ShellFolder2_getIconBits
             bmi.bmiHeader.biCompression = BI_RGB;
             // Extract the color bitmap
             int nBits = iconSize * iconSize;
-            long colorBits[1024];
+            jint colorBits[1024];
             GetDIBits(dc, iconInfo.hbmColor, 0, iconSize, colorBits, &bmi, DIB_RGB_COLORS);
             // XP supports alpha in some icons, and depending on device.
             // This should take precedence over the icon mask bits.
@@ -1010,7 +1010,7 @@ JNIEXPORT jintArray JNICALL Java_sun_awt_shell_Win32ShellFolder2_getFileChooserB
 {
     HBITMAP hBitmap = NULL;
     BITMAP bm;
-    HINSTANCE libComCtl32;
+    HINSTANCE libComCtl32 = NULL;
     HINSTANCE libShell32;
 
 
@@ -1051,7 +1051,7 @@ JNIEXPORT jintArray JNICALL Java_sun_awt_shell_Win32ShellFolder2_getFileChooserB
     // Extract the color bitmap
     int numPixels = bm.bmWidth * bm.bmHeight;
     //long colorBits[192 * 16];
-    long *colorBits = (long*)safe_Malloc(numPixels * sizeof(long));
+    jint *colorBits = (jint*)safe_Malloc(numPixels * sizeof(jint));
     if (GetDIBits(dc, hBitmap, 0, bm.bmHeight, colorBits, &bmi, DIB_RGB_COLORS) == 0) {
         return NULL;
     }

@@ -411,7 +411,7 @@ BOOL AwtToolkit::Initialize(BOOL localPump) {
     NewHandler::init();
 #endif
 
-        //\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+        ///////////////////////////////////////////////////////////////////////////
         // Bugs 4032109, 4047966, and 4071991 to fix AWT
         //      crash in 16 color display mode.  16 color mode is supported.  Less
         //      than 16 color is not.
@@ -582,7 +582,7 @@ void AwtToolkit::CreateComponent(void* component, void* parent,
        Reference from it. This is indicated by isParentALocalReference */
 
     jobject gcomponent = env->NewGlobalRef((jobject)component);
-    jobject gparent;
+    jobject gparent = 0;
     if (isParentALocalReference) gparent = env->NewGlobalRef((jobject)parent);
     ComponentCreatePacket ccp = { gcomponent,
                                   isParentALocalReference == TRUE ?  gparent : parent,

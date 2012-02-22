@@ -2623,6 +2623,9 @@ mlib_status mlib_ImageColorTrue2Index(mlib_image       *dst,
                   return MLIB_FAILURE;
               }
             }
+
+          default:
+            break;
         }
 
         break;
@@ -2678,6 +2681,9 @@ mlib_status mlib_ImageColorTrue2Index(mlib_image       *dst,
                   return MLIB_FAILURE;
               }
             }
+
+          default:
+            break;
         }
 
         break;

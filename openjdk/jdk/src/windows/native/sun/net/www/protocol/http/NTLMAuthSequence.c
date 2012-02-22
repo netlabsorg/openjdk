@@ -65,7 +65,7 @@ JNIEXPORT void JNICALL Java_sun_net_www_protocol_http_NTLMAuthSequence_initFirst
 (JNIEnv *env, jclass clazz)
 {
     OSVERSIONINFO   version;
-    UCHAR libName[MAX_PATH];
+    char libName[MAX_PATH];
 
     ntlm_ctxHandleID = (*env)->GetFieldID(env, clazz, "ctxHandle", "J");
     ntlm_crdHandleID = (*env)->GetFieldID(env, clazz, "crdHandle", "J");
@@ -195,7 +195,7 @@ JNIEXPORT jbyteArray JNICALL Java_sun_net_www_protocol_http_NTLMAuthSequence_get
     CtxtHandle      *pCtx;
     CtxtHandle      *newContext;
     TimeStamp            ltime;
-    jbyteArray       result;
+    jbyteArray       result = 0;
 
 
     pCtx = (CtxtHandle *) (*env)->GetLongField (env, this, ntlm_ctxHandleID);

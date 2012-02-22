@@ -134,10 +134,10 @@ void GDIHashtable::List::clear() {
 GDIHashtable::BatchDestructionManager::BatchDestructionManager(UINT nFirstThreshold,
                                                                UINT nSecondThreshold,
                                                                UINT nDestroyPeriod) :
+  m_nCounter(0),
   m_nFirstThreshold(nFirstThreshold),
   m_nSecondThreshold(nSecondThreshold),
   m_nDestroyPeriod(nDestroyPeriod),
-  m_nCounter(0),
   m_bBatchingEnabled(TRUE) {
     load_rsrc32_procs();
 }

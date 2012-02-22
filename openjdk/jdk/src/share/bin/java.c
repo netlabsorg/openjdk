@@ -204,7 +204,7 @@ main(int argc, char ** argv)
     char *main_class = NULL;
     int ret;
     InvocationFunctions ifn;
-    jlong start, end;
+    jlong start = 0, end;
     char jrepath[MAXPATHLEN], jvmpath[MAXPATHLEN];
     char ** original_argv = argv;
 
@@ -388,7 +388,7 @@ JavaMain(void * _args)
     jmethodID mainID;
     jobjectArray mainArgs;
     int ret = 0;
-    jlong start, end;
+    jlong start = 0, end;
 
     /*
      * Error message to print or display; by default the message will
@@ -1389,7 +1389,7 @@ LoadClass(JNIEnv *env, char *name)
     char *buf = JLI_MemAlloc(strlen(name) + 1);
     char *s = buf, *t = name, c;
     jclass cls;
-    jlong start, end;
+    jlong start = 0, end;
 
     if (_launcher_debug)
         start = CounterGet();
@@ -1808,7 +1808,7 @@ ReadKnownVMs(const char *jrepath, char * arch, jboolean speculative)
     char line[MAXPATHLEN+20];
     int cnt = 0;
     int lineno = 0;
-    jlong start, end;
+    jlong start = 0, end;
     int vmType;
     char *tmpPtr;
     char *altVMName = NULL;

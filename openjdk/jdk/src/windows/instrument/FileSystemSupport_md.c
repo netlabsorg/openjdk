@@ -27,6 +27,10 @@
 #include <string.h>
 #include <malloc.h>
 
+#ifdef __EMX__
+#include <strings.h> // strcasecmp
+#endif
+
 #include "FileSystemSupport_md.h"
 
 /*
