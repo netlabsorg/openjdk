@@ -57,11 +57,6 @@ endif
 
 ifeq ($(PLATFORM), os2)
 
-  ifeq ($(EMXOMFLD_TYPE), WLINK)
-    $(error WLINK is not currently supported due to fixup-related bugs when building awt.dll. \
-            Use VAC308 ILINK instead)
-  endif
-
   # Settings specific to OS/2
   CC           = $(COMPILER_PATH)gcc
   CPP          = $(COMPILER_PATH)gcc -E
@@ -71,7 +66,13 @@ ifeq ($(PLATFORM), os2)
   LINK         = $(COMPILER_PATH)g++
   AR           = $(COMPILER_PATH)emxomfar
   IMPLIB       = $(COMPILER_PATH)emximp
-  MAPSYM       = mapsym.exe
+
+  ifeq ($(EMXOMFLD_TYPE), WLINK)
+    MAPSYM = wmapsym.cmd
+  endif
+  ifeq ($(EMXOMFLD_TYPE), VAC308)
+    MAPSYM = mapsym.exe
+  endif
 
   # Option used to create a shared library
   SHARED_LIBRARY_FLAG = -Zdll
