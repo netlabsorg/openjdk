@@ -42,13 +42,24 @@
 
 static HMODULE dllHandle = 0;
 
-BOOL WINAPI DllMain(HINSTANCE hinst, DWORD reason, LPVOID reserved)
+#ifdef HAVE_DLLMAIN
+extern "C" BOOL WINAPI DllMain(HANDLE hInstance, DWORD ul_reason_for_call,
+                               LPVOID);
+#endif
+
+static BOOL WINAPI DefaultDllMain(HINSTANCE hinst, DWORD reason, LPVOID reserved)
 {
+    BOOL rc = TRUE;
+
+#ifdef HAVE_DLLMAIN
+    rc = DllMain(hinst, reason, reserved);
+#endif
+
     // call destructors when detaching the DLL from the process
     if (reason == 0)
         __ctordtorTerm();
 
-    return TRUE;
+    return rc;
 }
 
 unsigned long SYSTEM _DLL_InitTerm(unsigned long hModule, unsigned long ulFlag)
@@ -62,7 +73,7 @@ unsigned long SYSTEM _DLL_InitTerm(unsigned long hModule, unsigned long ulFlag)
 
     switch (ulFlag) {
         case 0 :
-            dllHandle = RegisterLxDll(hModule, DllMain, NULL,
+            dllHandle = RegisterLxDll(hModule, DefaultDllMain, NULL,
                                       ODINNT_MAJOR_VERSION,
                                       ODINNT_MINOR_VERSION,
                                       IMAGE_SUBSYSTEM_WINDOWS_CUI);
