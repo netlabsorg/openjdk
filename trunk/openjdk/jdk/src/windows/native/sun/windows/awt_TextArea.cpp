@@ -113,7 +113,7 @@ AwtTextArea* AwtTextArea::Create(jobject peer, jobject parent)
 
         {
             /* Adjust style for scrollbar visibility and word wrap  */
-          DWORD scroll_style;
+          DWORD scroll_style = 0;
           jint scrollbarVisibility =
               env->GetIntField(target, AwtTextArea::scrollbarVisibilityID);
 

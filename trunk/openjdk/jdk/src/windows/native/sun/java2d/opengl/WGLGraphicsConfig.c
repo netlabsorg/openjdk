@@ -201,7 +201,7 @@ WGLGC_GetPixelFormatForDC(HDC hdc)
     };
     int pixfmts[32];
     int chosenPixFmt = 0;
-    int nfmts, i;
+    UINT nfmts, i;
 
     // this is the initial minimum value for the combined depth+stencil size
     // (we initialize it to some absurdly high value; realistic values will

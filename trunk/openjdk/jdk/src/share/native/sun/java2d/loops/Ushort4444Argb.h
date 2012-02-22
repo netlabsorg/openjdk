@@ -116,7 +116,7 @@ typedef jushort Ushort4444ArgbDataType;
 
 
 #define DeclareUshort4444ArgbAlphaLoadData(PREFIX) \
-    jint PREFIX;
+    jint PREFIX = 0;
 
 #define InitUshort4444ArgbAlphaLoadData(PREFIX, pRasInfo)
 

@@ -211,6 +211,8 @@ mlib_status mlib_ImageConvMxN_f(mlib_image       *dst,
         case MLIB_DOUBLE:
           ret = mlib_convMxNnw_d64(dst_i, src_i, kernel, m, n, dm, dn, cmask);
           break;
+        default:
+          break;
       }
     }
 
@@ -220,6 +222,8 @@ mlib_status mlib_ImageConvMxN_f(mlib_image       *dst,
         break;
       case MLIB_EDGE_DST_COPY_SRC:
         mlib_ImageConvCopyEdge(dst_e, src_e, dx_l, dx_r, dy_t, dy_b, cmask);
+        break;
+      default:
         break;
     }
   }
@@ -278,6 +282,8 @@ mlib_status mlib_ImageConvMxN_f(mlib_image       *dst,
         break;
       case MLIB_DOUBLE:
         mlib_convMxNext_d64(dst_e, src_e, kernel, m, n, dx_l, dx_r, dy_t, dy_b, cmask);
+        break;
+      default:
         break;
     }
   }

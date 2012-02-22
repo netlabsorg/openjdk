@@ -26,8 +26,10 @@
 #ifndef j2d_md_h_Included
 #define j2d_md_h_Included
 
+#ifdef _MSC_VER
 #ifndef DEBUG
 #pragma optimize("t", on)
+#endif
 #endif
 
 /*

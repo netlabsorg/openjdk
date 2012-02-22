@@ -194,7 +194,7 @@ Java_sun_nio_ch_WindowsSelectorImpl_resetWakeupSocket0(JNIEnv *env, jclass this,
                                                 jint scinFd)
 {
     char bytes[WAKEUP_SOCKET_BUF_SIZE];
-    long bytesToRead;
+    u_long bytesToRead;
 
     /* Drain socket */
     /* Find out how many bytes available for read */

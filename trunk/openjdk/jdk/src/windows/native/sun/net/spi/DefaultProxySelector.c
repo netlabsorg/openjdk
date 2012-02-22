@@ -24,6 +24,11 @@
  */
 
 #include <windows.h>
+
+#ifdef __WIN32OS2__
+#include <string.h>
+#endif
+
 #include "jni.h"
 #include "jni_util.h"
 #include "jvm.h"

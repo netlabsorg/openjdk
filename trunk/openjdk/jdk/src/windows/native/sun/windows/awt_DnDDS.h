@@ -206,7 +206,7 @@ class AwtDragSource : virtual public IDropSource, virtual public IDataObject {
             protected:
                 AwtDragSource*   m_parent;
 
-                signed   char*   m_buffer;
+                jbyte*           m_buffer;
                 unsigned int     m_off;
                 unsigned int     m_blen;
 

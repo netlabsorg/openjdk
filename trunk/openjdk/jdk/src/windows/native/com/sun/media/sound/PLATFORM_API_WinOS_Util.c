@@ -93,7 +93,7 @@ int MIDI_WinCreateEmptyLongBufferQueue(MidiDeviceHandle* handle, int count) {
 int MIDI_WinCreateLongBufferQueue(MidiDeviceHandle* handle, int count, int size, UBYTE* preAllocatedMem) {
     SysExQueue* sysex;
     int i;
-    UBYTE* dataPtr;
+    char* dataPtr;
     int structSize = sizeof(SysExQueue) + ((count - 1) * sizeof(MIDIHDR));
 
     sysex = (SysExQueue*) malloc(structSize);
@@ -115,7 +115,7 @@ int MIDI_WinCreateLongBufferQueue(MidiDeviceHandle* handle, int count, int size,
     handle->longBuffers = sysex;
 
     // set up headers
-    dataPtr = preAllocatedMem;
+    dataPtr = (char*)preAllocatedMem;
     for (i=0; i<count; i++) {
         sysex->header[i].lpData = dataPtr;
         sysex->header[i].dwBufferLength = size;

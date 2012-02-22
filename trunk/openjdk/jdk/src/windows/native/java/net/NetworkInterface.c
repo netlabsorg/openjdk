@@ -331,7 +331,7 @@ int enumInterfaces_win(JNIEnv *env, netif **netifPP)
          * 32-bit numbers as index values.
          */
         strcpy(curr->name, dev_name);
-        strncpy(curr->displayName, ifrowP->bDescr, ifrowP->dwDescrLen);
+        strncpy(curr->displayName, (char*)ifrowP->bDescr, ifrowP->dwDescrLen);
         curr->displayName[ifrowP->dwDescrLen] = '\0';
         curr->dwIndex = ifrowP->dwIndex;
         curr->ifType = ifrowP->dwType;

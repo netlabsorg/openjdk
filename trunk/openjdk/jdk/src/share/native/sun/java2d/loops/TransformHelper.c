@@ -280,9 +280,9 @@ Java_sun_java2d_loops_TransformHelper_Transform
     CompositeInfo compInfo;
     RegionData clipInfo;
     TransformInfo itxInfo;
-    jint maxlinepix;
-    TransformHelperFunc *pHelperFunc;
-    TransformInterpFunc *pInterpFunc;
+    jint maxlinepix = 0;
+    TransformHelperFunc *pHelperFunc = NULL;
+    TransformInterpFunc *pInterpFunc = NULL;
     jdouble xorig, yorig;
     jlong numedges;
     jint *pEdges;

@@ -31,6 +31,10 @@
 #include <time.h>
 #include <assert.h>
 
+#ifdef __WIN32OS2__
+#include <string.h>
+#endif
+
 #include "jni_util.h"
 
 #define MAX_STR_LEN         256

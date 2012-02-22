@@ -217,7 +217,7 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1WrapKey
     CK_MECHANISM ckMechanism;
     CK_OBJECT_HANDLE ckWrappingKeyHandle;
     CK_OBJECT_HANDLE ckKeyHandle;
-    jbyteArray jWrappedKey;
+    jbyteArray jWrappedKey = 0;
     CK_RV rv;
     CK_BYTE BUF[MAX_STACK_BUFFER_LEN];
     CK_BYTE_PTR ckpWrappedKey = BUF;

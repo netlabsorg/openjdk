@@ -1799,7 +1799,7 @@ void GetDDErrorString(DWORD errNum, char *buffer)
         sprintf(buffer, "Direct3D Error: D3DERR_NOCURRENTVIEWPORT");
         break;
     default:
-        sprintf(buffer, "DirectX Error Unknown 0x%x", errNum);
+        sprintf(buffer, "DirectX Error Unknown 0x%lx", errNum);
         break;
     }
 

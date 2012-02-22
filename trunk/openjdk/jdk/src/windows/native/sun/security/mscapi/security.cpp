@@ -640,7 +640,7 @@ JNIEXPORT jobject JNICALL Java_sun_security_mscapi_RSAKeyPairGenerator_generateR
     HCRYPTPROV hCryptProv = NULL;
     HCRYPTKEY hKeyPair;
     DWORD dwFlags = (keySize << 16) | CRYPT_EXPORTABLE;
-    jobject keypair;
+    jobject keypair = NULL;
     const char* pszKeyContainerName = NULL; // UUID
 
     __try
@@ -737,7 +737,7 @@ JNIEXPORT jstring JNICALL Java_sun_security_mscapi_Key_getKeyType
 
         } else {
             char buffer[64];
-            if (sprintf(buffer, "%lu", dwAlgId)) {
+            if (sprintf(buffer, "%u", dwAlgId)) {
                 return env->NewStringUTF(buffer);
             }
         }
@@ -1400,7 +1400,7 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_mscapi_RSAPublicKey_getPublicKeyB
 
     jbyteArray blob = NULL;
     DWORD dwBlobLen;
-    BYTE* pbKeyBlob;
+    BYTE* pbKeyBlob = NULL;
 
     __try
     {

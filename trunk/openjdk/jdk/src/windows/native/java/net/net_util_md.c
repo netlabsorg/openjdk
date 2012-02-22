@@ -589,20 +589,20 @@ void dumpAddr (char *str, void *addr) {
     printf ("%s\n", str);
     if (family == AF_INET) {
         struct sockaddr_in *him = (struct sockaddr_in *)addr;
-        printf ("AF_INET: port %d: %x\n", ntohs(him->sin_port),
-                                          ntohl(him->sin_addr.s_addr));
+        printf ("AF_INET: port %d: %lx\n", ntohs(him->sin_port),
+                                            ntohl(him->sin_addr.s_addr));
     } else {
         int i;
         struct in6_addr *in = &a->sin6_addr;
         printf ("AF_INET6 ");
         printf ("port %d ", ntohs (a->sin6_port));
-        printf ("flow %d ", a->sin6_flowinfo);
+        printf ("flow %ld ", a->sin6_flowinfo);
         printf ("addr ");
         for (i=0; i<7; i++) {
             printf ("%04x:", ntohs(in->s6_words[i]));
         }
         printf ("%04x", ntohs(in->s6_words[7]));
-        printf (" scope %d\n", a->sin6_scope_id);
+        printf (" scope %ld\n", a->sin6_scope_id);
     }
 }
 

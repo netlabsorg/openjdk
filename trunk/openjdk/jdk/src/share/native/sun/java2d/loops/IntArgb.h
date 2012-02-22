@@ -118,7 +118,7 @@ typedef jint    IntArgbDataType;
 
 
 #define DeclareIntArgbAlphaLoadData(PREFIX) \
-    jint PREFIX;
+    jint PREFIX = 0;
 
 #define InitIntArgbAlphaLoadData(PREFIX, pRasInfo)
 

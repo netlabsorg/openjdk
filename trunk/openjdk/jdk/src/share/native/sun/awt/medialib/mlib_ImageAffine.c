@@ -154,7 +154,7 @@ mlib_status mlib_ImageAffine_alltypes(mlib_image       *dst,
   mlib_affine_param param[1];
   mlib_status res;
   mlib_type type;
-  mlib_s32 nchan, t_ind, kw, kw1;
+  mlib_s32 nchan, t_ind = 0, kw, kw1;
   mlib_addr align;
   mlib_d64 buff_lcl[BUFF_SIZE / 8];
   mlib_u8 **lineAddr = NULL;
@@ -317,6 +317,9 @@ mlib_status mlib_ImageAffine_alltypes(mlib_image       *dst,
           res = mlib_ImageAffineEdgeExtend_BC(param, param_e, colormap);
         }
 
+        break;
+
+      default:
         break;
     }
 

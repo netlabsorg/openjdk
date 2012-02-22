@@ -150,7 +150,7 @@
 
 #define DeclareByteBinaryAlphaLoadData(TYPE, PREFIX) \
     jint *PREFIX ## Lut; \
-    jint PREFIX ## rgb;
+    jint PREFIX ## rgb = 0;
 
 #define InitByteBinaryAlphaLoadData(TYPE, PREFIX, pRasInfo) \
     PREFIX ## Lut = (pRasInfo)->lutBase

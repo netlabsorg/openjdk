@@ -289,7 +289,7 @@ void
 initFormat(ImageFormat * format, int redMask, int greenMask, int blueMask,
            int alphaMask)
 {
-    int i, shift, numBits;
+    int i, shift = 0, numBits = 0;
 
     format->byteOrder = BYTE_ORDER_NATIVE;
     format->colorMap = NULL;

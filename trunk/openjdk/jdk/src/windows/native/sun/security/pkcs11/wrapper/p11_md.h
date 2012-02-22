@@ -58,14 +58,20 @@
 
 #include <windows.h>
 
+#ifdef __EMX__
+#define DECLSPEC_DLLIMPORT
+#else
+#define DECLSPEC_DLLIMPORT __declspec(dllimport)
+#endif
+
 /* statement according to PKCS11 docu */
 #pragma pack(push, cryptoki, 1)
 
 /* definitions according to PKCS#11 docu for Win32 environment */
 #define CK_PTR *
-#define CK_DEFINE_FUNCTION(returnType, name) returnType __declspec(dllexport) name
-#define CK_DECLARE_FUNCTION(returnType, name) returnType __declspec(dllimport) name
-#define CK_DECLARE_FUNCTION_POINTER(returnType, name) returnType __declspec(dllimport) (* name)
+#define CK_DEFINE_FUNCTION(returnType, name) returnType DECLSPEC_DLLIMPORT name
+#define CK_DECLARE_FUNCTION(returnType, name) returnType DECLSPEC_DLLIMPORT name
+#define CK_DECLARE_FUNCTION_POINTER(returnType, name) returnType DECLSPEC_DLLIMPORT (* name)
 #define CK_CALLBACK_FUNCTION(returnType, name) returnType (* name)
 #ifndef NULL_PTR
 #define NULL_PTR 0

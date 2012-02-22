@@ -48,7 +48,7 @@ typedef struct {
     int channels;
     int isSigned;
     int isBigEndian;
-    UINT8* conversionBuffer;
+    char* conversionBuffer;
     int conversionBufferSize;
 } DAUDIO_Info;
 
@@ -172,7 +172,7 @@ INLINE UINT8 MAP_ClipAndConvertToUByte(MAP_Sample sample) {
  * for sign conversion of a 24-bit sample stored in 32bits, 4 should be passed
  * as conversionSize
  */
-void handleSignEndianConversion(INT8* data, INT8* output, int byteSize, int conversionSize) {
+static void handleSignEndianConversion(char* data, char* output, int byteSize, int conversionSize) {
     TRACE1("conversion with size %d\n", conversionSize);
     switch (conversionSize) {
     case 1: {
@@ -185,7 +185,7 @@ void handleSignEndianConversion(INT8* data, INT8* output, int byteSize, int conv
         break;
     }
     case 2: {
-        INT8 h;
+        char h;
         byteSize = byteSize / 2;
         while (byteSize > 0) {
             h = *data;
@@ -199,7 +199,7 @@ void handleSignEndianConversion(INT8* data, INT8* output, int byteSize, int conv
         break;
     }
     case 3: {
-        INT8 h;
+        char h;
         byteSize = byteSize / 3;
         while (byteSize > 0) {
             h = *data;
@@ -214,7 +214,7 @@ void handleSignEndianConversion(INT8* data, INT8* output, int byteSize, int conv
         break;
     }
     case 4: {
-        INT8 h1, h2;
+        char h1, h2;
         byteSize = byteSize / 4;
         while (byteSize > 0) {
             h1 = data[0];
@@ -311,7 +311,7 @@ void handleSignEndianConversion(INT8* data, INT8* output, int byteSize, int conv
     FORMAT2CODE(channels, 16, 1, 1, inBigEndian, outBigEndian)
 
 
-void handleGainAndConversion(DAUDIO_Info* info, UINT8* input, UINT8* output,
+void handleGainAndConversion(DAUDIO_Info* info, char* input, char* output,
                              int len, float leftGain, float rightGain,
                              int conversionSize) {
     INT8* input8 = (INT8*) input;
@@ -584,10 +584,10 @@ JNIEXPORT jint JNICALL Java_com_sun_media_sound_DirectAudioDevice_nWrite
 (JNIEnv *env, jclass clazz, jlong id, jbyteArray jData,
  jint offset, jint len, jint conversionSize, jfloat leftGain, jfloat rightGain) {
     int ret = -1;
-#if USE_DAUDIO == TRUE
-    UINT8* data;
-    UINT8* dataOffset;
-    UINT8* convertedData;
+#if USE_DAUDIO != TRUE
+    char* data;
+    char* dataOffset;
+    char* convertedData;
     jboolean didCopy;
     DAUDIO_Info* info = (DAUDIO_Info*) (UINT_PTR) id;
 
@@ -598,7 +598,7 @@ JNIEXPORT jint JNICALL Java_com_sun_media_sound_DirectAudioDevice_nWrite
     }
     if (len == 0) return 0;
     if (info && info->handle) {
-        data = (UINT8*) ((*env)->GetByteArrayElements(env, jData, &didCopy));
+        data = ((*env)->GetByteArrayElements(env, jData, &didCopy));
         dataOffset = data;
         dataOffset += (int) offset;
         convertedData = dataOffset;
@@ -614,7 +614,7 @@ JNIEXPORT jint JNICALL Java_com_sun_media_sound_DirectAudioDevice_nWrite
                     info->conversionBufferSize = 0;
                 }
                 if (!info->conversionBuffer) {
-                    info->conversionBuffer = (UINT8*) malloc(len);
+                    info->conversionBuffer = (char*) malloc(len);
                     if (!info->conversionBuffer) {
                         // do not commit the native array
                         (*env)->ReleaseByteArrayElements(env, jData, (jbyte*) data, JNI_ABORT);
@@ -629,7 +629,7 @@ JNIEXPORT jint JNICALL Java_com_sun_media_sound_DirectAudioDevice_nWrite
                 || info->encoding!=DAUDIO_PCM
                 || ((info->channels * info->sampleSizeInBits / 8) != info->frameSize)
                 || (info->sampleSizeInBits != 8 && info->sampleSizeInBits != 16)) {
-                handleSignEndianConversion((INT8*) dataOffset, (INT8*) convertedData, (int) len,
+                handleSignEndianConversion(dataOffset, convertedData, (int) len,
                                            (int) conversionSize);
             } else {
                 handleGainAndConversion(info, dataOffset, convertedData,
@@ -638,7 +638,7 @@ JNIEXPORT jint JNICALL Java_com_sun_media_sound_DirectAudioDevice_nWrite
             }
         }
 
-        ret = DAUDIO_Write(info->handle, (INT8*) convertedData, (int) len);
+        ret = DAUDIO_Write(info->handle, convertedData, (int) len);
 
         // do not commit the native array
         (*env)->ReleaseByteArrayElements(env, jData, (jbyte*) data, JNI_ABORT);

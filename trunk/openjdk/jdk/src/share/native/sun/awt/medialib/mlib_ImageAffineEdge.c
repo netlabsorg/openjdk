@@ -616,6 +616,9 @@ void mlib_ImageAffineEdgeZero(mlib_affine_param *param,
         MLIB_PROCESS_EDGES_ZERO(mlib_d64);
         break;
       }
+
+    default:
+      break;
   }
 }
 
@@ -642,6 +645,9 @@ void mlib_ImageAffineEdgeNearest(mlib_affine_param *param,
 
     case MLIB_DOUBLE:
       MLIB_PROCESS_EDGES(MLIB_EDGE_NEAREST_LINE, mlib_d64);
+      break;
+
+    default:
       break;
   }
 }
@@ -691,6 +697,9 @@ mlib_status mlib_ImageAffineEdgeExtend_BL(mlib_affine_param *param,
             srcStride >>= 1;
             MLIB_PROCESS_EDGES(MLIB_EDGE_INDEX_u8i, mlib_s16);
             break;
+
+          default:
+            break;
         }
 
         break;
@@ -705,8 +714,14 @@ mlib_status mlib_ImageAffineEdgeExtend_BL(mlib_affine_param *param,
             srcStride >>= 1;
             MLIB_PROCESS_EDGES(MLIB_EDGE_INDEX_s16i, mlib_s16);
             break;
+
+          default:
+            break;
         }
 
+        break;
+
+      default:
         break;
     }
 
@@ -743,6 +758,9 @@ mlib_status mlib_ImageAffineEdgeExtend_BL(mlib_affine_param *param,
     case MLIB_DOUBLE:
       srcStride >>= 3;
       MLIB_PROCESS_EDGES(MLIB_EDGE_BL, mlib_d64);
+      break;
+
+    default:
       break;
   }
 
@@ -821,6 +839,9 @@ mlib_status mlib_ImageAffineEdgeExtend_BC(mlib_affine_param *param,
             srcStride >>= 1;
             MLIB_PROCESS_EDGES(MLIB_EDGE_INDEX_u8i, mlib_s16);
             break;
+
+          default:
+            break;
         }
 
         break;
@@ -835,8 +856,14 @@ mlib_status mlib_ImageAffineEdgeExtend_BC(mlib_affine_param *param,
             srcStride >>= 1;
             MLIB_PROCESS_EDGES(MLIB_EDGE_INDEX_s16i, mlib_s16);
             break;
+
+          default:
+            break;
         }
 
+        break;
+
+      default:
         break;
     }
 
@@ -894,6 +921,9 @@ mlib_status mlib_ImageAffineEdgeExtend_BC(mlib_affine_param *param,
         MLIB_PROCESS_EDGES(MLIB_EDGE_BC2, mlib_d64);
       }
 
+      break;
+
+    default:
       break;
   }
 

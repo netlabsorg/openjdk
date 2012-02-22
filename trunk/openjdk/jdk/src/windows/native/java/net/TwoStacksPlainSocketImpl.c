@@ -195,7 +195,7 @@ Java_java_net_TwoStacksPlainSocketImpl_socketConnect(JNIEnv *env, jobject this,
 
     /* family and localport are int fields of iaObj */
     int family;
-    jint fd, fd1=-1;
+    jint fd = -1, fd1 = -1;
     jint len;
     int  ipv6_supported = ipv6_available();
 
@@ -268,7 +268,7 @@ Java_java_net_TwoStacksPlainSocketImpl_socketConnect(JNIEnv *env, jobject this,
             connect_res = WSAGetLastError();
         }
     } else {
-        int optval;
+        u_long optval;
         int optlen = sizeof(optval);
 
         /* make socket non-blocking */
@@ -404,7 +404,7 @@ Java_java_net_TwoStacksPlainSocketImpl_socketBind(JNIEnv *env, jobject this,
     /* fdObj is the FileDescriptor field on this */
     jobject fdObj, fd1Obj;
     /* fd is an int field on fdObj */
-    int fd, fd1, len;
+    int fd = -1, fd1 = -1, len;
     int ipv6_supported = ipv6_available();
 
     /* family is an int field of iaObj */
@@ -523,7 +523,7 @@ Java_java_net_TwoStacksPlainSocketImpl_socketListen (JNIEnv *env, jobject this,
     jobject fd1Obj = (*env)->GetObjectField(env, this, psi_fd1ID);
     jobject address;
     /* fdObj's int fd field */
-    int fd, fd1;
+    int fd = -1, fd1;
     SOCKETADDRESS addr; int addrlen;
 
     if (IS_NULL(fdObj) && IS_NULL(fd1Obj)) {
@@ -789,7 +789,7 @@ Java_java_net_TwoStacksPlainSocketImpl_socketAccept(JNIEnv *env, jobject this,
 JNIEXPORT jint JNICALL
 Java_java_net_TwoStacksPlainSocketImpl_socketAvailable(JNIEnv *env, jobject this) {
 
-    jint available = -1;
+    u_long available = -1;
     jint res;
     jobject fdObj = (*env)->GetObjectField(env, this, psi_fdID);
     jint fd;
@@ -1022,7 +1022,7 @@ Java_java_net_TwoStacksPlainSocketImpl_socketGetOption(JNIEnv *env, jobject this
     int fd, fd1;
     int level, optname, optlen;
     union {
-        int i;
+        u_long i;
         struct linger ling;
     } optval;
 

@@ -890,7 +890,7 @@ Java_sun_awt_windows_WFontMetrics_bytesWidth(JNIEnv *env, jobject self,
             widths = (jint *)env->GetPrimitiveArrayCritical(array, 0);
 
             for (; len; len--) {
-                result += widths[*pStr++];
+                result += widths[(unsigned char)*pStr++];
             }
         } catch (...) {
             if (widths != NULL) {
@@ -1198,7 +1198,7 @@ void AwtFontCache::IncRefCount(HFONT hFont){
 }
 
 LONG AwtFontCache::IncRefCount(Item* item){
-    LONG    newVal;
+    LONG    newVal = 0;
 
     if(NULL != item){
         newVal = InterlockedIncrement((long*)&item->refCount);
@@ -1207,7 +1207,7 @@ LONG AwtFontCache::IncRefCount(Item* item){
 }
 
 LONG AwtFontCache::DecRefCount(Item* item){
-    LONG    newVal;
+    LONG    newVal = 0;
 
     if(NULL != item){
         newVal = InterlockedDecrement((long*)&item->refCount);

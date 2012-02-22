@@ -366,7 +366,7 @@ void CheckFontSmoothingSettings(HWND hWnd) {
     }
 
     BOOL fontSmoothing = FALSE, settingsChanged;
-    UINT fontSmoothingType=0, fontSmoothingContrast=0, subPixelOrder;
+    UINT fontSmoothingType=0, fontSmoothingContrast=0, subPixelOrder=0;
 
     if (firstTime) {
         SystemParametersInfo(SPI_GETFONTSMOOTHING, 0, &fontSmoothing, 0);
