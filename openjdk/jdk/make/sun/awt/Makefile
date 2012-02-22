@@ -94,6 +94,8 @@ include FILES_c_windows.gmk
 include FILES_export_windows.gmk
 
 FILES_cpp += jdk_DllMain.cpp
+CXXFLAGS_OPT/jdk_DllMain.obj += -DHAVE_DLLMAIN
+CXXFLAGS_DBG/jdk_DllMain.obj += -DHAVE_DLLMAIN
 
 #
 # Prune files that are currently unused on Windows (but still used on
