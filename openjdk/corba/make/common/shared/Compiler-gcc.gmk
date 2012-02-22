@@ -57,11 +57,6 @@ endif
 
 ifeq ($(PLATFORM), os2)
 
-  ifeq ($(EMXOMFLD_TYPE), WLINK)
-    $(error WLINK is not currently supported due to fixup-related bugs when building awt.dll. \
-            Use VAC308 ILINK instead)
-  endif
-
   # Settings specific to OS/2
   CC           = $(COMPILER_PATH)gcc
   CPP          = $(COMPILER_PATH)gcc -E
