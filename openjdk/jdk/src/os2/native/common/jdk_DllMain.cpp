@@ -73,15 +73,15 @@ unsigned long SYSTEM _DLL_InitTerm(unsigned long hModule, unsigned long ulFlag)
 
     switch (ulFlag) {
         case 0 :
+            // important to call constructors before DllMain
+            __ctordtorInit();
+
             dllHandle = RegisterLxDll(hModule, DefaultDllMain, NULL,
                                       ODINNT_MAJOR_VERSION,
                                       ODINNT_MINOR_VERSION,
                                       IMAGE_SUBSYSTEM_WINDOWS_CUI);
             if (dllHandle == 0)
                 break;
-
-            __ctordtorInit();
-
             return 1;
 
         case 1 :
