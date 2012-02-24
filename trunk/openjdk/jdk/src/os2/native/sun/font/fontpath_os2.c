@@ -25,7 +25,6 @@
  * have any questions.
  */
 
-#define OS2EMX_PLAIN_CHAR
 #define INCL_WINSHELLDATA
 #include <os2wrap.h> // Odin32 OS/2 api wrappers
 

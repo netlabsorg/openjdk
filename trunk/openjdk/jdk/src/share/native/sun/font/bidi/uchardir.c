@@ -614,7 +614,8 @@ static UCharDirection u_getDirectionInternal(uint32_t cp) {
   }
   dc &= 0x0f;
   if (dc > 13) {
-    dc = x2i[cp - 0x202a];
+    if (cp >= 0x202a && cp < 0x202a + 5)
+      dc = x2i[cp - 0x202a];
   } else {
     dc = jx2i[dc];
   }

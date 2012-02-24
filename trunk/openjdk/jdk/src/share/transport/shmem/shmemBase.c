@@ -539,9 +539,9 @@ openConnection(SharedMemoryTransport *transport, jlong otherPID,
         return SYS_NOMEM;
     }
 
-    sprintf(connection->name, "%s.%ld", transport->name, sysProcessGetID());
+    sprintf(connection->name, "%s.%lld", transport->name, sysProcessGetID());
     error = sysSharedMemOpen(connection->name, &connection->sharedMemory,
-                             &connection->shared);
+                             (void **)&connection->shared);
     if (error != SYS_OK) {
         closeConnection(connection);
         return error;
@@ -603,9 +603,9 @@ createConnection(SharedMemoryTransport *transport, jlong otherPID,
         return SYS_NOMEM;
     }
 
-    sprintf(connection->name, "%s.%ld", transport->name, otherPID);
+    sprintf(connection->name, "%s.%lld", transport->name, otherPID);
     error = sysSharedMemCreate(connection->name, sizeof(SharedMemory),
-                               &connection->sharedMemory, &connection->shared);
+                               &connection->sharedMemory, (void **)&connection->shared);
     if (error != SYS_OK) {
         closeConnection(connection);
         return error;
@@ -704,7 +704,7 @@ openTransport(const char *address, SharedMemoryTransport **transportPtr)
         return SYS_ERR;
     }
 
-    error = sysSharedMemOpen(address, &transport->sharedMemory, &transport->shared);
+    error = sysSharedMemOpen(address, &transport->sharedMemory, (void **)&transport->shared);
     if (error != SYS_OK) {
         setLastError(error);
         closeTransport(transport);
@@ -771,7 +771,7 @@ createTransport(const char *address, SharedMemoryTransport **transportPtr)
         }
         strcpy(transport->name, address);
         error = sysSharedMemCreate(address, sizeof(SharedListener),
-                                   &transport->sharedMemory, &transport->shared);
+                                   &transport->sharedMemory, (void **)&transport->shared);
     }
     if (error != SYS_OK) {
         setLastError(error);
@@ -832,7 +832,7 @@ shmemBase_accept(SharedMemoryTransport *transport,
                  SharedMemoryConnection **connectionPtr)
 {
     jint error;
-    SharedMemoryConnection *connection;
+    SharedMemoryConnection *connection = NULL;
 
     clearLastError();
 

@@ -189,7 +189,7 @@ static int CALLBACK EnumFontFacesInFamilyProcA(
 
     /* printf("FULL=%s\n",lpelfe->elfFullName);fflush(stdout);  */
 
-    fullname = JNU_NewStringPlatform(env, lpelfe->elfFullName);
+    fullname = JNU_NewStringPlatform(env, (char *)lpelfe->elfFullName);
     fullnameLC = (*env)->CallObjectMethod(env, fullname,
                                           fmi->toLowerCaseMID, fmi->locale);
     (*env)->CallObjectMethod(env, fmi->list, fmi->addMID, fullname);

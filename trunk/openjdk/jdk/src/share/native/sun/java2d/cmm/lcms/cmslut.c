@@ -790,7 +790,7 @@ LCMSAPI double LCMSEXPORT cmsEvalLUTreverse(LPLUT Lut, WORD Target[], WORD Resul
     VEC3       tmp, tmp2, x;
     MAT3       Jacobian;
     WORD       FixedK;
-    WORD       LastResult[4];
+    WORD       LastResult[4] = {0};
 
 
     // This is our Lab goal

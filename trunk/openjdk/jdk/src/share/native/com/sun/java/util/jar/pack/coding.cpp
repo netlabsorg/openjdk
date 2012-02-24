@@ -499,6 +499,9 @@ int value_stream::getInt() {
     assert(c.spec == BYTE1_spec);
     assert(B == 1 && H == 256 && S == 0 && D == 0);
     return getPopValue(this, *rp++ & 0xFF);
+
+  default:
+    break;
   }
   assert(false);
   return 0;
@@ -728,6 +731,7 @@ void coding_method::init(byte* &band_rp, byte* band_limit,
         switch (self->vs0.cmk) {
         case cmk_BHS0:   cmk2 = cmk_pop_BHS0;   break;
         case cmk_BYTE1:  cmk2 = cmk_pop_BYTE1;  break;
+        default: break;
         }
         self->vs0.cmk = cmk2;
         if (self != this) {
