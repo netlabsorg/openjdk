@@ -180,7 +180,7 @@ JNIEXPORT jlong JNICALL Java_sun_java2d_cmm_lcms_LCMS_createNativeTransform
         }
     }
 
-    sTrans.xf = cmsCreateMultiprofileTransform(iccArray, j,
+    sTrans.xf = cmsCreateMultiprofileTransform((cmsHPROFILE *)iccArray, j,
         0, 0, renderType, 0);
 
     (*env)->ReleasePrimitiveArrayCritical(env, profileIDs, ids, 0);
@@ -572,7 +572,7 @@ LCMSBOOL _cmsModifyTagData(cmsHPROFILE hProfile, icTagSignature sig,
     LCMSBOOL isNew;
     int i, idx, delta, count;
     LPBYTE padChars[3] = {0, 0, 0};
-    LPBYTE beforeBuf, afterBuf, ptr;
+    LPBYTE beforeBuf = 0, afterBuf = 0, ptr;
     size_t beforeSize, afterSize;
     icUInt32Number profileSize, temp;
     LPLCMSICCPROFILE Icc = (LPLCMSICCPROFILE) (LPSTR) hProfile;

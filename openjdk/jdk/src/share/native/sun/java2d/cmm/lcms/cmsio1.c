@@ -52,6 +52,12 @@
 // ICC profile serialization
 
 
+#ifdef __EMX__
+#include <unistd.h>
+#include <stdlib.h>
+#define swab _swab
+#endif
+
 #include "lcms.h"
 
 // ----------------------------------------------------------------- Tag Serialization

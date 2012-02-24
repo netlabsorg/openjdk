@@ -31,6 +31,8 @@ include $(BUILDDIR)/common/Defs.gmk
 
 ifeq ($(PLATFORM), os2)
 LIBRARY_SHORT = jjpeg
+# jpeg code uses potentially unsafe setjmp/longjmp
+CFLAGS_COMMON += -Wno-clobbered
 endif
 
 #

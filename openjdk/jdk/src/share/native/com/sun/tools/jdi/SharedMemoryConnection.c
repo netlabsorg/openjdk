@@ -173,7 +173,7 @@ byteArrayToPacket(JNIEnv *env, jbyteArray b, jdwpPacket *str)
     /*
      * Get the packet header
      */
-    (*env)->GetByteArrayRegion(env, b, 0, sizeof(pktHeader), pktHeader);
+    (*env)->GetByteArrayRegion(env, b, 0, sizeof(pktHeader), (jbyte *)pktHeader);
 
     total_length = (int)pktHeader[3] | ((int)pktHeader[2] << 8) |
                    ((int)pktHeader[1] << 16) | ((int)pktHeader[0] << 24);

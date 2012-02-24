@@ -209,7 +209,7 @@ png_decompress_chunk(png_structp png_ptr, int comp_type,
                               png_charp chunkdata, png_size_t chunklength,
                               png_size_t prefix_size, png_size_t *newlength)
 {
-   const static char msg[] = "Error decoding compressed text";
+   static const char msg[] = "Error decoding compressed text";
    png_charp text;
    png_size_t text_size;
 
@@ -591,8 +591,8 @@ png_handle_IEND(png_structp png_ptr, png_infop info_ptr, png_uint_32 length)
    }
    png_crc_finish(png_ptr, length);
 
-   if (&info_ptr == NULL) /* quiet compiler warnings about unused info_ptr */
-      return;
+   info_ptr = info_ptr; /* quiet compiler warnings about unused info_ptr */
+   return;
 }
 
 #if defined(PNG_READ_gAMA_SUPPORTED)
