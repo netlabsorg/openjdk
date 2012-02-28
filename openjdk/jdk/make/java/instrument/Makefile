@@ -129,7 +129,7 @@ DEF_FILE = $(OBJDIR)/$(LIBRARY).def
 $(DEF_FILE): $(MAKEFILE_LIST)
 	@$(ECHO) "LIBRARY $(LIBRARY_NAME) INITINSTANCE TERMINSTANCE" > $@
 	@$(ECHO) 'EXPORTS \n \
-  Agent_OnAttach = "_Agent_OnAttach@12" \n \
+  Agent_OnAttach \n \
 ' >> $@
 clean::
 	-$(RM) $(DEF_FILE)

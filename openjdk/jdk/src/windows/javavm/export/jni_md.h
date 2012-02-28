@@ -28,7 +28,12 @@
 
 #define JNIEXPORT __declspec(dllexport)
 #define JNIIMPORT __declspec(dllimport)
+
+#ifdef __OS2__
+#define JNICALL _System
+#else
 #define JNICALL __stdcall
+#endif
 
 #ifdef __GNUC__
 typedef int jint;

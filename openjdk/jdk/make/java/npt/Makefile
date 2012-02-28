@@ -76,8 +76,8 @@ DEF_FILE = $(OBJDIR)/$(LIBRARY).def
 $(DEF_FILE): $(MAKEFILE_LIST)
 	@$(ECHO) "LIBRARY $(LIBRARY_NAME) INITINSTANCE TERMINSTANCE" > $@
 	@$(ECHO) 'EXPORTS \n \
-  nptInitialize = "_nptInitialize@12" \n \
-  nptTerminate = "_nptTerminate@8" \n \
+  nptInitialize \n \
+  nptTerminate \n \
 ' >> $@
 
 clean::

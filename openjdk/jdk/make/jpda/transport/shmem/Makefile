@@ -84,7 +84,7 @@ DEF_FILE = $(OBJDIR)/$(LIBRARY).def
 $(DEF_FILE): $(MAKEFILE_LIST)
 	@$(ECHO) "LIBRARY $(LIBRARY_NAME) INITINSTANCE TERMINSTANCE" > $@
 	@$(ECHO) 'EXPORTS \n \
-  jdwpTransport_OnLoad = "_jdwpTransport_OnLoad@16" \n \
+  jdwpTransport_OnLoad \n \
 ' >> $@
 
 clean::
