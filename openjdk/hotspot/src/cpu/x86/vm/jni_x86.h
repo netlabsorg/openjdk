@@ -39,19 +39,22 @@
   typedef long long jlong;
 #endif
 
+typedef signed char jbyte;
+
 #else
   #define JNIEXPORT __declspec(dllexport)
   #define JNIIMPORT __declspec(dllimport)
   #define JNICALL __stdcall
 
-  typedef int jint;
 #ifdef TARGET_COMPILER_gcc
+  typedef int jint;
   typedef __int64_t jlong;
+  typedef char jbyte;
 #else
+  typedef int jint;
   typedef __int64 jlong;
+  typedef signed char jbyte;
 #endif
 #endif
-
-typedef signed char jbyte;
 
 #endif /* !_JAVASOFT_JNI_MD_H_ */
