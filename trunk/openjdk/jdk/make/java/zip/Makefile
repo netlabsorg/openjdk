@@ -80,11 +80,11 @@ $(DEF_FILE): $(MAKEFILE_LIST)
 	@$(ECHO) "LIBRARY $(LIBRARY_NAME) INITINSTANCE TERMINSTANCE" > $@
 	@$(ECHO) 'EXPORTS \n \
   ZIP_CRC32 = _ZIP_CRC32 \n \
-  ZIP_Open = "_ZIP_Open@8" \n \
-  ZIP_Close = "_ZIP_Close@4" \n \
-  ZIP_FindEntry = "_ZIP_FindEntry@16" \n \
-  ZIP_ReadEntry = "_ZIP_ReadEntry@16" \n \
-  ZIP_GetNextEntry = "_ZIP_GetNextEntry@8" \n \
+  ZIP_Open \n \
+  ZIP_Close \n \
+  ZIP_FindEntry \n \
+  ZIP_ReadEntry \n \
+  ZIP_GetNextEntry \n \
 ' >> $@
 clean::
 	-$(RM) $(DEF_FILE)

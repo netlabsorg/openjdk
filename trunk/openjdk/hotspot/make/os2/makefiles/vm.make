@@ -89,20 +89,12 @@ Def_File = vm.def
 $(Def_File): $(MAKEFILE)
 	@echo -e 'LIBRARY jvm INITINSTANCE TERMINSTANCE \n \
 EXPORTS \n \
-  JNI_GetDefaultJavaVMInitArgs = "_JNI_GetDefaultJavaVMInitArgs@4" \n \
-  JNI_CreateJavaVM = "_JNI_CreateJavaVM@12" \n \
-  JNI_GetCreatedJavaVMs = "_JNI_GetCreatedJavaVMs@12" \n \
   _jio_snprintf \n \
   _jio_printf \n \
   _jio_fprintf \n \
   _jio_vfprintf \n \
   _jio_vsnprintf \n \
   $(AGCT_EXPORT) \
-  JVM_GetVersionInfo = "_JVM_GetVersionInfo@12" \n \
-  JVM_GetThreadStateNames = "_JVM_GetThreadStateNames@12" \n \
-  JVM_GetThreadStateValues = "_JVM_GetThreadStateValues@8" \n \
-  JVM_InitAgentProperties = "_JVM_InitAgentProperties@8" \n \
-  JVM_FindClassFromBootLoader = "_JVM_FindClassFromBootLoader@8" \n \
 ' > $(Def_File)
 
 LINK_FLAGS += -Zdll

@@ -44,7 +44,12 @@ typedef signed char jbyte;
 #else
   #define JNIEXPORT __declspec(dllexport)
   #define JNIIMPORT __declspec(dllimport)
+
+#ifdef __OS2__
+  #define JNICALL _System
+#else
   #define JNICALL __stdcall
+#endif
 
 #ifdef TARGET_COMPILER_gcc
   typedef int jint;

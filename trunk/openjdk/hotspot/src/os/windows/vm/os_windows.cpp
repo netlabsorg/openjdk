@@ -1837,14 +1837,14 @@ void os::jvm_path(char *buf, jint buflen) {
 
 
 void os::print_jni_name_prefix_on(outputStream* st, int args_size) {
-#ifndef _WIN64
+#if !defined(_WIN64) && !defined(__WIN32OS2__)
   st->print("_");
 #endif
 }
 
 
 void os::print_jni_name_suffix_on(outputStream* st, int args_size) {
-#ifndef _WIN64
+#if !defined(_WIN64) && !defined(__WIN32OS2__)
   st->print("@%d", args_size  * sizeof(int));
 #endif
 }
