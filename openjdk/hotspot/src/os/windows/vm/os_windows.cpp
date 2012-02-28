@@ -4043,7 +4043,7 @@ char * os::native_path(char *path) {
   }
 
   #ifdef DEBUG
-    jio_fprintf(stderr, "sysNativePath: %s\n", path);
+    //jio_fprintf(stderr, "sysNativePath: %s\n", path);
   #endif
   return path;
 }
