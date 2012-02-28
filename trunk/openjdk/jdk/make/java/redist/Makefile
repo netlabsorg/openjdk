@@ -68,8 +68,10 @@ all: build
 INTERNAL_IMPORT_LIST = $(LIBDIR)/classlist
 
 # List of files coming from outside this workspace
+ifndef BUILD_CLIENT_ONLY
 IMPORT_LIST = $(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVM_NAME) \
               $(LIB_LOCATION)/$(SERVER_LOCATION)/Xusage.txt
+endif
 
 # INCLUDE_SA is false on platforms where SA is not supported.
 # On platforms where it is supported, we want to allow it to
@@ -159,9 +161,13 @@ ifeq ($(PLATFORM), os2)
 
 # Get the hotspot .map and .sym files for client and server
 IMPORT_LIST += \
-	$(LIBDIR)/$(JVMLIB_NAME) \
+	$(LIBDIR)/$(JVMLIB_NAME)
+
+ifndef BUILD_CLIENT_ONLY
+IMPORT_LIST += \
 	$(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVMMAP_NAME) \
 	$(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVMSYM_NAME)
+endif
 
 # Hotspot client is only available on 32-bit builds
 ifeq ($(ARCH_DATA_MODEL), 32)
