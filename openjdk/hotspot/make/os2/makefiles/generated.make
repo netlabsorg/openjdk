@@ -36,13 +36,13 @@ include $(WorkSpace)/make/os2/makefiles/sa.make
 AdlcOutDir=adfiles
 
 ifeq ($(filter-out compiler2 tiered,$(Variant)),)
-default:: $(AdlcOutDir)/ad_$(Platform_arch_model).cpp $(AdlcOutDir)/dfa_$(Platform_arch_model).cpp $(JvmtiGeneratedFiles) buildobjfiles
+default:: $(AdlcOutDir)/ad_$(Platform_arch_model).cpp $(AdlcOutDir)/dfa_$(Platform_arch_model).cpp $(JvmtiGeneratedFiles) objfiles.make
 else
-default:: $(JvmtiGeneratedFiles) buildobjfiles
+default:: $(JvmtiGeneratedFiles) objfiles.make
 endif
 
-buildobjfiles:
-	@ sh $(WorkSpace)/make/windows/create_obj_files.sh $(Variant) $(Platform_arch) $(Platform_arch_model) $(WorkSpace) .	> objfiles.make
+objfiles.make: $(JvmtiGeneratedFiles)
+	@ sh $(WorkSpace)/make/windows/create_obj_files.sh $(Variant) $(Platform_arch) $(Platform_arch_model) $(WorkSpace) .	> $@
 
 classes/ProjectCreator.class: $(ProjectCreatorSources)
 	if [ -d classes ]; then rm -rf classes; fi
