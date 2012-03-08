@@ -78,6 +78,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef __OS2__
+#include <float.h> // for _control87
+#endif
+
 #include <jni.h>
 #include <jvm.h>
 #include "java.h"
@@ -386,7 +390,22 @@ main(int argc, char ** argv)
       args.classname = classname;
       args.ifn = ifn;
 
+#ifdef __OS2__
+      // On OS/2, both Ctrl-C and process termination handlers (including DLL
+      // uninitialization code) are always called on thread 1. If we fire off
+      // a new thread here and create the JVM on it (as other platfroms do),
+      // thread 1 will be not known to the JVM and this can cause various
+      // nexpected side-effects like hangs and crashes at Java process
+      // termination (see #33 and #159 for details). For this reason, we instead
+      // create the JVM right on thread 1.
+
+      // disable FPU exceptions (taken from jdk/src/windows/hpi/src/system_md.c)
+      _control87(MCW_EM | RC_NEAR | PC_53, MCW_EM | MCW_RC | MCW_PC);
+
+      return JavaMain(&args);
+#else
       return ContinueInNewThread(JavaMain, threadStackSize, (void*)&args);
+#endif
     }
 }
 
