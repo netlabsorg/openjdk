@@ -4546,7 +4546,10 @@ void os::PlatformEvent::park () {
     // spin attempts by this thread.
     while (_Event < 0) {
        DWORD rv = ::WaitForSingleObject (_ParkHandle, INFINITE) ;
+       // on OS/2, wait functions may be interrupted by Ctrl-C on thread 1
+#ifndef __WIN32OS2__
        assert (rv == WAIT_OBJECT_0, "WaitForSingleObject failed") ;
+#endif
     }
 
     // Usually we'll find _Event == 0 at this point, but as
