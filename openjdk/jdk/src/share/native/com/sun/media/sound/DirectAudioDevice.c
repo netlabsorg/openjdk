@@ -584,7 +584,7 @@ JNIEXPORT jint JNICALL Java_com_sun_media_sound_DirectAudioDevice_nWrite
 (JNIEnv *env, jclass clazz, jlong id, jbyteArray jData,
  jint offset, jint len, jint conversionSize, jfloat leftGain, jfloat rightGain) {
     int ret = -1;
-#if USE_DAUDIO != TRUE
+#if USE_DAUDIO == TRUE
     char* data;
     char* dataOffset;
     char* convertedData;
