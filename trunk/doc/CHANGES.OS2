@@ -4,6 +4,28 @@ in the OpenJDK product from release to release.
 
 CHANGES
 
+1.6.0 Build 24 GA2 (2012-03-19)
+
+  - Updated OpenJDK sources to b24 (release November 2011). The main changes in
+    b24 are the latest round of security updates (e.g. the security changes in
+    jdk repo) and a few other fixes. For more information see the detailed list
+    of all the changes in OpenJDK 6 B24 here:
+
+    http://blogs.oracle.com/openjdk6releases/resource/OpenJDK6-B24-Changes.html
+
+  - Make the JNI interface calling convention compatible with IBM Java. This
+    allows old OS/2 JNI DLLs to be loaded by OpenJDK and makes standard
+    programs like LVMGUI and TCP/IP Configuration work properly under it.
+
+  - Fix hangs at crashes when the Java process is killed by Ctrl-C or by a kill
+    signal.
+
+  - Fix crashes following the "Attempt to protect stack guard pages failed"
+    warning message (Odin bug).
+
+  - Fix spontaneous NoClassDefFoundError exceptions thrown by some applicatinos
+    at startup (Odin/b22 bug).
+
 
 1.6.0 Build 22 GA (2011-06-27)
 

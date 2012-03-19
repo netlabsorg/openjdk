@@ -1,11 +1,8 @@
 /*REXX*/
 
-say 'Don''t pack ct.sym!'
-exit
+ver_id = 'openjdk6_b24'
 
-ver_id = 'openjdk6_b22'
-
-build_id = 'ga-20110627'
+build_id = 'ga2-20120319'
 
 src_path = '..'
 
@@ -114,7 +111,7 @@ ProcessMapFiles: procedure
         cwd = directory()
         ncwd = directory(filespec('D', found.i)||,
                          strip(filespec('P', found.i), 'T', '\'))
-        'mapsym' filespec('N', found.i)
+        'call wmapsym.cmd' filespec('N', found.i)
         rc2 = rc
         call directory cwd
         if (rc2 \= 0) then
@@ -131,8 +128,8 @@ ProcessMapFiles: procedure
     if (rc \= 0) then
         return rc
 
+    /* remove the mistakenly copied ct.sym file and its directory */
     if (\is_jre) then do
-        /* remove the mistakenly copied file and its directory */
         'del' aOut'_sym\lib\ct.sym'
         if (rc == 0) then
             'rd' aOut'_sym\lib'
