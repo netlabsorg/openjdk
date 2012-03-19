@@ -1,0 +1,147 @@
+This document contains a brief list of the most important OS/2-specific changes
+in the OpenJDK product from release to release.
+
+
+CHANGES
+
+1.6.0 Build 24 GA2 (2012-03-19)
+
+  - Updated OpenJDK sources to b24 (release November 2011). The main changes in
+    b24 are the latest round of security updates (e.g. the security changes in
+    jdk repo) and a few other fixes. For more information see the detailed list
+    of all the changes in OpenJDK 6 B24 here:
+
+    http://blogs.oracle.com/openjdk6releases/resource/OpenJDK6-B24-Changes.html
+
+  - Make the JNI interface calling convention compatible with IBM Java. This
+    allows old OS/2 JNI DLLs to be loaded by OpenJDK and makes standard
+    programs like LVMGUI and TCP/IP Configuration work properly under it.
+
+  - Fix hangs at crashes when the Java process is killed by Ctrl-C or by a kill
+    signal.
+
+  - Fix crashes following the "Attempt to protect stack guard pages failed"
+    warning message (Odin bug).
+
+  - Fix spontaneous NoClassDefFoundError exceptions thrown by some applicatinos
+    at startup (Odin/b22 bug).
+
+
+1.6.0 Build 22 GA (2011-06-27)
+
+  - Fixed crashing of Java applications on SMP systems.
+
+  - Don't allow to use two different JVM types at a time (as it is not possible
+    due to OS/2 LX DLL format limitations) and give an error message instead.
+
+  - A number of minor fixes in JVM and Odin libraries.
+
+
+1.6.0 Build 22 WSE (2011-05-12)
+
+  - Fixed: Opening the print dialog would crash the Java application.
+
+  - Fixed: Printed text was flipped along the base line on output.
+
+  - Fixed: The dtdbuilder tool would write the binary DTD to stdout causing
+    "\n" to "\r\n" expansion on OS/2 and thus breaking the resulting file which
+    in turn would completely break support of HTML text in Swing components
+    [vendor bug, regresion Build 22 (RC2)].
+
+
+1.6.0 Build 22 RC2 (2011-03-28)
+
+  - Updated OpenJDK sources to b22 (release February 2011). The main changes in
+    b22 are the latest round of security updates; in addition, there are a few
+    copyright and licensing fixes. A detailed list of all the changes in b22 is
+    available here:
+
+    http://blogs.sun.com/darcy/resource/OpenJDK_6/openjdk6-b22-changes-summary.html.
+
+  - Fixed and improved system tray support. Requires the Extended system tray
+    widget for XCenter/eCenter (see README.OS2 for a download link).
+
+  - Fixed: Sound did not work in LIBPATHSTRICT=T mode (Odin bug).
+
+  - Fixed: SIGABRT that would unexcpectedly terminate some Java applications,
+    e.g. IzPack based installers (GCC compiler bug).
+
+  - Fixed: Crash during Drag'n'Drop operations in some Java applications, e.g.
+    JAlbum (Odin bug).
+
+  - Fixed DLL loading code in the JVM that would print a useless message when
+    one of the required DLLs is not found.
+
+  - A bunch of smaller fixes in Odin libraries that should improve OpenJDK
+    behavior.
+
+
+1.6.0 Build 19 RC (2011-02-21)
+
+  - Ported and enabled the JPDA (Java Platform Debugger Architecture) component
+    which provides a framework for debugging Java applications.
+
+  - Added sound (audio and MIDI) support to Java applications using DART.
+
+  - Added a free implementation of the com.sun.image.codec.jpeg package (taken
+    from the IcedTea project) used by some old Java applications like Jeti/2.
+
+  - Renamed all Java DLLs by adding a 'j' prefix to the names to avoid possible
+    conflicts with system DLLs.
+
+  - Fixed: Accessing the network from Java applications would crash on some
+    machines (Odin bug).
+
+  - Fixed: Spontaneous 100% CPU load in many Java applications (e.g. GenealogyJ
+    Jeti/2) when throwing NullPointerException as a result of accessing null
+    objects of some application classes (Odin bug).
+
+  - Fixed: java.util.prefs.Preferences: Use the Open32 registry on OS/2 instead
+    of throwing an exception.
+
+  - Fixed: JVM used PATH instead of LIBPATH to comprise java.library.path
+    resulting in inability to find JNI DLLs in some applications.
+
+  - Fixed: Crash in java.io.WinNTFileSystem.getSpace() (Odin bug).
+
+  - Fixed: Exception java.awt.image.ImagingOpException in many applications due
+    to wrong exports from in jmlibimg.dll.
+
+
+1.6.0 Build 19 Beta 2 (2011-01-12)
+
+  - Added a predefined font configuration file to use the Liberation font family
+    as Java system fonts (see README.OS2 for details).
+
+  - Added the jawt.lib library to the SDK package.
+
+  - Added some missing GUI and audio classes to rt.jar.
+
+  - Fixed: Java could not find a .jar file in the current directory when
+    starting it with 'java -jar filename.jar'.
+
+  - Fixed: Non-ASCII characters in the title bar of any Java window would be
+    drawn using wrong glyphs.
+
+  - Fixed: Java could incorrectly detect the default object heap size on some
+    systems for some specific VIRTUALADDRESS values and abort at startup with a
+    "Could not reserve enough space for object heap" error message.
+
+  - Fixed: java.io.File.mkdirs() wouild always fail which would in particular
+    abort the installation process of some applications such as jEdit, iTrain
+    (this bug was actually fixed in Odin).
+
+  - Fixed: An attempt to use Drag & Drop in any Java application would cause
+    a Java exception and program termination.
+
+
+1.6.0 Build 19 Beta (2010-12-30)
+
+  - Added support for AWT and Swing classes which brings GUI capabilities.
+
+  - Lots of small fixes.
+
+
+1.6.0 Build 19 Alpha (2010-10-01)
+
+  - First public release.
