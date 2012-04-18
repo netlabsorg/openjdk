@@ -364,7 +364,9 @@ int WIN32API WinMain(HINSTANCE hInstance,
 int
 main(int argc, char ** argv)
 {
-    EnableSEH();
+#ifdef ODIN_FORCE_WIN32_TIB
+    ForceWin32TIB();
+#endif
     return RegisterLxExe((WINMAIN)WinMain, NULL);
 }
 
