@@ -71,8 +71,10 @@ unsigned long SYSTEM _DLL_InitTerm(unsigned long hModule, unsigned long ulFlag)
         // (this will issue a message box and abort the process on mismatch)
         CheckVersionFromHMOD(PE2LX_VERSION, hModule);
 
+#ifdef ODIN_FORCE_WIN32_TIB
         // enable __try/__except support
-        EnableSEH();
+        ForceWin32TIB();
+#endif
 
         dllHandle = RegisterLxDll(hModule, DllMain, NULL);
         if (dllHandle == 0)
