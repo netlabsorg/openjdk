@@ -1,0 +1,30 @@
+## @file
+#
+
+SUB_DEPTH = ..
+include $(KBUILD_PATH)/subheader.kmk
+
+OTHERS += netx
+BLDDIRS = $(netx_0_OUTDIR)
+
+netx: | $$(call DIRDEP,$$(netx_0_OUTDIR))
+	find $(PATH_SUB_CURRENT) -name '*.java' | sort > $(netx_0_OUTDIR)/files.txt
+	$(PATH_BOOTSTRAP_JDK)/bin/javac $(IT_JAVACFLAGS) \
+        -d "$(netx_0_OUTDIR)" \
+        -sourcepath "$(PATH_SUB_CURRENT)" \
+        -bootclasspath "$(BOOTSTRAP_JDK_RUNTIME)" \
+        @$(netx_0_OUTDIR)/files.txt
+	(cd $(NETX_RESOURCE_DIR); \
+        for files in $$(find . -type f); \
+        do \
+            $(INSTALL_DATA) -D $$(files) \
+            $(netx_0_OUTDIR)/net/sourceforge/jnlp/resources/$$(files); \
+        done)
+	$(CP) -a $(PATH_SUB_CURRENT)/net/sourceforge/jnlp/runtime/pac-funcs.js \
+        $(netx_0_OUTDIR)/net/sourceforge/jnlp/runtime
+	$(CP) -a build.properties $(netx_0_OUTDIR)/net/sourceforge/jnlp/
+
+
+include $(FILE_KBUILD_SUB_FOOTER)
+
+#$(error $(_DIRS))
