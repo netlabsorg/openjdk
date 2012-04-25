@@ -1,0 +1,90 @@
+## @file
+# Global Project Configuration File
+#
+
+#------------------------------------------------------------------------------
+# Global definitions
+#------------------------------------------------------------------------------
+
+PACKAGE_NAME       := icedtea-web
+PACKAGE_VERSION    := 1.1.2
+PACKAGE_STRING     := $(PACKAGE_NAME) $(PACKAGE_VERSION)
+PACKAGE_URL        := http://icedtea.classpath.org/wiki/IcedTea-Web
+
+FULL_VERSION       := $(PACKAGE_VERSION)
+
+IT_LANGUAGE_SOURCE_VERSION := 6
+IT_CLASS_TARGET_VERSION    := 6
+IT_JAVAC_SETTINGS           = -g -encoding utf-8 $(JAVACFLAGS) $(MEMORY_LIMIT) $(PREFER_SOURCE)
+IT_JAVACFLAGS               = $(IT_JAVAC_SETTINGS) -source $(IT_LANGUAGE_SOURCE_VERSION) -target $(IT_CLASS_TARGET_VERSION)
+
+BOOTSTRAP_JDK_RUNTIME   = $(PATH_BOOTSTRAP_JDK)/jre/lib/rt.jar;$(PATH_BOOTSTRAP_JDK)/jre/lib/jsse.jar
+
+NETX_RESOURCE_DIR       = $(PATH_ROOT)/netx/net/sourceforge/jnlp/resources
+
+INSTALL_DATA       := $(INSTALL) -m 644
+
+#
+# We need the jars in bootclasspath for a couple of reasons
+#  - we use classes (in the sun.applet package) loaded by the bootclassloader
+#    using another classloader to load classes from the same package causes an
+#    IllegalAccessException
+#  - we want full privileges
+#
+LAUNCHER_BOOTCLASSPATH  = -Xbootclasspath/a:$(datadir)/$(PACKAGE_NAME)/netx.jar$(RHINO_RUNTIME)
+PLUGIN_BOOTCLASSPATH    = -Xbootclasspath/a:$(datadir)/$(PACKAGE_NAME)/netx.jar;$(datadir)/$(PACKAGE_NAME)/plugin.jar$(RHINO_RUNTIME)
+
+# Fake update version to work with the Deployment Toolkit script used by Oracle
+# http://download.oracle.com/javase/tutorial/deployment/deploymentInDepth/depltoolkit_index.html
+JDK_UPDATE_VERSION  := 50
+
+#------------------------------------------------------------------------------
+# Tools
+#------------------------------------------------------------------------------
+
+#------------------------------------------------------------------------------
+# Common libraries referenced by components
+#------------------------------------------------------------------------------
+
+#------------------------------------------------------------------------------
+# General Stuff
+#------------------------------------------------------------------------------
+
+TEMPLATE_Cxx            = C++ sources
+TEMPLATE_Cxx_USES       =
+TEMPLATE_Cxx_TOOL       = GXX3OMF
+TEMPLATE_Cxx_INCS       = 
+TEMPLATE_Cxx_DEFS       = OS2EMX_PLAIN_CHAR
+
+ifn1of ($(EMXOMFLD_TYPE),WLINK wlink)
+TEMPLATE_Cxx_LDFLAGS    = -Zlinker '"DISABLE 1121"'
+endif
+
+# generate .sym files but don't put them in a separate dir
+TEMPLATE_Cxx_LD_DEBUG       = split
+TEMPLATE_Cxx_DEBUG_STAGE    = nul
+
+#------------------------------------------------------------------------------
+# Other Stuff
+#------------------------------------------------------------------------------
+
+#
+# Include a site-specific config for local overrides
+#
+ifndef LOCALCFG
+ LOCALCFG := $(wildcard $(PATH_ROOT)/LocalConfig.kmk)
+ ifneq ($(LOCALCFG),)
+  include $(LOCALCFG)
+ endif
+endif
+
+#------------------------------------------------------------------------------
+# Defaults
+#------------------------------------------------------------------------------
+
+PATH_MOZILLA_INCS          ?= $(PATH_ROOT)/../libs/mozilla/include
+MOZILLA_VERSION_COLLAPSED  ?= 11000000 # 11.0.0.0
+
+PATH_GLIB_INCS             ?= $(patsubst -I%,%,$(shell pkg-config --cflags-only-I glib-2.0))
+PATH_GLIB_LIBS             ?= $(patsubst -l%,%,$(shell pkg-config --libs-only-l glib-2.0))
+PATH_GLIB_LIBPATH          ?= $(patsubst -L%,%,$(shell pkg-config --libs-only-L glib-2.0))
