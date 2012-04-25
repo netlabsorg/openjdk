@@ -1,0 +1,54 @@
+## @file
+#
+
+SUB_DEPTH = ../..
+include $(KBUILD_PATH)/subheader.kmk
+
+DLLS               += npicedt
+npicedt_TEMPLATE    = Cxx
+npicedt_INCS        = $(PATH_MOZILLA_INCS) $(PATH_GLIB_INCS)
+npicedt_DEFS        = JDK_UPDATE_VERSION=$(JDK_UPDATE_VERSION) \
+                      MOZILLA_VERSION_COLLAPSED=$(MOZILLA_VERSION_COLLAPSED)
+npicedt_CXXFLAGS    = -DPLUGIN_NAME="IcedTea-Web Plugin" \
+                      -DPLUGIN_VERSION="IcedTea-Web $(FULL_VERSION)" \
+                      -DPACKAGE_URL="$(PACKAGE_URL)" \
+                      -DICEDTEA_WEB_JRE="$(SYSTEM_JRE_DIR)" \
+                      -DPLUGIN_BOOTCLASSPATH="$(PLUGIN_BOOTCLASSPATH)"
+npicedt_LIBS        = $(PATH_GLIB_LIBS)
+npicedt_LIBPATH     = $(PATH_GLIB_LIBPATH)
+
+npicedt_SOURCES     = \
+    IcedTeaNPPlugin.cc \
+    IcedTeaScriptablePluginObject.cc \
+    IcedTeaJavaRequestProcessor.cc \
+    IcedTeaPluginRequestProcessor.cc \
+    IcedTeaPluginUtils.cc
+
+# Unsorted stuff from Makefile.in
+
+#@ENABLE_PLUGIN_TRUE@ICEDTEAPLUGIN_CLEAN = clean-IcedTeaPlugin
+#@ENABLE_PLUGIN_TRUE@LIVECONNECT_DIR = netscape sun/applet
+#@ENABLE_PLUGIN_TRUE@PLUGIN_DIR = $(abs_top_builddir)/plugin/icedteanp
+#@ENABLE_PLUGIN_TRUE@PLUGIN_SRCDIR = $(abs_top_srcdir)/plugin/icedteanp
+#@ENABLE_PLUGIN_TRUE@LIVECONNECT_SRCS = $(PLUGIN_SRCDIR)/java
+#@ENABLE_PLUGIN_TRUE@ICEDTEAPLUGIN_TARGET = $(PLUGIN_DIR)/IcedTeaPlugin.so stamps/liveconnect-dist.stamp
+#@ENABLE_PLUGIN_TRUE@PLUGIN_PKGS = sun.applet netscape.security netscape.javascript
+
+#@ENABLE_PLUGIN_TRUE@	${INSTALL_PROGRAM} $(PLUGIN_DIR)/IcedTeaPlugin.so $(DESTDIR)$(libdir)
+#@ENABLE_PLUGIN_TRUE@	${INSTALL_DATA} $(abs_top_builddir)/liveconnect/lib/classes.jar $(DESTDIR)$(datadir)/$(PACKAGE_NAME)/plugin.jar
+
+#@ENABLE_PLUGIN_TRUE@stamps/plugin-tests.stamp: $(PLUGIN_TEST_SRCS) stamps/plugin.stamp
+#@ENABLE_PLUGIN_TRUE@	mkdir -p plugin/tests/LiveConnect
+#@ENABLE_PLUGIN_TRUE@	$(BOOT_DIR)/bin/javac $(IT_JAVACFLAGS) \
+#@ENABLE_PLUGIN_TRUE@	 -d plugin/tests/LiveConnect \
+#@ENABLE_PLUGIN_TRUE@	 -classpath liveconnect/lib/classes.jar \
+#@ENABLE_PLUGIN_TRUE@	 $(PLUGIN_TEST_SRCS) ;
+#@ENABLE_PLUGIN_TRUE@	$(BOOT_DIR)/bin/jar cf plugin/tests/LiveConnect/PluginTest.jar \
+#@ENABLE_PLUGIN_TRUE@	  plugin/tests/LiveConnect/*.class ;
+#@ENABLE_PLUGIN_TRUE@	cp -pPR $(SRC_DIR_LINK) $(abs_top_srcdir)/plugin/tests/LiveConnect/*.{js,html} \
+#@ENABLE_PLUGIN_TRUE@	  plugin/tests/LiveConnect ;
+#@ENABLE_PLUGIN_TRUE@	echo "Done. Now launch \"firefox file://`pwd`/index.html\"" ;
+#@ENABLE_PLUGIN_TRUE@	mkdir -p stamps
+#@ENABLE_PLUGIN_TRUE@	touch stamps/plugin-tests.stamp
+
+include $(FILE_KBUILD_SUB_FOOTER)
