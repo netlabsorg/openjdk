@@ -41,7 +41,6 @@ end
 
 aFlags = ''
 fTargets = ''
-aNewArgs = ''
 
 do i = 1 to words(aArgs)
     a = word(aArgs, i)
@@ -57,11 +56,11 @@ do i = 1 to words(aArgs)
         end
     end
     else do
-        aNewArgs = aNewArgs' 'a
+        leave
     end
 end
-aArgs = strip(aNewArgs)
-drop aNewArgs
+aArgs = strip(subword(aArgs, i))
+drop a
 
 if (verify(aFlags, 'Hh?', 'M')) then do
     say 'Flags for 'ScriptFile':'
@@ -233,6 +232,7 @@ call EnvSet 'USE_PRECOMPILED_HEADER', '0'
 /*
  * set up Odin32 runtime
  */
+/*
 if (\fMake) then do
     if (fRelease) then do
         call EnvAddFront 'PATH', G.PATH_SDK_ODIN32_BIN';'G.PATH_LIB_ODIN32_SRCTREE'\bin'
@@ -247,6 +247,7 @@ if (\fMake) then do
     if (fOdinLog) then call EnvSet 'WIN32LOG_ENABLED', '1'
     else call EnvSet 'WIN32LOG_ENABLED', ''
 end
+*/
 
 /*
  * Various Java runtime settings
