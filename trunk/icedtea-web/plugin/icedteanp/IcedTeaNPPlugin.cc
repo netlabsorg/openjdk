@@ -36,6 +36,12 @@ this exception to your version of the library, but you are not
 obligated to do so.  If you do not wish to do so, delete this
 exception statement from your version. */
 
+#ifdef __OS2__
+// OS/2 includes.
+#define INCL_PM
+#include <os2.h>
+#endif
+
 // System includes.
 #include <dlfcn.h>
 #include <errno.h>
@@ -50,6 +56,8 @@ exception statement from your version. */
 // Liveconnect extension
 #include "IcedTeaScriptablePluginObject.h"
 #include "IcedTeaNPPlugin.h"
+
+#include "OS.h"
 
 #if MOZILLA_VERSION_COLLAPSED < 1090100
 // Documentbase retrieval includes.
@@ -1078,6 +1086,16 @@ plugin_get_documentbase (NPP instance)
 static void
 plugin_display_failure_dialog ()
 {
+#ifdef __OS2__
+  gchar *msg = NULL;
+
+  PLUGIN_DEBUG ("plugin_display_failure_dialog\n");
+
+  msg = g_strdup_printf (FAILURE_MESSAGE, appletviewer_executable);
+  WinMessageBox (HWND_DESKTOP, HWND_DESKTOP,
+                 msg, "Error", 0, MB_ERROR | MB_OK);
+  g_free(msg);
+#else
   GtkWidget* dialog = NULL;
 
   PLUGIN_DEBUG ("plugin_display_failure_dialog\n");
@@ -1091,6 +1109,7 @@ plugin_display_failure_dialog ()
   gtk_widget_show_all (dialog);
   gtk_dialog_run (GTK_DIALOG (dialog));
   gtk_widget_destroy (dialog);
+#endif
 
   PLUGIN_DEBUG ("plugin_display_failure_dialog return\n");
 }
@@ -1533,7 +1552,7 @@ plugin_start_appletviewer (ITNPPluginData* data)
   {
       command_line = (gchar**) malloc(sizeof(gchar*)*11);
       command_line[cmd_num++] = g_strdup(appletviewer_executable);
-      command_line[cmd_num++] = g_strdup(PLUGIN_BOOTCLASSPATH);
+      command_line[cmd_num++] = g_strdup_printf(PLUGIN_BOOTCLASSPATH);
       // set the classpath to avoid using the default (cwd).
       command_line[cmd_num++] = g_strdup("-classpath");
       command_line[cmd_num++] = g_strdup_printf("%s/lib/rt.jar", ICEDTEA_WEB_JRE);
@@ -1554,7 +1573,7 @@ plugin_start_appletviewer (ITNPPluginData* data)
   {
       command_line = (gchar**) malloc(sizeof(gchar*)*8);
       command_line[cmd_num++] = g_strdup(appletviewer_executable);
-      command_line[cmd_num++] = g_strdup(PLUGIN_BOOTCLASSPATH);
+      command_line[cmd_num++] = g_strdup_printf(PLUGIN_BOOTCLASSPATH);
       command_line[cmd_num++] = g_strdup("-classpath");
       command_line[cmd_num++] = g_strdup_printf("%s/lib/rt.jar", ICEDTEA_WEB_JRE);
       command_line[cmd_num++] = g_strdup("sun.applet.PluginMain");
@@ -2262,14 +2281,14 @@ NP_Initialize (NPNetscapeFuncs* browserTable, NPPluginFuncs* pluginTable)
 
 // Returns a string describing the MIME type that this plugin
 // handles.
-char*
+const char*
 NP_GetMIMEDescription ()
 {
   PLUGIN_DEBUG ("NP_GetMIMEDescription\n");
 
   PLUGIN_DEBUG ("NP_GetMIMEDescription return\n");
 
-  return (char*) PLUGIN_MIME_DESC;
+  return PLUGIN_MIME_DESC;
 }
 
 // Returns a value relevant to the plugin as a whole.  The browser

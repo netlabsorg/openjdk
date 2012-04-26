@@ -15,14 +15,18 @@ FULL_VERSION       := $(PACKAGE_VERSION)
 
 IT_LANGUAGE_SOURCE_VERSION := 6
 IT_CLASS_TARGET_VERSION    := 6
-IT_JAVAC_SETTINGS           = -g -encoding utf-8 $(JAVACFLAGS) $(MEMORY_LIMIT) $(PREFER_SOURCE)
-IT_JAVACFLAGS               = $(IT_JAVAC_SETTINGS) -source $(IT_LANGUAGE_SOURCE_VERSION) -target $(IT_CLASS_TARGET_VERSION)
+IT_JAVAC_SETTINGS          ?= -g -encoding utf-8 $(JAVACFLAGS) $(MEMORY_LIMIT) $(PREFER_SOURCE)
+IT_JAVACFLAGS              ?= $(IT_JAVAC_SETTINGS) -source $(IT_LANGUAGE_SOURCE_VERSION) -target $(IT_CLASS_TARGET_VERSION)
 
-BOOTSTRAP_JDK_RUNTIME   = $(PATH_BOOTSTRAP_JDK)/jre/lib/rt.jar;$(PATH_BOOTSTRAP_JDK)/jre/lib/jsse.jar
+BOOTSTRAP_JDK_RUNTIME  ?= $(PATH_BOOTSTRAP_JDK)/jre/lib/rt.jar;$(PATH_BOOTSTRAP_JDK)/jre/lib/jsse.jar
 
-NETX_RESOURCE_DIR       = $(PATH_ROOT)/netx/net/sourceforge/jnlp/resources
+INSTALL_DATA       := install -m 644
 
-INSTALL_DATA       := $(INSTALL) -m 644
+# @todo later
+ICEDTEA_WEB_JRE_DIR     := /@unixroot/usr/lib/jre
+ICEDTEA_WEB_DATA_DIR    := /@unixroot/usr/share/$(PACKAGE_NAME)
+
+ICEDTEA_WEB_JRE     = icedtea_web_jre_dir()
 
 #
 # We need the jars in bootclasspath for a couple of reasons
@@ -31,8 +35,10 @@ INSTALL_DATA       := $(INSTALL) -m 644
 #    IllegalAccessException
 #  - we want full privileges
 #
-LAUNCHER_BOOTCLASSPATH  = -Xbootclasspath/a:$(datadir)/$(PACKAGE_NAME)/netx.jar$(RHINO_RUNTIME)
-PLUGIN_BOOTCLASSPATH    = -Xbootclasspath/a:$(datadir)/$(PACKAGE_NAME)/netx.jar;$(datadir)/$(PACKAGE_NAME)/plugin.jar$(RHINO_RUNTIME)
+LAUNCHER_BOOTCLASSPATH  = \"-Xbootclasspath/a:%s/netx.jar$(RHINO_RUNTIME)\", \
+                          icedtea_web_data_dir()
+PLUGIN_BOOTCLASSPATH    = \"-Xbootclasspath/a:%s/netx.jar;%s/plugin.jar$(RHINO_RUNTIME)\", \
+                          icedtea_web_data_dir()
 
 # Fake update version to work with the Deployment Toolkit script used by Oracle
 # http://download.oracle.com/javase/tutorial/deployment/deploymentInDepth/depltoolkit_index.html
@@ -85,6 +91,6 @@ endif
 PATH_MOZILLA_INCS          ?= $(PATH_ROOT)/../libs/mozilla/include
 MOZILLA_VERSION_COLLAPSED  ?= 11000000 # 11.0.0.0
 
-PATH_GLIB_INCS             ?= $(patsubst -I%,%,$(shell pkg-config --cflags-only-I glib-2.0))
-PATH_GLIB_LIBS             ?= $(patsubst -l%,%,$(shell pkg-config --libs-only-l glib-2.0))
-PATH_GLIB_LIBPATH          ?= $(patsubst -L%,%,$(shell pkg-config --libs-only-L glib-2.0))
+PATH_GLIB_INCS             ?= $(patsubst -I%,%,$(shell pkg-config --cflags-only-I glib-2.0 gthread-2.0))
+PATH_GLIB_LIBS             ?= $(patsubst -l%,%,$(shell pkg-config --libs-only-l glib-2.0 gthread-2.0))
+PATH_GLIB_LIBPATH          ?= $(patsubst -L%,%,$(shell pkg-config --libs-only-L glib-2.0 gthread-2.0))

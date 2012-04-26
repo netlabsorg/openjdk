@@ -6,15 +6,20 @@ include $(KBUILD_PATH)/subheader.kmk
 
 DLLS               += npicedt
 npicedt_TEMPLATE    = Cxx
-npicedt_INCS        = $(PATH_MOZILLA_INCS) $(PATH_GLIB_INCS)
-npicedt_DEFS        = JDK_UPDATE_VERSION=$(JDK_UPDATE_VERSION) \
-                      MOZILLA_VERSION_COLLAPSED=$(MOZILLA_VERSION_COLLAPSED)
-npicedt_CXXFLAGS    = -DPLUGIN_NAME="IcedTea-Web Plugin" \
-                      -DPLUGIN_VERSION="IcedTea-Web $(FULL_VERSION)" \
-                      -DPACKAGE_URL="$(PACKAGE_URL)" \
-                      -DICEDTEA_WEB_JRE="$(SYSTEM_JRE_DIR)" \
+npicedt_INCS        = $(PATH_ROOT)/extra $(PATH_MOZILLA_INCS) $(PATH_GLIB_INCS)
+npicedt_DEFS        = MOZILLA_VERSION_COLLAPSED=$(MOZILLA_VERSION_COLLAPSED) \
+                      DETECT_DATA_DIR=$(DETECT_DATA_DIR) \
+                      DETECT_JRE_DIR=$(DETECT_JRE_DIR) \
+                      WITHOUT_GTK
+npicedt_CXXFLAGS    = -DJDK_UPDATE_VERSION="\"$(JDK_UPDATE_VERSION)\"" \
+                      -DPLUGIN_NAME="\"IcedTea-Web Plugin\"" \
+                      -DPLUGIN_VERSION="\"IcedTea-Web $(FULL_VERSION)\"" \
+                      -DPACKAGE_URL="\"$(PACKAGE_URL)\"" \
+                      -DICEDTEA_WEB_JRE_DIR="\"$(SYSTEM_JRE_DIR)\"" \
+                      -DICEDTEA_WEB_JRE="$(ICEDTEA_WEB_JRE)" \
+                      -DICEDTEA_WEB_DATA_DIR="\"$(ICEDTEA_WEB_DATA_DIR)\"" \
                       -DPLUGIN_BOOTCLASSPATH="$(PLUGIN_BOOTCLASSPATH)"
-npicedt_LIBS        = $(PATH_GLIB_LIBS)
+npicedt_LIBS        = $(PATH_GLIB_LIBS) pthread
 npicedt_LIBPATH     = $(PATH_GLIB_LIBPATH)
 
 npicedt_SOURCES     = \
@@ -22,7 +27,8 @@ npicedt_SOURCES     = \
     IcedTeaScriptablePluginObject.cc \
     IcedTeaJavaRequestProcessor.cc \
     IcedTeaPluginRequestProcessor.cc \
-    IcedTeaPluginUtils.cc
+    IcedTeaPluginUtils.cc \
+    $(PATH_ROOT)/extra/OS.cc
 
 # Unsorted stuff from Makefile.in
 
