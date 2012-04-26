@@ -68,7 +68,7 @@ abstract class AppletPanel extends Panel implements AppletStub, Runnable {
     /**
      * The applet (if loaded).
      */
-    Applet applet;
+    protected Applet applet;
 
     /**
      * Applet will allow initialization.  Should be
@@ -117,7 +117,7 @@ abstract class AppletPanel extends Panel implements AppletStub, Runnable {
     /**
      * The thread for the applet.
      */
-    Thread handler;
+    protected Thread handler;
 
 
     /**
@@ -162,7 +162,8 @@ abstract class AppletPanel extends Panel implements AppletStub, Runnable {
      * Creates a thread to run the applet. This method is called
      * each time an applet is loaded and reloaded.
      */
-    synchronized void createAppletThread() {
+	//Overridden by NetxPanel.
+    protected synchronized void createAppletThread() {
         // Create a thread group for the applet, and start a new
         // thread to load the applet.
         String nm = "applet-" + getCode();
@@ -306,7 +307,7 @@ abstract class AppletPanel extends Panel implements AppletStub, Runnable {
     /**
      * Get an event from the queue.
      */
-    synchronized AppletEvent getNextEvent() throws InterruptedException {
+    protected synchronized AppletEvent getNextEvent() throws InterruptedException {
         while (queue == null || queue.isEmpty()) {
             wait();
         }
@@ -695,7 +696,8 @@ abstract class AppletPanel extends Panel implements AppletStub, Runnable {
      * applet event processing so that it can be gracefully interrupted from
      * things like HotJava.
      */
-    private void runLoader() {
+	//Overridden by NetxPanel.
+    protected void runLoader() {
         if (status != APPLET_DISPOSE) {
             showAppletStatus("notdisposed");
             return;
