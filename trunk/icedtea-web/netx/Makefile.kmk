@@ -5,26 +5,36 @@ SUB_DEPTH = ..
 include $(KBUILD_PATH)/subheader.kmk
 
 OTHERS += netx
-BLDDIRS = $(netx_0_OUTDIR)
+BLDDIRS += $(netx_0_OUTDIR)
 
-netx: | $$(call DIRDEP,$$(netx_0_OUTDIR))
+BUILD_PROPERTIES = $(netx_0_OUTDIR)/net/sourceforge/jnlp/build.properties
+BLDDIRS += $(dir $(BUILD_PROPERTIES))
+
+OTHER_CLEAN += $(BUILD_PROPERTIES) $(netx_0_OUTDIR)/files.txt
+
+$$(BUILD_PROPERTIES): $(PATH_ROOT)/build.properties.in | $$(call DIRDEP,$$(dir $$(@)))
+	sed "s/@RHINO_AVAILABLE@/$(if $(WITH_RHINO),true,false)/g" < $^ > $@
+
+netx: $$(BUILD_PROPERTIES) | $$(call DIRDEP,$$(netx_0_OUTDIR))
 	find $(PATH_SUB_CURRENT) -name '*.java' | sort > $(netx_0_OUTDIR)/files.txt
+ifndef WITH_RHINO
+	sed -i '/RhinoBasedPacEvaluator/ d' $(netx_0_OUTDIR)/files.txt
+endif
 	$(PATH_BOOTSTRAP_JDK)/bin/javac $(IT_JAVACFLAGS) \
         -d "$(netx_0_OUTDIR)" \
         -sourcepath "$(PATH_SUB_CURRENT)" \
         -bootclasspath "$(BOOTSTRAP_JDK_RUNTIME)" \
         @$(netx_0_OUTDIR)/files.txt
-	(cd $(NETX_RESOURCE_DIR); \
-        for files in $$(find . -type f); \
+	(cd $(PATH_SUB_CURRENT)/net/sourceforge/jnlp/resources; \
+        for files in $$(find . -path ./.svn -prune -o -type f -print); \
         do \
-            $(INSTALL_DATA) -D $$(files) \
-            $(netx_0_OUTDIR)/net/sourceforge/jnlp/resources/$$(files); \
+            $(INSTALL_DATA) -D $${files} \
+            $(netx_0_OUTDIR)/net/sourceforge/jnlp/resources/$${files}; \
         done)
-	$(CP) -a $(PATH_SUB_CURRENT)/net/sourceforge/jnlp/runtime/pac-funcs.js \
+	cp -a $(PATH_SUB_CURRENT)/net/sourceforge/jnlp/runtime/pac-funcs.js \
         $(netx_0_OUTDIR)/net/sourceforge/jnlp/runtime
-	$(CP) -a build.properties $(netx_0_OUTDIR)/net/sourceforge/jnlp/
 
 
 include $(FILE_KBUILD_SUB_FOOTER)
 
-#$(error $(_DIRS))
+#$(error --$(PATH_OUT))
