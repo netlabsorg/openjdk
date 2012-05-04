@@ -931,7 +931,13 @@ IcedTeaPluginUtilities::callAndWaitForResult(NPP instance, void (*func) (void *)
 
     struct timespec t;
     struct timespec curr_t;
+#ifdef __OS2__
+    t.tv_sec = time(NULL);
+    t.tv_nsec = 0;
+    curr_t.tv_sec = curr_t.tv_nsec = 0;
+#else
     clock_gettime(CLOCK_REALTIME, &t);
+#endif
     t.tv_sec += REQUESTTIMEOUT; // timeout
 
     // post request
@@ -939,7 +945,11 @@ IcedTeaPluginUtilities::callAndWaitForResult(NPP instance, void (*func) (void *)
 
     do
     {
+#ifdef __OS2__
+        curr_t.tv_sec = time(NULL);
+#else
         clock_gettime(CLOCK_REALTIME, &curr_t);
+#endif
         if (data != NULL && !data->result_ready && (curr_t.tv_sec < t.tv_sec))
         {
             usleep(2000);
