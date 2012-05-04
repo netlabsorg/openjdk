@@ -241,7 +241,12 @@ void
 JavaRequestProcessor::postAndWaitForResponse(std::string message)
 {
     struct timespec t;
+#ifdef __OS2__
+    t.tv_sec = time(NULL);
+    t.tv_nsec = 0;
+#else
     clock_gettime(CLOCK_REALTIME, &t);
+#endif
     t.tv_sec += REQUESTTIMEOUT; // 1 minute timeout
 
     // Clear the result
@@ -252,6 +257,9 @@ JavaRequestProcessor::postAndWaitForResponse(std::string message)
 
     // Wait for result to be filled in.
     struct timespec curr_t;
+#ifdef __OS2__
+    curr_t.tv_sec = curr_t.tv_nsec = 0;
+#endif
 
     bool isPluginThread = false;
 
@@ -263,7 +271,11 @@ JavaRequestProcessor::postAndWaitForResponse(std::string message)
 
     do
     {
+#ifdef __OS2__
+        curr_t.tv_sec = time(NULL);
+#else
         clock_gettime(CLOCK_REALTIME, &curr_t);
+#endif
 
         if (!result_ready && (curr_t.tv_sec < t.tv_sec))
         {
