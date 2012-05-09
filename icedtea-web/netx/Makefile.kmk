@@ -9,22 +9,44 @@ BLDDIRS += $(netx_0_OUTDIR)
 
 BUILD_PROPERTIES = $(netx_0_OUTDIR)/net/sourceforge/jnlp/build.properties
 BLDDIRS += $(dir $(BUILD_PROPERTIES))
+OTHER_CLEAN += $(BUILD_PROPERTIES)
 
-OTHER_CLEAN += $(BUILD_PROPERTIES) $(netx_0_OUTDIR)/files.txt
+MANIFEST = $(netx_0_OUTDIR)/netx.manifest
+BLDDIRS += $(dir $(MANIFEST))
+OTHER_CLEAN += $(MANIFEST)
+
+JAVASRCLIST += $(netx_0_OUTDIR)/javasrc.list
+BLDDIRS += $(dir $(JAVASRCLIST))
+OTHER_CLEAN += $(JAVASRCLIST) $(JAVASRCLIST).rsp $(JAVASRCLIST).stamp
+
+JARFILE = $(PATH_STAGE)/lib/netx.jar
+BLDDIRS += $(dir $(JARFILE))
+OTHER_CLEAN += $(JARFILE)
 
 $$(BUILD_PROPERTIES): $(PATH_ROOT)/build.properties.in | $$(call DIRDEP,$$(dir $$(@)))
 	sed "s/@RHINO_AVAILABLE@/$(if $(WITH_RHINO),true,false)/g" < $^ > $@
 
-netx: $$(BUILD_PROPERTIES) | $$(call DIRDEP,$$(netx_0_OUTDIR))
-	find $(PATH_SUB_CURRENT) -name '*.java' | sort > $(netx_0_OUTDIR)/files.txt
-ifndef WITH_RHINO
-	sed -i '/RhinoBasedPacEvaluator/ d' $(netx_0_OUTDIR)/files.txt
-endif
+$$(MANIFEST): $(PATH_ROOT)/netx.manifest.in | $$(call DIRDEP,$$(dir $$(@)))
+	sed "s/@PACKAGE_NAME@/$(PACKAGE_NAME)/g; \
+         s/@FULL_VERSION@/$(FULL_VERSION)/g; " < $^ > $@
+
+$$(JAVASRCLIST): $(MAKEFILE) | $$(call DIRDEP,$$(dir $$(@)))
+	@echo 'JAVASRC = \' > $@
+	find $(PATH_SUB_CURRENT) -name '*.java' \
+        $(if $(WITH_RHINO),,! -name '*RhinoBasedPacEvaluator*') \
+        -printf '%p \\\n' >> $@
+
+$$(JAVASRCLIST).stamp: $$(JAVASRC) | $$(call DIRDEP,$$(dir $$(@)))
+	$(call MSG_COMPILE,netx,$(words $?) sources,$@,JAVA)
+	@echo $? > $(JAVASRCLIST).rsp
 	$(PATH_BOOTSTRAP_JDK)/bin/javac $(IT_JAVACFLAGS) \
         -d "$(netx_0_OUTDIR)" \
         -sourcepath "$(PATH_SUB_CURRENT)" \
         -bootclasspath "$(BOOTSTRAP_JDK_RUNTIME)" \
-        @$(netx_0_OUTDIR)/files.txt
+        @"$(JAVASRCLIST).rsp"
+	@touch "$@"
+
+$$(JARFILE): $$(BUILD_PROPERTIES) $$(MANIFEST) $$(JAVASRCLIST).stamp
 	(cd $(PATH_SUB_CURRENT)/net/sourceforge/jnlp/resources; \
         for files in $$(find . -path ./.svn -prune -o -type f -print); \
         do \
@@ -33,8 +55,12 @@ endif
         done)
 	cp -a $(PATH_SUB_CURRENT)/net/sourceforge/jnlp/runtime/pac-funcs.js \
         $(netx_0_OUTDIR)/net/sourceforge/jnlp/runtime
+	(cd $(netx_0_OUTDIR); \
+        $(PATH_BOOTSTRAP_JDK)/bin/jar cfm $(JARFILE) \
+            $(MANIFEST) javax/jnlp net)
 
+netx: $$(JARFILE) | $$(call DIRDEP,$$(netx_0_OUTDIR))
 
 include $(FILE_KBUILD_SUB_FOOTER)
 
-#$(error --$(PATH_OUT))
+-include $(JAVASRCLIST)
