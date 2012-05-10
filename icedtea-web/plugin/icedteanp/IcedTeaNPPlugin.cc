@@ -38,8 +38,11 @@ exception statement from your version. */
 
 #ifdef __OS2__
 // OS/2 includes.
-#define INCL_PM
+#define INCL_DOSPROCESS
+#define INCL_DOSERRORS
+#define INCL_WINDIALOG
 #include <os2.h>
+#include <emx/startup.h>
 #endif
 
 // System includes.
@@ -2529,3 +2532,35 @@ allocate_scriptable_object(NPP npp, NPClass *aClass)
 	PLUGIN_DEBUG("Allocating new scriptable object\n");
 	return new IcedTeaScriptablePluginObject(npp);
 }
+
+#ifdef __OS2__
+
+// Make sure static initializers in the plugin DLL are called
+
+static APIENTRY void cleanup(ULONG ulReason)
+{
+    __ctordtorTerm();
+    _CRT_term();
+    DosExitList(EXLST_EXIT, cleanup);
+}
+
+unsigned long _System _DLL_InitTerm(unsigned long hModule,
+                                    unsigned long ulFlag)
+{
+    APIRET arc;
+
+    if (ulFlag == 0)
+    {
+        arc = DosExitList (EXLST_ADD, cleanup);
+        if (arc != NO_ERROR)
+            return 0;
+
+        if (_CRT_init() != 0) // failure?
+            return 0;
+        __ctordtorInit();
+    }
+
+    return 1;
+}
+
+#endif /* __OS2__ */
