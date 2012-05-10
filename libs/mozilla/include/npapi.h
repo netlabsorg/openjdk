@@ -38,6 +38,8 @@
 #ifndef npapi_h_
 #define npapi_h_
 
+#ifndef RC_INVOKED
+
 #if defined(__OS2__)
 #pragma pack(1)
 #endif
@@ -95,6 +97,8 @@
 #include <QEvent>
 #include <QRegion>
 #endif
+
+#endif /* RC_INVOKED */
 
 /*----------------------------------------------------------------------*/
 /*                        Plugin Version Constants                      */
