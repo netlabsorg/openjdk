@@ -1,0 +1,21 @@
+#include <npapi.h>
+
+/* RC_DATA types for version info - required */
+RCDATA NP_INFO_ProductVersion    { @PACKAGE_VER_MAJOR@,@PACKAGE_VER_MINOR@,@PACKAGE_VER_PATCH@,0 }
+RCDATA NP_INFO_MIMEType          { "application/x-java-vm\0" }
+RCDATA NP_INFO_FileOpenName      { "Java Plugin\0" }
+RCDATA NP_INFO_FileExtents       { "*\0" }
+
+/* RC_DATA types for version info - used if found */
+RCDATA NP_INFO_FileDescription   { "@PLUGIN_VERSION@\0" }
+RCDATA NP_INFO_ProductName       { "@PLUGIN_NAME@\0" }
+
+/* RC_DATA types for version info - optional */
+RCDATA NP_INFO_CompanyName       { "netlabs.org\0" }
+RCDATA NP_INFO_FileVersion       { @PACKAGE_VER_MAJOR@,@PACKAGE_VER_MINOR@,@PACKAGE_VER_PATCH@,0 }
+RCDATA NP_INFO_InternalName      { "NPICEDT.DLL\0" }
+RCDATA NP_INFO_LegalCopyright    { "Copyright (C) 2012\0" }
+RCDATA NP_INFO_OriginalFilename  { "NPICEDT.DLL\0" }
+
+/* BLDLEVEL info */
+RCDATA 9999 { "@#netlabs.org:@PACKAGE_VER_MAJOR@.@PACKAGE_VER_MINOR@#@##1## @BUILDDATE@ @HOSTNAME@::en::@PACKAGE_VER_PATCH@::@@@PLUGIN_NAME@" }
