@@ -718,6 +718,7 @@ clean-plugin: $(ICEDTEAPLUGIN_CLEAN)
 liveconnect-source-files.txt:
 	if test "x${LIVECONNECT_DIR}" != x; then \
 	  find $(LIVECONNECT_SRCS) -name '*.java' | sort > $@ ; \
+	  sed -i '/_OS2/ d' $@
 	fi
 	touch $@
 

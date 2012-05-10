@@ -35,25 +35,46 @@ BLDDIRS += $(liveconnect_0_OUTDIR)
 
 JAVASRCLIST += $(liveconnect_0_OUTDIR)/javasrc.list
 BLDDIRS += $(dir $(JAVASRCLIST))
-OTHER_CLEAN += $(JAVASRCLIST) $(JAVASRCLIST).rsp $(JAVASRCLIST).stamp
+OTHER_CLEAN += $(JAVASRCLIST) $(JAVASRCLIST).stamp \
+               $(JAVASRCLIST).os2 $(JAVASRCLIST).os2.stamp
 
 JARFILE = $(PATH_STAGE)/lib/plugin.jar
 BLDDIRS += $(dir $(JARFILE))
 OTHER_CLEAN += $(JARFILE)
 
-$$(JAVASRCLIST): $(MAKEFILE) | $$(call DIRDEP,$$(dir $$(@)))
-	@echo 'JAVASRC = \' > $@
-	find $(PATH_SUB_CURRENT) -name '*.java' \
+$$(JAVASRCLIST).os2: $(MAKEFILE) | $$(call DIRDEP,$$(dir $$(@)))
+	@echo 'JAVASRC.os2 = \' > $@
+	find $(PATH_SUB_CURRENT)/java -name '*.java' \
+        -name '*_OS2*' \
         -printf '%p \\\n' >> $@
 
-$$(JAVASRCLIST).stamp: $$(JAVASRC) | $$(call DIRDEP,$$(dir $$(@)))
+$$(JAVASRCLIST).os2.stamp: $$(JAVASRC.os2) | $$(call DIRDEP,$$(dir $$(@)))
+	$(call MSG_COMPILE,liveconnect.os2,$(words $?) sources,$@,JAVA)
+	@echo $? > $(JAVASRCLIST).os2.rsp
+	$(PATH_BOOTSTRAP_JDK)/bin/javac $(IT_JAVACFLAGS) \
+        -d "$(liveconnect_0_OUTDIR)" \
+        -sourcepath "$(PATH_SUB_CURRENT)/java" \
+        -bootclasspath "$(BOOTSTRAP_JDK_RUNTIME);$(PATH_STAGE)/lib/netx.jar" \
+        @"$(JAVASRCLIST).os2.rsp"
+	@$(RM) "$(JAVASRCLIST).os2.rsp"
+	@touch "$@"
+
+$$(JAVASRCLIST): $(MAKEFILE) | $$(call DIRDEP,$$(dir $$(@)))
+	@echo 'JAVASRC = \' > $@
+	find $(PATH_SUB_CURRENT)/java -name '*.java' \
+        ! -name '*_X11*' ! -name '*_OS2*' \
+        -printf '%p \\\n' >> $@
+
+$$(JAVASRCLIST).stamp: $$(JAVASRC) | $$(JAVASRCLIST).os2.stamp $$(call DIRDEP,$$(dir $$(@)))
 	$(call MSG_COMPILE,liveconnect,$(words $?) sources,$@,JAVA)
 	@echo $? > $(JAVASRCLIST).rsp
 	$(PATH_BOOTSTRAP_JDK)/bin/javac $(IT_JAVACFLAGS) \
         -d "$(liveconnect_0_OUTDIR)" \
-        -sourcepath "$(PATH_SUB_CURRENT)/icedteanp/java" \
+        -classpath "$(liveconnect_0_OUTDIR)" \
+        -sourcepath "$(PATH_SUB_CURRENT)/java" \
         -bootclasspath "$(BOOTSTRAP_JDK_RUNTIME);$(PATH_STAGE)/lib/netx.jar" \
         @"$(JAVASRCLIST).rsp"
+	@$(RM) "$(JAVASRCLIST).rsp"
 	@touch "$@"
 
 $$(JARFILE): $$(JAVASRCLIST).stamp
@@ -65,4 +86,5 @@ liveconnect: $$(JARFILE) | $$(call DIRDEP,$$(liveconnect_0_OUTDIR))
 
 include $(FILE_KBUILD_SUB_FOOTER)
 
+-include $(JAVASRCLIST).os2
 -include $(JAVASRCLIST)

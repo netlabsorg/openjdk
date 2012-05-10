@@ -111,7 +111,6 @@ import net.sourceforge.jnlp.NetxPanel;
 import net.sourceforge.jnlp.runtime.JNLPClassLoader;
 import sun.awt.AppContext;
 import sun.awt.SunToolkit;
-import sun.awt.X11.XEmbeddedFrame;
 import sun.misc.Ref;
 
 import com.sun.jndi.toolkit.url.UrlUtil;
@@ -254,7 +253,7 @@ class PluginAppletPanelFactory {
  */
 // FIXME: declare JSProxy implementation
 @SuppressWarnings("serial")
-public class PluginAppletViewer extends XEmbeddedFrame
+public class PluginAppletViewer extends PluginAppletViewerBase
         implements AppletContext, Printable {
 
     /**
@@ -342,7 +341,7 @@ public class PluginAppletViewer extends XEmbeddedFrame
     private PluginAppletViewer(long handle, final int identifier,
                                NetxPanel appletPanel) {
 
-        super(handle, true);
+        super(handle);
         this.identifier = identifier;
         this.panel = appletPanel;
 
