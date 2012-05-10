@@ -35,7 +35,8 @@ npicedt_SOURCES     = \
     IcedTeaJavaRequestProcessor.cc \
     IcedTeaPluginRequestProcessor.cc \
     IcedTeaPluginUtils.cc \
-    $(PATH_ROOT)/extra/OS.cc
+    $(PATH_ROOT)/extra/OS.cc \
+    $(PATH_ROOT)/plugin_os2.def
 
 PLUGIN_RC           = $(npicedt_0_OUTDIR)/plugin_os2.rc
 OTHER_CLEAN        += $(PLUGIN_RC)
