@@ -1093,7 +1093,7 @@ plugin_display_failure_dialog ()
 
   msg = g_strdup_printf (FAILURE_MESSAGE, appletviewer_executable);
   WinMessageBox (HWND_DESKTOP, HWND_DESKTOP,
-                 msg, "Error", 0, MB_ERROR | MB_OK);
+                 msg, "Error", 0, MB_ERROR | MB_OK | MB_MOVEABLE);
   g_free(msg);
 #else
   GtkWidget* dialog = NULL;
@@ -1999,6 +1999,51 @@ plugin_data_destroy (NPP instance)
   PLUGIN_DEBUG ("plugin_data_destroy return\n");
 }
 
+static NPError
+plugin_get_entry_points (NPPluginFuncs* pluginTable)
+{
+  // Ensure that the plugin function table we've received is large
+  // enough to store the number of functions that we may provide.
+  if (pluginTable->size < sizeof (NPPluginFuncs))
+    {
+      PLUGIN_ERROR ("Invalid plugin function table.");
+
+      return NPERR_INVALID_FUNCTABLE_ERROR;
+    }
+
+  // Return to the browser the plugin functions that we implement.
+  pluginTable->version = (NP_VERSION_MAJOR << 8) + NP_VERSION_MINOR;
+  pluginTable->size = sizeof (NPPluginFuncs);
+
+#if MOZILLA_VERSION_COLLAPSED < 1090100
+  pluginTable->newp = NewNPP_NewProc (ITNP_New);
+  pluginTable->destroy = NewNPP_DestroyProc (ITNP_Destroy);
+  pluginTable->setwindow = NewNPP_SetWindowProc (ITNP_SetWindow);
+  pluginTable->newstream = NewNPP_NewStreamProc (ITNP_NewStream);
+  pluginTable->destroystream = NewNPP_DestroyStreamProc (ITNP_DestroyStream);
+  pluginTable->asfile = NewNPP_StreamAsFileProc (ITNP_StreamAsFile);
+  pluginTable->writeready = NewNPP_WriteReadyProc (ITNP_WriteReady);
+  pluginTable->write = NewNPP_WriteProc (ITNP_Write);
+  pluginTable->print = NewNPP_PrintProc (ITNP_Print);
+  pluginTable->urlnotify = NewNPP_URLNotifyProc (ITNP_URLNotify);
+  pluginTable->getvalue = NewNPP_GetValueProc (ITNP_GetValue);
+#else
+  pluginTable->newp = NPP_NewProcPtr (ITNP_New);
+  pluginTable->destroy = NPP_DestroyProcPtr (ITNP_Destroy);
+  pluginTable->setwindow = NPP_SetWindowProcPtr (ITNP_SetWindow);
+  pluginTable->newstream = NPP_NewStreamProcPtr (ITNP_NewStream);
+  pluginTable->destroystream = NPP_DestroyStreamProcPtr (ITNP_DestroyStream);
+  pluginTable->asfile = NPP_StreamAsFileProcPtr (ITNP_StreamAsFile);
+  pluginTable->writeready = NPP_WriteReadyProcPtr (ITNP_WriteReady);
+  pluginTable->write = NPP_WriteProcPtr (ITNP_Write);
+  pluginTable->print = NPP_PrintProcPtr (ITNP_Print);
+  pluginTable->urlnotify = NPP_URLNotifyProcPtr (ITNP_URLNotify);
+  pluginTable->getvalue = NPP_GetValueProcPtr (ITNP_GetValue);
+#endif
+
+  return NPERR_NO_ERROR;
+}
+
 // FACTORY FUNCTIONS
 
 // Provides the browser with pointers to the plugin functions that we
@@ -2011,16 +2056,29 @@ plugin_data_destroy (NPP instance)
 // been called. There is no need to call this function more than once and
 // this workaround avoids any duplicate calls.
 NPError
-NP_Initialize (NPNetscapeFuncs* browserTable, NPPluginFuncs* pluginTable)
+#if defined(_WIN32) || defined (__OS2__)
+OSCALL NP_Initialize (NPNetscapeFuncs* browserTable)
+#else
+OSCALL NP_Initialize (NPNetscapeFuncs* browserTable, NPPluginFuncs* pluginTable)
+#endif
 {
   PLUGIN_DEBUG ("NP_Initialize\n");
 
+#if defined(_WIN32) || defined (__OS2__)
+  if (browserTable == NULL)
+  {
+    PLUGIN_ERROR ("Browser function table is NULL.");
+
+    return NPERR_INVALID_FUNCTABLE_ERROR;
+  }
+#else
   if ((browserTable == NULL) || (pluginTable == NULL))
   {
     PLUGIN_ERROR ("Browser or plugin function table is NULL.");
 
     return NPERR_INVALID_FUNCTABLE_ERROR;
   }
+#endif
 
   // Ensure that the major version of the plugin API that the browser
   // expects is not more recent than the major version of the API that
@@ -2030,15 +2088,6 @@ NP_Initialize (NPNetscapeFuncs* browserTable, NPPluginFuncs* pluginTable)
       PLUGIN_ERROR ("Incompatible version.");
 
       return NPERR_INCOMPATIBLE_VERSION_ERROR;
-    }
-
-  // Ensure that the plugin function table we've received is large
-  // enough to store the number of functions that we may provide.
-  if (pluginTable->size < sizeof (NPPluginFuncs))
-    {
-      PLUGIN_ERROR ("Invalid plugin function table.");
-
-      return NPERR_INVALID_FUNCTABLE_ERROR;
     }
 
   // Ensure that the browser function table is large enough to store
@@ -2097,34 +2146,11 @@ NP_Initialize (NPNetscapeFuncs* browserTable, NPPluginFuncs* pluginTable)
   browser_functions.setvalueforurl          = browserTable->setvalueforurl;
 #endif
 
-  // Return to the browser the plugin functions that we implement.
-  pluginTable->version = (NP_VERSION_MAJOR << 8) + NP_VERSION_MINOR;
-  pluginTable->size = sizeof (NPPluginFuncs);
-
-#if MOZILLA_VERSION_COLLAPSED < 1090100
-  pluginTable->newp = NewNPP_NewProc (ITNP_New);
-  pluginTable->destroy = NewNPP_DestroyProc (ITNP_Destroy);
-  pluginTable->setwindow = NewNPP_SetWindowProc (ITNP_SetWindow);
-  pluginTable->newstream = NewNPP_NewStreamProc (ITNP_NewStream);
-  pluginTable->destroystream = NewNPP_DestroyStreamProc (ITNP_DestroyStream);
-  pluginTable->asfile = NewNPP_StreamAsFileProc (ITNP_StreamAsFile);
-  pluginTable->writeready = NewNPP_WriteReadyProc (ITNP_WriteReady);
-  pluginTable->write = NewNPP_WriteProc (ITNP_Write);
-  pluginTable->print = NewNPP_PrintProc (ITNP_Print);
-  pluginTable->urlnotify = NewNPP_URLNotifyProc (ITNP_URLNotify);
-  pluginTable->getvalue = NewNPP_GetValueProc (ITNP_GetValue);
-#else
-  pluginTable->newp = NPP_NewProcPtr (ITNP_New);
-  pluginTable->destroy = NPP_DestroyProcPtr (ITNP_Destroy);
-  pluginTable->setwindow = NPP_SetWindowProcPtr (ITNP_SetWindow);
-  pluginTable->newstream = NPP_NewStreamProcPtr (ITNP_NewStream);
-  pluginTable->destroystream = NPP_DestroyStreamProcPtr (ITNP_DestroyStream);
-  pluginTable->asfile = NPP_StreamAsFileProcPtr (ITNP_StreamAsFile);
-  pluginTable->writeready = NPP_WriteReadyProcPtr (ITNP_WriteReady);
-  pluginTable->write = NPP_WriteProcPtr (ITNP_Write);
-  pluginTable->print = NPP_PrintProcPtr (ITNP_Print);
-  pluginTable->urlnotify = NPP_URLNotifyProcPtr (ITNP_URLNotify);
-  pluginTable->getvalue = NPP_GetValueProcPtr (ITNP_GetValue);
+  NPError np_error = NPERR_NO_ERROR;
+#if !defined(_WIN32) && !defined (__OS2__)
+  np_error = plugin_get_entry_points (pluginTable);
+  if (np_error != NPERR_NO_ERROR)
+    return np_error;
 #endif
 
   // Re-setting the above tables multiple times is OK (as the 
@@ -2141,7 +2167,6 @@ NP_Initialize (NPNetscapeFuncs* browserTable, NPPluginFuncs* pluginTable)
       PLUGIN_ERROR ("Failed to create data directory name.");
       return NPERR_OUT_OF_MEMORY_ERROR;
     }
-  NPError np_error = NPERR_NO_ERROR;
   gchar* filename = NULL;
 
   // If P_tmpdir does not exist, try /tmp directly
@@ -2279,10 +2304,27 @@ NP_Initialize (NPNetscapeFuncs* browserTable, NPPluginFuncs* pluginTable)
   return np_error;
 }
 
+#if defined(_WIN32) || defined (__OS2__)
+NPError
+OSCALL NP_GetEntryPoints (NPPluginFuncs* pluginTable)
+{
+  PLUGIN_DEBUG ("NP_GetEntryPoints\n");
+
+  if (pluginTable == NULL)
+  {
+    PLUGIN_ERROR ("Plugin function table is NULL.");
+
+    return NPERR_INVALID_FUNCTABLE_ERROR;
+  }
+
+  return plugin_get_entry_points (pluginTable);
+}
+#endif
+
 // Returns a string describing the MIME type that this plugin
 // handles.
 const char*
-NP_GetMIMEDescription ()
+OSCALL NP_GetMIMEDescription ()
 {
   PLUGIN_DEBUG ("NP_GetMIMEDescription\n");
 
@@ -2294,7 +2336,7 @@ NP_GetMIMEDescription ()
 // Returns a value relevant to the plugin as a whole.  The browser
 // calls this function to obtain information about the plugin.
 NPError
-NP_GetValue (void* future, NPPVariable variable, void* value)
+OSCALL NP_GetValue (void* future, NPPVariable variable, void* value)
 {
   PLUGIN_DEBUG ("NP_GetValue\n");
 
@@ -2327,7 +2369,7 @@ NP_GetValue (void* future, NPPVariable variable, void* value)
 // Shuts down the plugin.  Called after the last plugin instance is
 // destroyed.
 NPError
-NP_Shutdown (void)
+OSCALL NP_Shutdown (void)
 {
   PLUGIN_DEBUG ("NP_Shutdown\n");
 
