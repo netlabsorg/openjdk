@@ -41,7 +41,7 @@ ICEDTEA_WEB_JRE     = icedtea_web_jre_dir()
 LAUNCHER_BOOTCLASSPATH  = \"-Xbootclasspath/a:%s/netx.jar$(RHINO_RUNTIME)\", \
                           icedtea_web_data_dir()
 PLUGIN_BOOTCLASSPATH    = \"-Xbootclasspath/a:%s/netx.jar;%s/plugin.jar$(RHINO_RUNTIME)\", \
-                          icedtea_web_data_dir()
+                          icedtea_web_data_dir(), icedtea_web_data_dir()
 
 # Fake update version to work with the Deployment Toolkit script used by Oracle
 # http://download.oracle.com/javase/tutorial/deployment/deploymentInDepth/depltoolkit_index.html
