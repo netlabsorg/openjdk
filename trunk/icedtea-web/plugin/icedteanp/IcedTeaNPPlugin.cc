@@ -2340,9 +2340,18 @@ OSCALL NP_Initialize (NPNetscapeFuncs* browserTable, NPPluginFuncs* pluginTable)
   java_to_plugin_bus->subscribe(plugin_req_proc);
   plugin_to_java_bus->subscribe(java_req_proc);
 
+#ifdef __OS2__
+  queue_processor_data1.processor = plugin_req_proc;
+  queue_processor_data2.processor = plugin_req_proc;
+  queue_processor_data3.processor = plugin_req_proc;
+  pthread_create (&plugin_request_processor_thread1, NULL, &queue_processor, (void*) &queue_processor_data1);
+  pthread_create (&plugin_request_processor_thread2, NULL, &queue_processor, (void*) &queue_processor_data2);
+  pthread_create (&plugin_request_processor_thread3, NULL, &queue_processor, (void*) &queue_processor_data3);
+#else
   pthread_create (&plugin_request_processor_thread1, NULL, &queue_processor, (void*) plugin_req_proc);
   pthread_create (&plugin_request_processor_thread2, NULL, &queue_processor, (void*) plugin_req_proc);
   pthread_create (&plugin_request_processor_thread3, NULL, &queue_processor, (void*) plugin_req_proc);
+#endif
 
   itnp_plugin_thread_id = pthread_self();
 
@@ -2530,9 +2539,17 @@ OSCALL NP_Shutdown (void)
 
   initialized = false;
 
+#ifdef __OS2__
+  // pthread_cancel() isn't implemented on OS?2, so use an old good flag
+  queue_processor_data1.stopRequested = true;
+  queue_processor_data2.stopRequested = true;
+  queue_processor_data3.stopRequested = true;
+  pthread_cond_broadcast(&cond_message_available);
+#else
   pthread_cancel(plugin_request_processor_thread1);
   pthread_cancel(plugin_request_processor_thread2);
   pthread_cancel(plugin_request_processor_thread3);
+#endif
 
   pthread_join(plugin_request_processor_thread1, NULL);
   pthread_join(plugin_request_processor_thread2, NULL);

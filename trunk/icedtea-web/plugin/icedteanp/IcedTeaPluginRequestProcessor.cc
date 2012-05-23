@@ -693,8 +693,12 @@ queue_cleanup(void* data)
 void*
 queue_processor(void* data)
 {
-
+#ifdef __OS2__
+    QueueProcessorData *queue_processor_data = (QueueProcessorData *) data;
+    PluginRequestProcessor* processor = queue_processor_data->processor;
+#else
     PluginRequestProcessor* processor = (PluginRequestProcessor*) data;
+#endif
     std::vector<std::string*>* message_parts = NULL;
     std::string command;
     pthread_mutex_t wait_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -703,7 +707,11 @@ queue_processor(void* data)
 
     pthread_mutex_init(&wait_mutex, NULL);
 
+#ifdef __OS2__
+    queue_processor_data->stopRequested = false;
+#else
     pthread_cleanup_push(queue_cleanup, (void*) &wait_mutex);
+#endif
 
     while (true)
     {
@@ -785,10 +793,19 @@ queue_processor(void* data)
 
         message_parts = NULL;
 
+#ifdef __OS2__
+        if (queue_processor_data->stopRequested)
+            break;
+#else
 	pthread_testcancel();
+#endif
     }
 
+#ifdef __OS2__
+    queue_cleanup((void*) &wait_mutex);
+#else
     pthread_cleanup_pop(1);
+#endif
 }
 
 /******************************************
