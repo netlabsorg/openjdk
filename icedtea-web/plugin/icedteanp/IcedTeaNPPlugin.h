@@ -93,6 +93,18 @@ static pthread_t plugin_request_processor_thread1;
 static pthread_t plugin_request_processor_thread2;
 static pthread_t plugin_request_processor_thread3;
 
+#ifdef __OS2__
+struct QueueProcessorData
+{
+    PluginRequestProcessor *processor;
+    bool stopRequested;
+};
+
+static QueueProcessorData queue_processor_data1 = { NULL, false };
+static QueueProcessorData queue_processor_data2 = { NULL, false };
+static QueueProcessorData queue_processor_data3 = { NULL, false };
+#endif
+
 // Condition on which the queue processor waits
 extern pthread_cond_t cond_message_available;
 
