@@ -62,9 +62,6 @@ exception statement from your version. */
 
 package sun.applet;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.Authenticator;
 import java.net.CookieHandler;
@@ -80,7 +77,7 @@ import net.sourceforge.jnlp.security.JNLPAuthenticator;
 /**
  * The main entry point into PluginAppletViewer.
  */
-public class PluginMain {
+public class PluginMain extends PluginMainBase {
     // the files where stdout/stderr are sent to
     public static final String PLUGIN_STDERR_FILE = "java.stderr";
     public static final String PLUGIN_STDOUT_FILE = "java.stdout";
@@ -94,13 +91,12 @@ public class PluginMain {
      */
     public static void main(String args[])
             throws IOException {
-        if (args.length != 2 || !(new File(args[0]).exists()) || !(new File(args[1]).exists())) {
-            System.err.println("Invalid pipe names provided. Refusing to proceed.");
+        if (!checkArgs(args)) {
             System.exit(1);
         }
 
         try {
-            PluginStreamHandler streamHandler = connect(args[0], args[1]);
+            PluginStreamHandler streamHandler = connect(args);
             boolean redirectStreams = System.getenv().containsKey("ICEDTEAPLUGIN_DEBUG");
 
             // must be called before JNLPRuntime.initialize()
@@ -127,17 +123,6 @@ public class PluginMain {
 
     private PluginMain() {
         // The PluginMain constructor should never, EVER, be called
-    }
-
-    private static PluginStreamHandler connect(String inPipe, String outPipe) {
-        PluginStreamHandler streamHandler = null;
-        try {
-            streamHandler = new PluginStreamHandler(new FileInputStream(inPipe), new FileOutputStream(outPipe));
-            PluginDebug.debug("Streams initialized");
-        } catch (IOException ioe) {
-            ioe.printStackTrace();
-        }
-        return streamHandler;
     }
 
     private static void init() {

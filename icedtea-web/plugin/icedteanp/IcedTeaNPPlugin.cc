@@ -43,6 +43,7 @@ exception statement from your version. */
 #define INCL_WINDIALOG
 #include <os2.h>
 #include <emx/startup.h>
+#include <sys/socket.h>
 #endif
 
 // System includes.
@@ -159,14 +160,26 @@ static gchar* appletviewer_executable = NULL;
 // Applet viewer input channel (needs to be static because it is used in plugin_in_pipe_callback)
 static GIOChannel* in_from_appletviewer = NULL;
 
+#ifdef __OS2__
+#define CLOSE_FD(fd) do { if (fd != -1) { close (fd); fd = -1; } } while (0)
+#endif
+
+#ifdef __OS2__
+int in_pipe[2] = { -1 };
+#else
 // Applet viewer input pipe name.
 gchar* in_pipe_name;
+#endif
 
 // Applet viewer input watch source.
 gint in_watch_source;
 
+#ifdef __OS2__
+int out_pipe[2] = { -1 };
+#else
 // Applet viewer output pipe name.
 gchar* out_pipe_name;
+#endif
 
 // Applet viewer output watch source.
 gint out_watch_source;
@@ -452,6 +465,15 @@ void start_jvm_if_needed()
   // Create appletviewer-to-plugin pipe which we refer to as the input
   // pipe.
 
+#ifdef __OS2__
+  if (socketpair (AF_LOCAL, SOCK_STREAM, 0, in_pipe) == -1)
+    {
+      PLUGIN_ERROR_TWO ("Failed to create input pipe", strerror (errno));
+      np_error = NPERR_GENERIC_ERROR;
+      goto cleanup_in_pipe;
+    }
+  PLUGIN_DEBUG ("ITNP_New: created input fifo: %d/%d\n", in_pipe[0], in_pipe[1]);
+#else
   // in_pipe_name
   in_pipe_name = g_strdup_printf ("%s/%d-icedteanp-appletviewer-to-plugin",
                                          data_directory, getpid());
@@ -475,10 +497,20 @@ void start_jvm_if_needed()
       goto cleanup_in_pipe_name;
     }
   PLUGIN_DEBUG ("ITNP_New: created input fifo: %s\n", in_pipe_name);
+#endif
 
   // Create plugin-to-appletviewer pipe which we refer to as the
   // output pipe.
 
+#ifdef __OS2__
+  if (socketpair (AF_LOCAL, SOCK_STREAM, 0, out_pipe) == -1)
+    {
+      PLUGIN_ERROR_TWO ("Failed to create input pipe", strerror (errno));
+      np_error = NPERR_GENERIC_ERROR;
+      goto cleanup_out_pipe;
+    }
+  PLUGIN_DEBUG ("ITNP_New: created output fifo: %d/%d\n", out_pipe[0], out_pipe[1]);
+#else
   // out_pipe_name
   out_pipe_name = g_strdup_printf ("%s/%d-icedteanp-plugin-to-appletviewer",
                                          data_directory, getpid());
@@ -501,6 +533,7 @@ void start_jvm_if_needed()
       goto cleanup_out_pipe_name;
     }
   PLUGIN_DEBUG ("ITNP_New: created output fifo: %s\n", out_pipe_name);
+#endif
 
   // Start a separate appletviewer process for each applet, even if
   // there are multiple applets in the same page.  We may need to
@@ -509,11 +542,21 @@ void start_jvm_if_needed()
 
   np_error = plugin_start_appletviewer (data);
 
+#ifdef __OS2__
+  // close child ends of the pipes (not needed)
+  CLOSE_FD (in_pipe[1]);
+  CLOSE_FD (out_pipe[1]);
+#endif
+
   // Create plugin-to-appletviewer channel.  The default encoding for
   // the file is UTF-8.
   // out_to_appletviewer
+#ifdef __OS2__
+  out_to_appletviewer = g_io_channel_unix_new (out_pipe[0]);
+#else
   out_to_appletviewer = g_io_channel_new_file (out_pipe_name,
                                                "w", &channel_error);
+#endif
   if (!out_to_appletviewer)
     {
       if (channel_error)
@@ -539,8 +582,12 @@ void start_jvm_if_needed()
   // Create appletviewer-to-plugin channel.  The default encoding for
   // the file is UTF-8.
   // in_from_appletviewer
+#ifdef __OS2__
+  in_from_appletviewer = g_io_channel_unix_new (in_pipe [0]);
+#else
   in_from_appletviewer = g_io_channel_new_file (in_pipe_name,
                                                       "r", &channel_error);
+#endif
   if (!in_from_appletviewer)
     {
       if (channel_error)
@@ -590,24 +637,36 @@ void start_jvm_if_needed()
   out_to_appletviewer = NULL;
 
   // cleanup_out_pipe:
+#ifdef __OS2__
+ cleanup_out_pipe:
+  CLOSE_FD (out_pipe [0]);
+  CLOSE_FD (out_pipe[1]);
+#else
   // Delete output pipe.
-  PLUGIN_DEBUG ("ITNP_New: deleting input fifo: %s\n", in_pipe_name);
+  PLUGIN_DEBUG ("ITNP_New: deleting output fifo: %s\n", out_pipe_name);
   unlink (out_pipe_name);
-  PLUGIN_DEBUG ("ITNP_New: deleted input fifo: %s\n", in_pipe_name);
+  PLUGIN_DEBUG ("ITNP_New: deleted output fifo: %s\n", out_pipe_name);
 
  cleanup_out_pipe_name:
   g_free (out_pipe_name);
   out_pipe_name = NULL;
+#endif
 
   // cleanup_in_pipe:
+#ifdef __OS2__
+ cleanup_in_pipe:
+  CLOSE_FD (in_pipe[0]);
+  CLOSE_FD (out_pipe[1]);
+#else
   // Delete input pipe.
-  PLUGIN_DEBUG ("ITNP_New: deleting output fifo: %s\n", out_pipe_name);
+  PLUGIN_DEBUG ("ITNP_New: deleting input fifo: %s\n", in_pipe_name);
   unlink (in_pipe_name);
-  PLUGIN_DEBUG ("ITNP_New: deleted output fifo: %s\n", out_pipe_name);
+  PLUGIN_DEBUG ("ITNP_New: deleted input fifo: %s\n", in_pipe_name);
 
  cleanup_in_pipe_name:
   g_free (in_pipe_name);
   in_pipe_name = NULL;
+#endif
 
  done:
 
@@ -1569,8 +1628,13 @@ plugin_start_appletviewer (ITNPPluginData* data)
           command_line[cmd_num++] = g_strdup("-Xrunjdwp:transport=dt_socket,address=8787,server=y,suspend=n");
       }
       command_line[cmd_num++] = g_strdup("sun.applet.PluginMain");
+#ifdef __OS2__
+      command_line[cmd_num++] = g_strdup_printf("%d", out_pipe [1]);
+      command_line[cmd_num++] = g_strdup_printf("%d", in_pipe [1]);
+#else
       command_line[cmd_num++] = g_strdup(out_pipe_name);
       command_line[cmd_num++] = g_strdup(in_pipe_name);
+#endif
       command_line[cmd_num] = NULL;
   } else
   {
@@ -1580,8 +1644,13 @@ plugin_start_appletviewer (ITNPPluginData* data)
       command_line[cmd_num++] = g_strdup("-classpath");
       command_line[cmd_num++] = g_strdup_printf("%s/lib/rt.jar", ICEDTEA_WEB_JRE);
       command_line[cmd_num++] = g_strdup("sun.applet.PluginMain");
+#ifdef __OS2__
+      command_line[cmd_num++] = g_strdup_printf("%d", out_pipe [1]);
+      command_line[cmd_num++] = g_strdup_printf("%d", in_pipe [1]);
+#else
       command_line[cmd_num++] = g_strdup(out_pipe_name);
       command_line[cmd_num++] = g_strdup(in_pipe_name);
+#endif
       command_line[cmd_num] = NULL;
   }
 
@@ -1602,6 +1671,11 @@ plugin_start_appletviewer (ITNPPluginData* data)
         PLUGIN_ERROR ("Failed to spawn applet viewer");
       error = NPERR_GENERIC_ERROR;
     }
+
+  // make sure we get an error rather than crash the browser when talking to the
+  // jvm process if it dies unexpectedly (we do it here since g_spawn() is known
+  // to reset SIGPIPE handler to SIG_DFL)
+  signal (SIGPIPE, SIG_IGN);
 
   g_strfreev (environment);
 
@@ -2422,6 +2496,10 @@ OSCALL NP_Shutdown (void)
   out_to_appletviewer = NULL;
 
   // cleanup_out_pipe:
+#ifdef __OS2__
+  CLOSE_FD (out_pipe [0]);
+  CLOSE_FD (out_pipe [1]);
+#else
   // Delete output pipe.
   PLUGIN_DEBUG ("NP_Shutdown: deleting output fifo: %s\n", out_pipe_name);
   unlink (out_pipe_name);
@@ -2430,8 +2508,13 @@ OSCALL NP_Shutdown (void)
   // cleanup_out_pipe_name:
   g_free (out_pipe_name);
   out_pipe_name = NULL;
+#endif
 
   // cleanup_in_pipe:
+#ifdef __OS2__
+  CLOSE_FD (in_pipe [0]);
+  CLOSE_FD (in_pipe [1]);
+#else
   // Delete input pipe.
   PLUGIN_DEBUG ("NP_Shutdown: deleting input fifo: %s\n", in_pipe_name);
   unlink (in_pipe_name);
@@ -2440,6 +2523,7 @@ OSCALL NP_Shutdown (void)
   // cleanup_in_pipe_name:
   g_free (in_pipe_name);
   in_pipe_name = NULL;
+#endif
 
   // Destroy the call queue mutex
   pthread_mutex_destroy(&pluginAsyncCallMutex);
