@@ -544,8 +544,8 @@ void start_jvm_if_needed()
 
 #ifdef __OS2__
   // close child ends of the pipes (not needed)
-  CLOSE_FD (in_pipe[1]);
-  CLOSE_FD (out_pipe[1]);
+  CLOSE_FD (in_pipe [1]);
+  CLOSE_FD (out_pipe [1]);
 #endif
 
   // Create plugin-to-appletviewer channel.  The default encoding for
@@ -640,7 +640,7 @@ void start_jvm_if_needed()
 #ifdef __OS2__
  cleanup_out_pipe:
   CLOSE_FD (out_pipe [0]);
-  CLOSE_FD (out_pipe[1]);
+  CLOSE_FD (out_pipe [1]);
 #else
   // Delete output pipe.
   PLUGIN_DEBUG ("ITNP_New: deleting output fifo: %s\n", out_pipe_name);
@@ -655,8 +655,8 @@ void start_jvm_if_needed()
   // cleanup_in_pipe:
 #ifdef __OS2__
  cleanup_in_pipe:
-  CLOSE_FD (in_pipe[0]);
-  CLOSE_FD (out_pipe[1]);
+  CLOSE_FD (in_pipe [0]);
+  CLOSE_FD (in_pipe [1]);
 #else
   // Delete input pipe.
   PLUGIN_DEBUG ("ITNP_New: deleting input fifo: %s\n", in_pipe_name);
