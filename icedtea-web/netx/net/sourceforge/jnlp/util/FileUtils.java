@@ -25,6 +25,7 @@ import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 
+import net.sourceforge.jnlp.config.Defaults;
 import net.sourceforge.jnlp.runtime.JNLPRuntime;
 
 /**
@@ -177,11 +178,13 @@ public final class FileUtils {
         }
 
         // remove all permissions
-        if (!tempFile.setExecutable(false, false)) {
-            throw new IOException(R("RRemoveXPermFailed", tempFile));
-        }
-        if (!tempFile.setReadable(false, false)) {
-            throw new IOException(R("RRemoveRPermFailed", tempFile));
+        if (!Defaults.OS_DOS_LIKE) {
+            if (!tempFile.setExecutable(false, false)) {
+                throw new IOException(R("RRemoveXPermFailed", tempFile));
+            }
+            if (!tempFile.setReadable(false, false)) {
+                throw new IOException(R("RRemoveRPermFailed", tempFile));
+            }
         }
         if (!tempFile.setWritable(false, false)) {
             throw new IOException(R("RRemoveWPermFailed", tempFile));
@@ -205,6 +208,11 @@ public final class FileUtils {
         // rename this file. Unless the file is moved/renamed, any program that
         // opened the file right after it was created might still be able to
         // read the data.
+        if (Defaults.OS_DOS_LIKE) {
+            // On OS/2 and Windows, renameTo() fails if the target exists
+            // so delete it first
+            file.delete();
+        }
         if (!tempFile.renameTo(file)) {
             throw new IOException(R("RCantRename", tempFile, file));
         }

@@ -39,6 +39,7 @@ package net.sourceforge.jnlp.config;
 
 import static net.sourceforge.jnlp.runtime.Translator.R;
 
+import java.io.File;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.Locale;
@@ -101,6 +102,15 @@ public class BasicValueValidators {
             }
 
             String possibleFile = (String) possibleValue;
+            if (Defaults.OS_DOS_LIKE) {
+                if (!(Character.isLetter(possibleFile.charAt(0)) &&
+                      possibleFile.charAt(1) == ':' &&
+                      (possibleFile.charAt(2) == File.separatorChar ||
+                       possibleFile.charAt(2) == '/'))) {
+                    throw new IllegalArgumentException();
+                }
+            }
+            else
             if (!(possibleFile.startsWith("/"))) {
                 throw new IllegalArgumentException();
             }
@@ -109,7 +119,7 @@ public class BasicValueValidators {
 
         @Override
         public String getPossibleValues() {
-            return R("VVPossibleFileValues");
+            return Defaults.OS_DOS_LIKE ? R("VVPossibleFileValuesDOS") : R("VVPossibleFileValues");
         }
 
     }
