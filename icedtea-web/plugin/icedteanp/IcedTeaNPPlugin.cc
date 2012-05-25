@@ -63,6 +63,12 @@ exception statement from your version. */
 
 #include "OS.h"
 
+#ifdef __OS2__
+#define DT_SOCKET_DLL "jdtsock"
+#else
+#define DT_SOCKET_DLL "dt_socket"
+#endif
+
 #if MOZILLA_VERSION_COLLAPSED < 1090100
 // Documentbase retrieval includes.
 #include <nsIPluginInstance.h>
@@ -472,7 +478,7 @@ void start_jvm_if_needed()
       np_error = NPERR_GENERIC_ERROR;
       goto cleanup_in_pipe;
     }
-  PLUGIN_DEBUG ("ITNP_New: created input fifo: %d/%d\n", in_pipe[0], in_pipe[1]);
+  PLUGIN_DEBUG ("ITNP_New: created input fifo: %d/%d\n", in_pipe [0], in_pipe [1]);
 #else
   // in_pipe_name
   in_pipe_name = g_strdup_printf ("%s/%d-icedteanp-appletviewer-to-plugin",
@@ -505,11 +511,11 @@ void start_jvm_if_needed()
 #ifdef __OS2__
   if (socketpair (AF_LOCAL, SOCK_STREAM, 0, out_pipe) == -1)
     {
-      PLUGIN_ERROR_TWO ("Failed to create input pipe", strerror (errno));
+      PLUGIN_ERROR_TWO ("Failed to create output pipe", strerror (errno));
       np_error = NPERR_GENERIC_ERROR;
       goto cleanup_out_pipe;
     }
-  PLUGIN_DEBUG ("ITNP_New: created output fifo: %d/%d\n", out_pipe[0], out_pipe[1]);
+  PLUGIN_DEBUG ("ITNP_New: created output fifo: %d/%d\n", out_pipe [0], out_pipe [1]);
 #else
   // out_pipe_name
   out_pipe_name = g_strdup_printf ("%s/%d-icedteanp-plugin-to-appletviewer",
@@ -552,7 +558,7 @@ void start_jvm_if_needed()
   // the file is UTF-8.
   // out_to_appletviewer
 #ifdef __OS2__
-  out_to_appletviewer = g_io_channel_unix_new (out_pipe[0]);
+  out_to_appletviewer = g_io_channel_unix_new (out_pipe [0]);
 #else
   out_to_appletviewer = g_io_channel_new_file (out_pipe_name,
                                                "w", &channel_error);
@@ -1622,10 +1628,10 @@ plugin_start_appletviewer (ITNPPluginData* data)
       command_line[cmd_num++] = g_strdup("-Xnoagent");
       if (plugin_debug_suspend)
       {
-          command_line[cmd_num++] = g_strdup("-Xrunjdwp:transport=dt_socket,address=8787,server=y,suspend=y");
+          command_line[cmd_num++] = g_strdup("-Xrunjdwp:transport="DT_SOCKET_DLL",address=8787,server=y,suspend=y");
       } else
       {
-          command_line[cmd_num++] = g_strdup("-Xrunjdwp:transport=dt_socket,address=8787,server=y,suspend=n");
+          command_line[cmd_num++] = g_strdup("-Xrunjdwp:transport="DT_SOCKET_DLL",address=8787,server=y,suspend=n");
       }
       command_line[cmd_num++] = g_strdup("sun.applet.PluginMain");
 #ifdef __OS2__
