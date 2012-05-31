@@ -90,8 +90,8 @@ Java_java_io_RandomAccessFile_getFilePointer(JNIEnv *env, jobject this) {
     FD fd;
     jlong ret;
 
-    fd = GET_FD(this, raf_fd);
-    if (fd == -1) {
+    ASSIGN_FD(fd, this, raf_fd);
+    if (!VALID_FD(fd)) {
         JNU_ThrowIOException(env, "Stream Closed");
         return -1;
     }
@@ -107,8 +107,8 @@ Java_java_io_RandomAccessFile_length(JNIEnv *env, jobject this) {
     jlong cur = jlong_zero;
     jlong end = jlong_zero;
 
-    fd = GET_FD(this, raf_fd);
-    if (fd == -1) {
+    ASSIGN_FD(fd, this, raf_fd);
+    if (!VALID_FD(fd)) {
         JNU_ThrowIOException(env, "Stream Closed");
         return -1;
     }
@@ -128,8 +128,8 @@ Java_java_io_RandomAccessFile_seek(JNIEnv *env,
 
     FD fd;
 
-    fd = GET_FD(this, raf_fd);
-    if (fd == -1) {
+    ASSIGN_FD(fd, this, raf_fd);
+    if (!VALID_FD(fd)) {
         JNU_ThrowIOException(env, "Stream Closed");
         return;
     }
@@ -147,8 +147,8 @@ Java_java_io_RandomAccessFile_setLength(JNIEnv *env, jobject this,
     FD fd;
     jlong cur;
 
-    fd = GET_FD(this, raf_fd);
-    if (fd == -1) {
+    ASSIGN_FD(fd, this, raf_fd);
+    if (!VALID_FD(fd)) {
         JNU_ThrowIOException(env, "Stream Closed");
         return;
     }

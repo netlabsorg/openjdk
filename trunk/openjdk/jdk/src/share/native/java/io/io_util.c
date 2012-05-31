@@ -40,7 +40,7 @@ readSingle(JNIEnv *env, jobject this, jfieldID fid) {
     jint nread;
     char ret;
     FD fd = GET_FD(this, fid);
-    if (fd == -1) {
+    if (!VALID_FD(fd)) {
         JNU_ThrowIOException(env, "Stream Closed");
         return -1;
     }
@@ -103,8 +103,8 @@ readBytes(JNIEnv *env, jobject this, jbyteArray bytes,
         buf = stackBuf;
     }
 
-    fd = GET_FD(this, fid);
-    if (fd == -1) {
+    ASSIGN_FD(fd, this, fid);
+    if (!VALID_FD(fd)) {
         JNU_ThrowIOException(env, "Stream Closed");
         nread = -1;
     } else {
@@ -132,7 +132,7 @@ writeSingle(JNIEnv *env, jobject this, jint byte, jfieldID fid) {
     char c = (char) byte;
     jint n;
     FD fd = GET_FD(this, fid);
-    if (fd == -1) {
+    if (!VALID_FD(fd)) {
         JNU_ThrowIOException(env, "Stream Closed");
         return;
     }
@@ -180,8 +180,8 @@ writeBytes(JNIEnv *env, jobject this, jbyteArray bytes,
     if (!(*env)->ExceptionOccurred(env)) {
         off = 0;
         while (len > 0) {
-            fd = GET_FD(this, fid);
-            if (fd == -1) {
+            ASSIGN_FD(fd, this, fid);
+            if (!VALID_FD(fd)) {
                 JNU_ThrowIOException(env, "Stream Closed");
                 break;
             }

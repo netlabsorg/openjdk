@@ -53,41 +53,60 @@ jlong winFileHandleOpen(JNIEnv *env, jstring path, int flags);
 /*
  * Macros to use the right data type for file descriptors
  */
-#define FD jlong
+typedef struct __FD
+{
+    jint fd;
+    jlong handle;
+} _FD;
+
+#define FD _FD
 
 /*
  * Macros to set/get fd from the java.io.FileDescriptor.
  * If GetObjectField returns null, SET_FD will stop and GET_FD
  * will simply return -1 to avoid crashing VM.
  */
+
 #define SET_FD(this, fd, fid) \
     if ((*env)->GetObjectField(env, (this), (fid)) != NULL) \
         (*env)->SetLongField(env, (*env)->GetObjectField(env, (this), (fid)), IO_handle_fdID, (fd))
 
 #define GET_FD(this, fid) \
-    ((*env)->GetObjectField(env, (this), (fid)) == NULL) ? \
-      -1 : (*env)->GetLongField(env, (*env)->GetObjectField(env, (this), (fid)), IO_handle_fdID)
+    { ((*env)->GetObjectField(env, (this), (fid)) == NULL ? \
+      -1 : (*env)->GetIntField(env, (*env)->GetObjectField(env, (this), (fid)), IO_fd_fdID)), \
+      ((*env)->GetObjectField(env, (this), (fid)) == NULL ? \
+        -1 : (*env)->GetLongField(env, (*env)->GetObjectField(env, (this), (fid)), IO_handle_fdID)) }
+
+#define ASSIGN_FD(fd, this, fid) \
+    do { \
+        fd.fd = ((*env)->GetObjectField(env, (this), (fid)) == NULL ? \
+            -1 : (*env)->GetIntField(env, (*env)->GetObjectField(env, (this), (fid)), IO_fd_fdID)); \
+        fd.handle = ((*env)->GetObjectField(env, (this), (fid)) == NULL ? \
+            -1 : (*env)->GetLongField(env, (*env)->GetObjectField(env, (this), (fid)), IO_handle_fdID)); \
+    } while(0)
+
+#define VALID_FD(fd) (fd.handle != -1 || fd.fd != -1)
 
 /*
  * Macros to set/get fd when inside java.io.FileDescriptor
  */
-#define THIS_FD(obj) (*env)->GetLongField(env, obj, IO_handle_fdID)
+#define THIS_FD(obj) { (*env)->GetLongField(env, obj, IO_fd_fdID), (*env)->GetLongField(env, obj, IO_handle_fdID) }
 
 /*
  * Route the routines away from HPI layer
  */
-#define IO_Write handleWrite
-#define IO_Sync handleSync
-#define IO_Read handleRead
-#define IO_Lseek handleLseek
-#define IO_Available handleAvailable
-#define IO_SetLength handleSetLength
+#define IO_Write(fd,buf,len) (fd.handle != -1 ? handleWrite(fd.handle, buf, len) : JVM_Write(fd.fd, buf, len))
+#define IO_Sync(fd) (fd.handle != -1 ? handleSync(fd.handle) : JVM_Sync(fd.fd))
+#define IO_Read(fd,buf,len) (fd.handle != -1 ? handleRead(fd.handle, buf, len) : JVM_Read(fd.fd, buf, len))
+#define IO_Lseek(fd,offset,whence) (fd.handle != -1 ? handleLseek(fd.handle, offset, whence) : JVM_Lseek(fd.fd, offset, whence))
+#define IO_Available(fd,pbytes) (fd.handle != -1 ? handleAvailable(fd.handle, pbytes) : JVM_Available(fd.fd, pbytes))
+#define IO_SetLength(fd, length) (fd.handle != -1 ? handleSetLength(fd.handle, length) : JVM_SetLength(fd.fd, length))
 
 /*
  * Setting the handle field in Java_java_io_FileDescriptor_set for
  * standard handles stdIn, stdOut, stdErr
  */
-#define SET_HANDLE(fd) \
+#define RETURN_HANDLE(fd) \
 if (fd == 0) { \
     return (jlong)GetStdHandle(STD_INPUT_HANDLE); \
 } else if (fd == 1) { \

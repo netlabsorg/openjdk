@@ -47,6 +47,14 @@
     (*env)->GetObjectField(env, (this), (fid)) == NULL ? \
         -1 : (*env)->GetIntField(env, (*env)->GetObjectField(env, (this), (fid)), IO_fd_fdID)
 
+#define ASSIGN_FD(fd, this, fid) \
+    do { \
+        fd = (*env)->GetObjectField(env, (this), (fid)) == NULL ? \
+            -1 : (*env)->GetIntField(env, (*env)->GetObjectField(env, (this), (fid)), IO_fd_fdID); \
+    } while(0)
+
+#define VALID_FD(fd) (fd != -1)
+
 /*
  * Macros to set/get fd when inside java.io.FileDescriptor
  */
@@ -65,7 +73,7 @@
 /*
  * On Solaris, the handle field is unused
  */
-#define SET_HANDLE(fd) return (jlong)-1
+#define RETURN_HANDLE(fd) return (jlong)-1
 
 /*
  * IO helper function(s)

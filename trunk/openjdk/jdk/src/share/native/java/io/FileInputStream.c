@@ -77,7 +77,7 @@ Java_java_io_FileInputStream_skip(JNIEnv *env, jobject this, jlong toSkip) {
     jlong cur = jlong_zero;
     jlong end = jlong_zero;
     FD fd = GET_FD(this, fis_fd);
-    if (fd == -1) {
+    if (!VALID_FD(fd)) {
         JNU_ThrowIOException (env, "Stream Closed");
         return 0;
     }
@@ -93,7 +93,7 @@ JNIEXPORT jint JNICALL
 Java_java_io_FileInputStream_available(JNIEnv *env, jobject this) {
     jlong ret;
     FD fd = GET_FD(this, fis_fd);
-    if (fd == -1) {
+    if (!VALID_FD(fd)) {
         JNU_ThrowIOException (env, "Stream Closed");
         return 0;
     }

@@ -532,7 +532,7 @@ jint
 handleClose(JNIEnv *env, jobject this, jfieldID fid)
 {
     FD fd = GET_FD(this, fid);
-    HANDLE h = (HANDLE)fd;
+    HANDLE h = (HANDLE)fd.handle;
 
     if (h == INVALID_HANDLE_VALUE) {
         return 0;
@@ -547,7 +547,7 @@ handleClose(JNIEnv *env, jobject this, jfieldID fid)
     SET_FD(this, -1, fid);
 
     if (CloseHandle(h) == 0) { /* Returns zero on failure */
-        SET_FD(this, fd, fid); // restore fd
+        SET_FD(this, fd.handle, fid); // restore fd
         JNU_ThrowIOExceptionWithLastError(env, "close failed");
     }
     return 0;
