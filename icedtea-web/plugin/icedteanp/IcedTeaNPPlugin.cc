@@ -1662,8 +1662,14 @@ plugin_start_appletviewer (ITNPPluginData* data)
 
   environment = plugin_filter_environment();
 
+#ifdef __OS2__
+  int flags = G_SPAWN_LEAVE_DESCRIPTORS_OPEN | G_SPAWN_DO_NOT_REAP_CHILD;
+#else
+  int flags = G_SPAWN_DO_NOT_REAP_CHILD;
+#endif
+
   if (!g_spawn_async (NULL, command_line, environment,
-		      (GSpawnFlags) G_SPAWN_DO_NOT_REAP_CHILD,
+		      (GSpawnFlags) flags,
                       NULL, NULL, &appletviewer_pid, &channel_error))
     {
       if (channel_error)
