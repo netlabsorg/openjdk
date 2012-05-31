@@ -70,7 +70,7 @@ JNIEXPORT void JNICALL
 Java_java_io_FileOutputStream_write(JNIEnv *env, jobject this, jint byte) {
     jboolean append = (*env)->GetBooleanField(env, this, fos_append);
     FD fd = GET_FD(this, fos_fd);
-    if (fd == -1) {
+    if (!VALID_FD(fd)) {
         JNU_ThrowIOException(env, "Stream Closed");
         return;
     }
@@ -87,7 +87,7 @@ Java_java_io_FileOutputStream_writeBytes(JNIEnv *env,
     jobject this, jbyteArray bytes, jint off, jint len) {
     jboolean append = (*env)->GetBooleanField(env, this, fos_append);
     FD fd = GET_FD(this, fos_fd);
-    if (fd == -1) {
+    if (!VALID_FD(fd)) {
         JNU_ThrowIOException(env, "Stream Closed");
         return;
     }

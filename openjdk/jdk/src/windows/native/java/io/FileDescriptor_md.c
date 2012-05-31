@@ -54,7 +54,7 @@ Java_java_io_FileDescriptor_initIDs(JNIEnv *env, jclass fdClass) {
 
 JNIEXPORT jlong JNICALL
 Java_java_io_FileDescriptor_set(JNIEnv *env, jclass fdClass, jint fd) {
-    SET_HANDLE(fd);
+    RETURN_HANDLE(fd);
 }
 
 /**************************************************************
