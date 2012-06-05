@@ -59,6 +59,8 @@ JDK_UPDATE_VERSION  := 50
 # General Stuff
 #------------------------------------------------------------------------------
 
+KBUILD_SDK_PATHS       += $(PATH_ROOT)
+
 TEMPLATE_Cxx            = C++ sources
 TEMPLATE_Cxx_USES       =
 TEMPLATE_Cxx_TOOL       = GXX3OMF
