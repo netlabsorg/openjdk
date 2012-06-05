@@ -1,4 +1,4 @@
-/* OS.h
+/* OS_OS2_WinOS2.cc
 
    Copyright (C) 2009, 2010  Red Hat
 
@@ -36,12 +36,38 @@ this exception to your version of the library, but you are not
 obligated to do so.  If you do not wish to do so, delete this
 exception statement from your version. */
 
-#ifndef __OS_H__
-#define __OS_H__
+#include <windows.h>
 
-#ifdef __OS2__
-const char *icedtea_web_data_dir();
-const char *icedtea_web_jre_dir();
-#endif
+#include <winuser32.h> // CreateFakeWindowEx and friends
 
-#endif // __OS_H__
+#include "IcedTeaPluginUtils.h"
+
+static ATOM WrapperClass;
+
+LRESULT WIN32API WrapperWndProc (HWND hwnd, UINT msg, WPARAM mp1, LPARAM mp2)
+{
+    return DefWindowProc (hwnd, msg, mp1, mp2);
+}
+
+bool init_os_winos2()
+{
+    WNDCLASSA WndClass;
+    memset (&WndClass, 0, sizeof(WndClass));
+    WndClass.lpfnWndProc = WrapperWndProc;
+    WndClass.lpszClassName = "WC_ICEDTEANP_WRAPPER";
+    WndClass.cbWndExtra = 0;
+    WrapperClass = RegisterClass (&WndClass);
+    if (!WrapperClass)
+    {
+        PLUGIN_DEBUG ("RegisterClass failed.");
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
+void *wrap_window_handle (void *handle)
+{
+    HWND hwnd = CreateFakeWindowEx ((HWND) handle, WrapperClass);
+    return (void *) hwnd;
+}

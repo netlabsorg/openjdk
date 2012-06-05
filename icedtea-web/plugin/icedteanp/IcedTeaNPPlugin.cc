@@ -44,6 +44,7 @@ exception statement from your version. */
 #include <os2.h>
 #include <emx/startup.h>
 #include <sys/socket.h>
+#include "OS_OS2.h"
 #endif
 
 // System includes.
@@ -60,8 +61,6 @@ exception statement from your version. */
 // Liveconnect extension
 #include "IcedTeaScriptablePluginObject.h"
 #include "IcedTeaNPPlugin.h"
-
-#include "OS.h"
 
 #ifdef __OS2__
 #define DT_SOCKET_DLL "jdtsock"
@@ -776,10 +775,19 @@ ITNP_SetWindow (NPP instance, NPWindow* window)
       return NPERR_NO_ERROR;
     }
 
+#ifdef __OS2__
+  void *wnd = wrap_window_handle (window->window);
+  if (!wnd)
+      return NPERR_GENERIC_ERROR;
+
+  PLUGIN_DEBUG ("ITNP_SetWindow: wrapped window handle %d (%x) in %d (%x)\n",
+                window->window, window->window, wnd, wnd);
+#endif
+
   if (data->window_handle)
     {
       // The window already exists.
-      if (data->window_handle == window->window)
+      if (data->window_handle == wnd)
     {
           // The parent window is the same as in previous calls.
           PLUGIN_DEBUG ("ITNP_SetWindow: window already exists.\n");
@@ -850,7 +858,7 @@ ITNP_SetWindow (NPP instance, NPWindow* window)
       g_mutex_lock (data->appletviewer_mutex);
 
       // Store the window handle and dimensions
-      data->window_handle = window->window;
+      data->window_handle = wnd;
       data->window_width = window->width;
       data->window_height = window->height;
 
@@ -2247,6 +2255,15 @@ OSCALL NP_Initialize (NPNetscapeFuncs* browserTable, NPPluginFuncs* pluginTable)
   // anything beyond this point should only run once.
   if (initialized)
     return NPERR_NO_ERROR;
+
+#ifdef __OS2__
+  // perform OS-specific initialization
+  if (!init_os())
+    {
+      PLUGIN_ERROR ("Failed to perform OS-specific initialization.");
+      return NPERR_GENERIC_ERROR;
+    }
+#endif
 
   // Make sure the plugin data directory exists, creating it if
   // necessary.
