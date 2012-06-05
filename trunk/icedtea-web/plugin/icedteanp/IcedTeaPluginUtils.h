@@ -64,7 +64,7 @@ exception statement from your version. */
 #include <npruntime.h>
 #endif
 
-#include "IcedTeaNPPlugin.h"
+extern int plugin_debug; // defined in IcedTeaNPPlugin.cc
 
 #define PLUGIN_DEBUG(...) \
   do                                                          \
@@ -242,7 +242,7 @@ class IcedTeaPluginUtilities
                                           std::string* java_result,
                                           NPVariant* variant);
 
-    	static const gchar* getSourceFromInstance(NPP instance);
+    	static const char* getSourceFromInstance(NPP instance);
 
     	static void storeInstanceID(void* member_ptr, NPP instance);
 

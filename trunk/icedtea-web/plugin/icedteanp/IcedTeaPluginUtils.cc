@@ -463,7 +463,7 @@ IcedTeaPluginUtilities::printStringVector(const char* prefix, std::vector<std::s
 	delete str;
 }
 
-const gchar*
+const char*
 IcedTeaPluginUtilities::getSourceFromInstance(NPP instance)
 {
     // At the moment, src cannot be securely fetched via NPAPI
