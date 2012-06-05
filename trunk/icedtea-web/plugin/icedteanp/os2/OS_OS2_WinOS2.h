@@ -1,4 +1,4 @@
-/* OS.cc
+/* OS_OS2_WinOS2.h
 
    Copyright (C) 2009, 2010  Red Hat
 
@@ -36,26 +36,9 @@ this exception to your version of the library, but you are not
 obligated to do so.  If you do not wish to do so, delete this
 exception statement from your version. */
 
-#include <stdlib.h>
+#ifndef __OS_OS2_WINOS2_H__
+#define __OS_OS2_WINOS2_H__
 
-#include "OS.h"
+bool init_os_winos2();
 
-#ifdef __OS2__
-
-const char *icedtea_web_data_dir()
-{
-  const char *home = getenv("ICEDTEA_WEB_DATA");
-  if (!home)
-    home = ICEDTEA_WEB_DATA_DIR;
-  return home;
-}
-
-const char *icedtea_web_jre_dir()
-{
-  const char *jre = getenv("ICEDTEA_WEB_JRE");
-  if (!jre)
-    jre = ICEDTEA_WEB_JRE_DIR;
-  return jre;
-}
-
-#endif // __OS2__
+#endif // __OS_OS2_WINOS2_H__
