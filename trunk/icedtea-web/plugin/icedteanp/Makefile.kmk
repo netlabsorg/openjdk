@@ -109,6 +109,8 @@ $$(JARFILE): $$(JAVASRCLIST).stamp
 
 liveconnect: $$(JARFILE) | $$(call DIRDEP,$$(liveconnect_0_OUTDIR))
 
+install:: liveconnect
+
 include $(FILE_KBUILD_SUB_FOOTER)
 
 -include $(JAVASRCLIST)
