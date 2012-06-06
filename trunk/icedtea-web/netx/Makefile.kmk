@@ -7,62 +7,65 @@ include $(KBUILD_PATH)/subheader.kmk
 OTHERS += netx
 BLDDIRS += $(netx_0_OUTDIR)
 
-BUILD_PROPERTIES = $(netx_0_OUTDIR)/net/sourceforge/jnlp/build.properties
-BLDDIRS += $(dir $(BUILD_PROPERTIES))
-OTHER_CLEAN += $(BUILD_PROPERTIES)
+netx_BUILD_PROPERTIES = $(netx_0_OUTDIR)/net/sourceforge/jnlp/build.properties
+BLDDIRS += $(dir $(netx_BUILD_PROPERTIES))
+OTHER_CLEAN += $(netx_BUILD_PROPERTIES)
 
-MANIFEST = $(netx_0_OUTDIR)/netx.manifest
-BLDDIRS += $(dir $(MANIFEST))
-OTHER_CLEAN += $(MANIFEST)
+netx_MANIFEST = $(netx_0_OUTDIR)/netx.manifest
+BLDDIRS += $(dir $(netx_MANIFEST))
+OTHER_CLEAN += $(netx_MANIFEST)
 
-JAVASRCLIST += $(netx_0_OUTDIR)/javasrc.list
-BLDDIRS += $(dir $(JAVASRCLIST))
-OTHER_CLEAN += $(JAVASRCLIST) $(JAVASRCLIST).rsp $(JAVASRCLIST).stamp
+netx_JAVASRCDIRS := $(PATH_SUB_CURRENT)
 
-JARFILE = $(PATH_STAGE)/lib/netx.jar
-BLDDIRS += $(dir $(JARFILE))
-OTHER_CLEAN += $(JARFILE)
+netx_JAVASRCLIST = $(netx_0_OUTDIR)/javasrc.list
+BLDDIRS += $(dir $(netx_JAVASRCLIST))
+OTHER_CLEAN += $(netx_JAVASRCLIST) $(netx_JAVASRCLIST).rsp $(netx_JAVASRCLIST).stamp
 
-$$(BUILD_PROPERTIES): $(PATH_ROOT)/build.properties.in | $$(call DIRDEP,$$(dir $$(@)))
+netx_JARFILE = $(PATH_STAGE)/lib/netx.jar
+BLDDIRS += $(dir $(netx_JARFILE))
+OTHER_CLEAN += $(netx_JARFILE)
+
+$$(netx_BUILD_PROPERTIES): $(PATH_ROOT)/build.properties.in | $$(call DIRDEP,$$(dir $$(@)))
 	sed "s/@RHINO_AVAILABLE@/$(if $(WITH_RHINO),true,false)/g" < $^ > $@
 
-$$(MANIFEST): $(PATH_ROOT)/netx.manifest.in | $$(call DIRDEP,$$(dir $$(@)))
+$$(netx_MANIFEST): $(PATH_ROOT)/netx.manifest.in | $$(call DIRDEP,$$(dir $$(@)))
 	sed "s/@PACKAGE_NAME@/$(PACKAGE_NAME)/g; \
          s/@FULL_VERSION@/$(FULL_VERSION)/g; " < $^ > $@
 
-$$(JAVASRCLIST): $(MAKEFILE) | $$(call DIRDEP,$$(dir $$(@)))
+$$(netx_JAVASRCLIST): $(MAKEFILE) | $$(call DIRDEP,$$(dir $$(@)))
 	@echo 'JAVASRC = \' > $@
-	find $(PATH_SUB_CURRENT) -name '*.java' \
+	find $(netx_JAVASRCDIRS) -name '*.java' \
         $(if $(WITH_RHINO),,! -name '*RhinoBasedPacEvaluator*') \
         -printf '%p \\\n' >> $@
 
-$$(JAVASRCLIST).stamp: $$(JAVASRC) | $$(call DIRDEP,$$(dir $$(@)))
+$$(netx_JAVASRCLIST).stamp: $$(JAVASRC) | $$(call DIRDEP,$$(dir $$(@)))
 	$(call MSG_COMPILE,netx,$(words $?) sources,$@,JAVA)
-	@echo $? > $(JAVASRCLIST).rsp
+	@echo $? > $(netx_JAVASRCLIST).rsp
 	$(PATH_BOOTSTRAP_JDK)/bin/javac $(IT_JAVACFLAGS) \
         -d "$(netx_0_OUTDIR)" \
-        -sourcepath "$(PATH_SUB_CURRENT)" \
+        -sourcepath "$(subst ; ,;,$(foreach d,$(netx_JAVASRCDIRS),$(d);))" \
         -bootclasspath "$(BOOTSTRAP_JDK_RUNTIME)" \
-        @"$(JAVASRCLIST).rsp"
+        @"$(netx_JAVASRCLIST).rsp"
 	@touch "$@"
 
-$$(JARFILE): $$(BUILD_PROPERTIES) $$(MANIFEST) $$(JAVASRCLIST).stamp
-	(cd $(PATH_SUB_CURRENT)/net/sourceforge/jnlp/resources; \
+$$(netx_JARFILE): $$(netx_BUILD_PROPERTIES) $$(netx_MANIFEST) \
+                  $$(netx_JAVASRCLIST).stamp | $$(call DIRDEP,$$(dir $$(@)))
+	(cd $(netx_DEFPATH)/net/sourceforge/jnlp/resources; \
         for files in $$(find . -path ./.svn -prune -o -type f -print); \
         do \
             $(INSTALL_DATA) -D $${files} \
             $(netx_0_OUTDIR)/net/sourceforge/jnlp/resources/$${files}; \
         done)
-	cp -a $(PATH_SUB_CURRENT)/net/sourceforge/jnlp/runtime/pac-funcs.js \
+	cp -a $(netx_DEFPATH)/net/sourceforge/jnlp/runtime/pac-funcs.js \
         $(netx_0_OUTDIR)/net/sourceforge/jnlp/runtime
 	(cd $(netx_0_OUTDIR); \
-        $(PATH_BOOTSTRAP_JDK)/bin/jar cfm $(JARFILE) \
-            $(MANIFEST) javax/jnlp net)
+        $(PATH_BOOTSTRAP_JDK)/bin/jar cfm $(netx_JARFILE) \
+            $(netx_MANIFEST) javax/jnlp net)
 
-netx: $$(JARFILE) | $$(call DIRDEP,$$(netx_0_OUTDIR))
+netx: $$(netx_JARFILE)
 
-install: netx
+install:: netx
 
 include $(FILE_KBUILD_SUB_FOOTER)
 
--include $(JAVASRCLIST)
+-include $(netx_JAVASRCLIST)

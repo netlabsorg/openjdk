@@ -70,47 +70,47 @@ $$(PLUGIN_RC): $(PATH_ROOT)/plugin_os2.rc.in | $$(call DIRDEP,$$(dir $$(@)))
 OTHERS += liveconnect
 BLDDIRS += $(liveconnect_0_OUTDIR)
 
-JAVASRCDIRS = $(PATH_SUB_CURRENT)/java
+liveconnect_JAVASRCDIRS := $(PATH_SUB_CURRENT)/java
 ifeq ($(KBUILD_TARGET),os2)
-JAVASRCDIRS += $(PATH_SUB_CURRENT)/os2/java
+liveconnect_JAVASRCDIRS += $(PATH_SUB_CURRENT)/os2/java
 else # assume Linux
-JAVASRCDIRS += $(PATH_SUB_CURRENT)/x11/java
+liveconnect_JAVASRCDIRS += $(PATH_SUB_CURRENT)/x11/java
 endif
 
-JAVASRCLIST += $(liveconnect_0_OUTDIR)/javasrc.list
-BLDDIRS += $(dir $(JAVASRCLIST))
-OTHER_CLEAN += $(JAVASRCLIST) $(JAVASRCLIST).stamp
+liveconnect_JAVASRCLIST = $(liveconnect_0_OUTDIR)/javasrc.list
+BLDDIRS += $(dir $(liveconnect_JAVASRCLIST))
+OTHER_CLEAN += $(liveconnect_JAVASRCLIST) $(liveconnect_JAVASRCLIST).stamp
 
-JARFILE = $(PATH_STAGE)/lib/plugin.jar
-BLDDIRS += $(dir $(JARFILE))
-OTHER_CLEAN += $(JARFILE)
+liveconnect_JARFILE = $(PATH_STAGE)/lib/plugin.jar
+BLDDIRS += $(dir $(liveconnect_JARFILE))
+OTHER_CLEAN += $(liveconnect_JARFILE)
 
-$$(JAVASRCLIST): $(MAKEFILE) | $$(call DIRDEP,$$(dir $$(@)))
+$$(liveconnect_JAVASRCLIST): $(MAKEFILE) | $$(call DIRDEP,$$(dir $$(@)))
 	@echo 'JAVASRC = \' > $@
-	find $(JAVASRCDIRS) -name '*.java' \
+	find $(liveconnect_JAVASRCDIRS) -name '*.java' \
         -printf '%p \\\n' >> $@
 
-$$(JAVASRCLIST).stamp: $$(JAVASRC) | $$(call DIRDEP,$$(dir $$(@)))
+$$(liveconnect_JAVASRCLIST).stamp: $$(JAVASRC) | $(PATH_STAGE)/lib/netx.jar $$(call DIRDEP,$$(dir $$(@)))
 	$(call MSG_COMPILE,liveconnect,$(words $?) sources,$@,JAVA)
-	@echo $? > $(JAVASRCLIST).rsp
+	@echo $? > $(liveconnect_JAVASRCLIST).rsp
 	$(PATH_BOOTSTRAP_JDK)/bin/javac $(IT_JAVACFLAGS) \
         -d "$(liveconnect_0_OUTDIR)" \
         -classpath "$(liveconnect_0_OUTDIR)" \
-        -sourcepath "$(subst ; ,;,$(foreach d,$(JAVASRCDIRS),$(d);))" \
+        -sourcepath "$(subst ; ,;,$(foreach d,$(liveconnect_JAVASRCDIRS),$(d);))" \
         -bootclasspath "$(BOOTSTRAP_JDK_RUNTIME);$(PATH_STAGE)/lib/netx.jar" \
-        @"$(JAVASRCLIST).rsp"
-	@$(RM) "$(JAVASRCLIST).rsp"
+        @"$(liveconnect_JAVASRCLIST).rsp"
+	@$(RM) "$(liveconnect_JAVASRCLIST).rsp"
 	@touch "$@"
 
-$$(JARFILE): $$(JAVASRCLIST).stamp
+$$(liveconnect_JARFILE): $$(liveconnect_JAVASRCLIST).stamp | $$(call DIRDEP,$$(dir $$(@)))
 	(cd $(liveconnect_0_OUTDIR); \
-        $(PATH_BOOTSTRAP_JDK)/bin/jar cf $(JARFILE) \
+        $(PATH_BOOTSTRAP_JDK)/bin/jar cf $(liveconnect_JARFILE) \
             netscape sun/applet)
 
-liveconnect: $$(JARFILE) | $$(call DIRDEP,$$(liveconnect_0_OUTDIR))
+liveconnect: $$(liveconnect_JARFILE)
 
 install:: liveconnect
 
 include $(FILE_KBUILD_SUB_FOOTER)
 
--include $(JAVASRCLIST)
+-include $(liveconnect_JAVASRCLIST)
