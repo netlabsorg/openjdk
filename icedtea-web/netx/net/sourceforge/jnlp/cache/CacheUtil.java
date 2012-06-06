@@ -363,6 +363,7 @@ public class CacheUtil {
             lruHandler.lock();
             lruHandler.load();
 
+System.out.println("--- 1" + cacheDir);
             File cacheFile = null;
             for (long i = 0; i < Long.MAX_VALUE; i++) {
                 String path = cacheDir + File.separator + i;

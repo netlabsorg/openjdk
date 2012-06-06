@@ -61,6 +61,8 @@ $$(JARFILE): $$(BUILD_PROPERTIES) $$(MANIFEST) $$(JAVASRCLIST).stamp
 
 netx: $$(JARFILE) | $$(call DIRDEP,$$(netx_0_OUTDIR))
 
+install: netx
+
 include $(FILE_KBUILD_SUB_FOOTER)
 
 -include $(JAVASRCLIST)
