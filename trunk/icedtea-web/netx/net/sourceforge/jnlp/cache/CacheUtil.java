@@ -446,16 +446,13 @@ public class CacheUtil {
 
         StringBuffer path = new StringBuffer();
 
-        path.append(subdir);
-        path.append(File.separatorChar);
-
         path.append(location.getProtocol());
         path.append(File.separatorChar);
         path.append(location.getHost());
         path.append(File.separatorChar);
         path.append(location.getPath().replace('/', File.separatorChar));
 
-        return new File(FileUtils.sanitizePath(path.toString()));
+        return new File(subdir + File.separatorChar + FileUtils.sanitizePath(path.toString()));
     }
 
     /**
