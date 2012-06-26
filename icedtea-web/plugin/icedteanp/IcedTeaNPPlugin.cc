@@ -2265,6 +2265,7 @@ OSCALL NP_Initialize (NPNetscapeFuncs* browserTable, NPPluginFuncs* pluginTable)
     }
 #endif
 
+#ifndef __OS2__
   // Make sure the plugin data directory exists, creating it if
   // necessary.
   data_directory = g_strconcat (P_tmpdir, NULL);
@@ -2273,15 +2274,12 @@ OSCALL NP_Initialize (NPNetscapeFuncs* browserTable, NPPluginFuncs* pluginTable)
       PLUGIN_ERROR ("Failed to create data directory name.");
       return NPERR_OUT_OF_MEMORY_ERROR;
     }
-  gchar* filename = NULL;
 
   // If P_tmpdir does not exist, try /tmp directly
 
   if (!g_file_test (data_directory,
                     (GFileTest) (G_FILE_TEST_EXISTS | G_FILE_TEST_IS_DIR)))
     {
-      int file_error = 0;
-
       data_directory = g_strconcat ("/tmp", NULL);
         if (!data_directory)
           {
@@ -2329,9 +2327,10 @@ OSCALL NP_Initialize (NPNetscapeFuncs* browserTable, NPPluginFuncs* pluginTable)
             goto cleanup_data_directory;
 
     }
+#endif
 
   // Set appletviewer_executable.
-  filename = g_strdup(ICEDTEA_WEB_JRE);
+  gchar* filename = g_strdup(ICEDTEA_WEB_JRE);
   appletviewer_executable = g_strdup_printf ("%s/bin/java",
                                              filename);
   PLUGIN_DEBUG("Executing java at %s\n", appletviewer_executable);
@@ -2350,11 +2349,18 @@ OSCALL NP_Initialize (NPNetscapeFuncs* browserTable, NPPluginFuncs* pluginTable)
     }
   g_free (filename);
 
-  initialized = true;
-
   // Initialize threads (needed for mutexes).
   if (!g_thread_supported ())
     g_thread_init (NULL);
+
+#ifdef __OS2__
+  if (!g_main_context_os2_start_pm_integration (NULL))
+  {
+    PLUGIN_DEBUG ("Failed to integrate with PM");
+    np_error = NPERR_GENERIC_ERROR;
+    goto cleanup_appletviewer_executable;
+  }
+#endif
 
   plugin_instance_mutex = g_mutex_new ();
 
@@ -2389,6 +2395,8 @@ OSCALL NP_Initialize (NPNetscapeFuncs* browserTable, NPPluginFuncs* pluginTable)
   pthread_mutexattr_settype(&attribute, PTHREAD_MUTEX_RECURSIVE);
   pthread_mutex_init(&pluginAsyncCallMutex, &attribute);
   pthread_mutexattr_destroy(&attribute);
+
+  initialized = true;
 
   PLUGIN_DEBUG ("NP_Initialize return\n");
 
@@ -2487,6 +2495,10 @@ NPError
 OSCALL NP_Shutdown (void)
 {
   PLUGIN_DEBUG ("NP_Shutdown\n");
+
+#ifdef __OS2__
+  g_main_context_os2_stop_pm_integration (NULL);
+#endif
 
   // Free mutex.
   if (plugin_instance_mutex)
