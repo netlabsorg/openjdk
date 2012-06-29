@@ -44,6 +44,7 @@ exception statement from your version. */
 #include <os2.h>
 #include <emx/startup.h>
 #include <sys/socket.h>
+#include <fcntl.h>
 #include "OS_OS2.h"
 #endif
 
@@ -544,6 +545,13 @@ void start_jvm_if_needed()
   // there are multiple applets in the same page.  We may need to
   // change this behaviour if we find pages with multiple applets that
   // rely on being run in the same VM.
+
+#ifdef __OS2__
+  // make sure parent ends are not inherited by the child (otherwise read() on
+  // the child's side will not be aborted when the parent closes its end)
+  fcntl (in_pipe [0], F_SETFD, FD_CLOEXEC);
+  fcntl (out_pipe [0], F_SETFD, FD_CLOEXEC);
+#endif
 
   np_error = plugin_start_appletviewer (data);
 
