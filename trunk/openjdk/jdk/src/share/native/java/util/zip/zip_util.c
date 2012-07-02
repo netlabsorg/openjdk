@@ -137,13 +137,13 @@ ZFILE_Close(ZFILE zfd) {
 
 static jlong
 ZFILE_Lseek(ZFILE zfd, off_t offset, int whence) {
-    return IO_Lseek(zfd, offset, whence);
+    return handleLseek(zfd, offset, whence);
 }
 
 static int
 ZFILE_read(ZFILE zfd, char *buf, jint nbytes) {
 #if defined(WIN32) || defined (__WIN32OS2__)
-    return (int) IO_Read(zfd, buf, nbytes);
+    return (int) handleRead(zfd, buf, nbytes);
 #else
     /*
      * Calling JVM_Read will return JVM_IO_INTR when Thread.interrupt is called
