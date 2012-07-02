@@ -2586,6 +2586,11 @@ OSCALL NP_Shutdown (void)
   // Destroy the call queue mutex
   pthread_mutex_destroy(&pluginAsyncCallMutex);
 
+#ifdef __OS2__
+  // perform OS-specific uninitialization
+  done_os();
+#endif
+
   initialized = false;
 
 #ifdef __OS2__

@@ -65,3 +65,8 @@ bool init_os()
 {
     return init_os_winos2();
 }
+
+void done_os()
+{
+    done_os_winos2();
+}

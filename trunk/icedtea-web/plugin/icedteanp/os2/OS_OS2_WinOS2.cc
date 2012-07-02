@@ -59,11 +59,17 @@ bool init_os_winos2()
     WrapperClass = RegisterClass (&WndClass);
     if (!WrapperClass)
     {
-        PLUGIN_DEBUG ("RegisterClass failed.");
+        PLUGIN_DEBUG ("RegisterClass failed.\n");
         return FALSE;
     }
 
     return TRUE;
+}
+
+void done_os_winos2()
+{
+    if (!UnregisterClass ("WC_ICEDTEANP_WRAPPER", 0));
+        PLUGIN_DEBUG ("UnregisterClass failed.\n");
 }
 
 void *wrap_window_handle (void *handle)
