@@ -43,6 +43,7 @@ const char *icedtea_web_data_dir();
 const char *icedtea_web_jre_dir();
 
 bool init_os();
+void done_os();
 
 void *wrap_window_handle (void *handle);
 

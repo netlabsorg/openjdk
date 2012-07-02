@@ -40,5 +40,6 @@ exception statement from your version. */
 #define __OS_OS2_WINOS2_H__
 
 bool init_os_winos2();
+void done_os_winos2();
 
 #endif // __OS_OS2_WINOS2_H__
