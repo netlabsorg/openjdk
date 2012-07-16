@@ -26,8 +26,8 @@ BOOTSTRAP_JDK_RUNTIME  ?= $(PATH_BOOTSTRAP_JDK)/jre/lib/rt.jar;$(PATH_BOOTSTRAP_
 INSTALL_DATA       := install -m 644
 
 # @todo later
-ICEDTEA_WEB_JRE_DIR     := /@unixroot/usr/lib/jre
-ICEDTEA_WEB_DATA_DIR    := /@unixroot/usr/share/$(PACKAGE_NAME)
+#ICEDTEA_WEB_JRE_DIR     := /@unixroot/usr/lib/jre
+#ICEDTEA_WEB_DATA_DIR    := /@unixroot/usr/share/$(PACKAGE_NAME)
 
 ICEDTEA_WEB_JRE     = icedtea_web_jre_dir()
 
