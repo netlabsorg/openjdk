@@ -23,9 +23,9 @@ npicedt_CXXFLAGS    = -DJDK_UPDATE_VERSION="\"$(JDK_UPDATE_VERSION)\"" \
                       -DPLUGIN_NAME="\"$(PLUGIN_NAME)\"" \
                       -DPLUGIN_VERSION="\"$(PLUGIN_VERSION)\"" \
                       -DPACKAGE_URL="\"$(PACKAGE_URL)\"" \
-                      -DICEDTEA_WEB_JRE_DIR="\"$(ICEDTEA_WEB_JRE_DIR)\"" \
+                      $(if $(ICEDTEA_WEB_JRE_DIR),-DICEDTEA_WEB_JRE_DIR="\"$(ICEDTEA_WEB_JRE_DIR)\"") \
                       -DICEDTEA_WEB_JRE="$(ICEDTEA_WEB_JRE)" \
-                      -DICEDTEA_WEB_DATA_DIR="\"$(ICEDTEA_WEB_DATA_DIR)\"" \
+                      $(if $(ICEDTEA_WEB_DATA_DIR),-DICEDTEA_WEB_DATA_DIR="\"$(ICEDTEA_WEB_DATA_DIR)\"") \
                       -DPLUGIN_BOOTCLASSPATH="$(PLUGIN_BOOTCLASSPATH)"
 npicedt_LIBS        = $(PATH_GLIB_LIBS) pthread
 npicedt_LIBS.os2    = kernel32.lib user32.lib

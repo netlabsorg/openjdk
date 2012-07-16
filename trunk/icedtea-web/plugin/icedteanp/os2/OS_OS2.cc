@@ -38,9 +38,11 @@ exception statement from your version. */
 
 #define INCL_DOS
 #define INCL_PM
+#define INCL_ERRORS
 #include <os2.h>
 
 #include <stdlib.h>
+#include <string.h>
 
 #include "OS_OS2.h"
 #include "OS_OS2_WinOS2.h"
@@ -49,7 +51,40 @@ const char *icedtea_web_data_dir()
 {
     const char *home = getenv("ICEDTEA_WEB_DATA");
     if (!home)
+    {
+#if !defined(ICEDTEA_WEB_DATA_DIR)
+        // deduce the path from this DLL's name
+        static char buf[CCHMAXPATH] = {0};
+        if (buf[0] == 0)
+        {
+            BOOL ok = FALSE;
+            HMODULE hmod;
+            ULONG objNum, offset;
+            APIRET rc;
+            rc = DosQueryModFromEIP(&hmod, &objNum, sizeof(buf), buf, &offset,
+                                    (ULONG)&icedtea_web_data_dir);
+            if (rc == NO_ERROR)
+            {
+                rc = DosQueryModuleName(hmod, sizeof(buf), buf);
+                if (rc == NO_ERROR)
+                {
+                    // truncate the extension to get the data dir
+                    char *end = strrchr(buf, '.');
+                    if (end)
+                    {
+                        *end = '\0';
+                        ok = TRUE;
+                    }
+                }
+            }
+            if (!ok)
+                strcpy(buf, ".");
+        }
+        home = buf;
+#else
         home = ICEDTEA_WEB_DATA_DIR;
+#endif
+    }
     return home;
 }
 
@@ -57,7 +92,38 @@ const char *icedtea_web_jre_dir()
 {
     const char *jre = getenv("ICEDTEA_WEB_JRE");
     if (!jre)
+    {
+#if !defined(ICEDTEA_WEB_JRE_DIR)
+        // deduce the path from JAVA.EXE found in PATH
+        static char buf[CCHMAXPATH] = {0};
+        if (buf[0] == 0)
+        {
+            BOOL ok = FALSE;
+            APIRET rc;
+            rc = DosSearchPath(SEARCH_IGNORENETERRS | SEARCH_ENVIRONMENT |
+                               SEARCH_CUR_DIRECTORY,
+                               "PATH", "JAVA.EXE", buf, sizeof(buf));
+            if (rc == NO_ERROR)
+            {
+                char *end = strrchr(buf, '\\');
+                if (end)
+                {
+                    *end = '\0';
+                    ok = TRUE;
+                    // truncate \bin if present
+                    end = strrchr(buf, '\\');
+                    if (end && stricmp(end + 1, "bin") == 0)
+                        *end = '\0';
+                }
+            }
+            if (!ok)
+                strcpy(buf, ".");
+        }
+        jre = buf;
+#else
         jre = ICEDTEA_WEB_JRE_DIR;
+#endif
+    }
     return jre;
 }
 
