@@ -113,6 +113,13 @@ call EnvSet 'ALT_DROPS_DIR', 'D:/Coding/java_src_drops'
 call EnvSet 'ALLOW_DOWNLOADS', 'true'
 
 /**
+ * Only build the client hotspot JVM
+ */
+/*
+call EnvSet 'BUILD_CLIENT_ONLY', '1'
+*/
+
+/**
  * Here you may put any additional environment variable definitions needed for
  * your local environment or for the OpenJDK make files using the form shown
  * below. These variables are passed to the environment without any
@@ -130,16 +137,22 @@ call EnvSet 'ALT_SOME_VAR', 'some value'
  */
 
 /**
- * JDK build number in format 'bNN'.
+ * JDK update (marketing) number. Corresponds to the OpenJDK source bundle
+ * build (release) number. Should be updated with each upstream update.
  */
-/*
-call EnvSet 'BUILD_NUMBER', 'b00'
-*/
+call EnvSet 'JDK_UPDATE_VERSION', '25'
 
 /**
- * Milestone name. Will appear in the version string after the verison number
- * and before the build number.
+ * Build number in format 'bNN[-sometext]'. While it might seem like this one
+ * should reflect the source bundle build number, in fact it doesn't -- it
+ * reflects the serial build number for the given platform instead (which allows
+ * to distinguish several distributed builds of the same upstream release), as
+ * well as the symbolic build name (optional).
  */
+call EnvSet 'BUILD_NUMBER', 'b00-test'
+
 /*
-call EnvSet 'MILESTONE', 'internal'
-*/
+call EnvSet 'COMPILE_APPROACH', 'parallel'
+call EnvSet 'ALT_PARALLEL_COMPILE_JOBS', '2'
+call EnvSet 'HOTSPOT_BUILD_JOBS', '2'
+ */
