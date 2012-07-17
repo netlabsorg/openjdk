@@ -1231,6 +1231,10 @@ plugin_in_pipe_callback (GIOChannel* source,
             }
           else
             PLUGIN_ERROR ("Failed to read line from input channel");
+#ifdef __OS2__
+          // G_IO_ERR/HUP is not reported on file/pipe handles, simulate it
+          condition = (GIOCondition) (condition | G_IO_ERR);
+#endif
         } else
         {
           consume_message(message);
