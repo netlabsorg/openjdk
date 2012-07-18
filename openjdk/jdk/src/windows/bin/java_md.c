@@ -233,22 +233,24 @@ LoadJavaVM(const char *jvmpath, InvocationFunctions *ifn)
 
 #ifdef __WIN32OS2__
     /*
-     * Native OS/2 LX DLLs support importing functions from other DLLs using
-     * relocation fixup records which differs from the Win32 PE format that does
-     * this through the IAT (import address table - a table of function
-     * pointers). As a result, if DLL_A imports something from DLL_B, then when
-     * DLL_A is loaded by a process, it will load a particular version of DLL_B
+     * Native OS/2 LX DLLs import functions from other DLLs using relocation
+     * fixup records which differs from the Win32 PE format that does this
+     * through the IAT (import address table - a table of function pointers).
+     * As a result, if DLL_A imports something from DLL_B then when DLL_A is
+     * loaded by a process, it will load a particular version of DLL_B
      * to call its functions and all other processes that load DLL_A will get
-     * the same calls to that particular version of DLL_B (from within DLL_A)
-     * even though they supply their own version of DLL_B. In case of Java this
-     * means that if there is a Java process using e.g. server/JVM.DLL and
-     * another process is requesting client/JVM.DLL, this second process will
-     * eventually crash because all Java DLLs statically linked to JVM.DLL (e.g.
+     * the same calls to that particular version of DLL_B even though they
+     * supply their own version of DLL_B (because relocation only happens once
+     * and it is system-wide, as opposed to Win32 where IAT tables are per-
+     * process). In case of Java this means that if there is a Java process
+     * using e.g. server/JVM.DLL and another process is requesting
+     * client/JVM.DLL, this second process will eventually crash because all
+     * Java DLLs statically linked to JVM.DLL through the import table (e.g.
      * JVERIFY.DLL, JZIP.DLL) which it loads later will be calling functions
      * from server/JVM.DLL but that DLL is *not* initialized within this process
-     * (no surprise, it loaded and initialized client/JVM.DLL instead). In order
-     * to avoid such crashes we have to give a corresponding error message and
-     * terminate, there is no other solution so far.
+     * (no surprise, the process has loaded and initialized client/JVM.DLL
+     * instead). In order to avoid such crashes we have to give a corresponding
+     * error message and terminate, there is no other solution so far.
      */
     {
         /* Try to load JVM.DLL by name -- if successful, it will give us the DLL
@@ -280,40 +282,6 @@ LoadJavaVM(const char *jvmpath, InvocationFunctions *ifn)
         if (!ok)
             return JNI_FALSE;
     }
-
-    /*
-     * Add the JRE bin path to BEGINLIBPATH to make sure that other DLLs
-     * statically linked to the various JRE DLLs (so that they refer to them by
-     * name in the import tables) are able to find it. This is necessary because
-     * on OS/2, loading a DLL by full path does NOT make it available to other
-     * DLLs by name -- a normal procedure of searching it in LIBPATH and
-     * BEGINLIBPATH/ENDLIBPATH is always performed in this case.
-     */
-    if (GetJREPath(crtpath, MAXPATHLEN)) {
-        char *dir = (char *)malloc(strlen(crtpath) + 4 + 32);
-        strcpy(dir, crtpath);
-        strcat(dir, "\\bin;%BEGINLIBPATH%");
-        if (_launcher_debug) {
-             printf("Adding %s to BEGINLIBPATH\n", dir);
-        }
-        DosSetExtLIBPATH(dir, BEGIN_LIBPATH);
-        free(dir);
-    }
-
-    /*
-     * Do the same for the Java VM DLL which is located in a separate directory.
-     */
-    char *jvmdir = (char *)malloc(strlen(jvmpath) + 1 + 32);
-    strcpy(jvmdir, jvmpath);
-    char *sep = strrchr(jvmdir, '\\');
-    if (sep) {
-        strcpy(sep, ";%BEGINLIBPATH%");
-        if (_launcher_debug) {
-             printf("Adding %s to BEGINLIBPATH\n", jvmdir);
-        }
-        DosSetExtLIBPATH(jvmdir, BEGIN_LIBPATH);
-    }
-    free(jvmdir);
 #endif
 
     /* Now get the function addresses */
