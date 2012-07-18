@@ -27,6 +27,8 @@
 // This code redirects the OS/2 DLL initialization/termination calls to
 // the Windows DllMain() and registers the DLL with Odin
 
+#define INCL_DOS
+#define INCL_ERRORS
 #include <os2wrap.h> // Odin32 OS/2 api wrappers
 #include <odinlx.h>
 #include <misc.h>
@@ -35,6 +37,8 @@
 #ifdef TARGET_COMPILER_gcc
 #include <emx/startup.h>
 #endif
+
+#include <string.h>
 
 extern "C" BOOL WINAPI DllMain(HINSTANCE hinst, DWORD reason, LPVOID reserved);
 
@@ -70,6 +74,35 @@ unsigned long SYSTEM _DLL_InitTerm(unsigned long hModule, unsigned long ulFlag)
         // check that the runtime Odin version matches the compile time version
         // (this will issue a message box and abort the process on mismatch)
         CheckVersionFromHMOD(PE2LX_VERSION, hModule);
+
+        // Assuming that JVM.DLL is stored in a bin/<type>/ subdirectory (where
+        // type is e.g. "client"), we add this directory, as well as its parent
+        // (which contains all other Java DLLs), to BEGINLIBPATH so that the OS2
+        // DLL loader can satisfy DLL dependencies (i.e. find DLLs referred to
+        // by other DLLs through their import module table) when some Java DLLs
+        // (e.g. JAVA.DLL, JZIP.DLL) are dynamically loaded later by JVM.DLL.
+        // Note that despite the fact that JVM.DLL is already loaded at this
+        // point, we still need to add its directory to BEGINLIBPATH. This is
+        // bcause most likely it's been loaded by full path which does NOT make
+        // it locatable by the loader when referred to by name from the import
+        // table of some other DLL (like JAVA.DLL).
+
+        char dllpath[CCHMAXPATH + 16 /* ";%BEGINLIBPATH%" */];
+        if (DosQueryModuleName(hModule, sizeof(dllpath), dllpath) == NO_ERROR)
+        {
+            char *end = strrchr(dllpath, '\\');
+            if (end)
+            {
+                strcpy(end, ";%BEGINLIBPATH%");
+                DosSetExtLIBPATH(dllpath, BEGIN_LIBPATH);
+                end = strrchr(dllpath, '\\');
+                if (end)
+                {
+                    strcpy(end, ";%BEGINLIBPATH%");
+                    DosSetExtLIBPATH(dllpath, BEGIN_LIBPATH);
+                }
+            }
+        }
 
 #ifdef ODIN_FORCE_WIN32_TIB
         // enable __try/__except support
