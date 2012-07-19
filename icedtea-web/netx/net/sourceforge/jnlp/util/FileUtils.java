@@ -315,6 +315,9 @@ public final class FileUtils {
      * @throws FileNotFoundException If the file does not exist.
      */
     public static FileLock getFileLock(String path, boolean shared, boolean allowBlock) throws FileNotFoundException {
+        // @todo temporary solution, see http://svn.netlabs.org/java/ticket/169
+        if (Defaults.OS_DOS_LIKE)
+            return null;
         RandomAccessFile rafFile = new RandomAccessFile(path, "rw");
         FileChannel fc = rafFile.getChannel();
         FileLock lock = null;
