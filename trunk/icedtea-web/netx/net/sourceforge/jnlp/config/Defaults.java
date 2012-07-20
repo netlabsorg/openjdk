@@ -132,7 +132,7 @@ public class Defaults {
                 {
                         DeploymentConfiguration.KEY_USER_SECURITY_POLICY,
                         BasicValueValidators.getUrlValidator(),
-                        "file://" + USER_SECURITY + File.separator + "java.policy"
+                        new File(USER_SECURITY + File.separator + "java.policy").toURI().toString()
                 },
                 {
                         DeploymentConfiguration.KEY_USER_TRUSTED_CA_CERTS,
