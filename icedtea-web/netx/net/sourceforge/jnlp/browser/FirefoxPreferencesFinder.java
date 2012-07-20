@@ -46,6 +46,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import net.sourceforge.jnlp.runtime.JNLPRuntime;
+import net.sourceforge.jnlp.config.Defaults;
 
 /**
  * Finds the file corresponding to firefox's (default) preferences file
@@ -62,7 +63,8 @@ public class FirefoxPreferencesFinder {
      */
     public static File find() throws IOException {
 
-        String configPath = System.getProperty("user.home") + File.separator + ".mozilla"
+        String configPath = System.getProperty("user.home") + File.separator
+                + (Defaults.OS_DOS_LIKE ? "Mozilla" : ".mozilla")
                 + File.separator + "firefox" + File.separator;
 
         String profilesPath = configPath + "profiles.ini";
