@@ -1,0 +1,71 @@
+## @file
+#
+
+SUB_DEPTH = ..
+include $(KBUILD_PATH)/subheader.kmk
+
+OTHERS += netx
+BLDDIRS += $(netx_0_OUTDIR)
+
+netx_BUILD_PROPERTIES = $(netx_0_OUTDIR)/net/sourceforge/jnlp/build.properties
+BLDDIRS += $(dir $(netx_BUILD_PROPERTIES))
+OTHER_CLEAN += $(netx_BUILD_PROPERTIES)
+
+netx_MANIFEST = $(netx_0_OUTDIR)/netx.manifest
+BLDDIRS += $(dir $(netx_MANIFEST))
+OTHER_CLEAN += $(netx_MANIFEST)
+
+netx_JAVASRCDIRS := $(PATH_SUB_CURRENT)
+
+netx_JAVASRCLIST = $(netx_0_OUTDIR)/javasrc.list
+BLDDIRS += $(dir $(netx_JAVASRCLIST))
+OTHER_CLEAN += $(netx_JAVASRCLIST) $(netx_JAVASRCLIST).rsp $(netx_JAVASRCLIST).stamp
+
+netx_JARFILE = $(PATH_STAGE)/lib/netx.jar
+BLDDIRS += $(dir $(netx_JARFILE))
+OTHER_CLEAN += $(netx_JARFILE)
+
+$$(netx_BUILD_PROPERTIES): $(PATH_ROOT)/build.properties.in | $$(call DIRDEP,$$(dir $$(@)))
+	sed "s/@RHINO_AVAILABLE@/$(if $(WITH_RHINO),true,false)/g" < $^ > $@
+
+$$(netx_MANIFEST): $(PATH_ROOT)/netx.manifest.in | $$(call DIRDEP,$$(dir $$(@)))
+	sed "s/@PACKAGE_NAME@/$(PACKAGE_NAME)/g; \
+         s/@FULL_VERSION@/$(FULL_VERSION)/g; " < $^ > $@
+
+$$(netx_JAVASRCLIST): $(MAKEFILE) | $$(call DIRDEP,$$(dir $$(@)))
+	@echo 'JAVASRC = \' > $@
+	find $(netx_JAVASRCDIRS) -name '*.java' \
+        $(if $(WITH_RHINO),,! -name '*RhinoBasedPacEvaluator*') \
+        -printf '%p \\\n' >> $@
+
+$$(netx_JAVASRCLIST).stamp: $$(JAVASRC) | $$(call DIRDEP,$$(dir $$(@)))
+	$(call MSG_COMPILE,netx,$(words $?) sources,$@,JAVA)
+	@echo $? > $(netx_JAVASRCLIST).rsp
+	$(PATH_BOOTSTRAP_JDK)/bin/javac $(IT_JAVACFLAGS) \
+        -d "$(netx_0_OUTDIR)" \
+        -sourcepath "$(subst ; ,;,$(foreach d,$(netx_JAVASRCDIRS),$(d);))" \
+        -bootclasspath "$(BOOTSTRAP_JDK_RUNTIME)" \
+        @"$(netx_JAVASRCLIST).rsp"
+	@touch "$@"
+
+$$(netx_JARFILE): $$(netx_BUILD_PROPERTIES) $$(netx_MANIFEST) \
+                  $$(netx_JAVASRCLIST).stamp | $$(call DIRDEP,$$(dir $$(@)))
+	(cd $(netx_DEFPATH)/net/sourceforge/jnlp/resources; \
+        for files in $$(find . -path ./.svn -prune -o -type f -print); \
+        do \
+            $(INSTALL_DATA) -D $${files} \
+            $(netx_0_OUTDIR)/net/sourceforge/jnlp/resources/$${files}; \
+        done)
+	cp -a $(netx_DEFPATH)/net/sourceforge/jnlp/runtime/pac-funcs.js \
+        $(netx_0_OUTDIR)/net/sourceforge/jnlp/runtime
+	(cd $(netx_0_OUTDIR); \
+        $(PATH_BOOTSTRAP_JDK)/bin/jar cfm $(netx_JARFILE) \
+            $(netx_MANIFEST) javax/jnlp net)
+
+netx: $$(netx_JARFILE)
+
+install:: netx
+
+include $(FILE_KBUILD_SUB_FOOTER)
+
+-include $(netx_JAVASRCLIST)

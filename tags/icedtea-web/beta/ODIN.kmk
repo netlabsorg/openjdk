@@ -1,0 +1,28 @@
+## @file
+#
+# Odin SDK, headers and libraries.
+
+SDK_ODIN :=Odin SDK, headers and libraries.
+
+# SDK Specific Properties
+ifndef PATH_SDK_ODIN
+ PATH_SDK_ODIN := /@unixroot/usr
+else
+ # Resolve any fancy stuff once and for all.
+ PATH_SDK_ODIN := $(PATH_SDK_ODIN)
+endif
+ifneq ($(PATH_SDK_ODIN),)
+ PATH_SDK_ODIN_INC ?= $(PATH_SDK_ODIN)/include
+ PATH_SDK_ODIN_LIB ?= $(PATH_SDK_ODIN)/lib
+endif
+
+# This breaks some GCC core defs, disable for now
+#SDK_ODIN_DEFS_FORCE_BSD_TCPIP := \
+#    _POSIX_SOURCE _POSIX_C_SOURCE=200112 _EMX_SOURCE
+#    _XOPEN_SOURCE=600 _SVID_SOURCE
+
+# General Properties used by kBuild
+SDK_ODIN_DEFS ?= __WIN32OS2__ _i386__ $(SDK_ODIN_DEFS_FORCE_BSD_TCPIP)
+SDK_ODIN_INCS ?= $(PATH_SDK_ODIN_INC) $(PATH_SDK_ODIN_INC)/win
+SDK_ODIN_LIBPATH ?= $(PATH_SDK_ODIN_LIB)
+
