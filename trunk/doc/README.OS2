@@ -1,8 +1,8 @@
 OpenJDK 6 for OS/2 and eCS
 
-Version 1.6.0 Build 24 GA2 (2012-03-19)
+Version 1.6.0 Build 25 GA3 (2012-07-21)
 
-This is an official release of Build 22 intended for general use.
+This is an official release of Build 25 intended for general use.
 
 
 
@@ -27,46 +27,56 @@ In order to use this version of OpenJDK, you will need the following:
 
   - A OS/2 Warp 4 Fixpack 16+, OS/2 Warp 4.5 or eComStation operating system.
 
-  - LIBC runtime version 0.6.4 (you probably have it already installed):
+  - LIBC runtime version 0.6.5 (you probably have it already installed):
 
-    ftp://ftp.netlabs.org/pub/libc/libc-0_6_4-csd4.wpi
+    ftp://ftp.netlabs.org/pub/libc/libc-0_6_5-csd5.wpi
 
   - GCC 4 runtime libraries:
 
     ftp://ftp.netlabs.org/pub/gcc/gcc4core-1_2_1.wpi
 
-  - Odin runtime version 0.8.4 or above:
+  - Odin runtime version 0.8.5 or above:
 
-    ftp://ftp.netlabs.org/pub/odin/0.8.4/odin-0.8.4.zip
+    ftp://ftp.netlabs.org/pub/odin/0.8.5/odin-0.8.5.zip
 
   - Extended system tray widget for XCenter version 0.1.1 or above (optional,
     but required for system tray support in Java applications):
 
     ftp://ftp.netlabs.org/pub/qt4/xsystray/xsystray-0_1_1.wpi
 
+If you use the YUM/RPM package manager, you may install all the requirements
+with a single command from the command line (except the system tray widget):
+
+    yum install libc libgcc446 libodin
+
 
 
 INSTALLATION
 
   The OpenJDK product is distributed in two packages: the JRE and the SDK
-  (which includes a copy of JRE). Simply take a necessary package and unzip it
-  to a directory of your choice. You will need to add the \bin subdirectory
-  inside this directory to PATH and BEGINLIBPATH to allow for starting Java
-  executables from an arbitrary location:
+  (which includes a copy of JRE). Simply take the necessary package and unzip it
+  to a directory of your choice. You will need to add the "bin" subdirectory
+  inside this directory to the PATH environment variable to allow for starting
+  Java programs from an arbitrary location (using JAVA.EXE and JAVAW.EXE):
 
     set PATH=<directory>\bin;%PATH%
+
+  Note that if you use the SDK package, you will also need to add this "bin"
+  subdirectory to the BEGINLIBPATH environment variable (in order to run
+  JAVAC.EXE, JAR.EXE and other development tools):
+
     set BEGINLIBPATH=<directory>\bin;%BEGINLIBPATH%
 
   Also make sure there are no traces of other Java installations in the
-  environment because this is known to make problems (in particular, this means
-  that the CLASSPATH/JAVA_HOME/SWING_HOME environment variables should not be
-  set).
+  environment because this is known to make problems. In particular, you should
+  check that the CLASSPATH/JAVA_HOME/SWING_HOME environment variables are not
+  set.
 
-  Alternatively, you may add this subdirectory to PATH and LIBPATH statements
-  of your CONFIG.SYS (and reboot) to make the given Java installation the
-  default one.
+  Alternatively, you may add the "bin" subdirectory to PATH and LIBPATH
+  statements of your CONFIG.SYS (and reboot) to make the given Java installation
+  the default one.
 
-  Please read the further sections (especially the "CURRENT LIMITATIONS" section
+  Please read further sections (especially the "CURRENT LIMITATIONS" section
   below) to make sure that you are aware of possible problems you may run into
   while running Java applications using this product.
 

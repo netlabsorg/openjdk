@@ -4,6 +4,33 @@ in the OpenJDK product from release to release.
 
 CHANGES
 
+1.6.0 Build 25 GA3 (2012-07-21)
+
+  - Updated OpenJDK sources to b25 (release May, 07, 2012). The main changes in
+    b25 are the latest round of security updates (in jdk and corba repositories)
+    and a number of other fixes. The full list of changes is located here:
+
+    https://blogs.oracle.com/openjdk6releases/entry/openjdk_6_b25_available
+
+  - Fix a hang in the TCP/IP Configuration application when saving the changes.
+
+  - Fix warnings about stack guard pages that could eventually lead crash the
+    Java application.
+
+  - Add related changes to make the IcedTea-Web (Java) browser plugin work.
+
+  - Fix a possible secondary crash when generating the Java crash report.
+
+  - Change the version numbering scheme to 1.6.0_BB-bNN-name where BB is the
+    upstream Build number, NN is the OS/2 sequential build number and name is
+    a symbolic name of the release. This release's version is 1.6.0_25-b01-GA3.
+
+  - Make sure the BEGINLIBPATH setting is not necessary for JAVA.EXE and
+    JAVAW.EXE binaries (and for creating a JVM by loading JVM.DLL directly).
+    It is only necessary for JAVAC.EXE and other SDK tools.
+
+
+
 1.6.0 Build 24 GA2 (2012-03-19)
 
   - Updated OpenJDK sources to b24 (release November 2011). The main changes in
