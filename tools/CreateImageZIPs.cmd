@@ -1,8 +1,8 @@
 /*REXX*/
 
-ver_id = 'openjdk6_b24'
+ver_id = 'openjdk6_b25'
 
-build_id = 'ga2-20120319'
+build_id = 'ga3-20120721'
 
 src_path = '..'
 
