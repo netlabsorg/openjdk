@@ -551,20 +551,29 @@ void CompilerOracle::parse_from_line(char* line) {
 }
 
 static const char* cc_file() {
-  if (CompileCommandFile == NULL)
+#ifdef ASSERT
+  if (CompileCommandFile == NULL) {
     return ".hotspot_compiler";
+  }
+#endif
   return CompileCommandFile;
 }
+
+bool CompilerOracle::has_command_file() {
+  return cc_file() != NULL;
+}
+
 bool CompilerOracle::_quiet = false;
 
 void CompilerOracle::parse_from_file() {
+  assert(has_command_file(), "command file must be specified");
   FILE* stream = fopen(cc_file(), "rt");
   if (stream == NULL) return;
 
   char token[1024];
   int  pos = 0;
   int  c = getc(stream);
-  while(c != EOF) {
+  while(c != EOF && pos < (int)(sizeof(token)-1)) {
     if (c == '\n') {
       token[pos++] = '\0';
       parse_from_line(token);
@@ -585,7 +594,7 @@ void CompilerOracle::parse_from_string(const char* str, void (*parse_line)(char*
   int  pos = 0;
   const char* sp = str;
   int  c = *sp++;
-  while (c != '\0') {
+  while (c != '\0' && pos < (int)(sizeof(token)-1)) {
     if (c == '\n') {
       token[pos++] = '\0';
       parse_line(token);
@@ -600,6 +609,7 @@ void CompilerOracle::parse_from_string(const char* str, void (*parse_line)(char*
 }
 
 void CompilerOracle::append_comment_to_file(const char* message) {
+  assert(has_command_file(), "command file must be specified");
   fileStream stream(fopen(cc_file(), "at"));
   stream.print("# ");
   for (int index = 0; message[index] != '\0'; index++) {
@@ -610,6 +620,7 @@ void CompilerOracle::append_comment_to_file(const char* message) {
 }
 
 void CompilerOracle::append_exclude_to_file(methodHandle method) {
+  assert(has_command_file(), "command file must be specified");
   fileStream stream(fopen(cc_file(), "at"));
   stream.print("exclude ");
   Klass::cast(method->method_holder())->name()->print_symbol_on(&stream);
@@ -624,7 +635,9 @@ void CompilerOracle::append_exclude_to_file(methodHandle method) {
 void compilerOracle_init() {
   CompilerOracle::parse_from_string(CompileCommand, CompilerOracle::parse_from_line);
   CompilerOracle::parse_from_string(CompileOnly, CompilerOracle::parse_compile_only);
-  CompilerOracle::parse_from_file();
+  if (CompilerOracle::has_command_file()) {
+    CompilerOracle::parse_from_file();
+  }
   if (lists[PrintCommand] != NULL) {
     if (PrintAssembly) {
       warning("CompileCommand and/or .hotspot_compiler file contains 'print' commands, but PrintAssembly is also enabled");
