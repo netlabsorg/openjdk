@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,26 +23,21 @@
  * questions.
  */
 
-package sun.beans.editors;
+package sun.security.util;
 
 /**
- * Property editor for a java builtin "float" type.
- *
+ * The Length interface defines the length of an object
  */
+public interface Length {
 
-import java.beans.*;
-
-public class FloatEditor extends NumberEditor {
-
-    public String getJavaInitializationString() {
-        Object value = getValue();
-        return (value != null)
-                ? value + "F"
-                : "null";
-    }
-
-    public void setAsText(String text) throws IllegalArgumentException {
-        setValue((text == null) ? null : Float.valueOf(text));
-    }
-
+    /**
+     * Gets the length of this object
+     * <p>
+     * Note that if a class of java.security.Key implements this interfaces,
+     * the length should be measured in bits.
+     *
+     * @return the length of this object
+     * @throws UnsupportedOperationException if the operation is not supported
+     */
+    public int length();
 }
