@@ -1704,7 +1704,12 @@ PrintUsage(JNIEnv* env, jboolean doXUsage)
   if (doXUsage) {
     NULL_CHECK(printXUsageMessage = (*env)->GetStaticMethodID(env, cls,
                                         "printXUsageMessage", "(Z)V"));
+#ifdef __OS2__
+    // printing usage info to stderr is not respected, use stdout
+    (*env)->CallStaticVoidMethod(env, cls, printXUsageMessage, JNI_FALSE);
+#else
     (*env)->CallStaticVoidMethod(env, cls, printXUsageMessage, JNI_TRUE);
+#endif
   } else {
     NULL_CHECK(initHelp = (*env)->GetStaticMethodID(env, cls,
                                         "initHelpMessage", "(Ljava/lang/String;)V"));
@@ -1763,7 +1768,12 @@ PrintUsage(JNIEnv* env, jboolean doXUsage)
     }
 
     /* Complete the usage message and print to stderr*/
+#ifdef __OS2__
+    // printing usage info to stderr is not respected, use stdout
+    (*env)->CallStaticVoidMethod(env, cls, printHelp, JNI_FALSE);
+#else
     (*env)->CallStaticVoidMethod(env, cls, printHelp, JNI_TRUE);
+#endif
   }
   return;
 }
