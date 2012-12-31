@@ -1,8 +1,8 @@
 OpenJDK 6 for OS/2 and eCS
 
-Version 1.6.0 Build 25 GA3 (2012-07-21)
+Version 1.6.0 Build 27 GA4 (2012-12-31)
 
-This is an official release of Build 25 intended for general use.
+This is an official release of Build 27 intended for general use.
 
 
 
@@ -37,7 +37,7 @@ In order to use this version of OpenJDK, you will need the following:
 
   - Odin runtime version 0.8.5 or above:
 
-    ftp://ftp.netlabs.org/pub/odin/0.8.5/odin-0.8.5.zip
+    ftp://ftp.netlabs.org/pub/odin/0.8.8/odin-0.8.8.zip
 
   - Extended system tray widget for XCenter version 0.1.1 or above (optional,
     but required for system tray support in Java applications):
