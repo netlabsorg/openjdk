@@ -276,7 +276,12 @@ load_rsrc32_procs()
 void
 load_rich_edit_library() {
     static int initialized = 0;
+#ifdef __WIN32OS2__
+    // Odin only has RICHED32.DLL (Wrapper for Rich Text 1.0)
+    BOOL isRichEdit32Needed = TRUE;
+#else
     BOOL isRichEdit32Needed = IS_WIN95 && !IS_WIN98;
+#endif
 
     if (initialized) {
         return;

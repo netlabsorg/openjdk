@@ -54,7 +54,12 @@ struct ReplaceTextStruct {
 jfieldID AwtTextArea::scrollbarVisibilityID;
 
 WNDPROC AwtTextArea::sm_pDefWindowProc = NULL;
+#ifdef __WIN32OS2__
+// Odin only has RICHED32.DLL (Wrapper for Rich Text 1.0)
+BOOL AwtTextArea::sm_RichEdit20 = FALSE;
+#else
 BOOL AwtTextArea::sm_RichEdit20 = (IS_WIN98 || IS_NT);
+#endif
 
 /************************************************************************
  * AwtTextArea methods
