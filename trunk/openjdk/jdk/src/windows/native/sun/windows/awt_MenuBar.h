@@ -66,7 +66,7 @@ public:
 
     virtual HWND GetOwnerHWnd();
 
-    AwtMenuItem* GetItem(jobject target, long index);
+    AwtMenuItem* GetItem(jobject target, jint index);
     int CountItem(jobject menuBar);
 
     void SendDrawItem(AwtMenuItem* awtMenuItem,
