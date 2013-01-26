@@ -148,7 +148,7 @@ int AwtMenuBar::CountItem(jobject menuBar)
     return nCount;
 }
 
-AwtMenuItem* AwtMenuBar::GetItem(jobject target, long index)
+AwtMenuItem* AwtMenuBar::GetItem(jobject target, jint index)
 {
     JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
     if (env->EnsureLocalCapacity(2) < 0) {
@@ -172,7 +172,7 @@ AwtMenuItem* AwtMenuBar::GetItem(jobject target, long index)
 void AwtMenuBar::DrawItem(DRAWITEMSTRUCT& drawInfo)
 {
     DASSERT(drawInfo.CtlType == ODT_MENU);
-    AwtMenu::DrawItems(drawInfo);
+    DrawItems(drawInfo);
 }
 
 void AwtMenuBar::MeasureItem(HDC hDC,
