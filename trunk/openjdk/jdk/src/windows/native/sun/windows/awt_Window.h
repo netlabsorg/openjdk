@@ -34,6 +34,7 @@
 // property name tagging windows disabled by modality
 static LPCTSTR ModalBlockerProp = TEXT("SunAwtModalBlockerProp");
 static LPCTSTR ModalDialogPeerProp = TEXT("SunAwtModalDialogPeerProp");
+static LPCTSTR ModalDialogProcProp = TEXT("SunAwtModalDialogProcProp");
 
 #ifndef WH_MOUSE_LL
 #define WH_MOUSE_LL 14
