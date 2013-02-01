@@ -688,6 +688,7 @@ IRT_ENTRY(void, InterpreterRuntime::resolve_invoke(JavaThread* thread, Bytecodes
   constantPoolHandle pool(thread, method(thread)->constants());
 
   {
+    ResourceMark rm(thread);
     JvmtiHideSingleStepping jhss(thread);
     LinkResolver::resolve_invoke(info, receiver, pool,
                                  get_index_u2_cpcache(thread, bytecode), bytecode, CHECK);
