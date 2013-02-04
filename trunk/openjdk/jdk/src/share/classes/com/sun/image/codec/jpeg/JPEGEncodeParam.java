@@ -1,4 +1,4 @@
-/* JPEGEncodeParam.java -- 
+/* JPEGEncodeParam.java --
    Copyright (C) 2007 Free Software Foundation, Inc.
 
    This file is part of GNU Classpath.
@@ -37,7 +37,7 @@
 
 package com.sun.image.codec.jpeg;
 
-public class JPEGEncodeParam
+public interface JPEGEncodeParam
 {
 	public static final int COLOR_ID_UNKNOWN = 0;
 	public static final int COLOR_ID_RGBA = 1;
@@ -47,93 +47,39 @@ public class JPEGEncodeParam
 	public static final int COLOR_ID_CMYK = 5;
 	public static final int COLOR_ID_YCbCr = 6;
 
-	public JPEGEncodeParam()
-	{
-	}
+	public void setQuality(float i, boolean b);
 
-	public void setQuality(float i, boolean b)
-        {
-        }	
+	public JPEGEncodeParam clone();
 
-	public void setQuality(int i, boolean b)
-	{
-	}
+	public void setTableInfoValid(boolean b);
 
-	public JPEGEncodeParam clone()
-	{
-	  return null;
-	}
+	public void setImageInfoValid(boolean b);
 
-	public void setTableInfoValid(boolean b)
-	{
-	}
+	public int getHorizontalSubsampling(int i);
 
-	public void setImageInfoValid(boolean b)
-	{
-	}
+	public int getVerticalSubsampling(int i);
 
-	public int getHorizontalSubsampling(int i)
-	{
-	  return 0;
-	}
+	public int getWidth();
 
-	public int getVerticalSubsampling(int i)
-        {
-          return 0;
-        }
+	public int getHeight();
 
-	public int getWidth()
-	{
-	  return 0;
-	}
+	public int getDensityUnit();
 
-	public int getHeight()
-	{
-	  return 0;
-	}
+    public int getXDensity();
 
-	public int getDensityUnit()
-        {
-          return 0;
-        }
+    public int getYDensity();
 
-        public int getXDensity()
-        {
-          return 0;
-        }
+    public int getRestartInterval();
 
-        public int getYDensity()
-        {
-          return 0;
-        }
+    public JPEGQTable getQTable(int i);
 
-        public int getRestartInterval()
-        {
-          return 0;
-        }
+	public void setDensityUnit(int i);
 
-        public JPEGQTable getQTable(int i)
-        {
-          return new JPEGQTable();
-        }	
+	public void setXDensity(int i);
 
-	public void setDensityUnit(int i)
-	{
-	}
+	public void setYDensity(int i);
 
-	public void setXDensity(int i)
-	{
-	}
+	public void setRestartInterval(int i);
 
-	public void setYDensity(int i)
-	{
-	}
-
-	public void setRestartInterval(int i)
-	{
-	}
-
-	public void setQTable(int i, JPEGQTable jqt)
-	{
-	}
+	public void setQTable(int i, JPEGQTable jqt);
 }

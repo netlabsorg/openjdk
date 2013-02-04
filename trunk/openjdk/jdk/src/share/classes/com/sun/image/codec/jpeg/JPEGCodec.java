@@ -1,4 +1,4 @@
-/* JPEGCodec.java -- 
+/* JPEGCodec.java --
    Copyright (C) 2007 Free Software Foundation, Inc.
    Copyright (C) 2007 Matthew Flaschen
 
@@ -38,12 +38,17 @@
 
 package com.sun.image.codec.jpeg;
 
+import java.lang.RuntimeException;
+import java.lang.UnsupportedOperationException;
+
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.IOException;
 
+import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.awt.image.Raster;
+import java.awt.image.ColorModel;
 
 import javax.imageio.*;
 import javax.imageio.stream.*;
@@ -61,59 +66,59 @@ public class JPEGCodec
 
 	public static JPEGImageEncoder createJPEGEncoder(OutputStream os)
 	{
-		return null;
+		return new ImageIOJPEGImageEncoder(os);
 	}
 
 	public static JPEGImageDecoder createJPEGDecoder(InputStream src, JPEGDecodeParam jdp)
 	{
-		return null; 
+    return new ImageIOJPEGImageDecoder(src);
 	}
-        
+
 	public static JPEGImageEncoder createJPEGEncoder(OutputStream dest, JPEGEncodeParam jep)
 	{
-		return null;
+    return new ImageIOJPEGImageEncoder(dest);
 	}
-        
+
 	public static JPEGEncodeParam getDefaultJPEGEncodeParam(BufferedImage bi)
-	{
-		return null;
-	}
-        
+  {
+    throw new UnsupportedOperationException("FIX ME!");
+  }
+
 	public static JPEGEncodeParam getDefaultJPEGEncodeParam(int numBands, int colorID)
-	{
-		return null;
-	}
-		
+  {
+    throw new UnsupportedOperationException("FIX ME!");
+  }
+
 	public static JPEGEncodeParam getDefaultJPEGEncodeParam(JPEGDecodeParam jdp)
-	{
-		return null;
-	}
-        
+  {
+    throw new UnsupportedOperationException("FIX ME!");
+  }
+
 	public static JPEGEncodeParam getDefaultJPEGEncodeParam(Raster ras, int colorID)
-	{
-		return null;
-	}
-        
+  {
+    throw new UnsupportedOperationException("FIX ME!");
+  }
+
 
 	private static class ImageIOJPEGImageDecoder implements JPEGImageDecoder
 	{
-		
+
 		private static final String JPGMime = "image/jpeg";
-    
+
 		private ImageReader JPGReader;
-		
+
 		private InputStream in;
-		
+
 		private ImageIOJPEGImageDecoder (InputStream newIs)
 		{
 			in = newIs;
-			
+
 			Iterator<ImageReader> JPGReaderIter = ImageIO.getImageReadersByMIMEType(JPGMime);
 			if(JPGReaderIter.hasNext())
 			{
 				JPGReader  = JPGReaderIter.next();
 			}
-			
+
 			JPGReader.setInput(new MemoryCacheImageInputStream(in));
 		}
 
@@ -121,26 +126,255 @@ public class JPEGCodec
 		{
 			return JPGReader.read(0);
 		}
-		
+
 		public Raster decodeAsRaster() throws IOException, ImageFormatException
 		{
 			return JPGReader.readRaster(0, null);
 		}
-		
+
 		public InputStream getInputStream()
 		{
 			return in;
 		}
-		
+
 		public JPEGDecodeParam getJPEGDecodeParam()
-		{
-			return null;
-		}
+    {
+      throw new UnsupportedOperationException("FIX ME!");
+    }
 
 		public void setJPEGDecodeParam(JPEGDecodeParam jdp)
-		{
-			return;
-		}
+    {
+      throw new UnsupportedOperationException("FIX ME!");
+    }
 
 	}
+
+  private static class ImageIOJPEGEncodeParam implements JPEGEncodeParam
+  {
+    private ImageWriter writer;
+    private ImageWriteParam p;
+    private int width;
+    private int height;
+
+    private ImageIOJPEGEncodeParam (ImageWriter _writer, int _width, int _height)
+    {
+      writer = _writer;
+      p = _writer.getDefaultWriteParam();
+      width = _width;
+      height = _height;
+    }
+
+    private ImageWriteParam getImageWriteParam()
+    {
+      return p;
+    }
+
+    public void setQuality(float i, boolean b)
+    {
+      p.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
+      p.setCompressionQuality(i);
+    }
+
+    public JPEGEncodeParam clone()
+    {
+      return new ImageIOJPEGEncodeParam(writer, width, height);
+    }
+
+    public void setTableInfoValid(boolean b)
+    {
+      throw new UnsupportedOperationException("FIX ME!");
+    }
+
+    public void setImageInfoValid(boolean b)
+    {
+      throw new UnsupportedOperationException("FIX ME!");
+    }
+
+    public int getHorizontalSubsampling(int i)
+    {
+      throw new UnsupportedOperationException("FIX ME!");
+    }
+
+    public int getVerticalSubsampling(int i)
+    {
+      throw new UnsupportedOperationException("FIX ME!");
+    }
+
+    public int getWidth()
+    {
+      return width;
+    }
+
+    public int getHeight()
+    {
+      return height;
+    }
+
+    public int getDensityUnit()
+    {
+      throw new UnsupportedOperationException("FIX ME!");
+    }
+
+    public int getXDensity()
+    {
+      throw new UnsupportedOperationException("FIX ME!");
+    }
+
+    public int getYDensity()
+    {
+      throw new UnsupportedOperationException("FIX ME!");
+    }
+
+    public int getRestartInterval()
+    {
+      throw new UnsupportedOperationException("FIX ME!");
+    }
+
+    public JPEGQTable getQTable(int i)
+    {
+      throw new UnsupportedOperationException("FIX ME!");
+    }
+
+    public void setDensityUnit(int i)
+    {
+      throw new UnsupportedOperationException("FIX ME!");
+    }
+
+    public void setXDensity(int i)
+    {
+      throw new UnsupportedOperationException("FIX ME!");
+    }
+
+    public void setYDensity(int i)
+    {
+      throw new UnsupportedOperationException("FIX ME!");
+    }
+
+    public void setRestartInterval(int i)
+    {
+      throw new UnsupportedOperationException("FIX ME!");
+    }
+
+    public void setQTable(int i, JPEGQTable jqt)
+    {
+      throw new UnsupportedOperationException("FIX ME!");
+    }
+  }
+
+  private static class ImageIOJPEGImageEncoder implements JPEGImageEncoder
+  {
+
+    private static final String JPGMime = "image/jpeg";
+
+    private ImageWriter JPGWriter;
+    private OutputStream out;
+    private ImageIOJPEGEncodeParam param;
+
+    private ImageIOJPEGImageEncoder (OutputStream newOs)
+    {
+      out = newOs;
+      param = null;
+
+      Iterator<ImageWriter> JPGWriterIter = ImageIO.getImageWritersByMIMEType(JPGMime);
+      if(JPGWriterIter.hasNext())
+      {
+        JPGWriter = JPGWriterIter.next();
+      }
+
+      JPGWriter.setOutput(new MemoryCacheImageOutputStream(out));
+    }
+
+    private BufferedImage checkImage(BufferedImage bi)
+    {
+      boolean needsConversion = false;
+
+      int[] bandSizes = bi.getSampleModel().getSampleSize();
+      for (int i = 0; i < bandSizes.length; i++)
+      {
+        if (bandSizes[i] > 8)
+        {
+          needsConversion = true;
+          break;
+        }
+      }
+
+      if (needsConversion)
+      {
+        BufferedImage newBi = new BufferedImage(bi.getWidth(), bi.getHeight(), BufferedImage.TYPE_INT_RGB);
+        Graphics2D g = newBi.createGraphics();
+        g.drawImage(bi, 0, 0, null);
+        bi = newBi;
+      }
+
+      return bi;
+    }
+
+    public JPEGEncodeParam getJPEGEncodeParam()
+    {
+      return param;
+    }
+
+    public void setJPEGEncodeParam(JPEGEncodeParam jep)
+    {
+      if (!(jep instanceof ImageIOJPEGEncodeParam))
+        throw new RuntimeException("Must specify object returned by getDefaultJPEGEncodeParam()");
+      param = (ImageIOJPEGEncodeParam)jep;
+    }
+
+    public JPEGEncodeParam getDefaultJPEGEncodeParam(BufferedImage bi)
+    {
+      return new ImageIOJPEGEncodeParam(JPGWriter, bi.getWidth(), bi.getHeight());
+    }
+
+    public JPEGEncodeParam getDefaultJPEGEncodeParam(Raster ras, int colorID) throws ImageFormatException
+    {
+      return new ImageIOJPEGEncodeParam(JPGWriter, ras.getWidth(), ras.getHeight());
+    }
+
+    public JPEGEncodeParam getDefaultJPEGEncodeParam(int numBands, int colorID) throws ImageFormatException
+    {
+      throw new UnsupportedOperationException("FIX ME!");
+    }
+
+    public JPEGEncodeParam getDefaultJPEGEncodeParam(JPEGDecodeParam jdp) throws ImageFormatException
+    {
+      throw new UnsupportedOperationException("FIX ME!");
+    }
+
+    public int getDefaultColorId(ColorModel cm)
+    {
+      throw new UnsupportedOperationException("FIX ME!");
+    }
+
+    public OutputStream getOutputStream()
+    {
+      return out;
+    }
+
+    public void encode(BufferedImage bi, JPEGEncodeParam p) throws IOException, ImageFormatException
+    {
+      if (!(p instanceof ImageIOJPEGEncodeParam))
+        throw new RuntimeException("Must specify object returned by getDefaultJPEGEncodeParam()");
+      bi = checkImage(bi);
+      JPGWriter.write(null, new IIOImage(bi, null, null), ((ImageIOJPEGEncodeParam)p).getImageWriteParam());
+    }
+
+    public void encode(Raster ras) throws IOException, ImageFormatException
+    {
+      JPGWriter.write(null, new IIOImage(ras, null, null), param.getImageWriteParam());
+    }
+
+    public void encode(BufferedImage bi) throws IOException, ImageFormatException
+    {
+      bi = checkImage(bi);
+      JPGWriter.write(null, new IIOImage(bi, null, null), param.getImageWriteParam());
+    }
+
+    public void encode(Raster ras, JPEGEncodeParam p) throws IOException, ImageFormatException
+    {
+      if (!(p instanceof ImageIOJPEGEncodeParam))
+        throw new RuntimeException("Must specify object returned by getDefaultJPEGEncodeParam()");
+      JPGWriter.write(null, new IIOImage(ras, null, null), ((ImageIOJPEGEncodeParam)p).getImageWriteParam());
+    }
+  }
 }
