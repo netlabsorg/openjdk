@@ -1,4 +1,4 @@
-/* JPEGImageEncoder.java -- 
+/* JPEGImageEncoder.java --
    Copyright (C) 2007 Free Software Foundation, Inc.
 
    This file is part of GNU Classpath.
@@ -40,28 +40,33 @@ package com.sun.image.codec.jpeg;
 import com.sun.image.codec.jpeg.*;
 import java.awt.image.BufferedImage;
 import java.awt.image.Raster;
+import java.awt.image.ColorModel;
+import java.io.OutputStream;
+import java.io.IOException;
 
-public class JPEGImageEncoder
+public interface JPEGImageEncoder
 {
-	public JPEGImageEncoder()
-	{
-	}
-	
-	public JPEGEncodeParam getDefaultJPEGEncodeParam(BufferedImage bi)
-	{
-		return null;
-	}
+    public JPEGEncodeParam getJPEGEncodeParam();
 
-	public void encode(BufferedImage bi, JPEGEncodeParam p)
-	{
-	}
+    public void setJPEGEncodeParam(JPEGEncodeParam jep);
 
-	public void encode(Raster bi)
-        {
-        }
+    public JPEGEncodeParam getDefaultJPEGEncodeParam(BufferedImage bi) throws ImageFormatException;
 
-	public void encode(BufferedImage bi)
-        {
-        }
+    public JPEGEncodeParam getDefaultJPEGEncodeParam(Raster ras, int colorID) throws ImageFormatException;
 
+    public JPEGEncodeParam getDefaultJPEGEncodeParam(int numBands, int colorID) throws ImageFormatException;
+
+    public JPEGEncodeParam getDefaultJPEGEncodeParam(JPEGDecodeParam jdp) throws ImageFormatException;
+
+    public int getDefaultColorId(ColorModel cm);
+
+    public OutputStream getOutputStream();
+
+	public void encode(BufferedImage bi, JPEGEncodeParam p) throws IOException, ImageFormatException;
+
+	public void encode(Raster ras) throws IOException, ImageFormatException;
+
+	public void encode(BufferedImage bi) throws IOException, ImageFormatException;
+
+    public void encode(Raster ras, JPEGEncodeParam p) throws IOException, ImageFormatException;
 }
