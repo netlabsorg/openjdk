@@ -325,18 +325,20 @@ function weekdayRange() {
  * of the above ways of calling.
  */
 function dateRange() {
+    switch (arguments.length) {
+       case 1: return isDateInRange_internallForIcedTeaWebTesting(new Date(),arguments[0]);
+       case 2: return isDateInRange_internallForIcedTeaWebTesting(new Date(),arguments[0],arguments[1]);
+       case 3: return isDateInRange_internallForIcedTeaWebTesting(new Date(),arguments[0],arguments[1],arguments[2]);
+       case 4: return isDateInRange_internallForIcedTeaWebTesting(new Date(),arguments[0],arguments[1],arguments[2],arguments[3]);
+       case 5: return isDateInRange_internallForIcedTeaWebTesting(new Date(),arguments[0],arguments[1],arguments[2],arguments[3],arguments[4]);
+       case 6: return isDateInRange_internallForIcedTeaWebTesting(new Date(),arguments[0],arguments[1],arguments[2],arguments[3],arguments[4],arguments[5]);
+       case 7: return isDateInRange_internallForIcedTeaWebTesting(new Date(),arguments[0],arguments[1],arguments[2],arguments[3],arguments[4],arguments[5],arguments[6]); //GMT
+       default:
+           return false;
+    }
+}
 
-    // note: watch out for wrapping around of dates. date ranges, like
-    // month=9 to month=8, wrap around and cover the entire year. this
-    // makes everything more interesting
-
-    var gmt;
-	if (arguments.length > 1) {
-		if (arguments[arguments.length-1] === "GMT") {
-			gmt = true;
-            arguments.splice(0,arguments.length-1);
-        }
-	}
+function isDateInRange_internallForIcedTeaWebTesting() {
 
     function isDate(date) {
         if (typeof(date) === 'number' && (date <= 31 && date >= 1)) {
@@ -413,7 +415,7 @@ function dateRange() {
     }
 
     function inYearRange(today, year1, year2) {
-        if (year1 <= today.getYear() && today.getYear() <= year2) {
+        if (year1 <= today.getFullYear() && today.getFullYear() <= year2) {
             return true;
         } else {
             return false;
@@ -480,7 +482,7 @@ function dateRange() {
 
     function inYearMonthRange(today, month1, year1, month2, year2) {
         if (year1 === year2) {
-            if (today.getYear() === year1) {
+            if (today.getFullYear() === year1) {
                if (month1 <= today.getMonth() && today.getMonth() <= month2) {
                    return true;
                } else {
@@ -491,14 +493,14 @@ function dateRange() {
             }
         }
         if (year1 < year2) {
-            if (year1 <= today.getYear() && today.getYear() <= year2) {
-                if (today.getYear() === year1) {
+            if (year1 <= today.getFullYear() && today.getFullYear() <= year2) {
+                if (today.getFullYear() === year1) {
                     if (today.getMonth() >= month1) {
                         return true;
                     } else {
                         return false;
                     }
-                } else if (today.getYear() === year2) {
+                } else if (today.getFullYear() === year2) {
                     if (today.getMonth() <= month2) {
                         return true;
                     } else {
@@ -513,12 +515,11 @@ function dateRange() {
         } else {
             return false;
         }
-
     }
 
     function inYearMonthDateRange(today, date1, month1, year1, date2, month2, year2) {
         if (year1 === year2) {
-            if (year1 === today.getYear()) {
+            if (year1 === today.getFullYear()) {
                 if ((month1 <= today.getMonth()) && (today.getMonth() <= month2)) {
                     if (month1 === month2) {
                         if (date1 <= today.getDate() && today.getDate() <= date2) {
@@ -548,8 +549,8 @@ function dateRange() {
                 return false;
             }
         } else if (year1 < year2) {
-            if (year1 <= today.getYear() && today.getYear() <= year2) {
-                if (today.getYear() === year1) {
+            if (year1 <= today.getFullYear() && today.getFullYear() <= year2) {
+                if (today.getFullYear() === year1) {
                     if (today.getMonth() === month1) {
                         if (today.getDate() >= date1) {
                             return true;
@@ -561,11 +562,17 @@ function dateRange() {
                     } else {
                         return false;
                     }
-                } else if (today.getYear() === year2) {
-                    if (today.getMonth() <= month2) {
-
-                    } else {
+                } else if (today.getFullYear() === year2) {
+                    if (today.getMonth() === month2) {
+                        if (today.getDate() <= date1) {
+                            return true;
+                        } else {
+                            return false;
+                        }
+                    } else if (today.getMonth() < month2) {
                         return true;
+                    } else {
+                        return false;
                     }
                 } else {
                     return true;
@@ -578,8 +585,19 @@ function dateRange() {
         }
     }
 
+    // note: watch out for wrapping around of dates. date ranges, like
+    // month=9 to month=8, wrap around and cover the entire year. this
+    // makes everything more interesting
+
+    var gmt;
+	if (arguments.length > 2) {
+		if (arguments[arguments.length-1] === "GMT") {
+			gmt = true;
+            arguments.splice(0,arguments.length-1);
+        }
+	}
     // TODO: change date to gmt, whatever
-    var today = new Date();
+    var today = arguments[0]
 
     var arg1;
     var arg2;
@@ -588,9 +606,9 @@ function dateRange() {
     var arg5;
     var arg6;
 
-    switch (arguments.length) {
+    switch (arguments.length-1) {
         case 1:
-            var arg = arguments[0];
+            var arg = arguments[1];
             if (isDate(arg)) {
                 if (today.getDate() === arg) {
                     return true;
@@ -604,15 +622,15 @@ function dateRange() {
                     return false;
                 }
             } else { // year
-                if (today.getYear() === arg) {
+                if (today.getFullYear() === arg) {
                     return true;
                 } else {
                     return false;
                 }
             }
         case 2:
-            arg1 = arguments[0];
-            arg2 = arguments[1];
+            arg1 = arguments[1];
+            arg2 = arguments[2];
             if (isDate(arg1) && isDate(arg2)) {
                 var date1 = arg1;
                 var date2 = arg2;
@@ -634,10 +652,10 @@ function dateRange() {
                 return false;
             }
         case 4:
-            arg1 = arguments[0];
-            arg2 = arguments[1];
-            arg3 = arguments[2];
-            arg4 = arguments[3];
+            arg1 = arguments[1];
+            arg2 = arguments[2];
+            arg3 = arguments[3];
+            arg4 = arguments[4];
 
             if (isDate(arg1) && isMonth(arg2) && isDate(arg3) && isMonth(arg4)) {
                 var date1 = arg1;
@@ -658,12 +676,12 @@ function dateRange() {
                 return false;
             }
         case 6:
-            arg1 = arguments[0];
-            arg2 = arguments[1];
-            arg3 = arguments[2];
-            arg4 = arguments[3];
-            arg5 = arguments[4];
-            arg6 = arguments[5];
+            arg1 = arguments[1];
+            arg2 = arguments[2];
+            arg3 = arguments[3];
+            arg4 = arguments[4];
+            arg5 = arguments[5];
+            arg6 = arguments[6];
             if (isDate(arg1) && isMonth(arg2) && isYear(arg3) &&
                 isDate(arg4) && isMonth(arg5) && isYear(arg6)) {
                 var day1 = arg1;

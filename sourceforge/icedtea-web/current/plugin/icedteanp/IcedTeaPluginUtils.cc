@@ -146,22 +146,20 @@ IcedTeaPluginUtilities::constructMessagePrefix(int context, int reference,
 void
 IcedTeaPluginUtilities::JSIDToString(void* id, std::string* result)
 {
-
-	char* id_str = (char*) malloc(sizeof(char)*20); // max = long long = 8446744073709551615 == 19 chars
+	char id_str[NUM_STR_BUFFER_SIZE];
 
 	if (sizeof(void*) == sizeof(long long))
 	{
-		sprintf(id_str, "%llu", id);
+		snprintf(id_str, NUM_STR_BUFFER_SIZE, "%llu", id);
 	}
 	else
 	{
-		sprintf(id_str, "%lu", id); // else use long
+		snprintf(id_str, NUM_STR_BUFFER_SIZE, "%lu", id); // else use long
 	}
 
 	result->append(id_str);
 
 	PLUGIN_DEBUG("Converting pointer %p to %s\n", id, id_str);
-	free(id_str);
 }
 
 /**
@@ -257,12 +255,9 @@ IcedTeaPluginUtilities::releaseReference()
 void
 IcedTeaPluginUtilities::itoa(int i, std::string* result)
 {
-	// largest possible integer is 10 digits long
-	char* int_str = (char*) malloc(sizeof(char)*11);
-	sprintf(int_str, "%d", i);
+	char int_str[NUM_STR_BUFFER_SIZE];
+	snprintf(int_str, NUM_STR_BUFFER_SIZE, "%d", i);
 	result->append(int_str);
-
-	free(int_str);
 }
 
 /**
@@ -292,7 +287,7 @@ IcedTeaPluginUtilities::freeStringPtrVector(std::vector<std::string*>* v)
  *
  * @param str The string to split
  * @param The delimiters to split on
- * @return A string vector containing the aplit components
+ * @return A string vector containing the split components
  */
 
 std::vector<std::string*>*
@@ -302,7 +297,7 @@ IcedTeaPluginUtilities::strSplit(const char* str, const char* delim)
 	v->reserve(strlen(str)/2);
 	char* copy;
 
-	// Tokening is done on a copy
+	// Tokenization is done on a copy
 	copy = (char*) malloc (sizeof(char)*strlen(str) + 1);
 	strcpy(copy, str);
 
@@ -313,11 +308,12 @@ IcedTeaPluginUtilities::strSplit(const char* str, const char* delim)
 	{
 	    // Allocation on heap since caller has no way to knowing how much will
 	    // be needed. Make sure caller cleans up!
-		std::string* s = new std::string();
-		s->append(tok_ptr);
-		v->push_back(s);
-		tok_ptr = strtok (NULL, " ");
+	    std::string* s = new std::string();
+	    s->append(tok_ptr);
+	    v->push_back(s);
+	    tok_ptr = strtok (NULL, delim);
 	}
+        free(copy);
 
 	return v;
 }
@@ -371,19 +367,17 @@ IcedTeaPluginUtilities::convertStringToUTF8(std::string* str, std::string* utf_s
 
 	ostream << length;
 
-	// UTF-8 characters are 4-bytes max + space + '\0'
-	char* hex_value = (char*) malloc(sizeof(char)*10);
+	char hex_value[NUM_STR_BUFFER_SIZE];
 
 	for (int i = 0; i < str->length(); i++)
 	{
-		sprintf(hex_value, " %hx", str->at(i));
+		snprintf(hex_value, NUM_STR_BUFFER_SIZE," %hx", str->at(i));
 		ostream << hex_value;
 	}
 
 	utf_str->clear();
 	*utf_str = ostream.str();
 
-	free(hex_value);
 	PLUGIN_DEBUG("Converted %s to UTF-8 string %s\n", str->c_str(), utf_str->c_str());
 }
 
@@ -668,11 +662,8 @@ IcedTeaPluginUtilities::printNPVariant(NPVariant variant)
     }
     else if (NPVARIANT_IS_STRING(variant))
     {
-#if MOZILLA_VERSION_COLLAPSED < 1090200
-    	PLUGIN_DEBUG("STRING: %s\n", NPVARIANT_TO_STRING(variant).utf8characters);
-#else
-    	PLUGIN_DEBUG("STRING: %s\n", NPVARIANT_TO_STRING(variant).UTF8Characters);
-#endif
+    	std::string str = IcedTeaPluginUtilities::NPVariantAsString(variant);
+    	PLUGIN_DEBUG("STRING: %s (length=%d)\n", str.c_str(), str.size());
     }
     else
     {
@@ -683,49 +674,45 @@ IcedTeaPluginUtilities::printNPVariant(NPVariant variant)
 void
 IcedTeaPluginUtilities::NPVariantToString(NPVariant variant, std::string* result)
 {
-	char* str = (char*) malloc(sizeof(char)*32); // enough for everything except string
+  char conv_str[NUM_STR_BUFFER_SIZE]; // conversion buffer
+  bool was_string_already = false;
 
-    if (NPVARIANT_IS_VOID(variant))
-    {
-        sprintf(str, "%p", variant);
-    }
-    else if (NPVARIANT_IS_NULL(variant))
-    {
-    	sprintf(str, "NULL");
-    }
-    else if (NPVARIANT_IS_BOOLEAN(variant))
-    {
-    	if (NPVARIANT_TO_BOOLEAN(variant))
-    		sprintf(str, "true");
-    	else
-    		sprintf(str, "false");
-    }
-    else if (NPVARIANT_IS_INT32(variant))
-    {
-    	sprintf(str, "%d", NPVARIANT_TO_INT32(variant));
-    }
-    else if (NPVARIANT_IS_DOUBLE(variant))
-    {
-    	sprintf(str, "%f", NPVARIANT_TO_DOUBLE(variant));;
-    }
-    else if (NPVARIANT_IS_STRING(variant))
-    {
-    	free(str);
-#if MOZILLA_VERSION_COLLAPSED < 1090200
-    	str = (char*) malloc(sizeof(char)*NPVARIANT_TO_STRING(variant).utf8length);
-    	sprintf(str, "%s", NPVARIANT_TO_STRING(variant).utf8characters);
-#else
-        str = (char*) malloc(sizeof(char)*NPVARIANT_TO_STRING(variant).UTF8Length);
-        sprintf(str, "%s", NPVARIANT_TO_STRING(variant).UTF8Characters);
-#endif
-    }
+  if (NPVARIANT_IS_STRING(variant))
+  {
+    result->append(IcedTeaPluginUtilities::NPVariantAsString(variant));
+    was_string_already = true;
+  }
+  else if (NPVARIANT_IS_VOID(variant))
+  {
+    snprintf(conv_str, NUM_STR_BUFFER_SIZE, "%p", variant);
+  }
+  else if (NPVARIANT_IS_NULL(variant))
+  {
+    snprintf(conv_str, NUM_STR_BUFFER_SIZE, "NULL");
+  }
+  else if (NPVARIANT_IS_BOOLEAN(variant))
+  {
+    if (NPVARIANT_TO_BOOLEAN(variant))
+      snprintf(conv_str, NUM_STR_BUFFER_SIZE, "true");
     else
-    {
-        sprintf(str, "[Object %p]", variant);
-    }
+      snprintf(conv_str, NUM_STR_BUFFER_SIZE, "false");
+  }
+  else if (NPVARIANT_IS_INT32(variant))
+  {
+    snprintf(conv_str, NUM_STR_BUFFER_SIZE, "%d", NPVARIANT_TO_INT32(variant));
+  }
+  else if (NPVARIANT_IS_DOUBLE(variant))
+  {
+    snprintf(conv_str, NUM_STR_BUFFER_SIZE, "%f", NPVARIANT_TO_DOUBLE(variant));
+  }
+  else
+  {
+    snprintf(conv_str, NUM_STR_BUFFER_SIZE, "[Object %p]", variant);
+  }
 
-    result->append(str);
-    free(str);
+  if (!was_string_already){
+    result->append(conv_str);
+  }
 }
 
 bool
@@ -864,13 +851,7 @@ IcedTeaPluginUtilities::isObjectJSArray(NPP instance, NPObject* object)
     browser_functions.invoke(instance, constructor, toString, NULL, 0, &constructor_str);
     IcedTeaPluginUtilities::printNPVariant(constructor_str);
 
-    std::string constructor_name = std::string();
-
-#if MOZILLA_VERSION_COLLAPSED < 1090200
-    constructor_name.append(NPVARIANT_TO_STRING(constructor_str).utf8characters);
-#else
-    constructor_name.append(NPVARIANT_TO_STRING(constructor_str).UTF8Characters);
-#endif
+    std::string constructor_name = IcedTeaPluginUtilities::NPVariantAsString(constructor_str);
 
     PLUGIN_DEBUG("Constructor for NPObject is %s\n", constructor_name.c_str());
 
@@ -913,6 +894,20 @@ IcedTeaPluginUtilities::decodeURL(const gchar* url, gchar** decoded_url)
     PLUGIN_DEBUG("SENDING URL: %s\n", *decoded_url);
 }
 
+/* Copies a variant data type into a C++ string */
+std::string
+IcedTeaPluginUtilities::NPVariantAsString(NPVariant variant)
+{
+#if MOZILLA_VERSION_COLLAPSED < 1090200
+  return std::string(
+    NPVARIANT_TO_STRING(variant).utf8characters,
+    NPVARIANT_TO_STRING(variant).utf8length);
+#else
+  return std::string(
+    NPVARIANT_TO_STRING(variant).UTF8Characters,
+    NPVARIANT_TO_STRING(variant).UTF8Length);
+#endif
+}
 
 /**
  * Posts a function for execution on the plug-in thread and wait for result.
@@ -1066,7 +1061,7 @@ MessageBus::MessageBus()
 	if(ret)
 		PLUGIN_DEBUG("Error: Unable to initialize message queue mutex: %d\n", ret);
 
-	PLUGIN_DEBUG("Mutexs %p and %p initialized\n", &subscriber_mutex, &msg_queue_mutex);
+	PLUGIN_DEBUG("Mutexes %p and %p initialized\n", &subscriber_mutex, &msg_queue_mutex);
 }
 
 /**
@@ -1130,27 +1125,23 @@ MessageBus::unSubscribe(BusSubscriber* b)
 void
 MessageBus::post(const char* message)
 {
-	char* msg = (char*) malloc(sizeof(char)*strlen(message) + 1);
 	bool message_consumed = false;
-
-	// consumer frees this memory
-	strcpy(msg, message);
 
 	PLUGIN_DEBUG("Trying to lock %p...\n", &msg_queue_mutex);
 	pthread_mutex_lock(&subscriber_mutex);
 
-    PLUGIN_DEBUG("Message %s received on bus. Notifying subscribers.\n", msg);
+    PLUGIN_DEBUG("Message %s received on bus. Notifying subscribers.\n", message);
 
     std::list<BusSubscriber*>::const_iterator i;
     for( i = subscribers.begin(); i != subscribers.end() && !message_consumed; ++i ) {
-    	PLUGIN_DEBUG("Notifying subscriber %p of %s\n", *i, msg);
-    	message_consumed = ((BusSubscriber*) *i)->newMessageOnBus(msg);
+    	PLUGIN_DEBUG("Notifying subscriber %p of %s\n", *i, message);
+    	message_consumed = ((BusSubscriber*) *i)->newMessageOnBus(message);
     }
 
     pthread_mutex_unlock(&subscriber_mutex);
 
     if (!message_consumed)
-    	PLUGIN_DEBUG("Warning: No consumer found for message %s\n", msg);
+    	PLUGIN_DEBUG("Warning: No consumer found for message %s\n", message);
 
     PLUGIN_DEBUG("%p unlocked...\n", &msg_queue_mutex);
 }

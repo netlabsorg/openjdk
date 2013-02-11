@@ -65,6 +65,7 @@ import javax.swing.border.TitledBorder;
 
 import net.sourceforge.jnlp.config.DeploymentConfiguration;
 import net.sourceforge.jnlp.runtime.JNLPRuntime;
+import net.sourceforge.jnlp.util.ImageResources;
 
 /**
  * A simple Java console for IcedTeaPlugin
@@ -92,6 +93,7 @@ public class JavaConsole {
         final String logDir = JNLPRuntime.getConfiguration().getProperty(DeploymentConfiguration.KEY_USER_LOG_DIR);
 
         consoleWindow = new JFrame("Java Console");
+        consoleWindow.setIconImages(ImageResources.INSTANCE.getApplicationImages());
 
         JPanel contentPanel = new JPanel();
         contentPanel.setLayout(new GridBagLayout());
@@ -306,8 +308,8 @@ public class JavaConsole {
 
         boolean toShowConsole = false;
 
-        for (int i = 0; i < args.length; i++) {
-            if (args[i] == "--show-console") {
+        for (String arg : args) {
+            if ("--show-console".equals(arg)) {
                 toShowConsole = true;
             }
         }

@@ -116,8 +116,8 @@ public class AppletEnvironment implements AppletContext, AppletStub {
         destroyed = true;
 
         List<AppletAudioClip> clips = weakClips.hardList();
-        for (int i = 0; i < clips.size(); i++) {
-            clips.get(i).dispose();
+        for (AppletAudioClip clip : clips) {
+            clip.dispose();
         }
     }
 
@@ -204,6 +204,20 @@ public class AppletEnvironment implements AppletContext, AppletStub {
             return applet;
         else
             return null;
+    }
+
+    /**
+     * Set the applet of this environment; can only be called once.
+     */
+    public void setApplet(Applet applet) {
+        if (this.applet != null) {
+            if (JNLPRuntime.isDebug()) {
+                Exception ex = new IllegalStateException("Applet can only be set once.");
+                ex.printStackTrace();
+            }
+            return;
+        }
+        this.applet = applet;
     }
 
     /**

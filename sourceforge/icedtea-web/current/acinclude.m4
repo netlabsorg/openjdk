@@ -359,21 +359,66 @@ AC_ARG_ENABLE([plugin],
 AC_MSG_RESULT(${enable_plugin})
 ])
 
+dnl ITW_GTK_CHECK_VERSION([gtk version])
+AC_DEFUN([ITW_GTK_CHECK_VERSION],
+[
+  AC_MSG_CHECKING([for GTK$1 version])
+  GTK_VER=`$PKG_CONFIG --modversion gtk+-$1.0`
+  AC_MSG_RESULT([$GTK_VER])
+])
+
+dnl ITW_GTK_CHECK([gtk version])
+AC_DEFUN([ITW_GTK_CHECK],
+[
+  case "$1" in
+    default)
+      PKG_CHECK_MODULES(GTK, gtk+-3.0,
+        [ITW_GTK_CHECK_VERSION([3])],
+        [PKG_CHECK_MODULES(GTK, gtk+-2.0,
+           [ITW_GTK_CHECK_VERSION([2])],
+           [AC_MSG_ERROR([GTK $1 not found])]
+        )]
+      )
+      ;;
+    *)
+      PKG_CHECK_MODULES(GTK, gtk+-$1.0,
+        [ITW_GTK_CHECK_VERSION([$1])],
+        [AC_MSG_ERROR([GTK $1 not found])]
+      )
+      ;;
+  esac
+])
+
 AC_DEFUN_ONCE([IT_CHECK_PLUGIN_DEPENDENCIES],
 [
 dnl Check for plugin support headers and libraries.
 dnl FIXME: use unstable
 AC_REQUIRE([IT_CHECK_PLUGIN])
 if test "x${enable_plugin}" = "xyes" ; then
-  PKG_CHECK_MODULES(GTK, gtk+-2.0)
+  AC_ARG_WITH([gtk],
+    [AS_HELP_STRING([--with-gtk=[2|3|default]],
+    [the GTK+ version to use (default: 3)])],
+    [case "$with_gtk" in
+       2|3|default) ;;
+       *) AC_MSG_ERROR([invalid GTK version specified]) ;;
+     esac],
+    [with_gtk=default])
+  ITW_GTK_CHECK([$with_gtk])
   PKG_CHECK_MODULES(GLIB, glib-2.0)
   AC_SUBST(GLIB_CFLAGS)
   AC_SUBST(GLIB_LIBS)
   AC_SUBST(GTK_CFLAGS)
   AC_SUBST(GTK_LIBS)
 
-  PKG_CHECK_MODULES(MOZILLA, mozilla-plugin)
-    
+  PKG_CHECK_MODULES(MOZILLA, npapi-sdk, [
+    AC_CACHE_CHECK([for xulrunner version], [xulrunner_cv_collapsed_version],[
+      # XXX: use NPAPI versions instead
+      xulrunner_cv_collapsed_version=20000000
+    ])
+  ], [
+    PKG_CHECK_MODULES(MOZILLA, mozilla-plugin)
+  ])
+
   AC_SUBST(MOZILLA_CFLAGS)
   AC_SUBST(MOZILLA_LIBS)
 fi
@@ -389,6 +434,9 @@ then
     if pkg-config --modversion libxul >/dev/null 2>&1
     then
       xulrunner_cv_collapsed_version=`pkg-config --modversion libxul | awk -F. '{power=6; v=0; for (i=1; i <= NF; i++) {v += $i * 10 ^ power; power -=2}; print v}'`
+    elif pkg-config --modversion mozilla-plugin >/dev/null 2>&1
+    then
+      xulrunner_cv_collapsed_version=`pkg-config --modversion mozilla-plugin | awk -F. '{power=6; v=0; for (i=1; i <= NF; i++) {v += $i * 10 ^ power; power -=2}; print v}'`
     else
       AC_MSG_FAILURE([cannot determine xulrunner version])
     fi])
@@ -482,6 +530,30 @@ AC_ARG_WITH([pkgversion],
 AC_MSG_RESULT([${PKGVERSION}])
 AM_CONDITIONAL(HAS_PKGVERSION, test "x${PKGVERSION}" != "xnone") 
 AC_SUBST(PKGVERSION)
+])
+
+AC_DEFUN_ONCE([IT_CHECK_GLIB_VERSION],[
+   PKG_CHECK_MODULES([GLIB2_V_216],[glib-2.0 >= 2.16],[],[AC_DEFINE([LEGACY_GLIB])])
+ ])
+
+AC_DEFUN_ONCE([IT_CHECK_XULRUNNER_API_VERSION],
+[
+  AC_MSG_CHECKING([for legacy xulrunner api])
+  AC_LANG_PUSH(C++)
+  CXXFLAGS_BACKUP=$CXXFLAGS
+  CXXFLAGS=$CXXFLAGS" "$MOZILLA_CFLAGS
+  AC_TRY_COMPILE([
+    #include <npfunctions.h>
+    const  char* NP_GetMIMEDescription ()
+    {return (char*) "yap!";}
+  ],[],[
+    AC_MSG_RESULT(no)
+  ],[
+    AC_MSG_RESULT(yes)
+    AC_DEFINE([LEGACY_XULRUNNERAPI])
+  ])
+  CXXFLAGS=$CXXFLAGS_BACKUP
+  AC_LANG_POP(C++)
 ])
 
 AC_DEFUN([IT_CHECK_WITH_GCJ],
@@ -642,6 +714,69 @@ AC_DEFUN_ONCE([IT_FIND_JAVA],
   fi
   AC_MSG_RESULT(${JAVA})
   AC_SUBST(JAVA)
+  JAVA_VERSION=`$JAVA -version 2>&1 | sed -n '1s/@<:@^"@:>@*"\(.*\)"$/\1/p'`
+  case "${JAVA_VERSION}" in
+    1.7*) VERSION_DEFS='-DHAVE_JAVA7';;
+  esac
+  AC_SUBST(VERSION_DEFS)
+])
+
+AC_DEFUN_ONCE([IT_FIND_KEYTOOL],
+[
+  AC_REQUIRE([IT_CHECK_FOR_JDK])
+  AC_MSG_CHECKING([for keytool])
+  AC_ARG_WITH([keytool],
+              [AS_HELP_STRING(--with-keytool,specify location of keytool for signed part of run-netx-dist)],
+  [
+    if test "${withval}" = "yes" ; then 
+      KEYTOOL=${SYSTEM_JDK_DIR}/bin/keytool  
+    else 
+      KEYTOOL="${withval}"
+    fi
+  ],
+  [
+    KEYTOOL=${SYSTEM_JDK_DIR}/bin/keytool
+  ])
+  if ! test -f "${KEYTOOL}"; then
+    AC_PATH_PROG(KEYTOOL, keytool)
+  fi
+  if ! test -f "${KEYTOOL}"; then
+    KEYTOOL=""
+  fi
+  if test -z "${KEYTOOL}" ; then
+     AC_MSG_WARN("keytool not found so signed part of run-netx-dist will fail")
+  fi
+  AC_MSG_RESULT(${KEYTOOL})
+  AC_SUBST(KEYTOOL)
+])
+
+AC_DEFUN_ONCE([IT_FIND_JARSIGNER],
+[
+  AC_REQUIRE([IT_CHECK_FOR_JDK])
+  AC_MSG_CHECKING([for jarsigner])
+  AC_ARG_WITH([jarsigner],
+              [AS_HELP_STRING(--with-jarsigner,specify location of jarsigner for signed part od run-netx-dist)],
+  [
+    if test "${withval}" = "yes" ; then 
+      JARSIGNER=${SYSTEM_JDK_DIR}/bin/jarsigner  
+    else 
+      JARSIGNER="${withval}"
+    fi
+  ],
+  [
+    JARSIGNER=${SYSTEM_JDK_DIR}/bin/jarsigner
+  ])
+  if ! test -f "${JARSIGNER}"; then
+    AC_PATH_PROG(JARSIGNER, jarsigner,"")
+  fi
+  if ! test -f "${JARSIGNER}"; then
+    JARSIGNER=""
+  fi
+  if test -z "${JARSIGNER}"; then
+     AC_MSG_WARN("jarsigner not found so signed part of run-netx-dist will fail")
+  fi
+  AC_MSG_RESULT(${JARSIGNER})
+  AC_SUBST(JARSIGNER)
 ])
 
 AC_DEFUN([IT_FIND_JAVADOC],
@@ -782,4 +917,70 @@ AC_DEFUN_ONCE([IT_SET_VERSION],
   FULL_VERSION="${PACKAGE_VERSION}${ICEDTEA_REV}${ICEDTEA_PKG}"
   AC_MSG_RESULT([${FULL_VERSION}])
   AC_SUBST([FULL_VERSION])
+])
+
+dnl Allows you to configure (enable/disable/set path to) the browser
+dnl REQUIRED Parameters: 
+dnl [browser name, variable to store path, default command to run browser (if not provided, assume it's the same as the browser name]
+AC_DEFUN([IT_FIND_BROWSER],
+[
+  AC_ARG_WITH([$1],
+              [AS_HELP_STRING(--with-$1,specify the location of $1)],
+  [
+   if test "${withval}" = "no" || test "${withval}" = "yes" || test "${withval}" = "" ; then
+    $2=""
+   elif test -f "${withval}" ; then
+    $2="${withval}"
+   else 
+    AC_MSG_CHECKING([for $1])
+    AC_MSG_RESULT([not found])
+    AC_MSG_FAILURE([invalid location specified to $1: ${withval}])
+   fi
+  ],
+  [
+   withval="yes"
+  ])
+
+  if test -f "${$2}"; then
+   AC_MSG_CHECKING([for $1])
+   AC_MSG_RESULT([${$2}])
+  elif test "${withval}" != "no"; then
+   if test $# -gt 2; then
+    AC_PATH_TOOL([$2], [$3], [], [])  
+   else
+    AC_PATH_TOOL([$2], [$1], [], [])
+   fi
+  else
+   AC_MSG_CHECKING([for $1])        
+   AC_MSG_RESULT([no])
+  fi
+])
+
+AC_DEFUN_ONCE([IT_SET_GLOBAL_BROWSERTESTS_BEHAVIOUR],
+[
+  AC_MSG_CHECKING([how browser test will be run])
+  AC_ARG_WITH([browser-tests],
+             [AS_HELP_STRING([--with-browser-tests],
+                              [yes - as defined (default), no - all browser tests will be skipped, one - all "mutiple browsers" test will behave as "one" test, all - all browser tests will be run for all set browsers])],
+             [
+               BROWSER_SWITCH=${withval}
+             ],
+             [
+               BROWSER_SWITCH="yes"
+             ])
+  D_PARAM_PART="-Dmodified.browsers.run"
+  case "$BROWSER_SWITCH" in
+    "yes" )
+        BROWSER_TESTS_MODIFICATION="" ;;
+    "no" )
+        BROWSER_TESTS_MODIFICATION="$D_PARAM_PART=ignore" ;;
+    "one" )
+        BROWSER_TESTS_MODIFICATION="$D_PARAM_PART=one" ;;
+    "all" )
+        BROWSER_TESTS_MODIFICATION="$D_PARAM_PART=all" ;;
+    *) 
+        AC_MSG_ERROR([unknown valkue of with-browser-tests ($BROWSER_SWITCH), so not use (yes) or set yes|no|one|all])
+  esac
+  AC_MSG_RESULT(${BROWSER_SWITCH})
+  AC_SUBST(BROWSER_TESTS_MODIFICATION)
 ])
