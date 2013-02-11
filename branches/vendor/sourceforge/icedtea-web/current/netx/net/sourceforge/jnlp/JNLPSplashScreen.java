@@ -10,12 +10,13 @@ import java.io.IOException;
 import java.net.URL;
 
 import javax.imageio.ImageIO;
-import javax.swing.JFrame;
+import javax.swing.JDialog;
 
 import net.sourceforge.jnlp.cache.ResourceTracker;
 import net.sourceforge.jnlp.runtime.JNLPRuntime;
+import net.sourceforge.jnlp.util.ImageResources;
 
-public class JNLPSplashScreen extends JFrame {
+public class JNLPSplashScreen extends JDialog {
 
     String applicationTitle;
     String applicationVendor;
@@ -27,6 +28,8 @@ public class JNLPSplashScreen extends JFrame {
 
     public JNLPSplashScreen(ResourceTracker resourceTracker,
             String applicationTitle, String applicationVendor) {
+
+        setIconImages(ImageResources.INSTANCE.getApplicationImages());
 
         // If the JNLP file does not contain any icon images, the splash image
         // will consist of the application's title and vendor, as taken from the

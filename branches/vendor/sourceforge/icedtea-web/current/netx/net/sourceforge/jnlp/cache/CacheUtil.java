@@ -47,8 +47,8 @@ import net.sourceforge.jnlp.util.PropertiesFile;
  */
 public class CacheUtil {
 
-    private static final String cacheDir = new File(JNLPRuntime.getConfiguration()
-            .getProperty(DeploymentConfiguration.KEY_USER_CACHE_DIR)).getPath(); // Do this with file to standardize it.
+    private static final String setCacheDir = JNLPRuntime.getConfiguration().getProperty(DeploymentConfiguration.KEY_USER_CACHE_DIR);
+    private static final String cacheDir = new File(setCacheDir != null ? setCacheDir : System.getProperty("java.io.tmpdir")).getPath(); // Do this with file to standardize it.
     private static final CacheLRUWrapper lruHandler = CacheLRUWrapper.getInstance();
     private static final HashMap<String, FileLock> propertiesLockPool = new HashMap<String, FileLock>();
 
@@ -61,22 +61,40 @@ public class CacheUtil {
      * ie sourceforge.net and www.sourceforge.net).
      */
     public static boolean urlEquals(URL u1, URL u2) {
-        if (u1 == u2)
+        if (u1 == u2) {
             return true;
-        if (u1 == null || u2 == null)
+        }
+        if (u1 == null || u2 == null) {
             return false;
+        }
 
-        if (!compare(u1.getProtocol(), u2.getProtocol(), true) ||
-                !compare(u1.getHost(), u2.getHost(), true) ||
-                //u1.getDefaultPort() != u2.getDefaultPort() || // only in 1.4
-                !compare(u1.getPath(), u2.getPath(), false) ||
-                !compare(u1.getQuery(), u2.getQuery(), false) ||
-                !compare(u1.getRef(), u2.getRef(), false))
-            return false;
-        else
+        if (notNullUrlEquals(u1, u2)) {
             return true;
+        }
+        try {
+            URL nu1 = ResourceTracker.normalizeUrl(u1, false);
+            URL nu2 = ResourceTracker.normalizeUrl(u2, false);
+            if (notNullUrlEquals(nu1, nu2)) {
+                return true;
+            }
+        } catch (Exception ex) {
+            //keep silent here and return false
+        }
+        return false;
     }
 
+    private static boolean notNullUrlEquals(URL u1, URL u2) {
+        if (!compare(u1.getProtocol(), u2.getProtocol(), true)
+                || !compare(u1.getHost(), u2.getHost(), true)
+                || //u1.getDefaultPort() != u2.getDefaultPort() || // only in 1.4
+                !compare(u1.getPath(), u2.getPath(), false)
+                || !compare(u1.getQuery(), u2.getQuery(), false)
+                || !compare(u1.getRef(), u2.getRef(), false)) {
+            return false;
+        } else {
+            return true;
+        }
+    }
     /**
      * Caches a resource and returns a URL for it in the cache;
      * blocks until resource is cached.  If the resource location is
@@ -144,16 +162,16 @@ public class CacheUtil {
      * process is using them can be quite disasterous. Hence why Launcher creates lock files
      * and we check for those by calling {@link #okToClearCache()}
      */
-    public static void clearCache() {
+    public static boolean clearCache() {
 
         if (!okToClearCache()) {
             System.err.println(R("CCannotClearCache"));
-            return;
+            return false;
         }
 
         File cacheDir = new File(CacheUtil.cacheDir);
         if (!(cacheDir.isDirectory())) {
-            return;
+            return false;
         }
 
         if (JNLPRuntime.isDebug()) {
@@ -165,6 +183,7 @@ public class CacheUtil {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+        return true;
     }
 
     /**
@@ -306,8 +325,8 @@ public class CacheUtil {
             cacheFile = getCacheFileIfExist(urlToPath(source, ""));
             if (cacheFile == null) { // We did not find a copy of it.
                 cacheFile = makeNewCacheFile(source, version);
-            }
-            lruHandler.store();
+            } else
+                lruHandler.store();
             lruHandler.unlock();
         }
         return cacheFile;
@@ -328,12 +347,10 @@ public class CacheUtil {
                 final String key = e.getKey();
                 final String path = e.getValue();
 
-                if (path != null) {
-                    if (pathToURLPath(path).equals(urlPath.getPath())) { // Match found.
-                        cacheFile = new File(path);
-                        lruHandler.updateEntry(key);
-                        break; // Stop searching since we got newest one already.
-                    }
+                if (pathToURLPath(path).equals(urlPath.getPath())) { // Match found.
+                    cacheFile = new File(path);
+                    lruHandler.updateEntry(key);
+                    break; // Stop searching since we got newest one already.
                 }
             }
             return cacheFile;
@@ -483,9 +500,9 @@ public class CacheUtil {
 
             // only resources not starting out downloaded are displayed
             List<URL> urlList = new ArrayList<URL>();
-            for (int i = 0; i < resources.length; i++) {
-                if (!tracker.checkResource(resources[i]))
-                    urlList.add(resources[i]);
+            for (URL url : resources) {
+                if (!tracker.checkResource(url))
+                    urlList.add(url);
             }
             URL undownloaded[] = urlList.toArray(new URL[urlList.size()]);
 
@@ -495,28 +512,29 @@ public class CacheUtil {
                 long read = 0;
                 long total = 0;
 
-                for (int i = 0; i < undownloaded.length; i++) {
+                for (URL url : undownloaded) {
                     // add in any -1's; they're insignificant
-                    total += tracker.getTotalSize(undownloaded[i]);
-                    read += tracker.getAmountRead(undownloaded[i]);
+                    total += tracker.getTotalSize(url);
+                    read += tracker.getAmountRead(url);
                 }
 
                 int percent = (int) ((100 * read) / Math.max(1, total));
 
-                for (int i = 0; i < undownloaded.length; i++)
-                    listener.progress(undownloaded[i], "version",
-                                      tracker.getAmountRead(undownloaded[i]),
-                                      tracker.getTotalSize(undownloaded[i]),
+                for (URL url : undownloaded) {
+                    listener.progress(url, "version",
+                                      tracker.getAmountRead(url),
+                                      tracker.getTotalSize(url),
                                       percent);
+                }
             } while (!tracker.waitForResources(resources, indicator.getUpdateRate()));
 
             // make sure they read 100% until indicator closes
-            for (int i = 0; i < undownloaded.length; i++)
-                listener.progress(undownloaded[i], "version",
-                                  tracker.getTotalSize(undownloaded[i]),
-                                  tracker.getTotalSize(undownloaded[i]),
+            for (URL url : undownloaded) {
+                listener.progress(url, "version",
+                                  tracker.getTotalSize(url),
+                                  tracker.getTotalSize(url),
                                   100);
-
+            }
         } catch (InterruptedException ex) {
             if (JNLPRuntime.isDebug())
                 ex.printStackTrace();
@@ -530,6 +548,7 @@ public class CacheUtil {
      * This will remove all old cache items.
      */
     public static void cleanCache() {
+
         if (okToClearCache()) {
             // First we want to figure out which stuff we need to delete.
             HashSet<String> keep = new HashSet<String>();
@@ -548,57 +567,55 @@ public class CacheUtil {
             for (Entry<String, String> e : lruHandler.getLRUSortedEntries()) {
                 // Check if the item is contained in cacheOrder.
                 final String key = e.getKey();
-                final String value = e.getValue();
+                final String path = e.getValue();
 
-                if (value != null) {
-                    File file = new File(value);
-                    PropertiesFile pf = new PropertiesFile(new File(value + ".info"));
-                    boolean delete = Boolean.parseBoolean(pf.getProperty("delete"));
+                File file = new File(path);
+                PropertiesFile pf = new PropertiesFile(new File(path + ".info"));
+                boolean delete = Boolean.parseBoolean(pf.getProperty("delete"));
 
-                    /*
-                     * This will get me the root directory specific to this cache item.
-                     * Example:
-                     *  cacheDir = /home/user1/.icedtea/cache
-                     *  file.getPath() = /home/user1/.icedtea/cache/0/http/www.example.com/subdir/a.jar
-                     *  rStr first becomes: /0/http/www.example.com/subdir/a.jar
-                     *  then rstr becomes: /home/user1/.icedtea/cache/0
-                     */
-                    String rStr = file.getPath().substring(cacheDir.length());
-                    rStr = cacheDir + rStr.substring(0, rStr.indexOf(File.separatorChar, 1));
-                    long len = file.length();
+                /*
+                 * This will get me the root directory specific to this cache item.
+                 * Example:
+                 *  cacheDir = /home/user1/.icedtea/cache
+                 *  file.getPath() = /home/user1/.icedtea/cache/0/http/www.example.com/subdir/a.jar
+                 *  rStr first becomes: /0/http/www.example.com/subdir/a.jar
+                 *  then rstr becomes: /home/user1/.icedtea/cache/0
+                 */
+                String rStr = file.getPath().substring(cacheDir.length());
+                rStr = cacheDir + rStr.substring(0, rStr.indexOf(File.separatorChar, 1));
+                long len = file.length();
 
-                    if (keep.contains(file.getPath().substring(rStr.length()))) {
-                        lruHandler.removeEntry(key);
-                        continue;
-                    }
-                    
-                    /*
-                     * we remove entries from our lru if any of the following condition is met.
-                     * Conditions:
-                     *  - delete: file has been marked for deletion.
-                     *  - !file.isFile(): if someone tampered with the directory, file doesn't exist.
-                     *  - maxSize >= 0 && curSize + len > maxSize: If a limit was set and the new size
-                     *  on disk would exceed the maximum size.
-                     */
-                    if (delete || !file.isFile() || (maxSize >= 0 && curSize + len > maxSize)) {
-                        lruHandler.removeEntry(key);
-                        remove.add(rStr);
-                    } else {
-                        curSize += len;
-                        keep.add(file.getPath().substring(rStr.length()));
+                if (keep.contains(file.getPath().substring(rStr.length()))) {
+                    lruHandler.removeEntry(key);
+                    continue;
+                }
 
-                        for (File f : file.getParentFile().listFiles()) {
-                            if (!(f.equals(file) || f.equals(pf.getStoreFile()))){
-                                try {
-                                    FileUtils.recursiveDelete(f, f);
-                                } catch (IOException e1) {
-                                    e1.printStackTrace();
-                                }
-                            }
+                /*
+                 * we remove entries from our lru if any of the following condition is met.
+                 * Conditions:
+                 *  - delete: file has been marked for deletion.
+                 *  - !file.isFile(): if someone tampered with the directory, file doesn't exist.
+                 *  - maxSize >= 0 && curSize + len > maxSize: If a limit was set and the new size
+                 *  on disk would exceed the maximum size.
+                 */
+                if (delete || !file.isFile() || (maxSize >= 0 && curSize + len > maxSize)) {
+                    lruHandler.removeEntry(key);
+                    remove.add(rStr);
+                    continue;
+                }
+
+                curSize += len;
+                keep.add(file.getPath().substring(rStr.length()));
+
+                for (File f : file.getParentFile().listFiles()) {
+                    if (!(f.equals(file) || f.equals(pf.getStoreFile()))) {
+                        try {
+                            FileUtils.recursiveDelete(f, f);
+                        } catch (IOException e1) {
+                            e1.printStackTrace();
                         }
                     }
-                } else {
-                    lruHandler.removeEntry(key);
+
                 }
             }
             lruHandler.store();

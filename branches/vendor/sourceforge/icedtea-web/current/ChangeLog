@@ -1,7 +1,2286 @@
-2011-08-31  Deepak Bhole <dbhole@redhat.com>
+2012-08-27  Deepak Bhole <dbhole@redhat.com>
 
-	* NEWS: Prepare for 1.1.2
-	* configure.ac: Same
+	* configure.ac: Prepare for 1.3
+	* NEWS: Same
+
+2012-08-27  Deepak Bhole <dbhole@redhat.com>
+
+	* netx/net/sourceforge/jnlp/runtime/JNLPClassLoader.java
+	(getAccessControlContextForClassLoading): Catch ClassCircularityErrors and
+	ignore them (thus denying permission to caller).
+
+2012-08-13  Jiri Vanek  <jvanek@redhat.com>
+
+	* tests/test-extensions/net/sourceforge/jnlp/ServerAccess.java:
+	(executeProcessUponURL)Fixed wrong call in previous commit which was
+	causing null process name.
+	* tests/reproducers/simple/AppletTest/testcases/AppletTestTests.java:
+	Removed unused import.
+
+2012-08-13  Jiri Vanek  <jvanek@redhat.com>
+
+	Reproducers of PR955
+	* tests/reproducers/simple/LocalisedInformationElement/resources/LocalisedInformationElement1.jnlp:
+	* tests/reproducers/simple/LocalisedInformationElement/resources/LocalisedInformationElement2.jnlp:
+	* tests/reproducers/simple/LocalisedInformationElement/resources/LocalisedInformationElement3.jnlp:
+	* tests/reproducers/simple/LocalisedInformationElement/resources/LocalisedInformationElement4.jnlp:
+	Test jnlp files with various combinations of locales, reproducers of PR955.
+	* tests/reproducers/simple/LocalisedInformationElement/resources/LocalisedInformationElement_noLoc.jnlp
+	Jnlp file with which is not affected by PR955 and is helping to catch error in LOCALE changing hack
+	* tests/reproducers/simple/LocalisedInformationElement/srcs/LocalisedInformationElement.java:
+	Reproducer main class, after loading prints out default locale.
+	* tests/reproducers/simple/LocalisedInformationElement/testcases/LocalisedInformationElementTest.java:
+	Testcases launching above jnlps under various locales.
+	* tests/test-extensions/net/sourceforge/jnlp/ServerAccess.java:
+	Added set of methods allowing passing of custom variables to ThreadedProcess.
+	* tests/test-extensions/net/sourceforge/jnlp/ThreadedProcess.java:
+	Added processing of custom variables.
+
+2012-08-22  Danesh Dadachanji  <ddadacha@redhat.com>
+
+	Fix PR955: regression: SweetHome3D fails to run
+	* NEWS: Added entry for PR955
+	* netx/net/sourceforge/jnlp/JNLPFile.java: New enum Match that represents
+	the level of precision to use when matching locales.
+	(localMatches): Renamed to localeMatches, added matchLevel paramater
+	and updated conditionals to handle the level of precision specified by it.
+	(getVendor): New method that returns an information's vendor text.
+	(getInformation): Added override methods for getTitle and getVendor
+	that are used by the anonymous class to filter by locale. All three
+	methods now go through all levels of precision to search for the best
+	fitted locale.
+	(getResources), (getResourcesDescs): Updated to check if any level of
+	precision matches when searching for locales.
+	(parse): Added call to checkForTitleVendor.
+	* netx/net/sourceforge/jnlp/Parser.java
+	(checkForTitleVendor): New method to check for availability of localized
+	title and vendor from the information tags. Throws ParseException.
+	(getInfo): Replace loop with foreach loop.
+	(getInformationDesc): Remove check for present title and vendor.
+	(getLocale): Variant returned can now use everything after the eigth
+	element of the locale's string.
+	* netx/net/sourceforge/jnlp/resources/Messages.properties:
+	Update missing title and vendor messages to mention localization.
+	* tests/reproducers/simple/InformationTitleVendorParser/testcases/InformationTitleVendorParserTest.java:
+	Update output string as per new changes to Messages internationalizations.
+	* tests/netx/unit/net/sourceforge/jnlp/JNLPFileTest.java:
+	New unit test that checks the localesMatches method in JNLPFile.
+	* tests/netx/unit/net/sourceforge/jnlp/MockJNLPFile.java:
+	New class used to create a mock JNLPFile object.
+	* tests/netx/unit/net/sourceforge/jnlp/ParserTest.java:
+	New unit test that checks that the return of getTitle and getVendor
+	have localized information.
+
+2012-08-21  Jiri Vanek  <jvanek@redhat.com>
+
+	* tests/test-extensions/net/sourceforge/jnlp/ProcessAssasin.java:
+	(sigInt), (sigKill), (sigTerm) new methods for various killing of
+	processes by kill.
+	(kill) new method, launching kill process.
+	(destroyProcess	) is now calling sigInt instead of unwrapped sigTerm.
+
+2012-08-21  Jiri Vanek  <jvanek@redhat.com>
+
+	* launcher/javaws.in: java is now launched by exec
+
+2012-08-17  Adam Domurad  <adomurad@redhat.com>
+
+	Fixes PR588, cookies set in the java cookie jar are now stored properly
+	* plugin/icedteanp/IcedTeaNPPlugin.cc
+	(set_cookie_info): New, uses setvalueforurl
+	(consume_plugin_message): Additional message added allowing 
+	set_cookie_info to be used from the java side.
+	* plugin/icedteanp/java/sun/applet/PluginCookieManager.java: Now
+	overrides put method, results in set_cookie_info calls in C++
+	* plugin/icedteanp/java/sun/applet/PluginMain.java: Passes
+	PluginStreamHandler to PluginCookieManager to allow C++ side
+	communication
+
+2012-08-17  Adam Domurad  <adomurad@redhat.com>
+
+	* plugin/icedteanp/IcedTeaNPPlugin.cc
+	(consume_plugin_message): New, called by consume_message, handles
+	cookie and proxy info retrieval, and setting cookie info
+	(consume_message): Call consume_plugin_message for "plugin ..."
+	messages
+
+2012-08-17  Adam Domurad  <adomurad@redhat.com>
+
+	Reproducers for PR588, sets persistent and session cookies in the 
+	cookie jar and tries to read them with various means.
+	* tests/reproducers/signed/SavingCookies/resources/CheckCookie.html:
+	Print the cookie store contents
+	* tests/reproducers/signed/SavingCookies/resources/CheckCookieAndGotoClear.html:
+	Print the cookie store contents, and then go to 
+	ClearPersistentCookie.html with showDocument
+	* tests/reproducers/signed/SavingCookies/resources/ClearPersistentCookie.html:
+	Clear the test cookie so it does not interfere with further tests
+	* tests/reproducers/signed/SavingCookies/resources/SavePersistentCookie.html:
+	Create a persistent cookie
+	* tests/reproducers/signed/SavingCookies/resources/SavePersistentCookieAndGotoCheck.html:
+	Create a persistent cookie and check it with showDocument
+	* tests/reproducers/signed/SavingCookies/resources/SaveSessionCookie.html:
+	Create a session cookie
+	* tests/reproducers/signed/SavingCookies/resources/SaveSessionCookieAndGotoCheck.html:
+	Create a session cookie and check it with showDocument
+	* tests/reproducers/signed/SavingCookies/srcs/CheckingCookies.java:
+	Checks the contents of the cookie store.
+	Depending on the test, this may go to another page upon completion.
+	* tests/reproducers/signed/SavingCookies/srcs/SavingCookies.java:
+	Store cookies in the java cookie store. Depending on the test, this may
+	go to another page upon completion.
+	* tests/reproducers/signed/SavingCookies/testcases/SavingCookiesTests.java
+	Test driver for testing persistent and session cookies in different 
+	ways
+
+2012-08-18  Jiri Vanek  <jvanek@redhat.com>
+
+	* tests/test-extensions/net/sourceforge/jnlp/ServerAccess.java: added 
+	VERBOSE_OPTION constant with -verbose value for javaws launching.
+
+2012-08-17  Jiri Vanek  <jvanek@redhat.com>
+
+	* tests/reproducers/simple/deadlocktest/testcases/DeadLockTestTest.java:
+	(testDeadLockTestTerminatedBody) removed tests for killed-process and
+	termination of remaining javas put on correct place.
+	* tests/test-extensions/net/sourceforge/jnlp/ServerAccess.java:
+	(executeBrowser)  stout and stderr listeners forwarded to next method in
+	correct order.
+
+2012-08-14  Danesh Dadachanji  <ddadacha@redhat.com>
+
+	Small addition to NEWS entry and bug annotation indicating the PR975 fix.
+	* NEWS: Add entry for PR975
+	* tests/reproducers/signed/ClasspathManifestTest/testcases/ClasspathManifestTest.java:
+	Add bug annotation for PR975.
+
+2012-08-14  Danesh Dadachanji  <ddadacha@redhat.com>
+
+	Classpaths in jars' manifests are only considered when the applet is run
+	without using jnlp_href and a JNLP file.
+	* netx/net/sourceforge/jnlp/runtime/JNLPClassLoader.java (activateJars):
+	Add conditional check for use of jnlp_href.
+	* tests/reproducers/signed/Classpath.Manifest.Test.Helper/srcs/CheckForClasspath.java:
+	Applet whose jar is stored in a subdir under the test engine server.
+	* tests/reproducers/signed/ClasspathManifestTest/resources/ClasspathManifestAppletTest.html:
+	* tests/reproducers/signed/ClasspathManifestTest/resources/ClasspathManifestAppletTest.jnlp:
+	* tests/reproducers/signed/ClasspathManifestTest/resources/ClasspathManifestApplicationTest.jnlp:
+	* tests/reproducers/signed/ClasspathManifestTest/resources/ClasspathManifestJNLPHrefTest.html:
+	* tests/reproducers/signed/ClasspathManifestTest/srcs/ClasspathManifest.java:
+	* tests/reproducers/signed/ClasspathManifestTest/srcs/META-INF/MANIFEST.MF:
+	* tests/reproducers/signed/ClasspathManifestTest/testcases/ClasspathManifestTest.java:
+	Test if manifest entry is searched for classpath only when in the plugin
+	is run without using jnlp_href.
+
+2012-08-14  Adam Domurad  <adomurad@redhat.com>
+
+	Reproducer for allowing unsigned content in META-INF/ folder. 
+	Derives from ReadPropertiesSigned test's signed jar.
+	* tests/reproducers/custom/UnsignedContentInMETAINF/resources/UnsignedContentInMETAINF.jnlp:
+	New, runs a modified version of ReadPropertiesSigned.jar (UnsignedContentInMETAINF.jar)
+	* tests/reproducers/custom/UnsignedContentInMETAINF/srcs/META-INF/unsigned_file_in_metainf: 
+	New, placed into a modified version of ReadPropertiesSigned.jar 
+	(UnsignedContentInMETAINF.jar) so that there is unsigned content in the
+	META-INF/ folder.
+	* tests/reproducers/custom/UnsignedContentInMETAINF/srcs/Makefile:
+	New, creates a modified version of ReadPropertiesSigned.jar, named 
+	UnsignedContentInMETAINF.jar, and places unsigned content inside its 
+	META-INF/ folder
+	* tests/reproducers/custom/UnsignedContentInMETAINF/testcases/UnsignedContentInMETAINF.java: 
+	Test driver for jnlp file
+
+2012-08-14  Adam Domurad  <adomurad@redhat.com>
+
+	Unit test for method in JCV, isMetaInfFile()
+	* netx/net/sourceforge/jnlp/tools/JarCertVerifier.java: 
+	Made isMetaInfFile package-private for testing purposes.
+	* tests/netx/unit/net/sourceforge/jnlp/tools/JarCertVerifierTest.java:
+	New, tests isMetaInfFile
+
+2012-08-07  Adam Domurad  <adomurad@redhat.com>
+
+	Fixes PR1106, plugin crashing with firefox + archlinux/gentoo
+	* plugin/icedteanp/IcedTeaNPPlugin.cc
+	(initialize_browser_functions): Account for the fact that
+	browserTable->size can be larger than sizeof(NPNetscapeFuncs)
+
+2012-07-31  Jiri Vanek  <jvanek@redhat.com>
+            Peter Hatina  <phatina@redhat.com>
+
+	Introduced configure option --with-gtk=2|3|default to be able
+	to compile against different version of GTK+ (2.x or 3.x).
+	* NEWS: mentioned bug fix
+	* acinclude.m4: (ITW_GTK_CHECK_VERSION) macro for getting GTK+ version
+	(ITW_GTK_CHECK) macro for checking GTK+ version
+
+2012-07-24  Adam Domurad  <adomurad@redhat.com>
+
+	CVE-2012-3422, RH840592: Potential read from an uninitialized
+	memory location.
+	* plugin/icedteanp/IcedTeaNPPlugin.cc
+	(get_cookie_info): Only attempt to perform this operation if there is a
+	valid plugin instance
+	(get_proxy_info): Only attempt to perform this operation if there is a
+	valid plugin instance
+
+2012-07-24  Adam Domurad  <adomurad@redhat.com>
+
+	* plugin/icedteanp/IcedTeaPluginUtils.cc
+	(IcedTeaPluginUtilities::strSplit): Replace usage of " " with proper 
+	delimiter
+
+2012-07-24  Adam Domurad  <adomurad@redhat.com>
+
+	Refactor JNLPFile#launchType into its own interface type (as opposed to
+	Object), LaunchDesc.
+	* netx/net/sourceforge/jnlp/AppletDesc.java: Add override annotation to
+	getMainClass().
+	* netx/net/sourceforge/jnlp/ApplicationDesc.java: Same as above
+	* netx/net/sourceforge/jnlp/InstallerDesc.java: Same as above
+	* netx/net/sourceforge/jnlp/JNLPFile.java: Make launchType a 
+	LaunchDesc object. Update getLaunchInfo() accordingly.
+	* netx/net/sourceforge/jnlp/LaunchDesc.java: New launch description. 
+	* netx/net/sourceforge/jnlp/Parser.java
+	(getLauncher): Return type changed to LaunchDesc
+	* netx/net/sourceforge/jnlp/runtime/JNLPClassLoader.java: Replace
+	occurences of instanceof with respect to launchType.
+
+2012-07-18  Danesh Dadachanji  <ddadacha@redhat.com>
+
+	Fix RH838417, Fix RH838559: Disambiguate signed applet security prompt
+	from certificate warning.
+	* NEWS: Added entries for RH838417 and RH838559.
+	* netx/net/sourceforge/jnlp/resources/Messages.properties:
+	Added SWarnFullPermissionsIgnorePolicy and updated SHttpsUnverified.
+	* netx/net/sourceforge/jnlp/security/CertWarningPane.java: Display
+	SWarnFullPermissionsIgnorePolicy if the cert is from a jar and is either
+	unverified or has a signing error. Also added warning.png to HTTPS dialogs.
+
+2012-07-11  Jiri Vanek  <jvanek@redhat.com>
+
+	try to close browser before kill it
+	* tests/reproducers/signed/AppletTestSigned/testcases/AppletTestSignedTests.java:
+	* tests/reproducers/simple/AppletTest/testcases/AppletTestTests.java:
+	* tests/reproducers/simple/CheckServices/testcases/CheckServicesTests.java
+	(evaluateSignedApplet) addapted to properly closed browser
+	* tests/reproducers/simple/CheckServices/srcs/CheckServices.java:
+	removed fixme section as it shuld work now	
+	* tests/test-extensions/net/sourceforge/jnlp/ProcessAssasin.java
+	(destroyProcess) new method, launching kill with SIGTERM before clasical
+	process.destroy()
+	* tests/test-extensions/net/sourceforge/jnlp/ServerAccess.java:
+	removed Set<Thread> terminated, should be removed long ago
+
+2012-07-09  Saad Mohammad  <smohammad@redhat.com>
+
+	* netx/net/sourceforge/jnlp/runtime/JNLPClassLoader.java (initializeExtensions):
+	Checks and assigns the main-class name prior to the for loop.
+
+2012-07-09  Martin Olsson  <martin@minimum.se>
+
+	* plugin/icedteanp/IcedTeaPluginUtils.cc: Change calls from g_free
+	to free when allocated with calloc.
+	* plugin/icedteanp/IcedTeaPluginRequestProcessor.cc
+	(PluginRequestProcessor::call): Make sure args_array doesnt hold 
+	garbage when freed.
+	(_loadURL): Change calls from g_free to free when allocated with 
+	calloc.
+
+2012-07-09  Adam Domurad  <adomurad@redhat.com>
+
+	Ignore invalid jar files in applets, like the oracle plugin does.
+	* netx/net/sourceforge/jnlp/cache/IllegalResourceDescriptorException.java:
+	New exception type for ResourceTracker to throw instead of
+	IllegalArgumentException 
+	* netx/net/sourceforge/jnlp/cache/IllegalResourceDescriptorException.java:
+	Throws IllegalArgumentDescriptorException instead of 
+	IllegalArgumentException.
+	* netx/net/sourceforge/jnlp/runtime/JNLPClassLoader.java: 
+	(isInvalidJar): New, checks for ZipException in new JarFile(...)
+	(shouldFilterInvalidJars): New, checks if we are in an applet
+	(initializeResources): if 'shouldFilterInvalidJars()' is true and a jar
+	is not a valid jar file, the jar is filtered out and normal execution 
+	continues.
+
+2012-07-03  Saad Mohammad  <smohammad@redhat.com>
+
+	* netx/net/sourceforge/jnlp/runtime/JNLPClassLoader.java:
+	(JNLPClassLoader): New constructor that accepts an additional parameter
+	containing the main class name.
+	(getInstance): Accepts mainName as parameter to override application's
+	main class name
+	(initializeExtensions): Passes in the name of the application's main class
+	when creating a new JNLPClassLoader instance.
+	(initializeResources): If the loader owns no jars, it will consider
+	itself as signed if all of the extension loaders are signed. Also, if the
+	extension jars have the main class, it will set foundMainJar to true.
+	(initializeResources): If the main class was not found, check if it was
+	found within the extension jars.
+	(checkForMain): Uses the overwritten main class name (if set) when
+	searching for the main within the jars.
+	(hasMainJar): Returns true if this loader holds the main jar.
+	(hasMainInExtensions): Returns true if extension loaders have the main jar
+	* tests/jnlp_tests/signed/ExtensionJnlp/resources/UsesSignedJarExtension.jnlp:
+	* tests/jnlp_tests/signed/ExtensionJnlp/resources/UsesSignedJnlpExtension.jnlp:
+	* tests/jnlp_tests/signed/ExtensionJnlp/resources/UsesSignedJnlpJarAndSignedJarExtension.jnlp:
+	Launching jnlps that use extension jnlp as its resource.
+	* tests/jnlp_tests/signed/ExtensionJnlp/resources/UsesSignedJar.jnlp:
+	Launching jnlp that directly launches SignedJarResource class.
+	* tests/jnlp_tests/signed/ExtensionJnlp/resources/UsesSignedJnlp.jnlp:
+	Launching jnlp that directly launches SignedJnlpResource class.
+	* tests/jnlp_tests/signed/ExtensionJnlp/testcases/ExtensionJnlpTest.java:
+	Testcase that tests the launching of jnlp files containing extension jnlps
+	as resource.
+	* tests/jnlp_tests/signed/SignedJarResource/resources/SignedJarExtension.jnlp:
+	Component jnlp file that is used as an extension resource.
+	* tests/jnlp_tests/signed/SignedJarResource/srcs/SignedJarResource.java:
+	A simple java class that outputs a string.
+	* tests/jnlp_tests/signed/SignedJnlpResource/resources/UnmatchingSignedJnlpExtension.jnlp:
+	Component jnlp file that is used as an extension resource and does not
+	match the signed jnlp file.
+	* tests/jnlp_tests/signed/SignedJnlpResource/resources/MatchingSignedJnlpExtension.jnlp:
+	Component jnlp file that is used as an extension resource and matches the
+	signed jnlp file.
+	* tests/jnlp_tests/signed/SignedJnlpResource/srcs/JNLP-INF/APPLICATION_TEMPLATE.jnlp:
+	Signed jnlp file.
+	* tests/jnlp_tests/signed/SignedJnlpResource/srcs/SignedJnlpResource.java:
+	A simple java class that outputs a string.
+
+2012-07-02  Jiri Vanek  <jvanek@redhat.com>
+
+	Added missing headers
+	* tests/reproducers/simple/CreateClassLoader/resources/CreateClassLoader.jnlp: 
+	* tests/reproducers/simple/ReadEnvironment/resources/ReadEnvironment.jnlp: 
+	* tests/reproducers/simple/ReadProperties/resources/ReadProperties1.jnlp: 
+	* tests/reproducers/simple/ReadProperties/resources/ReadProperties2.jnlp: 
+	* tests/reproducers/simple/RedirectStreams/resources/RedirectStreams.jnlp: 
+	* tests/reproducers/simple/ReplaceSecurityManager/resources/ReplaceSecurityManager.jnlp: 
+	* tests/reproducers/simple/SetContextClassLoader/resources/SetContextClassLoader.jnlp: 
+	* tests/test-extensions/net/sourceforge/jnlp/ServerAccess.java: 
+	* tests/test-extensions/net/sourceforge/jnlp/annotations/Bug.java: 
+	* tests/test-extensions/net/sourceforge/jnlp/annotations/KnownToFail.java: 
+	* tests/test-extensions/net/sourceforge/jnlp/annotations/NeedsDisplay.java: 
+	* tests/test-extensions/net/sourceforge/jnlp/annotations/TestInBrowsers.java: 
+	* tests/test-extensions/net/sourceforge/jnlp/browsertesting/Browser.java: 
+	* tests/test-extensions/net/sourceforge/jnlp/browsertesting/BrowserFactory.java: 
+	* tests/test-extensions/net/sourceforge/jnlp/browsertesting/BrowserTest.java: 
+	* tests/test-extensions/net/sourceforge/jnlp/browsertesting/BrowserTestRunner.java: 
+	* tests/test-extensions/net/sourceforge/jnlp/browsertesting/Browsers.java: 
+	* tests/test-extensions/net/sourceforge/jnlp/browsertesting/browsers/Chrome.java: 
+	* tests/test-extensions/net/sourceforge/jnlp/browsertesting/browsers/Chromium.java: 
+	* tests/test-extensions/net/sourceforge/jnlp/browsertesting/browsers/Epiphany.java: 
+	* tests/test-extensions/net/sourceforge/jnlp/browsertesting/browsers/Firefox.java: 
+	* tests/test-extensions/net/sourceforge/jnlp/browsertesting/browsers/LinuxBrowser.java: 
+	* tests/test-extensions/net/sourceforge/jnlp/browsertesting/browsers/Midory.java: 
+	* tests/test-extensions/net/sourceforge/jnlp/browsertesting/browsers/MozillaFamilyLinuxBrowser.java: 
+	* tests/test-extensions/net/sourceforge/jnlp/browsertesting/browsers/Opera.java: 
+	added license headers
+
+2012-07-02  Jiri Vanek  <jvanek@redhat.com>
+
+	Makefile adapted to recent (three changelog items) refactoring
+	* Makefile.am: (JNLP_TESTS_ENGINE_SRCDIR) now points correctly to
+	test-extensions. (JNLP_TESTS_ENGINE_TESTS_SRCDIR) new variable for
+	test-extensions-tests. (JNLP_TESTS_SRCDIR) now points to reproducers.
+	(JNLP_TESTS_ENGINE_TESTS_DIR) new variable for built
+	JNLP_TESTS_ENGINE_TESTS_SRCDIR
+	(netx-dist-tests-tests-source-files.txt) new target for list of
+	content of JNLP_TESTS_ENGINE_TESTS_SRCDIR.
+	(stamps/netx-dist-tests-tests-compile.stamp) new target for compiling
+	netx-dist-tests-tests-source-files.txt
+	(netx-dist-tests-source-files.tx) now depends on
+	stamps/netx-dist-tests-tests-compile.stamp
+	($(REPRODUCERS_CLASS_NAMES)) target is now working in JNLP_TESTS_ENGINE_TESTS_DIR
+	instead of JNLP_TESTS_ENGINE_DIR
+	(stamps/run-netx-dist-tests.stamp): added JNLP_TESTS_ENGINE_TESTS_DIR to classpath
+	(stamps/run-unit-test-code-coverage.stamp), (stamps/run-reproducers-test-code-coverage.stamp)
+	added JNLP_TESTS_ENGINE_TESTS_DIR to classpath and
+	JNLP_TESTS_ENGINE_TESTS_SRCDIR to sources path
+
+2012-07-02  Jiri Vanek  <jvanek@redhat.com>
+
+	All tests from test-extensions extracted to test-extensions-tests.
+	All inner classes in test-extensions extracted as outer classes
+	* tests/test-extensions/net/sourceforge/jnlp/ResourcesTest.java:
+	moved to test-extensions-tests
+	* tests/test-extensions-tests/net/sourceforge/jnlp/ResourcesTest.java:
+	new file, copied from test-extensions
+	* tests/test-extensions-tests/net/sourceforge/jnlp/ServerAccessTest.java:
+	all tests from original ServerAccess.java
+	* tests/test-extensions/net/sourceforge/jnlp/ContentReader.java:
+	* tests/test-extensions/net/sourceforge/jnlp/LogItem.java:
+	* tests/test-extensions/net/sourceforge/jnlp/LoggingBottleneck.java:
+	* tests/test-extensions/net/sourceforge/jnlp/ProcessAssasin.java:
+	* tests/test-extensions/net/sourceforge/jnlp/ProcessResult.java:
+	* tests/test-extensions/net/sourceforge/jnlp/ServerLauncher.java:
+	* tests/test-extensions/net/sourceforge/jnlp/TestsLogs.java:
+	* tests/test-extensions/net/sourceforge/jnlp/ThreadedProcess.java:
+	* tests/test-extensions/net/sourceforge/jnlp/TinyHttpdImpl.java:
+	new files, extracted classes from ServerAccess
+	* tests/test-extensions/net/sourceforge/jnlp/ServerAccess.java:
+	extracted tests and inner classes
+
+2012-07-02  Jiri Vanek  <jvanek@redhat.com>
+
+	hg move tests/netx/jnlp_testsengine/ tests/test-extensions
+
+2012-07-02  Jiri Vanek  <jvanek@redhat.com>
+
+	hg move tests/jnlp_tests/ tests/reproducers
+
+2012-06-29  Jiri Vanek  <jvanek@redhat.com>
+
+	Fixed resource tests and Browsers.none behavior
+	* tests/netx/jnlp_testsengine/net/sourceforge/jnlp/ResourcesTest.java:
+	Added slash into all executeBrowsers urls.
+	Added midori and epiphany to simple proxies test.
+	* tests/netx/jnlp_testsengine/net/sourceforge/jnlp/browsertesting/BrowserTestRunner.java:
+	Corrected handling of Browsers.none together with -Dmodified.browsers.run switch
+
+2012-06-28  Omair Majid  <omajid@redhat.com>
+
+	* netx/net/sourceforge/jnlp/runtime/JNLPClassLoader.java
+	(findClass): Invoke CodeBaseClassLoader.findClass with a flag to avoid
+	infinite recursion.
+	(CodeBaseClassLoader.findClass(String)): Delegate to ...
+	(CodeBaseClassLoader.findClass(String,boolean)): New method.
+	* tests/netx/unit/net/sourceforge/jnlp/runtime/CodeBaseClassLoaderTest.java
+	(testParentClassLoaderIsAskedForClasses): New method.
+
+2012-06-28 Jiri Vanek <jvanek@redhat.com>
+
+	Correctly backup all log files re-writable by emma during code-coverage
+	* Makefile.am: (EMMA_MODIFIED_FILES) new variable with list of files to
+	backup/restore. (stamps/run-unit-test-code-coverage.stamp) and
+	(stamps/run-reproducers-test-code-coverage.stamp) are now iterating over
+	EMMA_MODIFIED_FILES instead of enumerating them
+
+2012-06-28  Jiri Vanek  <jvanek@redhat.com>
+
+	Removed repeated re-runing of tests during coverage, stamped pac tests
+	* Makefile.am: (check-pac-functions) moved to target aliases and replaced
+	by stamps/check-pac-functions.stamp.
+	(clean-netx-unit-tests) added removing of  stamps/check-pac-functions.stamp
+	(stamps/exported-test-certs.stamp): no longer depends on
+	netx-dist-tests-remove-cert-from-public, logic of it have to be
+	copy-pasted from here.
+	(stamps/run-unit-test-code-coverage.stamp): no longer depends on check,
+	but was added direct dependences 
+
+2012-06-28  Adam Domurad  <adomurad@redhat.com>
+
+	Allow for folders in archive tag.
+	* netx/net/sourceforge/jnlp/PluginBridge.java:
+	(PluginBridge) Changes jar -> archive, parse contents with
+	addArchiveEntries.
+	(addArchiveEntries) New method. Adds entries ending with / to the list
+	of folders.
+	(getCodeBaseFolders) Returns the folders collected by addArchiveEntries
+	* netx/net/sourceforge/jnlp/runtime/JNLPClassLoader.java:
+	(initializeResources) If ran as plugin, add archive tag folders to the
+	code base loader.
+
+2012-06-27  Adam Domurad  <adomurad@redhat.com>
+
+	Tests folders in archive tag
+	* tests/jnlp_tests/custom/AppletFolderInArchiveTag/testcases/AppletFolderInArchiveTagTests.java:
+	Runs html file in browser
+	* tests/jnlp_tests/custom/AppletFolderInArchiveTag/srcs/Makefile:
+	packages compiled source files in folder
+	* tests/jnlp_tests/custom/AppletFolderInArchiveTag/srcs/AppletFolderInArchiveTag.java:
+	Simple output to confirm it is running
+	* tests/jnlp_tests/custom/AppletFolderInArchiveTag/resources/AppletFolderInArchiveTag.html:
+	Has folder in its archive tag that contains a class file
+
+2012-06-26  Jiri Vanek  <jvanek@redhat.com>
+
+	Added slipped midori and epiphany to recognized browsers.
+	* tests/netx/jnlp_testsengine/net/sourceforge/jnlp/browsertesting/BrowserFactory.java:
+	(BrowserFactory) added slipped cases for creating Epiphany and Midori singletons
+
+2012-06-26  Jiri Vanek  <jvanek@redhat.com>
+
+	* Makefile.am:  Most crucial variables exported to be used by custom Makefiles
+	(CUSTOM_REPRODUCERS): new variable to hold custom name
+	(ALL_NONCUSTOM_REPRODUCERS): new variable for gathering all except custom reproducers
+	(ALL_REPRODUCERS): now contains also custom ones
+	(stamps/junit-jnlp-dist-dirs): now depends also on junit-jnlp-dist-custom.txt
+	(junit-jnlp-dist-custom.txt): new target scanning for directories in jnlp_tests/custom
+	and saving them as list for future purposes.
+	(stamps/netx-dist-tests-prepare-reproducers.stamp): and
+	( stamps/change-dots-to-paths.stamp):iterate through ALL_NONCUSTOM_REPRODUCERS
+	instead of ALL__REPRODUCERS
+	(stamps/process-custom-reproducers.stamp) : new target for iterating by
+	junit-jnlp-dist-custom.txt through  jnlp_tests/custom/srcs* and launching
+	make prepare-reproducer in each.
+	(clean-custom-reproducers): same as above but launching make clean-reproducer
+	(run-netx-dist-tests) now depends on stamps/process-custom-reproducers.stamp
+	(clean-netx-dist-tests): now depends on clean-custom-reproducers and is removing
+	stamps/netx-dist-tests-copy-resources.stamp
+	(stamps/netx-dist-tests-copy-resources.stamp): new target extracting
+	copying of resources from stamps/netx-dist-tests-compile-testcases.stamp
+	* tests/jnlp_tests/README: described this mechanism a bit 
+
+2012-06-26 Jiri Vanek <jvanek@redhat.com>
+
+	Reproducer for classes which should be loaded before verification but are not
+	* tests/jnlp_tests/signed/InternalClassloaderWithDownloadedResource/resources/InternalClassloaderWithDownloadedResource-applet-hack.jnlp
+	jnlp launcher of applet variant with injecting new url to classlaoder
+	* tests/jnlp_tests/signed/InternalClassloaderWithDownloadedResource/resources/InternalClassloaderWithDownloadedResource-applet-new.jnlp
+	jnlp launcher of applet variant with custom classlaoder
+	* tests/jnlp_tests/signed/InternalClassloaderWithDownloadedResource/resources/InternalClassloaderWithDownloadedResource-hack.html
+	html launcher of applet variant with injecting new url to classlaoder
+	* tests/jnlp_tests/signed/InternalClassloaderWithDownloadedResource/resources/InternalClassloaderWithDownloadedResource-hack.jnlp
+	jnlp launcher of application variant with injecting new url to classlaoder
+	* tests/jnlp_tests/signed/InternalClassloaderWithDownloadedResource/resources/InternalClassloaderWithDownloadedResource-new.html
+	html launcher of applet variant with custom classlaoder
+	* tests/jnlp_tests/signed/InternalClassloaderWithDownloadedResource/resources/InternalClassloaderWithDownloadedResource-new.jnlp
+	jnlp launcher of application variant with custom classlaoder
+	* tests/jnlp_tests/signed/InternalClassloaderWithDownloadedResource/srcs/InternalClassloaderWithDownloadedResource.java:
+	Both application and applet reproducing behavior of this bug
+	* tests/jnlp_tests/signed/InternalClassloaderWithDownloadedResource/testcases/InternalClassloaderWithDownloadedResourceTest.java:
+	Testcase launching jnlp application, jnlp applet and html applet 
+
+2012-06-26  Jiri Vanek  <jvanek@redhat.com>
+
+	Last hope for not downloaded resources to be verified
+	* netx/net/sourceforge/jnlp/runtime/JNLPClassLoader.java:
+	(getCodeSourceSecurity): will now try to download and verify resource
+	which was downloaded outside of netx.
+	(alreadyTried) set for memory of once tried resources to not try again 
+
+2012-06-25  Adam Domurad  <adomurad@redhat.com>
+
+	Small comment cleanup to classes with missing or wrong descriptions.
+	* plugin/icedteanp/java/sun/applet/PluginMessageHandlerWorker.java: 
+	Comment at top fixed
+	* plugin/icedteanp/java/sun/applet/AppletSecurityContextManager.java: 
+	Same
+	* plugin/icedteanp/java/sun/applet/PluginException.java: Same
+	* plugin/icedteanp/java/sun/applet/PluginCallRequestFactory.java: Same
+	* netx/net/sourceforge/jnlp/PluginBridge.java: Add class description.
+	* plugin/icedteanp/java/sun/applet/PluginCallRequest.java: 
+	Removed FIXME that had already been fixed.
+
+2012-06-25  Adam Domurad  <adomurad@redhat.com>
+
+	Allow passing of plugin tables and browser tables in NP_Initialize that
+	are not the expected length but still large enough for our purposes.
+	* plugin/icedteanp/IcedTeaNPPlugin.cc
+	(initialize_browser_functions): New function to check size of passed
+	browser function table, and initialize 'browser_functions' global
+	variable.
+	(initialize_plugin_table): New function to check size of passed
+	plugin function table, and initialize proper plugin callbacks.
+	(NP_Initialize): Make use of initialization helper functions, get
+	rid of old size tests and error if the helper functions fail.
+
+2012-06-20  Adam Domurad  <adomurad@redhat.com>
+
+	* netx/net/sourceforge/jnlp/tools/JarCertVerifier.java
+	(verifyJar): two for loops made into for-each loops
+
+2012-06-19  Jiri Vanek  <jvanek@redhat.com>
+
+	various test for browser engine
+	* tests/jnlp_tests/simple/AppletTest/resources/appletAutoTests.html:
+	fixed missing parenthesis
+	* tests/jnlp_tests/simple/AppletTest/resources/appletAutoTests2.html:
+	new test excluding XslowX for applets
+	* tests/jnlp_tests/simple/AppletTest/testcases/AppletTestTests:
+	(doubleChrome) test for ensuring that two chrome browsers launched
+	behind themselves will not cause errors as they were without
+	criticalFixes patch
+	(AppletInBrowserTest) and (AppletInBrowserTestXslowX) testing methods
+	for all browser
+	* tests/jnlp_tests/simple/AppletTest/testcases/AppletBaseURLTest:
+	* tests/jnlp_tests/simple/AppletTest/testcases/CheckServicesTests:
+	* tests/jnlp_tests/simple/AppletTest/testcases/AppletReadsInvalidJarTests:
+	Included @TestInBrowser instead of plain executeBrowser
+	* tests/jnlp_tests/simple/deadlocktest/srcs/DeadlockTest.java: improved
+	to print sometimes something out
+	* tests/jnlp_tests/simple/deadlocktest/testcases/DeadLockTestTest.java:
+	(testDeadLockTestTerminatedBody) enhanced to ensure that not so much is
+	lost when process is terminated, but showing that something can be lost
+	(which is correct)
+	* tests/netx/jnlp_testsengine/net/sourceforge/jnlp/ResourcesTest.java:
+	(testNonExisitngBrowserWillNotDeadlock) testing taht when no browser is
+	set, then no deadlock happens as happen before criticalFixes's deadlyException
+	(testUnexistingProcessWillFailRecognizedly)  is actually testing deadlyException
+	(testNonExisitngBrowserWillNotCauseMess) some but with annotation which
+	was also harming output of tool little bit without TestInBrowsersAnnotation fixed.
+	(testBrowsers2) is testing all browsers configuration without annotation
+	and (testBrowser3) do the same configuration tests annotation driven
+	(testBrowser) body of above two methods. Is testing whether used
+	browsers are correctly linked with latest build
+	(testBrowsers1) is testing parsing of -D variable
+	(testListeners) annotated that needs display
+	* tests/netx/unit/net/sourceforge/jnlp/runtime/CodeBaseClassLoaderTest.java:
+	annotated with Bug annotation 
+
+2012-06-19  Jiri Vanek  <jvanek@redhat.com>
+
+	introduced possibility to run comfortably applets+html reproducers
+	* Makefile.am: used BROWSER_TESTS_MODIFICATION variable to pass global
+	switch from configure
+	* acinclude.m4: (IT_SET_GLOBAL_BROWSERTESTS_BHAVIOUR) new method
+	handling --with-browser-tests
+	* configure.ac: used IT_SET_GLOBAL_BROWSERTESTS_BHAVIOUR
+	switch and passing  BROWSER_TESTS_MODIFICATION variable to Makefile.
+	* tests/netx/jnlp_testsengine/net/sourceforge/jnlp/ServerAccess.java:
+	(currentBrowser) variable holding injected browser for ServerAccess instance
+	(loggedBrowser) static variable keeping id of (currentBrowser) for static
+	logging purposes
+	(modifyMethodWithForBrowser) new function changing the name of method to
+	"method - browser" for logging purposes
+	(getBrowserLocation) - returning path to process to be launched when
+	browser requested
+	(getBrowserParams) - gathering set default's browser settings
+	(set/getCurrentBrowsers) - set browser by id/return id of set browser
+	(set/getCurrentBrowser) - set browser instance /returns instance of
+	current browser
+	(executeBrowser) family of methods now cooperate with above methods for
+	default set browser
+	(executeBrowser(Browser) family to work with implicit browser
+	* tests/netx/jnlp_testsengine/net/sourceforge/jnlp/annotations/TestInBrowsers.java:
+	annotation for determining which browser(s) to use with annotated method
+	* tests/netx/jnlp_testsengine/net/sourceforge/jnlp/browsertesting/Browser.java:
+	interface for dealing with various browsers
+	* tests/netx/jnlp_testsengine/net/sourceforge/jnlp/browsertesting/BrowserFactory.java:
+	singleton for mapping configured browsers x requested browser x browsers proxies
+	* tests/netx/jnlp_testsengine/net/sourceforge/jnlp/browsertesting/BrowserTest.java:
+	Forefather of all testcases which have methods to do tests iniside browser.
+	Is allowing correct annotation -> proxy trasnver to VirtualServer for
+	selected method and is requesting custom runner from junit framework
+	* tests/netx/jnlp_testsengine/net/sourceforge/jnlp/browsertesting/BrowserTestRunner.java:
+	custom test Ruuner which is responsible for translating annotation and
+	run the method mutlipletimes for each requested browser and to name it properly
+	* tests/netx/jnlp_testsengine/net/sourceforge/jnlp/browsertesting/Browsers.java:
+	enumeration of abstract browsers and theirs sets or subsets.
+	* tests/netx/jnlp_testsengine/net/sourceforge/jnlp/browsertesting/browsers/*:
+	individual browsers proxies and theirs abstractions,namely:
+	* tests/netx/jnlp_testsengine/net/sourceforge/jnlp/browsertesting/browsers/Opera.java:
+	* tests/netx/jnlp_testsengine/net/sourceforge/jnlp/browsertesting/browsers/Firefox.java:
+	* tests/netx/jnlp_testsengine/net/sourceforge/jnlp/browsertesting/browsers/Chrome.java:
+	* tests/netx/jnlp_testsengine/net/sourceforge/jnlp/browsertesting/browsers/Chromium.java:
+	* tests/netx/jnlp_testsengine/net/sourceforge/jnlp/browsertesting/browsers/Midori.java:
+	* tests/netx/jnlp_testsengine/net/sourceforge/jnlp/browsertesting/browsers/Epiphany.java:
+	proxies for  browsers as name suggests
+	* tests/netx/jnlp_testsengine/net/sourceforge/jnlp/browsertesting/browsers/LinuxBrowser.java:
+	abstract forefather for all browsers implementing Browser interface. Is
+	setting /usr/bin as bin path, libjavaplugin.so as default plugin library name,
+	intorducing stubs for methods (eg 32/64 bit libs)
+	* tests/netx/jnlp_testsengine/net/sourceforge/jnlp/browsertesting/browsers/MozillaFamilyLinuxBrowser:
+	forefather for all browsers except Opera. Is unifying .mozilla/plugins directories
+
+2012-06-15  Jiri Vanek  <jvanek@redhat.com>
+
+	* tests/jnlp_tests/simple/AppletTest/resources/appletAutoTests.html:
+	Added quotes around parameters  of html applet tag.
+	* tests/jnlp_tests/simple/deadlocktest/testcases/DeadLockTestTest.java:
+	Output verification is counting with repeated and probably unfinished outputs.
+	* tests/jnlp_tests/simple/deadlocktest/srcs/DeadlockTest.java
+	Is now printing out sentence in intervals to avoid destroy-consume as much as possible
+	* tests/netx/unit/net/sourceforge/jnlp/runtime/CodeBaseClassLoaderTest.java:
+	Added bug annotation with threads on distro-pkg-dev 
+
+2012-06-15  Adam Domurad  <adomurad@redhat.com>
+
+	Fixed two memory leaks
+	* plugin/icedteanp/IcedTeaNPPlugin.cc
+	(consume_message): Call to g_strsplit matched with call to g_strfreev.
+	* plugin/icedteanp/IcedTeaPluginUtils.cc
+	(post): Removed copy of string, which assumed consumer freed string
+	(which was not true and not always possible)
+
+2012-06-11  Danesh Dadachanji  <ddadacha@redhat.com>
+
+	PR855: AppletStub getDocumentBase() doesn't return full URL
+	* NEWS: Added PR855 entry.
+	* plugin/icedteanp/IcedTeaNPPlugin.cc (plugin_get_documentbase):
+	Assign documentbase_copy directly to href's value instead of iterating
+	through the segments to remove the file from the path.
+	* tests/jnlp_tests/simple/AppletBaseURLTest/srcs/AppletBaseURL.java:
+	* tests/jnlp_tests/simple/AppletBaseURLTest/testcases/AppletBaseURLTest.java:
+	* tests/jnlp_tests/simple/AppletBaseURLTest/resources/AppletBaseURLTest.html:
+	* tests/jnlp_tests/simple/AppletBaseURLTest/resources/AppletBaseURLTest.jnlp:
+	* tests/jnlp_tests/simple/AppletBaseURLTest/resources/AppletJNLPHrefBaseURLTest.html:
+	New reproducer that checks the URLS that document and codebase
+	point are correct.
+
+2012-06-13  Danesh Dadachanji  <ddadacha@redhat.com>
+
+	Update CheckServices reproducer to handle browser testcase.
+	* tests/jnlp_tests/simple/CheckServices/testcases/CheckServicesTests.java:
+	Added browser test and annotation, refactored asserts into helper method.
+	* tests/jnlp_tests/simple/CheckServices/resources/CheckPluginServices.html:
+	New browser test file that runs applet using jnlp_href.
+
+2012-06-13  Jiri Vanek  <jvanek@redhat.com>
+
+	* tests/junit-runner/JunitLikeXmlOutputListener.java:
+	Introduced TEST_IGNORED_ATTRIBUTE to mark test as ignored if should be.
+	* tests/report-styles/jreport.xsl: Applied correct text and style for
+	tests with attribute ignored. 
+
+2012-06-12  Adam Domurad  <adomurad@redhat.com>
+
+	Fixes PR722, javaws failing to run with unsigned content in META-INF/
+	* NEWS: Added entry: Fixes PR722
+	* netx/net/sourceforge/jnlp/tools/JarCertVerifier.java: Changed
+	isSignatureRelated => isMetaInfFile. Now all files under META-INF/ are
+	disregarded in checking the jar signage.
+
+2012-06-11  Jiri Vanek  <jvanek@redhat.com>
+
+	Implemented xml logging backend
+	* Makefile.am: (stamps/run-netx-unit-tests.stamp) and 
+	(stamps/run-netx-dist-tests.stamp) removed redirection of streams as 
+	logging is now done in ServerAccess tests extensions
+	added xsltproc execution above generated xml log
+	xsltproc generating results html files is now receiving result of above 
+	as parameter
+	* tests/report-styles/jreport.xsl: log parameter is now accepted, and 
+	if set, then all tests are linking into specified file to show the log
+	* tests/report-styles/report.css: added styles for new links
+	* tests/report-styles/index.js: new functions to work for result of below sheet
+	* tests/report-styles/logs.xsl: new file, sheet to convert xml log to html file
+	* tests/report-styles/output.css: new file, styles of above html file
+	* tests/jnlp_tests/simple/deadlocktest/testcases/DeadLockTestTest.java:
+	* tests/netx/jnlp_testsengine/net/sourceforge/jnlp/ResourcesTest.java:
+	* tests/netx/jnlp_testsengine/net/sourceforge/jnlp/ServerAccess.java:
+	Tests', server's and ProcessAssasin's logs are now redirected to bottleneck
+	* tests/netx/jnlp_testsengine/net/sourceforge/jnlp/ServerAccess.java:
+	(LOGS_REPRINT) flag for debugging purposes, will enable reprinting to 
+	stdout/err again
+	(DEFAULT_LOG_FILE ) default name of xml output
+	(DEFAULT_STDERR_FILE)(DEFAULT_STDOUT_FILE)(DEFAULT_STDLOGS_FILE) default
+	values of plain text output files
+	(*ELEMENT) and( (*ATTRIBUTE) variables keeping repeated names of xml 
+	output parts
+	(writeXmlLog) method called from Sytsem.hook to save xml log
+	(addToXmlLog) method to record item to xml structure
+	(TestsLogs) and (LogItem) inner classes to keep logging information
+	(log) is now reprinting message with id to std out/err dependently on
+	(LOGS_REPRINT) but always to internal streams, possilbe exception is thrown
+	(logException) new method, shortcut to log exception in same way as message
+	(getTestMethod) now can handle methods inside ServerAccess class too 
+
+2012-06-11  Adam Domurad  <adomurad@redhat.com>
+
+	* NEWS: Added mention of fixing PR518
+
+2012-06-07  Saad Mohammad  <smohammad@redhat.com>
+
+	Allows the user to configure browser paths and/or disable browsers.
+	* acinclude.m4 (IT_FIND_BROWSER): Checks if the browser is set to be 
+	disabled, or if the path provided is valid. Otherwise, it locates the 
+	default path to the browser if found on the system.
+	* configure.ac: Uses IT_FIND_BROWSER to find/configure browsers.
+
+2012-06-06  Deepak Bhole <dbhole@redhat.com>
+
+	* netx/net/sourceforge/jnlp/runtime/JNLPClassLoader.java
+	(getAccessControlContextForClassLoading): Iterate over codebase URLs only
+	if codeBaseLoader is not null.
+
+2012-06-05  Deepak Bhole <dbhole@redhat.com>
+
+	PR861: Allow loading from non codebase hosts. Allow code to connect to
+	hosting server.
+	* netx/net/sourceforge/jnlp/SecurityDesc.java
+	(getSandBoxPermissions): Only add host if it is not empty.
+	* netx/net/sourceforge/jnlp/runtime/JNLPClassLoader.java
+	(getPermissions): Add SocketPermission for code source host.
+	(findLoadedClassAll): Call super methods privileged so that connection to
+	non codebase hosts can be made.
+	(findClass): Same.
+	(findResourcesBySearching): Same. Also use privileged context for enum
+	operations because the enum is defined on the fly by URLClassLoader and
+	checks for hosting server connectivity via next().
+	(getAccessControlContextForClassLoading): New method. Returns a control
+	context for classloader operations like find/load/etc.
+	(CodeBaseClassLoader::findClass): Call super methods privileged so that
+	connection to non codebase hosts can be made.
+	(CodeBaseClassLoader::findResource): Same.
+
+2012-06-05  Jiri Vanek  <jvanek@redhat.com>
+
+	* tests/netx/jnlp_testsengine/net/sourceforge/jnlp/annotations/KnownToFail.java
+	New file. Annotation for marking failing tests.
+	* tests/report-styles/jreport.xsl:
+	* tests/junit-runner/LessVerboseTextListener.java:
+	* tests/junit-runner/JunitLikeXmlOutputListener.java:  Added counting
+	and printing of @KnownToFail annotations if presented.
+	* tests/jnlp_tests/simple/Spaces can be everywhere/testcases/SpacesCanBeEverywhereTests.java:
+	(SpacesCanBeEverywhereRemoteTests1) (SpacesCanBeEverywhereRemoteTests2)
+	(SpacesCanBeEverywhereRemoteTests3)
+	* tests/netx/unit/net/sourceforge/jnlp/JNLPMatcherTest.java: (testTemplateCDATA)
+	(testApplicationCDATA)
+	* tests/netx/unit/net/sourceforge/jnlp/ParserCornerCases.java:
+	(testCDataFirstChild) (testCDataSecondChild) (testCommentInAttributes)
+	* tests/netx/unit/net/sourceforge/jnlp/ParserMalformedXml.java:
+	(testMalformedArguments) (testTagNotClosed) (testUnquotedAttributes)
+	marked as KnownToFail 
+
+2012-06-05  Jiri Vanek  <jvanek@redhat.com>
+
+	isDateInRange renamed to isDateInRange_internallForIcedTeaWebTesting
+	* netx/net/sourceforge/jnlp/runtime/pac-funcs.js: and
+	* tests/netx/pac/pac-funcs-test.js: 
+	(isDateInRange): Renamed to isDateInRange_internallForIcedTeaWebTesting.
+	(isDateInRange_internallForIcedTeaWebTesting): New function
+
+2012-06-04  Saad Mohammad <smohammad@redhat.com>
+
+	Added signed jnlp file tests.
+	* tests/jnlp_tests/signed/SignedJnlpApplication/resources/SignedJnlpApplication1.jnlp:
+	Launching jnlp file that matches the signed jnlp application file.
+	* tests/jnlp_tests/signed/SignedJnlpApplication/resources/SignedJnlpApplication2.jnlp:
+	* tests/jnlp_tests/signed/SignedJnlpApplication/resources/SignedJnlpApplication3.jnlp:
+	Launching jnlp file that does not match the signed jnlp application file.
+	* tests/jnlp_tests/signed/SignedJnlpApplication/srcs/JNLP-INF/APPLICATION.jnlp:
+	Signed jnlp application file.
+	* tests/jnlp_tests/signed/SignedJnlpApplication/srcs/SignedJnlpApplication.java:
+	A simple java class that outputs a string.
+	* tests/jnlp_tests/signed/SignedJnlpApplication/testcases/SignedJnlpApplicationTest.java:
+	Testcase that tests the launching of applications with a signed jnlp 
+	application file.
+	* tests/jnlp_tests/signed/SignedJnlpTemplate/resources/SignedJnlpTemplate1.jnlp:
+	Launching jnlp file that matches the signed jnlp application template file.
+	* tests/jnlp_tests/signed/SignedJnlpTemplate/resources/SignedJnlpTemplate2.jnlp:
+	* tests/jnlp_tests/signed/SignedJnlpTemplate/resources/SignedJnlpTemplate3.jnlp:
+	Launching jnlp file that does not match the signed jnlp application 
+	template file.
+	* tests/jnlp_tests/signed/SignedJnlpTemplate/srcs/JNLP-INF/APPLICATION_TEMPLATE.jnlp:
+	Signed jnlp application template file.
+	* tests/jnlp_tests/signed/SignedJnlpTemplate/srcs/SignedJnlpTemplate.java:
+	A simple java class that outputs a string.
+	* tests/jnlp_tests/signed/SignedJnlpTemplate/testcases/SignedJnlpTemplateTest.java:
+	Testcase that tests the launching of applications with a signed jnlp 
+	application template file.
+	* tests/jnlp_tests/simple/UnsignedJnlpApplication/resources/UnsignedJnlpApplication1.jnlp:
+	Launching jnlp file that matches the unsigned jnlp application file.
+	* tests/jnlp_tests/simple/UnsignedJnlpApplication/resources/UnsignedJnlpApplication2.jnlp:
+	* tests/jnlp_tests/simple/UnsignedJnlpApplication/resources/UnsignedJnlpApplication3.jnlp:
+	Launching jnlp file that does not match the unsigned jnlp application file.
+	* tests/jnlp_tests/simple/UnsignedJnlpApplication/srcs/JNLP-INF/APPLICATION.jnlp:
+	Unsigned jnlp application file.
+	* tests/jnlp_tests/simple/UnsignedJnlpApplication/srcs/UnsignedJnlpApplication.java:
+	A simple java class that outputs a string.
+	* tests/jnlp_tests/simple/UnsignedJnlpApplication/testcases/UnsignedJnlpApplicationTest.java:
+	Testcase that tests the launching of applications with an unsigned jnlp 
+	application file.
+	* tests/jnlp_tests/simple/UnsignedJnlpTemplate/resources/UnsignedJnlpTemplate1.jnlp:
+	Launching jnlp file that matches the unsigned jnlp application 
+	template file.
+	* tests/jnlp_tests/simple/UnsignedJnlpTemplate/resources/UnsignedJnlpTemplate2.jnlp:
+	* tests/jnlp_tests/simple/UnsignedJnlpTemplate/resources/UnsignedJnlpTemplate3.jnlp:
+	Launching jnlp file that does not match the unsigned jnlp application 
+	template file.
+	* tests/jnlp_tests/simple/UnsignedJnlpTemplate/srcs/JNLP-INF/APPLICATION_TEMPLATE.jnlp:
+	Unsigned jnlp application template file.
+	* tests/jnlp_tests/simple/UnsignedJnlpTemplate/srcs/UnsignedJnlpTemplate.java:
+	A simple java class that outputs a string.
+	* tests/jnlp_tests/simple/UnsignedJnlpTemplate/testcases/UnsignedJnlpTemplateTest.java:
+	Testcase that tests the launching of applications with an unsigned jnlp 
+	application template file.
+	* tests/jnlp_tests/signed/SignedJnlpCaseTestOne/resources/SignedJnlpCaseTestOne1.jnlp:
+	Launching jnlp file that matches the signed jnlp application file.
+	* tests/jnlp_tests/signed/SignedJnlpCaseTestOne/resources/SignedJnlpCaseTestOne2.jnlp:
+	Launching jnlp file that does not match the signed jnlp application file.
+	* tests/jnlp_tests/signed/SignedJnlpCaseTestOne/srcs/JNLP-INF/aPpLiCaTioN.jnlp:
+	Signed jnlp application file.
+	* tests/jnlp_tests/signed/SignedJnlpCaseTestOne/srcs/SignedJnlpCase.java:
+	A simple java class that outputs a string.
+	* tests/jnlp_tests/signed/SignedJnlpCaseTestOne/testcases/SignedJnlpCaseOneTest.java:
+	Testcase that tests the case-sensitivity of the signed jnlp application's 
+	filename.
+	* tests/jnlp_tests/signed/SignedJnlpCaseTestTwo/resources/SignedJnlpCaseTestTwo1.jnlp:
+	Launching jnlp file that matches the signed jnlp application template file.
+	* tests/jnlp_tests/signed/SignedJnlpCaseTestTwo/resources/SignedJnlpCaseTestTwo2.jnlp:
+	Launching jnlp file that does not match the signed jnlp application 
+	template file.
+	* tests/jnlp_tests/signed/SignedJnlpCaseTestTwo/srcs/JNLP-INF/aPpLiCaTiOn_tEmPlAte.jnlp:
+	Signed jnlp application template file.
+	* tests/jnlp_tests/signed/SignedJnlpCaseTestTwo/srcs/SignedJnlpCase.java:
+	A simple java class that outputs a string.
+	* tests/jnlp_tests/signed/SignedJnlpCaseTestTwo/testcases/SignedJnlpCaseTwoTest.java:
+	Testcase that tests the case-sensitivity of the signed jnlp application 
+	template's filename.
+
+2012-06-04  Danesh Dadachanji  <ddadacha@redhat.com>
+
+	Fix to handle absolute paths passed into jnlp_href's value.
+	* netx/net/sourceforge/jnlp/PluginBridge.java
+	(PluginBridge): Uses context of codebase to evaluate jnlp_href's value.
+	Uses JNLPCreator's create method to make new JNLPFile variables.
+	New constructor that wraps around the original one, creating a new
+	JNLPCreator to use.
+	* netx/net/sourceforge/jnlp/JNLPCreator.java: New strategy pattern class
+	to be used to wrap around the creation of a JNLPFile. Replace this creator
+	when unit testing to skip running parsing code.
+	* tests/netx/unit/net/sourceforge/jnlp/PluginBridgeTest.java:
+	New class to unit test getEvaluatedJNLPHref.
+
+2012-06-04  Adam Domurad  <adomurad@redhat.com>
+
+	Added self to AUTHORS.
+	This patch fixes PR518, ensures null termination of strings based off
+	of NPVariant results.
+	* plugin/icedteanp/IcedTeaPluginUtils.h: Added declaration of
+	NPVariantAsString
+	* plugin/icedteanp/IcedTeaPluginUtils.cc
+	(NPVariantAsString): New. Converts an NPVariant to a
+	std::string, assumes it is a valid NPString.
+	(isObjectJSArray): Now uses NPVariantAsString, minor cleanup.
+	* plugin/icedteanp/IcedTeaJavaRequestProcessor.cc
+	(plugin_get_documentbase): Now uses NPVariantAsString.
+	* plugin/icedteanp/IcedTeaNPPlugin.cc
+	(NPVariantToString): Now uses NPVariantAsString, minor cleanup.
+
+2012-06-01  Deepak Bhole <dbhole@redhat.com>
+
+	PR863: Error passing strings to applet methods in Chromium
+	* plugin/icedteanp/IcedTeaJavaRequestProcessor.cc
+	(createJavaObjectFromVariant): Account for length of the characters.
+	* plugin/icedteanp/IcedTeaNPPlugin.cc (plugin_get_documentbase): Same.
+	* plugin/icedteanp/IcedTeaPluginRequestProcessor.cc (_eval): Print the
+	string's c_str rather than utf8characters.
+	* plugin/icedteanp/IcedTeaPluginUtils.cc (printNPVariant): Account for
+	length of the characters.
+	(NPVariantToString): Same.
+	(isObjectJSArray): Same.
+
+2012-05-30  Jiri Vanek  <jvanek@redhat.com>
+
+	Enabled multiple certificates and extracted variables
+	* Makefile.am: EXPORTED_TEST_CERT by EXPORTED_TEST_CERT_PREFIX and 
+	EXPORTED_TEST_CERT_SUFFIX for further composition
+	SIGNED_REPRODUCERS new variable for  iterating through signed reproducers
+	SIMPLE_REPRODUCERS new variable for  iterating through simple reproducers
+	ALL_REPRODUCER new variable for  iterating through all reproducers
+	(junit-jnlp-dist-signed.txt) replaced by
+	(stamps/junit-jnlp-dist-signed.stamp) which generates 
+	junit-jnlp-dist-signedX.txt for each directory with signed reproducers
+	(stamps/netx-dist-tests-prepare-reproducers.stamp)
+	(stamps/change-dots-to-paths.stamp) 
+	(stamps/netx-dist-tests-compile-testcases.stamp)
+	(run-netx-dist-codecoverage): extracted variables
+	(clean-netx-dist-tests): iterates through all the list and removes them
+	(stamps/netx-dist-tests-sign-some-reproducers.stamp): now iterate through
+	SIGNED_REPRODUCERS and creates special certificate for each member. Each
+	jar from this directory is then signed by corresponding certificate
+	(netx-dist-tests-remove-cert-from-public): iterates through all certificates
+	(stamps/netx-dist-tests-import-cert-to-public): exports each certificate
+	created during tests preparations
+	($(EXPORTED_TEST_CERT)) replaced by stamps/exported-test-certs.stamp which
+	create for each of SIGNED_REPRODUCERS individual certificate
+	(tests/jnlp_tests/README): mentioned possibility of multiple certificate
+
+2012-05-29  Jiri Vanek  <jvanek@redhat.com>
+
+	* netx/net/sourceforge/jnlp/runtime/JNLPClassLoader.java: (getPermissions):
+	New rethrow of exceptions and following condition make more accurate. 
+
+2012-05-29  Jiri Vanek  <jvanek@redhat.com>
+
+	Get rid of repeated sout/serr  in reproducers testcases/unit tests and
+	introduce bottleneck for loging.
+	* tests/netx/jnlp_testsengine/net/sourceforge/jnlp/ServerAccess.java:
+	(PROCESS_LOG) static flag for enabling/disabling automatic logging of 
+	statically executed processes.
+	(logErrorReprint) (logOutputReprint) (logNoReprint) new methods, to call  
+	logging bottleneck.
+	(log) main logging bottleneck, reprint message to according stream with 
+	calling test-class and test-method as suffix.
+	(getTestMethod) new method to analyze calling test-method.
+	(executeProcess) enhanced for conditional automatic logging of start of
+	process and outputs of process.
+	* tests/jnlp_tests/signed/AppletTestSigned/testcases/AppletTestSignedTests.java: 
+	* tests/jnlp_tests/signed/CacheReproducer/testcases/CacheReproducerTest.java: 
+	* tests/jnlp_tests/signed/MissingJar/testcases/MissingJarTest.java: 
+	* tests/jnlp_tests/signed/ReadPropertiesSigned/testcases/ReadPropertiesSignedTest.java: 
+	* tests/jnlp_tests/signed/Spaces can be everywhere signed/testcases/SpacesCanBeEverywhereTestsSigned.java: 
+	* tests/jnlp_tests/simple/AccessClassInPackage/testcases/AccessClassInPackageTest.java: 
+	* tests/jnlp_tests/simple/AddShutdownHook/testcases/AddShutdownHookTest.java: 
+	* tests/jnlp_tests/simple/AllStackTraces/testcases/AllStackTracesTest.java: 
+	* tests/jnlp_tests/simple/AppletTest/testcases/AppletTestTests.java: 
+	* tests/jnlp_tests/simple/CheckServices/testcases/CheckServicesTests.java: 
+	* tests/jnlp_tests/simple/CreateClassLoader/testcases/CreateClassLoaderTest.java: 
+	* tests/jnlp_tests/simple/InformationTitleVendorParser/testcases/InformationTitleVendorParserTest.java: 
+	* tests/jnlp_tests/simple/ManifestedJar1/testcases/ManifestedJar1Test.java: 
+	* tests/jnlp_tests/simple/ReadEnvironment/testcases/ReadEnvironmentTest.java: 
+	* tests/jnlp_tests/simple/ReadProperties/testcases/ReadPropertiesTest.java: 
+	* tests/jnlp_tests/simple/RedirectStreams/testcases/RedirectStreamsTest.java: 
+	* tests/jnlp_tests/simple/ReplaceSecurityManager/testcases/ReplaceSecurityManagerTest.java: 
+	* tests/jnlp_tests/simple/SetContextClassLoader/testcases/SetContextClassLoaderTest.java: 
+	* tests/jnlp_tests/simple/Spaces can be everywhere/testcases/SpacesCanBeEverywhereTests.java: 
+	* tests/jnlp_tests/simple/deadlocktest/testcases/DeadLockTestTest.java: 
+	* tests/jnlp_tests/simple/simpletest1/testcases/SimpleTest1Test.java: 
+	* tests/jnlp_tests/simple/simpletest2/testcases/SimpleTest2Test.java: 
+	* tests/netx/unit/net/sourceforge/jnlp/cache/CacheLRUWrapperTest.java: 
+	* tests/netx/unit/net/sourceforge/jnlp/runtime/CodeBaseClassLoaderTest.java: 
+	* tests/netx/unit/net/sourceforge/jnlp/util/replacements/BASE64EncoderTest.java: 
+	all System.out replaced by ServerAccess.logOutputReprint 
+	and System.err replaced by ServerAccess.logErrorReprint 
+
+2012-05-25  Adam Domurad <adomurad@redhat.com>
+
+	Changed for-loops over iterators and indices to for-each loops if they
+	were sufficient and clearer.
+	* netx/net/sourceforge/jnlp/JNLPFile.java: Changed for-loops that could
+	be expressed more clearly as for-each loops.
+	* netx/net/sourceforge/jnlp/PluginBridge.java: Same
+	* netx/net/sourceforge/jnlp/ResourcesDesc.java: Same
+	* netx/net/sourceforge/jnlp/cache/CacheUtil.java: Same
+	* netx/net/sourceforge/jnlp/cache/DefaultDownloadIndicator.java: Same
+	* netx/net/sourceforge/jnlp/cache/Resource.java: Same
+	* netx/net/sourceforge/jnlp/cache/ResourceTracker.java: Same
+	* netx/net/sourceforge/jnlp/runtime/AppletEnvironment.java: Same
+	* netx/net/sourceforge/jnlp/runtime/ApplicationInstance.java: Same
+	* plugin/icedteanp/java/netscape/javascript/JSObject.java: Same
+	* plugin/icedteanp/java/sun/applet/JavaConsole.java: Same
+	* plugin/icedteanp/java/sun/applet/PluginAppletViewer.java: Same
+
+2012-05-23  Adam Domurad  <adomurad@redhat.com>
+	Removed instances of snprintf where buffer size was not known. Added
+	buffer size constant for allocating buffers for numeric conversions.
+	* plugin/icedteanp/IcedTeaNPPlugin.cc: Removed usage of snprintf for
+	simple blanking of strings. Buffer size was misguided previously.
+	Used NUM_STR_BUFFER_SIZE constant to replace magic numbers/
+	* plugin/icedteanp/IcedTeaPluginUtils.cc: Made
+	NPVariantToString(NPVariant variant, std::string* result) use two
+	space indentation. Used NUM_STR_BUFFER_SIZE constant to replace magic
+	numbers.
+	* plugin/icedteanp/IcedTeaPluginUtils.h: Added constant,
+	NUM_STR_BUFFER_SIZE.
+
+2012-05-24  Danesh Dadachanji <ddadacha@redhat.com>
+
+	Fix use of src dir instead of build dir when whitelisting.
+	* Makefile.am (REPRODUCERS_CLASS_WHITELIST): Use abs_top_srcdir
+	instead of abs_top_builddir.
+
+2012-05-23  Martin Olsson <martin@minimum.se>
+
+	* plugin/icedteanp/IcedTeaPluginUtils.cc:
+	Tiny fixup for changeset 383; don't do free(stack_variable).
+
+2012-05-20  Jiri Vanek  <jvanek@redhat.com>
+
+	Reproducers engine enhanced for jars in subdirectories by "." naming convention
+	* Makefile.am: (stamps/change-dots-to-paths.stamp) new target to copy jars
+	with dots (.jar omitted) to the java-like package/directory structure in
+	jnlp_test_server
+	(EXPORTED_TEST_CERT) now depends on  stamps/change-dots-to-paths.stamp
+	(clean-netx-dist-tests) removes stamps/change-dots-to-paths.stamp too. 
+
+2012-05-24  Jiri Vanek  <jvanek@redhat.com>
+
+	Introduced whitelist for reproducers
+	* netx-dist-tests-whitelist: new file, contains regular expressions
+	(separated by space) for expr to select testcases which only will be
+	run. By default set to all by expression .*
+	* Makefile.am: (REPRODUCERS_CLASS_NAMES) When class with testcases is
+	going to be included in list, it is at first check for match in whitelist.
+	If there is no match, will not be included. 
+
+2012-05-24  Martin Olsson <martin@minimum.se>
+	
+	* plugin/icedteanp/IcedTeaPluginUtils.cc:
+	Fix two typos.
+
+2012-05-23  Deepak Bhole <dbhole@redhat.com>
+
+	* AUTHORS: Added Martin Olsson to list.
+
+2012-05-23  Martin Olsson  <martin@minimum.se>
+
+	* plugin/icedteanp/IcedTeaNPPlugin.cc:
+	Use g_mutex_free instead of g_free to free appletviewer_mutex (fixes
+	crash).
+
+2012-05-23  Deepak Bhole <dbhole@redhat.com>
+
+	* ChangeLog: Converted spaces to tabs in an older entry
+
+2012-05-23  Jiri Vanek  <jvanek@redhat.com>
+
+	* netx/net/sourceforge/jnlp/resources/Messages.properties: fixed error
+	in PBadNonrelativeUrl 
+
+2012-05-23 Jiri Vanek  <jvanek@redhat.com>
+
+	Added more debugging outputs
+	* netx/net/sourceforge/jnlp/runtime/JNLPClassLoader.java:
+	(getCodeSourceSecurity): added output message when no SecurityDesc is found
+	for some url/resource
+	* netx/net/sourceforge/jnlp/resources/Messages.properties: added LNoSecInstance
+	and LCertFoundIn values
+	* netx/net/sourceforge/jnlp/security/KeyStores.java: (getPathToKeystore):
+	new method, able to search for file used for creating of KeyStore if possible
+	* netx/net/sourceforge/jnlp/security/CertificateUtils.java: (inKeyStores)
+	using getPathToKeystore for debug output
+
+2012-05-23  Jiri Vanek  <jvanek@redhat.com>
+
+	* netx/net/sourceforge/jnlp/runtime/JNLPClassLoader.java: (getPermissions):
+	Any exception from this method is consumed somewhere. I have cough exception,
+	reprint it in debug mode and re-throw (to be lost). Main condition in this
+	method had several possible NullPointer exceptions. Separated and thrown before
+	this condition.
+
+2012-05-23  Jiri Vanek  <jvanek@redhat.com>
+
+	Enhanced about dialog
+	* extra/net/sourceforge/javaws/about/Main.java: Main frame and Main tab
+	renamed from "About NetX" to "About IcedTea-Web and NetX".
+	* extra/net/sourceforge/javaws/about/resources/about.html: mentioned 
+	IcedTea-Web.
+	* extra/net/sourceforge/javaws/about/resources/notes.html: List of authors
+	synchronized with AUTHORS, mentioned classpath's IcedTea-Web as homepage
+	of IcedTea-web.
+
+2012-05-23  Jiri Vanek  <jvanek@redhat.com>
+
+	Fixed error in reproducers source preparation
+	* Makefile.am: (stamps/netx-dist-tests-prepare-reproducers.stamp) removed
+	inappropriately used quotes when copying notSrcFiles. Source files now
+	copied only if src dir exists in reproducer
+
+2012-05-22  Adam Domurad  <adomurad@redhat.com>
+
+	Changed allocation of small, fixed-size buffers to stack-based 
+	allocations. Changed occurences of sprintf to the safer function
+	snprintf, added buffer information. While unlikely to change
+	functionality, snprintf adds an extra check to prevent buffer
+	overflows.
+	* plugin/icedteanp/IcedTeaNPPlugin.cc: Allocation of small buffers 
+	using malloc changed to stack allocation & changed sprintf calls to 
+	buffer-size aware snprintf calls. 
+	* plugin/icedteanp/IcedTeaPluginUtils.cc: Same as above.
+
+2012-05-22  Jiri Vanek  <jvanek@redhat.com>
+
+	* tests/jnlp_tests/signed/ReadPropertiesSigned/testcases/ReadPropertiesSignedTest.java:
+	* tests/jnlp_tests/simple/AddShutdownHook/testcases/AddShutdownHookTest.java:
+	* tests/jnlp_tests/simple/AllStackTraces/testcases/AllStackTracesTest.java:
+	* tests/jnlp_tests/simple/CreateClassLoader/testcases/CreateClassLoaderTest.java:
+	* tests/jnlp_tests/simple/ReadEnvironment/testcases/ReadEnvironmentTest.java:
+	* tests/jnlp_tests/simple/ReadProperties/testcases/ReadPropertiesTest.java:
+	* tests/jnlp_tests/simple/RedirectStreams/testcases/RedirectStreamsTest.java:
+	* tests/jnlp_tests/simple/ReplaceSecurityManager/testcases/ReplaceSecurityManagerTest.java:
+	* tests/jnlp_tests/simple/SetContextClassLoader/testcases/SetContextClassLoaderTest.java:
+	All exact matches upon AccessControlException replaced by regular expression matching both jdk7 and jdk6 syntax 
+
+2012-05-21  Jiri Vanek  <jvanek@redhat.com>
+
+	* Makefile.am: mzilla-filesystem linking targets now counts also with 
+	midori and epiphany. Extracted duplicated entries to variables
+	* configure.ac: added  check for midori and epiphany
+
+2012-05-21  Jiri Vanek  <jvanek@redhat.com>
+
+	Added detection of installed browsers and added targets to create
+	symbolic links from install dir to browsers' plugin directories.
+	Primarily for testing purposes
+	* Makefile.am: (stamps/user-links.stamp) with alias (links) - new target for
+	creating symlinks for all users. One must be root to execute this target.
+	(stamps/global-links.stamp) with alias (user-links) - new target
+	for creating symlinks for logged user only. Because opera is missing this feature,
+	quite useless for testing or dependence targets, but good for live user.
+	(restore-global-links): target for restoring original global links.
+	One must be root again
+	(restore-user-links): target for restoring user's links
+	* configure.ac: added basic check whether and which browsers are
+	installed 
+
+2012-05-18  Jiri Vanek  <jvanek@redhat.com>
+
+	Fixed behavior when encoded/characters needed encoding included in url
+	* NEWS: mentioned PR811
+	* netx/net/sourceforge/jnlp/cache/CacheUtil.java: (urlEquals) Enhanced
+	to be able compare encoded/decoded urls correctly.
+	(notNullUrlEquals) new method to separate comparing of individual parts of
+	url from null checks
+	* netx/net/sourceforge/jnlp/cache/ResourceTracker.java: (addResource)
+	is now encoding url if needed. (normalizeUrl) new method to encode path in
+	url of all except file protocol. (normalizeChunk) New method for encoding
+	of atomic piece.
+
+2012-05-18  Jiri Vanek  <jvanek@redhat.com>
+
+	More tests for Spaces and characters in urls
+	* netx/net/sourceforge/jnlp/cache/CacheLRUWrapper.java: and
+	* netx/net/sourceforge/jnlp/cache/CacheUtil.java: for unit-tests
+	purposes (cacheDir) make to point to tmp dir when no
+	DeploymentConfiguration	exists.
+	* tests/jnlp_tests/signed/Spaces can be everywhere signed/:
+	couple of new test doing the same as simple "Spaces can be everywhere"
+	but are signed
+	* tests/jnlp_tests/simple/Spaces can be everywhere/: added new test-cases
+	and html/jnlp test files to try more combinations of encodable characters
+	x launches
+	* tests/netx/unit/net/sourceforge/jnlp/cache/ResourceTrackerTest.java:
+	unittest for url encoder behavior
+	* tests/netx/unit/net/sourceforge/jnlp/cache/CacheUtilTest.java:
+	unittest for urlEquals function
+
+2012-05-17  Adam Domurad  <adomurad@redhat.com>
+
+	Fixed uses of == to compare String objects to .equals where 
+	appropriate.
+	Noted a non-obvious use of == to compare a 'magic' String reference.
+	* netx/net/sourceforge/jnlp/JNLPFile.java:
+	Changed calls that compare String contents from == to .equals
+	* plugin/icedteanp/java/sun/applet/GetMemberPluginCallRequest.java: 
+	Same
+	* plugin/icedteanp/java/sun/applet/PluginCallRequestFactory.java:
+	Same
+	* netx/net/sourceforge/jnlp/Version.java: Added comment explaining why
+	== was used vs .equals
+
+2012-05-14  Jiri Vanek  <jvanek@redhat.com>
+
+	* tests/netx/unit/net/sourceforge/jnlp/runtime/CodeBaseClassLoaderTest.java:
+	* tests/netx/unit/net/sourceforge/jnlp/cache/CacheLRUWrapperTest.java:
+	System.out replaced with System.err 
+
+2012-05-14  Jiri Vanek  <jvanek@redhat.com>
+
+	* tests/junit-runner/JunitLikeXmlOutputListener.java: fixed indentation
+	and spacing
+
+2012-05-11  Thomas Meyer  <thomas@m3y3r.de>
+
+	* tests/netx/unit/net/sourceforge/jnlp/util/PropertiesFileTest.java: Add
+	some unit tests for the PropertiesFile class 
+	* tests/netx/unit/net/sourceforge/jnlp/cache/CacheLRUWrapperTest.java: Add
+	some unit tests for the CacheLRUWrapper class
+	* netx/net/sourceforge/jnlp/util/PropertiesFile.java: Use last
+	modification timestamp of the underlying file to lazy load properties.
+	(load): Only reload file, if the file modification timestamp has changed.
+	(store): Actually fsync() the file to disk.
+	* netx/net/sourceforge/jnlp/services/XPersistenceService.java (create):
+	Fix coding style
+	* netx/net/sourceforge/jnlp/cache/CacheLRUWrapper.java (load): Only check
+	data when the recently_used file was reloaded.
+
+2012-05-02  Jiri Vanek  <jvanek@redhat.com>
+
+	Introduced new annotations Bug (to connect test/reproducer with documentation)
+	and NeedsDisplay which tells the launching engine that this particular 
+	test needs Display. Based on ptisnovs's ideas and jtreg experiences
+	*Makefile.am: (JUNIT_RUNNER_JAR), (stamps/run-netx-unit-tests.stamp) and
+	(stamps/run-unit-test-code-coverage.stamp) are now dependent on (stamps/netx-dist-tests-compile)
+	 and classpaths inside them have been enriched for JNLP_TESTS_ENGINE_DIR
+	which contains definitions of those annotations
+	*tests/jnlp_tests/simple/CheckServices/testcases/CheckServicesTests.java: and
+	*tests/jnlp_tests/simple/ManifestedJar1/testcases/ManifestedJar1Test.java: and
+	*tests/jnlp_tests/simple/Spaces can be everywhere/testcase/SpacesCanBeEverywhereTests.java:
+	 filled Bug annotations
+	*tests/junit-runner/JunitLikeXmlOutputListener.java: made to understand 
+	Bug annotation
+	*tests/netx/jnlp_testsengine/net/sourceforge/jnlp/annotations/NeedsDisplay.java:
+	and
+	*tests/netx/jnlp_testsengine/net/sourceforge/jnlp/annotations/Bug.java:
+	annotations definitions
+	*tests/report-styles/jreport.xsl: made nice links from bug annotation 
+	prepared by JunitLikeXmlOutputListener 
+
+2012-04-24  Omair Majid  <omajid@redhat.com>
+
+	* Makefile.am
+	(RUNTIME): Add resources.jar.
+	(stamps/run-unit-test-code-coverage.stamp) [WITH_EMMA]: Add resouces.jar
+	to classpath.
+	(stamps/run-reproducers-test-code-coverage.stamp) [WITH_EMMA]: Include
+	resources.jar in classpath.
+	(stamps/bootstrap-directory.stamp): Create a link to resources.jar in
+	BOOT_DIR.
+
+2012-04-19  Omair Majid  <omajid@redhat.com>
+
+	PR918: java applet windows uses a low resulution black/white icon
+	* NEWS: Update with fix.
+	* netx/net/sourceforge/jnlp/runtime/JNLPRuntime.java: Remove windowIcon.
+	(initialize): Do not call loadWindowIcon.
+	(getWindowIcon): Remove.
+	(setWindowIcon): Remove.
+	(loadWindowIcon): Remove.
+	* netx/net/sourceforge/jnlp/runtime/JNLPSecurityManager.java
+	(checkTopLevelWindow): Do not set the icon for all top level windows. Use
+	the default java icon instead.
+	* netx/net/sourceforge/jnlp/util/ImageResources.java: New file. Provides
+	access to icons.
+	* netx/net/sourceforge/jnlp/JNLPSplashScreen.java (JNLPSplashScreen),
+	* netx/net/sourceforge/jnlp/cache/DefaultDownloadIndicator.java
+	(getListener),
+	* netx/net/sourceforge/jnlp/controlpanel/AdvancedProxySettingsDialog.java
+	(AdvancedProxySettingsDialog),
+	* netx/net/sourceforge/jnlp/controlpanel/CacheViewer.java (CacheViewer),
+	* netx/net/sourceforge/jnlp/controlpanel/ControlPanel.java (ControlPanel),
+	* netx/net/sourceforge/jnlp/security/SecurityDialog.java (SecurityDialog),
+	* netx/net/sourceforge/jnlp/security/viewer/CertificateViewer.java
+	(CertificateViewer),
+	* netx/net/sourceforge/jnlp/util/BasicExceptionDialog.java (show),
+	* plugin/icedteanp/java/sun/applet/JavaConsole.java (initialize):
+	Explicitly load icons.
+	* tests/netx/unit/net/sourceforge/jnlp/util/ImageResourcesTest.java: Test
+	for ImageResources class.
+
+2012-04-18  Jiri Vanek  <jvanek@redhat.com>
+
+	Allowed signed applets in automatic reproducers tests
+	* tests/jnlp_tests/signed/AppletTestSigned/resources/AppletTestSigned.html:
+	html file for launching signed applet. Its style is different from the one for
+	calling unsigned applets - red. 
+	* tests/jnlp_tests/signed/AppletTestSigned/resources/AppletTestSigned.jnlp:
+	jnlp file for launched signed applet
+	* tests/jnlp_tests/signed/AppletTestSigned/srcs/AppletTestSigned.java
+	body of signed applet
+	* tests/jnlp_tests/signed/AppletTestSigned/testcases/AppletTestSignedTests.java:
+	(AppletTestSignedTest): testing method to launch signed applet in javaws
+	(AppletTestSignedFirefoxTest): testing method to launch signed applet in
+	browser
+	* Makefile.am: PUBLIC_KEYSTORE_PASS, EXPORTED_TEST_CERT, TEST_CERT_ALIAS,
+	PUBLIC_KEYSTORE PUBLIC_KEYSTORE_PASS: new global variables holding
+	keystores' credentials
+	(clean-local): clean-bootstrap-directory moved to be last one, as keytool
+	is necessary for removing certificate
+	(EXPORTED_TEST_CERT): new target exporting certificate from testing keystore
+	(stamps/netx-dist-tests-import-cert-to-public): new target to import
+	certificate to PUBLIC_KEYSTORE
+	(netx-dist-tests-remove-cert-from-public): new target removing testing
+	certificate from PUBLIC_KEYSTORE
+	(clean-netx-dist-tests): now depends on netx-dist-tests-remove-cert-from-public
+	and is removing EXPORTED_TEST_CERT file
+
+2012-04-17  Jiri Vanek <jvanek@redhat.com>
+
+	Rewritten DeadLockTestTest to stop failing in more then 1/2 of cases
+	All assassinated processes were hanging as zombies, killed forcibly by
+	kill -9 now.
+	* /tests/jnlp_tests/simple/deadlocktest/testcases/DeadLockTestTest.java:
+	(countJavaInstances) now return pids of found javas.
+	(killDiff) new method killing zombie javas forcibly.
+
+2012-04-11  Jiri Vanek  <jvanek@redhat.com>
+
+	* Makefile.am: EMMA_JAVA_ARGS, new variable for adjusting emma runs. 
+	Currently set to -Xmx2G.
+	(stamps/run-unit-test-code-coverage.stamp),
+	(stamps/run-reproducers-test-code-coverage.stamp),
+	(run-test-code-coverage): Use EMMA_JAVA_ARGS in theirs emma runs.
+
+2012-06-04  Jiri Vanek <jvanek@redhat.com>
+            Thomas Meyer <thomas@m3y3r.de>
+
+	* makefile.am: (stamps/run-netx-dist-tests.stamp) and
+	               (run-reproducers-test-code-coverage.stamp)
+	now using $(javaws) variable instead of plaintext javaws
+	* netx/net/sourceforge/jnlp/cache/CacheLRUWrapper.java: (checkData) new
+	method checking for sanity of cache entries
+	(load) now checks for data sanity after loading, and stores without
+	corrupted items if necessary
+	(Comparator.compare) for sorting lru items. Now redundant checking for
+	sanity removed
+	* netx/net/sourceforge/jnlp/cache/CacheUtil.java: (getCacheFile) don't
+	call lruHandler.store twice for new cache entries
+	(getCacheFileIfExist) removed iteration and cleaning mechanism
+	* netx/net/sourceforge/jnlp/resources/Messages.properties: modified
+	cache messages
+	* tests/jnlp_tests/signed/CacheReproducer/testcases/CacheReproducerTest.java
+	Added test for checking corrupted path in entry and all tests adapted for
+	exception thrown only in debug mode
+
+2012-04-04  Danesh Dadachanji <ddadacha@redhat.com>
+
+	Change the name of JarSigner to JarCertVerifier to make it more
+	relevant to the purpose of the file.
+	* netx/net/sourceforge/jnlp/runtime/JNLPClassLoader.java
+	* netx/net/sourceforge/jnlp/tools/KeyStoreUtil.java:
+	Replace all instances, paramaters and references of JarSigner
+	by JarCertVerifier.
+	* netx/net/sourceforge/jnlp/security/CertWarningPane.java
+	* netx/net/sourceforge/jnlp/security/CertsInfoPane.java
+	* netx/net/sourceforge/jnlp/security/MoreInfoPane.java
+	* netx/net/sourceforge/jnlp/security/SecurityDialogs.java:
+	Replaced all paramaters, references and variable names of JarSigner
+	to CertVerifier to match the variable object type.
+	* netx/net/sourceforge/jnlp/security/SecurityDialog.java (getJarSigner):
+	Renamed to getCertVerifier as it returns the certVerfier instance.
+	* netx/net/sourceforge/jnlp/tools/JarSigner.java:
+	Renamed to JarCertVerifier.
+	* netx/net/sourceforge/jnlp/tools/JarCertVerifier.java:
+	The rename of JarSigner.
+
+2012-04-05  Jiri Vanek <jvanek@redhat.com>
+
+	Fixing issue when process was not launched at all and when was killed but
+	left behind living/hanging, fixing mime-types
+	* tests/netx/jnlp_testsengine/net/sourceforge/jnlp/ServerAccess.java:
+	(getContentOfStream) this method overloaded with possibility to specify
+	encoding (I needed to set it to ASCII in one test)
+	(deadlyException) field introduced in ThreadedProcess to record exception
+	caused by impassibility of launching the process. And so process have
+	been null without any sign why.
+	(TinyHttpdImpl) now correctly returns known mime types
+	(ProcessAssasin) can now skip or smoothly (and finally correctly)
+	destroy its process, and all his logging messages were done null-proof
+	(as deadlyException now allows)
+	Asynchronous (ContentReader) have been silenced when complaining about 
+	closed streams by Assassin.
+
+2012-04-03  Danesh Dadachanji  <ddadacha@redhat.com>
+
+	Change all vendors in JNLP test suite to IcedTea and homepage href's to
+	a link to IcedTea-Web's wiki page.
+	* tests/jnlp_tests/signed/AccessClassInPackageSigned/resources/AccessClassInPackageSignedJAVAXJNLP.jnlp
+	* tests/jnlp_tests/signed/AccessClassInPackageSigned/resources/AccessClassInPackageSignedNETSF.jnlp
+	* tests/jnlp_tests/signed/AccessClassInPackageSigned/resources/AccessClassInPackageSignedSELF.jnlp
+	* tests/jnlp_tests/signed/AccessClassInPackageSigned/resources/AccessClassInPackageSignedSUNSEC.jnlp
+	* tests/jnlp_tests/signed/CacheReproducer/resources/CacheReproducer1.jnlp
+	* tests/jnlp_tests/signed/CacheReproducer/resources/CacheReproducer1_1.jnlp
+	* tests/jnlp_tests/signed/CacheReproducer/resources/CacheReproducer2.jnlp
+	* tests/jnlp_tests/signed/CacheReproducer/resources/CacheReproducer2_1.jnlp
+	* tests/jnlp_tests/signed/MissingJar/resources/MissingJar.jnlp
+	* tests/jnlp_tests/signed/MissingJar/resources/MissingJar2.jnlp
+	* tests/jnlp_tests/signed/MissingJar/resources/MissingJar3.jnlp
+	* tests/jnlp_tests/signed/MissingJar/resources/MissingJar4.jnlp
+	* tests/jnlp_tests/signed/ReadPropertiesBySignedHack/resources/ReadPropertiesBySignedHack.jnlp
+	* tests/jnlp_tests/signed/ReadPropertiesSigned/resources/ReadPropertiesSigned1.jnlp
+	* tests/jnlp_tests/signed/ReadPropertiesSigned/resources/ReadPropertiesSigned2.jnlp
+	* tests/jnlp_tests/signed/SimpletestSigned1/resources/SimpletestSigned1.jnlp
+	* tests/jnlp_tests/simple/AccessClassInPackage/resources/AccessClassInPackageJAVAXJNLP.jnlp
+	* tests/jnlp_tests/simple/AccessClassInPackage/resources/AccessClassInPackageNETSF.jnlp
+	* tests/jnlp_tests/simple/AccessClassInPackage/resources/AccessClassInPackageSELF.jnlp
+	* tests/jnlp_tests/simple/AccessClassInPackage/resources/AccessClassInPackageSUNSEC.jnlp
+	* tests/jnlp_tests/simple/AddShutdownHook/resources/AddShutdownHook.jnlp
+	* tests/jnlp_tests/simple/AllStackTraces/resources/AllStackTraces.jnlp
+	* tests/jnlp_tests/simple/AppletTest/resources/AppletTest.jnlp
+	* tests/jnlp_tests/simple/CheckServices/resources/CheckServices.jnlp
+	* tests/jnlp_tests/simple/CreateClassLoader/resources/CreateClassLoader.jnlp
+	* tests/jnlp_tests/simple/InformationTitleVendorParser/resources/TitleParser.jnlp
+	* tests/jnlp_tests/simple/InformationTitleVendorParser/resources/TitleVendorParser.jnlp
+	* tests/jnlp_tests/simple/InformationTitleVendorParser/resources/VendorParser.jnlp
+	* tests/jnlp_tests/simple/ManifestedJar1/resources/ManifestedJar-1main2mainAppDesc.jnlp
+	* tests/jnlp_tests/simple/ManifestedJar1/resources/ManifestedJar-1main2mainNoAppDesc.jnlp
+	* tests/jnlp_tests/simple/ManifestedJar1/resources/ManifestedJar-1main2nothingNoAppDesc.jnlp
+	* tests/jnlp_tests/simple/ManifestedJar1/resources/ManifestedJar-1mainHaveAppDesc.jnlp
+	* tests/jnlp_tests/simple/ManifestedJar1/resources/ManifestedJar-1mainNoAppDesc.jnlp
+	* tests/jnlp_tests/simple/ManifestedJar1/resources/ManifestedJar-1noAppDesc.jnlp
+	* tests/jnlp_tests/simple/ManifestedJar1/resources/ManifestedJar-1noAppDescAtAll.jnlp
+	* tests/jnlp_tests/simple/ManifestedJar1/resources/ManifestedJar-1nothing2nothingAppDesc.jnlp
+	* tests/jnlp_tests/simple/ManifestedJar1/resources/ManifestedJar-1nothing2nothingNoAppDesc.jnlp
+	* tests/jnlp_tests/simple/ReadEnvironment/resources/ReadEnvironment.jnlp
+	* tests/jnlp_tests/simple/ReadProperties/resources/ReadProperties1.jnlp
+	* tests/jnlp_tests/simple/ReadProperties/resources/ReadProperties2.jnlp
+	* tests/jnlp_tests/simple/RedirectStreams/resources/RedirectStreams.jnlp
+	* tests/jnlp_tests/simple/ReplaceSecurityManager/resources/ReplaceSecurityManager.jnlp
+	* tests/jnlp_tests/simple/SetContextClassLoader/resources/SetContextClassLoader.jnlp
+	* tests/jnlp_tests/simple/Spaces can be everywhere/resources/Spaces can be everywhere1.jnlp
+	* tests/jnlp_tests/simple/Spaces can be everywhere/resources/Spaces can be everywhere2.jnlp
+	* tests/jnlp_tests/simple/Spaces can be everywhere/resources/SpacesCanBeEverywhere1.jnlp
+	* tests/jnlp_tests/simple/deadlocktest/resources/deadlocktest.jnlp
+	* tests/jnlp_tests/simple/deadlocktest/resources/deadlocktest_1.jnlp
+	* tests/jnlp_tests/simple/simpletest1/resources/simpletest1.jnlp
+	* tests/jnlp_tests/simple/simpletest1/resources/simpletestCustomSplash.jnlp
+	* tests/jnlp_tests/simple/simpletest1/resources/simpletestMegaSlow.jnlp
+	* tests/jnlp_tests/simple/simpletest1/resources/simpletestSlow.jnlp
+	* tests/jnlp_tests/simple/simpletest1/resources/simpletestSlowBrokenCustomSplash.jnlp
+	* tests/jnlp_tests/simple/simpletest1/resources/simpletestSlowSlowCustomSplash.jnlp
+	* tests/jnlp_tests/simple/simpletest2/resources/simpletest2.jnlp:
+	Replaced the specified vendor with IcedTea and homepage with a link to
+	IcedTea-Web's wiki.
+
+2012-04-03  Omair Majid  <omajid@redhat.com>
+
+	* netx/net/sourceforge/jnlp/runtime/pac-funcs.js: Replace incorrect use of
+	getYear() with getFullYear().
+	(inYearMonthDateRange): Add missing conditional case.
+	* tests/netx/pac/pac-funcs-test.js
+	(runTest): New function.
+	(runTests): Call runTest.
+	(incDate): Deal with month/year wrapping around.
+	(decDate): Removed.
+	(testDateRange, testDateRange2, testDateRange3): Handle wrapping of month
+	and days.
+
+2012-04-03  Jiri Vanek <jvanek@redhat.com>
+
+	Tests virtual server thread marked as daemon by default
+	* tests/netx/jnlp_testsengine/net/sourceforge/jnlp/ServerAccess.java:
+	All (ServerLauncher) instances returned by methods were marked as daemon
+	by default. Possibility to change and api were kept. 
+
+2012-03-30  Danesh Dadachanji  <ddadacha@redhat.com>
+
+	Certificate start dates are not being checked, they are still verified
+	even if the date has yet not been reached.
+	* netx/net/sourceforge/jnlp/tools/JarSigner.java (verifyJar): If the start
+	date is in the future, set notYetValidCert to true.
+
+2012-03-21  Omair Majid  <omajid@redhat.com>
+
+	* tests/netx/unit/net/sourceforge/jnlp/JNLPMatcherTest.java
+	(testIsMatchDoesNotHangOnLargeData): New method.
+
+2012-03-21  Lars Herschke  <lhersch@dssgmbh.de>
+
+	PR898: signed applications with big jnlp-file doesn't start
+	* netx/net/sourceforge/jnlp/JNLPMatcher.java (JNLPMatcher): Handle large
+	files correctly.
+
+2012-03-19  Danesh Dadachanji  <ddadacha@redhat.com>
+
+	Fix failing unit test missing title/vendor tags in the JNLP stream.
+	* tests/netx/unit/net/sourceforge/jnlp/ParserCornerCases.java
+	(testNestedComments): Added title and vendor tags to malformedJnlp. 
+
+2012-03-19  Jiri Vanek <jvanek@redhat.com>
+	* tests/jnlp_tests/signed/CacheReproducer/testcases/CacheReproducerTest.java: 
+	 as javaws have now integrated splash, I have changed this test to lunch
+	 javaws -Xclearcache with -headless to skip this logo (although it is 
+	not fatal fr testrun itself)
+	* tests/jnlp_tests/simple/AppletTest/resources/appletAutoTests.html: 
+	 this html file is lunched during tests run in browser and stdout of 
+	 lunched applet is examined. Is lunched with slow resources to test
+	 spalshscreen
+	* tests/jnlp_tests/simple/AppletTest/resources/appletViewTest.html: this 
+	test html file is dedicated to manual lunch and let user to look how the
+	 applet (with slow loading) is 	loaded and how looks splashscreen in
+	 small mode and in large mode
+	* tests/jnlp_tests/simple/AppletTest/testcases/AppletTestTests.java: 
+	 test is enriched for lunching the html file with applet in browser and
+	 is examining output of this file. Browser must be always terminated as
+	 there is no way how to close from inside
+	* tests/jnlp_tests/simple/simpletest1/resources/netxPlugin.png: 
+	 image to let user observe that user-defined splashscreen is still
+	 working even when internal splashscreen is enabled
+	* tests/jnlp_tests/simple/simpletest1/resources/simpletestCustomSplash.jnlp:
+	 this and all jnlp files below are just for manual lunching and for
+	 watching various lunches of splash screen - slow loading of resources 
+	 and with custom splash
+	* tests/jnlp_tests/simple/simpletest1/resources/simpletestMegaSlow.jnlp:
+	slow loading of resource and (XslowX)jnlp also
+	* tests/jnlp_tests/simple/simpletest1/resources/simpletestSlow.jnlp:
+	 slow loading of resource
+	* tests/jnlp_tests/simple/simpletest1/resources/simpletestSlowBrokenCustomSplash.jnlp: 
+	 slow loading of resource with broken user's splash (our internal will be used)
+	* tests/jnlp_tests/simple/simpletest1/resources/simpletestSlowSlowCustomSplash.jnlp: 
+	 slow loading of custom splash screen and resource
+	* tests/netx/jnlp_testsengine/net/sourceforge/jnlp/ServerAccess.java: 
+	 Main server launcher was modified to support lunching of browser, 
+	 stdout listteners and for slowing download of resources to provide time
+	 for watching splash screen (main) was rewritten to provide free port OR
+	 run server in-D specified directory on custom or default port - very
+	 useful for debuging reproducers
+	 (getIndependentInstance) can now run also on specified port and (or) directory
+	 (USED_BROWSER_COMMAND) new constant handling value of -D property to 
+	set browser = "used.browser.command";
+	 (getBrowserLocation) new method  to provide specified 
+	(by used.browser.command -D property) or default browser location (firefox)
+	 (ensureServer) test is testing weather XslowXmodifier is working
+	 (executeBrowser) set of overloaded functions to lunch browser
+	 (TinyHttpdImpl) was enriched for XslowX modifier. When resource starts
+	 with this, is returned slowly - splited to 10 parts with 1s delay
+	 betwen sending each of them.
+	 Although it is throwing BrokenPipe exception, is working fine.
+	 (splitArray) new function to split array of byte to n arrays of bytes, 
+	 which when concated do the same array
+	 (splitArrayTestN) set of tests for splitArray
+	 (ContentReader) now can also have lsteners for catching outputs n runtime.
+	* tests/netx/jnlp_testsengine/net/sourceforge/jnlp/ContentReaderListener.java: 
+	Listener for catching chars and lines form processes outputs
+	* tests/netx/jnlp_testsengine/net/sourceforge/jnlp/ResourcesTest.java: 
+	added (testListeners) to test listeners behaviour 
+
+2012-03-16  Danesh Dadachanji  <ddadacha@redhat.com>
+
+	Applications using JNLP files without a title or vendor section
+	still run, despite them being required elements.
+	* netx/net/sourceforge/jnlp/Parser.java:
+	(getInformationDesc): If title or vendor are not found in info,
+	a new ParseException is thrown.
+	* netx/net/sourceforge/jnlp/resources/Messages.properties:
+	Added PNoTitleElement and PNoVendorElement
+	* tests/jnlp_tests/simple/InformationTitleVendorParser/resources/InformationParser.jnlp,
+	* tests/jnlp_tests/simple/InformationTitleVendorParser/resources/TitleParser.jnlp,
+	* tests/jnlp_tests/simple/InformationTitleVendorParser/resources/TitleVendorParser.jnlp,
+	* tests/jnlp_tests/simple/InformationTitleVendorParser/resources/VendorParser.jnlp,
+	* tests/jnlp_tests/simple/InformationTitleVendorParser/testcases/TitleVendorParserTest.java:
+	New test that runs JNLPs in a combination of missing information, title
+	and vendor tags, checking for the appropriate exceptions.
+
+2012-03-14  Deepak Bhole <dbhole@redhat.com>
+			Omair Majid <omajid@redhat.com>
+
+	PR895: IcedTea-Web searches for missing classes on each loadClass or
+	findClass
+	* netx/net/sourceforge/jnlp/runtime/JNLPClassLoader.java
+	(CodeBaseClassLoader): Added new map to track resources that are not
+	found.
+	(findClass): If resource was not found before, return immediately. If
+	resource was not found for the first time, record it in the new map.
+	(findResouces): Same.
+	(findResource): Same.
+	* tests/netx/unit/net/sourceforge/jnlp/runtime/CodeBaseClassLoaderTest.java:
+	Test case for PR895 from Omair Majid.
+
+2012-03-14  Omair Majid  <omajid@redhat.com>
+
+	Print exceptions to terminal when running in gui mode too.
+	* netx/net/sourceforge/jnlp/AbstractLaunchHandler.java: New file.
+	* netx/net/sourceforge/jnlp/DefaultLaunchHandler.java: Extend
+	AbstractLaunchHandler.
+	(DefaultLaunchHandler): New method.
+	(printMessage): Moved to parent class.
+	* netx/net/sourceforge/jnlp/GuiLaunchHandler.java: Extend
+	AbstractLaunchHandler.
+	(GuiLauchHandler): New method.
+	(launchError): Print the error too.
+	(launchWarning,validationError): Call parent's printMessage.
+	* netx/net/sourceforge/jnlp/LaunchException.java: Use standard java
+	exception chaining. This removes compatibility with pre-java 1.3 class
+	libraries.
+	(LaunchException(JNLPFile,Exception,String,String,String,String)): Pass
+	cause to parent so exceptions are chanined properly.
+	(LaunchException(String,Throwable),LaunchException(Throwable)): Call
+	parent's constructor.
+	(printStackTrace(PrintStream),printStackTrace(PrintWriter),getCause):
+	Removed. Use parent's implementation instead.
+	(getCauses): Removed.
+	* netx/net/sourceforge/jnlp/LaunchHandler.java
+	(validationError): Rename argument to clarify meaing.
+	* netx/net/sourceforge/jnlp/runtime/JNLPRuntime.java
+	(initialize): Redirect output of all handlers to System.err.
+	* plugin/icedteanp/java/sun/applet/PluginAppletSecurityContext.java
+	(PluginAppletSecurityContext): Likewise.
+	* tests/netx/unit/net/sourceforge/jnlp/DefaultLaunchHandlerTest.java,
+	* tests/netx/unit/net/sourceforge/jnlp/LaunchExceptionTest.java: New
+	file. Contains tests.
+
+2012-03-12  Danesh Dadachanji  <ddadacha@redhat.com>
+
+	Adding test for regression of JNLP API accessibility in constructor
+	methods of applets.
+	* Makefile.am: Added classes.jar to classpath when compiling jnlp_tests.
+	* tests/jnlp_tests/simple/CheckServices/resources/CheckServices.jnlp:
+	* tests/jnlp_tests/simple/CheckServices/srcs/CheckServices.java:
+	* tests/jnlp_tests/simple/CheckServices/testcases/CheckServicesTests.java:
+	New test file added. Tests ServiceManager is setup correctly when called
+	from applet constructors.
+
+2012-03-12  Danesh Dadachanji  <ddadacha@redhat.com>
+
+	Update tests that are missing title/vendor tag in their JNLPs.
+	* tests/jnlp_tests/signed/CacheReproducer/resources/CacheReproducer1.jnlp,
+	* tests/jnlp_tests/signed/CacheReproducer/resources/CacheReproducer1_1.jnlp,
+	* tests/jnlp_tests/signed/CacheReproducer/resources/CacheReproducer2.jnlp,
+	* tests/jnlp_tests/signed/CacheReproducer/resources/CacheReproducer2_1.jnlp,
+	* tests/jnlp_tests/signed/MissingJar/resources/MissingJar.jnlp,
+	* tests/jnlp_tests/signed/MissingJar/resources/MissingJar2.jnlp,
+	* tests/jnlp_tests/signed/MissingJar/resources/MissingJar3.jnlp,
+	* tests/jnlp_tests/signed/MissingJar/resources/MissingJar4.jnlp,
+	* tests/jnlp_tests/signed/ReadPropertiesBySignedHack/resources/ReadPropertiesBySignedHack.jnlp,
+	* tests/jnlp_tests/signed/ReadPropertiesSigned/resources/ReadPropertiesSigned1.jnlp,
+	* tests/jnlp_tests/signed/ReadPropertiesSigned/resources/ReadPropertiesSigned2.jnlp,
+	* tests/jnlp_tests/simple/AddShutdownHook/resources/AddShutdownHook.jnlp,
+	* tests/jnlp_tests/simple/AllStackTraces/resources/AllStackTraces.jnlp
+	* tests/jnlp_tests/simple/CreateClassLoader/resources/CreateClassLoader.jnlp,
+	* tests/jnlp_tests/simple/ReadEnvironment/resources/ReadEnvironment.jnlp,
+	* tests/jnlp_tests/simple/ReadProperties/resources/ReadProperties1.jnlp,
+	* tests/jnlp_tests/simple/ReadProperties/resources/ReadProperties2.jnlp,
+	* tests/jnlp_tests/simple/RedirectStreams/resources/RedirectStreams.jnlp,
+	* tests/jnlp_tests/simple/ReplaceSecurityManager/resources/ReplaceSecurityManager.jnlp,
+	* tests/jnlp_tests/simple/SetContextClassLoader/resources/SetContextClassLoader.jnlp,
+	* tests/netx/unit/net/sourceforge/jnlp/templates/template8.jnlp:
+	Added missing title/vendor tags that make them fail with this changeset.
+
+2012-03-05  Jiri Vanek <jvanek@redhat.com>
+
+	Added test for main-class in manifest for jnlp
+	* Makefile.am: (prepare-reproducers.stamp) fixed manifest handling. Till
+	now was manifest copied as any other non java file, and so was rewritten 
+	by jar tool
+	* tests/jnlp_tests/simple/ManifestedJar2/srcs: secondary jar file which 
+	should have manifest and so should help ManifestedJar1 with testing
+	* tests/jnlp_tests/simple/ManifestedJar2/resources/META-INF/MANIFEST.MF:
+	 manifest for  ManifestedJar2.jar
+	* tests/jnlp_tests/simple/ManifestedJar1/srcs: main testing jar
+	* tests/jnlp_tests/simple/ManifestedJar2/resources/META-INF/MANIFEST.MF:
+	 manifest for  ManifestedJar1.jar
+	* tests/jnlp_tests/simple/ManifestedJar1/testcases/ManifestedJar1Test.java:
+	 testing class for this reproducers
+	* tests/jnlp_tests/simple/ManifestedJar1/resources/: nine reproducers jnlps
+
+2012-03-06  Jiri Vanek <jvanek@redhat.com>
+
+	Improved reflection test:
+	* tests/jnlp_tests/simple/AccessClassInPackage/testcases/AccessClassInPackageTest.java:
+	This testcase was extended for three more unsigned reflection tries and four signed
+	*tests/jnlp_tests/simple/AccessClassInPackage/srcs/AccessClassInPackage.java:
+	now accepting class to be findByName as argument. Four new jnlp files in
+	signed a four in simple are then passing  those argument
+	*tests/jnlp_tests/simple/AccessClassInPackage/resources/AccessClassInPackageSUNSEC.jnlp:
+	*tests/jnlp_tests/simple/AccessClassInPackage/resources/AccessClassInPackageNETSF.jnlp:
+	*tests/jnlp_tests/simple/AccessClassInPackage/resources/AccessClassInPackageJAVAXJNLP.jnlp:
+	*tests/jnlp_tests/simple/AccessClassInPackage/resources/AccessClassInPackageSELF.jnlp:
+	*tests/jnlp_tests/simple/AccessClassInPackage/resources/AccessClassInPackage.jnlp:
+	removed
+	* tests/jnlp_tests/signed/AccessClassInPackageSigned/srcs/AccessClassInPackageSigned.java
+	signed variation of AccessClassInPackage, tescase is also in AccessClassInPackage
+	* tests/jnlp_tests/signed/AccessClassInPackageSigned/resources/AccessClassInPackageSignedSELF.jnlp
+	* tests/jnlp_tests/signed/AccessClassInPackageSigned/resources/AccessClassInPackageSignedNETSF.jnlp
+	* tests/jnlp_tests/signed/AccessClassInPackageSigned/resources/AccessClassInPackageSignedSUNSEC.jnlp
+	* tests/jnlp_tests/signed/AccessClassInPackageSigned/resources/AccessClassInPackageSignedJAVAXJNLP.jnlp
+
+2012-02-29  Deepak Bhole <dbhole@redhat.com>
+
+	* configure.ac: Bumped version to 1.3pre
+
+2012-02-29  Deepak Bhole <dbhole@redhat.com>
+
+	* netx/net/sourceforge/jnlp/security/CertificateUtils.java
+	(inKeyStores): Only check for certificate equality.
+
+2012-02-28  Deepak Bhole <dbhole@redhat.com>
+
+	* netx/net/sourceforge/jnlp/runtime/JNLPClassLoader.java
+	(checkForMain): Also check manifest file of main jar.
+	(getMainClassName): New method. Looks in a jar manifest to see if there is
+	a Main-Class specified.
+
+2012-02-28  Deepak Bhole <dbhole@redhat.com>
+
+	* plugin/icedteanp/IcedTeaPluginRequestProcessor.cc
+	(_eval): Return 0 id to Java side if eval fails.
+	(_call): Return 0 id to Java side if call fails.
+
+2012-02-27  Matthias Klose  <doko@ubuntu.com>
+
+	* acinclude.m4 (IT_CHECK_PLUGIN_DEPENDENCIES): Use the mozilla-plugin
+	 pkgconfig module if the libxul module is not available.
+
+2012-02-27  Matthias Klose  <doko@ubuntu.com>
+
+	* acinclude.m4 (IT_FIND_JAVA): Set VERSION_DEFS.
+	* Makefile.am ($(PLUGIN_DIR)/%.o): Pass $(VERSION_DEFS)
+	* IcedTeaNPPlugin.cc (PLUGIN_MIME_DESC): Define in terms
+	of HAVE_JAVA7.
+
+2012-02-27  Thomas Meyer <thomas@m3y3r.de>
+			Deepak Bhole <dbhole@redhat.com>
+
+	PR820: IcedTea-Web 1.1.3 crashing Firefox when loading Citrix XenApp
+	* plugin/icedteanp/IcedTeaJavaRequestProcessor.cc
+	(createJavaObjectFromVariant): If variant is a generic object array,
+	create a JSObject on Java side instead of JSObject array.
+	* plugin/icedteanp/IcedTeaPluginRequestProcessor.cc 
+	(newMessageOnBus): Run finalize on main thread.
+	(eval): Create Java object in _eval
+	(call): Create Java object in _call.
+	(setMember): Create Java object in _setMember.
+	(sendMember): Create Java object in _getMember.
+	(sendString): Create Java object in _getString.
+	(_setMember): Process result and create Java object if needed.
+	(_getMember): Same.
+	(_eval): Same.
+	(_call): Same.
+	(_getString): Same.
+
+2012-02-22  Danesh Dadachanji  <ddadacha@redhat.com>
+
+	Add ability to check for jnlp_href use outside of PluginBridge.
+	* netx/net/sourceforge/jnlp/PluginBridge.java
+	(PluginBridge): New boolean useJNLPHref is set if jnlp_href is used.
+	(useJNLPHref): New getter method, returns boolean useJNLPHref.
+
+2012-02-10  Danesh Dadachanji  <ddadacha@redhat.com>
+
+	Fix path to NEW_LINE_IFS for when one builds outside of src directory.
+	* Makefile.am: Use top src directory instead of top build directory
+	for NEW_LINE_IFS
+
+2012-02-06  Danesh Dadachanji  <ddadacha@redhat.com>
+
+	Fixed regression in running webstart applets from JNLP files.
+	* netx/net/sourceforge/jnlp/Launcher.java (createApplet): Added call to
+	set applet variable in the AppletInstance's AppletEnvironment.
+	* netx/net/sourceforge/jnlp/runtime/AppletEnvironment.java
+	(setApplet): New method, set AppletEnvironment's applet variable only once.
+
+2012-02-02  Danesh Dadachanji  <ddadacha@redhat.com>
+
+	* netx/net/sourceforge/jnlp/LaunchException.java: Fix message
+	to handle null description
+
+2012-02-01  Danesh Dadachanji  <ddadacha@redhat.com>
+
+	* netx/net/sourceforge/jnlp/LaunchException.java: Add description 
+	parameter to the message the exception stores.
+
+2012-02-01 Jiri Vanek<jvanek@redhat.com>
+
+	Fix for PR844
+	* netx/net/sourceforge/jnlp/cache/CacheLRUWrapper.java: (getLRUSortedEntries)
+	instead of error throwing own LRU exception. Also catches more then
+	NumberFormatException
+	(clearLRUSortedEntries) new method - making soft clearing of cache public
+	(clearCache) now return true if cache was cleared, false otherwise 
+	(or exception)
+	* netx/net/sourceforge/jnlp/cache/CacheUtil.java: (getCacheFileIfExist) 
+	does three tires to load cache. If ifrst fails, then recently_used file
+	is emptied both in memory and on disc. When second attemmpt fails, then
+	LRU cache is forcibly cleared. if clearing fails, then error is thrown.
+	If it pass, then one more try to load entries is allowed. When third
+	attempt fails, then error is  thrown.
+	* /netx/net/sourceforge/jnlp/cache/LruCacheException.java:
+	new file, for purpose of catching this particular exception
+	* netx/net/sourceforge/jnlp/util/PropertiesFile.java: (store) tries to 
+	mkdirs to its path. It is better then to fail when no cache directory exists.
+	* tests/jnlp_tests/signed/CacheReproducer: new  reproducr trying severals 
+	way of corupted cache on several types of jnlp files. Is signed because
+	of reflection used.
+	* tests/jnlp_tests/signed/SimpletestSigned1: signed hello world to be
+	used in  CacheReproducer tests.
+	* tests/netx/jnlp_testsengine/net/sourceforge/jnlp/ServerAccess.java: 
+	timeout for processes doubled, as clear cache methods sometimes took
+	more then original allowed.
+
+2012-01-27  Deepak Bhole <dbhole@redhat.com>
+
+	PR852: Classloader not being flushed after last applet from a site is closed
+	* netx/net/sourceforge/jnlp/runtime/JNLPClassLoader.java: Added variable
+	to count usage for a given ClassLoader instance.
+	(getInstance): Decrement use count for a loader after it is merged with
+	another. Increment loader use count before returning.
+	(incrementLoaderUseCount): New method. Increments loader use count.
+	(decrementLoaderUseCount): New method. Decrements loader use count.
+	* java/sun/applet/PluginAppletViewer.java (appletClose): Decrement loader
+	use count when applet is closed.
+
+2012-01-25  Jiri Vanek  <jvanek@redhat.com>
+
+	Added test for -Xnofork option and for applet launching by jnlp
+	* tests/jnlp_tests/simple/deadlocktest/resources/deadlocktest_1.jnlp: new file
+	By specifying new max heap size, should invoke jvm to fork when launched
+	* tests/jnlp_tests/simple/deadlocktest/srcs/DeadlockTest.java:
+	improved indentation, added debug output that main method was lunched
+	* tests/jnlp_tests/simple/deadlocktest/testcases/DeadLockTestTest.java:
+	small refactoring, add lunching  of deadlocktest_1.jnlp with and
+	without -Xnofork, and counting java instances during runtime
+	* tests/netx/jnlp_testsengine/net/sourceforge/jnlp/ServerAccess.java
+	(ThreadedProcess.run) fixed situation, when process ended, but not all
+	the output was read by its stdout/stderr readers
+	(ContentReader.run) enabled exception printing to stderr.
+	* tests/jnlp_tests/simple/AppletTest/ : test for loading applets by jnlp file
+
+2012-01-06  Danesh Dadachanji  <ddadacha@redhat.com>
+
+	Use the JNLP file's information section for the Name and
+	Publisher labels of access dialogs, if available.
+	* netx/net/sourceforge/jnlp/PluginBridge.java:
+	(PluginBridge): Assigned info variable to JNLP file's information
+	section (if one is used), otherwise to a new, empty ArrayList.
+	(getInformation): Removed method, superclass method
+	should be used instead.
+	* netx/net/sourceforge/jnlp/resources/Messages.properties:
+	Adding SUnverified.
+	* a/netx/net/sourceforge/jnlp/security/AccessWarningPane.java:
+	(addComponents): Append unverified note to the publisher label.
+
+2012-01-09  Deepak Bhole <dbhole@redhat.com>
+
+	PR838: IcedTea plugin crashes with chrome browser when javascript is executed
+	* plugin/icedteanp/IcedTeaPluginRequestProcessor.cc (eval): Added a check
+	to ensure that the result pointer is valid before attempting to create an
+	NPVariant from it.
+
+2012-01-05  Omair Majid <omajid@redhat.com>
+
+	* netx/net/sourceforge/jnlp/runtime/JNLPClassLoader.java
+	(initializeResources): Only throw exceptions about the main class not
+	being found when the jnlp file can have a main class.
+	(addToCodeBaseLoader): Dont try to process null URLs.
+
+2011-12-15  Jiri Vanek  <jvanek@redhat.com>
+
+	* configure.ac: added search for xsltproc program and setting
+	WITH_XSLTPROC variable
+	* Makefile.am: xsltproc result is no longer ignored, command
+	itself is in conditional block 
+
+2011-12-22  Thomas Meyer <thomas@m3y3r.de>
+
+	* plugin/icedteanp/IcedTeaPluginRequestProcessor.cc(sendMember): Use
+	correct response parameter when returning array member vs member itself.
+
+2011-12-21  Thomas Meyer <thomas@m3y3r.de>
+
+	RH586194: Unable to connect to connect with Juniper VPN client
+	* plugin/icedteanp/IcedTeaPluginRequestProcessor.cc(sendMember): Use
+	createJavaObjectFromVariant to create the resulting object on Java side,
+	rather than always creating a JSObject.
+
+2011-12-21  Jiri Vanek  <jvanek@redhat.com>
+
+	* acinclude.m4: added definition of IT_CHECK_XULRUNNER_API_VERSION,
+	which tries to compile small program against new xulrunner api
+	* configure.ac: added call of IT_CHECK_XULRUNNER_API_VERSION
+	* plugin/icedteanp/IcedTeaNPPlugin.cc: (NP_GetMIMEDescription) 
+	return type set-up by dependency on defined LEGACY_XULRUNNERAPI.
+	 This one is set by IT_CHECK_XULRUNNER_API_VERSION during configure.
+	if defined, then old char* is used. New const char* is used otherwise.
+
+2011-12-19  Danesh Dadachanji <ddadacha@redhat.com>
+
+	Fix for BasicService being used in applet constructors but not 
+	having access to ApplicationInstance variable.
+	* netx/net/sourceforge/jnlp/Launcher.java: 
+	(createApplet): Moved applet initialization below loader.setApplication,
+	appletInstance is now initialized with applet param as null.
+	* netx/net/sourceforge/jnlp/runtime/AppletInstance.java:
+	(setApplet): New method, allows setting of AppletInstance's applet 
+	only once.
+
+2011-12-16  Deepak Bhole <dbhole@redhat.com>
+
+	Patch from Thomas Meyer <thomas@m3y3r.de>
+	* plugin/icedteanp/IcedTeaPluginRequestProcessor.cc: Fixed function name
+	in comment for sendMember. 
+
+2011-12-08  Omair Majid  <omajid@redhat.com>
+
+	* netx/net/sourceforge/jnlp/Launcher.java
+	(launchApplication): Print arguments being passed to the application's
+	main method in debug mode.
+
+2011-12-05  Danesh Dadachanji <ddadacha@redhat.com>
+
+	Update UI for AccessWarningPane
+	* netx/net/sourceforge/jnlp/security/AccessWarningPane.java:
+	Use question.png instead of warning.png for access dialogs.
+
+2011-11-28 Jiri Vanek <jvanek@redhat.com>
+
+	Added code-coverage generation targets
+	* configure.ac: added search for optional emma.jar
+	* makefile.am: added UNIT_CLASS_NAMES and REPRODUCERS_CLASS_NAMES variables
+	to store tests clases for reuse in emmarun. Both also moved to separate target
+	(run-netx-unit-tests): made dependent on reused stamped version
+	(run-netx-dist-tests): made dependent on reused stamped version
+	(stamps/run-netx-dist-tests): stamped rusable version of run-netx-dist-tests
+	(run-unit-test-code-coverage) targets to generate report from unit-tests. 
+	 Result binary and xml file and html report in tests.build/netx/unit
+	(run-reproducers-test-code-coverage) targets to generate report from
+	 reproducers-test. Result binary file, xml and html report in
+	 tests.build/netx/jnlp_testsengine
+	(run-test-code-coverage): merges binary results from unit and reproducers
+	(clean-unit-test-code-coverage) conditionaly removes html,xml report
+	 and es and ec files from tests.build/netx/unit
+	(clean-reproducers-test-code-coverage) condtionlay removes html and xml 
+	 report and es file from tests.build/netx/jnlp_testsengine
+	(clean-test-code-coverage) conditionlay removes merged html, xml es and em 
+	files from tests.build
+	(clean-netx-tests) now depends also on clean-test-code-coverage
+
+2011-11-11  Jiri Vanek  <jvanek@redhat.com>
+
+	Added reproducer for PR804 and PR8011
+	* tests/jnlp_tests/simple/Spaces can be everywhere/resources/Spaces can be everywhere1.jnlp:
+	new jnlp file with space in name and with jar in resources which name does not contain
+	spaces
+	* tests/jnlp_tests/simple/Spaces can be everywhere/resources/Spaces can be everywhere2.jnlp:
+	new jnlp file with space in name and with jar in resources which name contains spaces
+	* tests/jnlp_tests/simple/Spaces can be everywhere/resources/SpacesCanBeEverywhere1.jnlp:
+	jnlp file without space in name but with jar in resources which name contains spaces
+	* tests/jnlp_tests/simple/Spaces can be everywhere/srcs/SpacesCanBeEverywhere.java:
+	new file containig simple main method of "Spaces can be everywhere.jar" jar
+	* tests/jnlp_tests/simple/Spaces can be everywhere/testcases/SpacesCanBeEverywhereTests.java
+	testcase for this reproducer. It is lunching  each of this jnlp once locally from filesystem and
+	once remotely from server. Please note that except it's own jar, this reproducer is also
+	using simpletest1.jar
+
+2011-11-11  Jiri Vanek  <jvanek@redhat.com>
+
+	Fixed reproducers engine to handle spaces in files and in urls
+	* Makefile.am: (stamps/netx-dist-tests-prepare-reproducers.stamp)
+	(stamps/netx-dist-tests-sign-some-reproducers.stamp)
+	(stamps/netx-dist-tests-compile-testcases.stamp):
+	added call to NEW_LINE_IFS to use line breake temporarily as parameter
+	separator while loading files from list and correct quoting
+	* NEW_LINE_IFS: new file, small separate script used in makefile as inline script
+	which backup original IFS variable and then set it to pure new line. It is in
+	separate file because it is reused and I do not know another way how to save a new
+	line variable in makefile. Restore to original vlaue is handled in Makefile
+	*tests/netx/jnlp_testsengine/net/sourceforge/jnlp/ResourcesTest.java:
+	(testResourcesExists) filename is encoded to correct URL before requested from server
+	* tests/netx/jnlp_testsengine/net/sourceforge/jnlp/ServerAccess.java:
+	"-headless" string extracted to variable HEADLES_OPTION
+	(executeProcess) and (ThreadedProcess) enhanced for variable dir to specify working
+	directory. Backward compatibility kept
+	(TinyHttpdImpl) now expects url on requests, so all requests are now decoded by
+	java.net.URLDecoder 
+
+2011-11-10  Jiri Vanek <jvanek at redhat.com>
+	
+	Added tests which covers corner cases or rhino support function dateRange
+	Enabled testWeekdayRange test
+	* tests/netx/pac/pac-funcs-test.js: (testWeekdayRange) - added mising
+	runTests call
+	(incDate) (decDate) (monthToStr) moved level up from function scope
+	to be shareable
+	(testDateRange2) new method, tests last days of months.
+	(testDateRange3) new method, tests first days of months
+	* netx/net/sourceforge/jnlp/runtime/pac-funcs.js:
+	(dateRange) logic of this method moved to isDateInRange. This one now serve
+	just as api using current date
+	(isDateInRange) logic of dateRange, can calculate ranges against any date
+
+2011-10-31  Omair Majid  <omajid@redhat.com>
+
+	PR808: javaws is unable to start when missing jars are enumerated before
+	main jar
+	* NEWS: Update.
+	* netx/net/sourceforge/jnlp/tools/JarSigner.java (verifyJars): Continue
+	with other jars if the first jar can't be used.
+
+2011-10-28  Deepak Bhole <dbhole@redhat.com>
+
+	RH742515, CVE-2011-3377: IcedTea-Web: second-level domain subdomains and
+	suffix domain SOP bypass
+	* NEWS: Updated
+	* netx/net/sourceforge/jnlp/runtime/JNLPSecurityManager.java
+	(checkPermission): Remove special case for SocketPermission.
+
+2011-10-27  Deepak Bhole <dbhole@redhat.com>
+
+	PR778: Jar download and server certificate verification deadlock
+	* ChangeLog: Removed extra whitespace from previous entries
+	* NEWS: Updated
+	* netx/net/sourceforge/jnlp/GuiLaunchHandler.java (launchInitialized):
+	Moved as much code as possible out of the invokeLater block. 
+
+2011-10-25  Omair Majid  <omajid@redhat.com>
+
+	PR804: javaws launcher incorrectly handles file names with spaces
+	* NEWS: Update.
+	* launcher/javaws.in: Use bash arrays to store arguments to handle
+	filenames with spaces correctly.
+
+2011-10-24  Jiri Vanek <jvanek@redhat.com>  
+
+	Added reproducer for - PR788: Elluminate Live! is not working
+	* tests/jnlp_tests/signed/MissingJar/resources/MissingJar.jnlp
+	* tests/jnlp_tests/signed/MissingJar/resources/MissingJar2.jnlp
+	* tests/jnlp_tests/signed/MissingJar/resources/MissingJar3.jnlp
+	* tests/jnlp_tests/signed/MissingJar/resources/MissingJar4.jnlp
+	four testcases's jnlp files. Differs by order and by used resoure tags
+	* tests/jnlp_tests/signed/MissingJar/srcs/MissingJar.java
+	very simple main jar, just printing message when initialized
+	* tests/jnlp_tests/signed/MissingJar/testcases/MissingJarTest.java
+	testing file of reproducer, launchiing above four jnlp files, each in individual test
+
+2011-10-17  Jiri Vanek <jvanek@redhat.com>
+
+	PR564: NetX depends on sun.misc.BASE64Encoder
+	* configure.ac: removed IT564 comment, removed check for sun.misc.BASE64Encoder
+	* netx/net/sourceforge/jnlp/security/CertificateUtils.java : sun.misc.BASE64Encoder;
+	replaced (just changed import) by internal implementation from
+	net.sourceforge.jnlp.util.replacements.BASE64Encoder;
+	* netx/net/sourceforge/jnlp/util/replacements/BASE64Encoder.java:
+	* netx/net/sourceforge/jnlp/util/replacements/CharacterEncoder.java:
+	New files, internal implementation of BASE64Encoder,  copied from OpenJDK
+	* tests/netx/unit/net/sourceforge/jnlp/util/replacements/BASE64EncoderTest.java
+	New file, to test internal base64encoder implementation
+
+
+2011-10-03  Jiri Vanek <jvanek@redhat.com>
+
+	* tests/jnlp_tests/signed/ReadPropertiesBySignedHack/resources/ReadPropertiesBySignedHack.jnlp
+	* tests/jnlp_tests/signed/ReadPropertiesBySignedHack/srcs/ReadPropertiesBySignedHack.java
+	* tests/jnlp_tests/signed/ReadPropertiesBySignedHack/testcases/ReadPropertiesBySignedHackTest.java
+	* tests/jnlp_tests/signed/ReadPropertiesSigned/resources/ReadPropertiesSigned1.jnlp
+	* tests/jnlp_tests/signed/ReadPropertiesSigned/resources/ReadPropertiesSigned2.jnlp
+	* tests/jnlp_tests/signed/ReadPropertiesSigned/srcs/ReadPropertiesSigned.java
+	* tests/jnlp_tests/signed/ReadPropertiesSigned/testcases/ReadPropertiesSignedTest.java
+	Direcory signed was somehow missing from my commit from 2011-09-22. 
+	Now it  have been added with all its original files
+
+2011-09-29  Omair Majid  <omajid@redhat.com>
+
+	PR618: Can't install OpenDJ, JavaWebStart fails with Input stream is null
+	error.
+	* NEWS: Update.
+	* netx/net/sourceforge/jnlp/runtime/JNLPClassLoader.java
+	(getResource): Rename to ...
+	(findResource): New method.
+	(findResources): If resource can not be found, search in lazy resources.
+	(findResourcesBySearching): New method.
+
+2011-09-28  Omair Majid  <omajid@redhat.com>
+
+	* netx/net/sourceforge/jnlp/AppletDesc.java (getMainClass): Clarify the
+	return value in javadoc.
+	* netx/net/sourceforge/jnlp/Launcher.java
+	(createApplet, createAppletObject): Do not replace '/' with '.'.
+	* netx/net/sourceforge/jnlp/PluginBridge.java (PluginBridge): Ensure that
+	the class name is in the dot-separated from.
+	* netx/net/sourceforge/jnlp/runtime/JNLPClassLoader.java
+	(checkForMain): Ensure that the name is an exact match.
+
+2011-09-28  Deepak Bhole <dbhole@redhat.com>
+
+	PR794: IcedTea-Web does not work if a Web Start app jar has a Class-Path
+	element in the manifest.
+	* netx/net/sourceforge/jnlp/runtime/CachedJarFileCallback.java
+	(retrieve): Blank out the Class-Path elements in manifest.
+	* netx/net/sourceforge/jnlp/runtime/JNLPClassLoader.java
+	(activateJars): Only load Class-Path elements if this is an applet.
+	(addNewJar): Add the right permissions for the cached jar file and verify
+	signatures. 
+
+2011-09-26  Lars Herschke  <lhersch@dssgmbh.de>
+
+	* netx/net/sourceforge/jnlp/resources/Messages.properties: Add
+	CVExportPasswordMessage, CVImportPasswordMessage and
+	CVPasswordTitle.
+	* netx/net/sourceforge/jnlp/runtime/JNLPRuntime.java (initialize):
+	Initialize SSLContext with the user's client certificates.
+	* netx/net/sourceforge/jnlp/security/CertificateUtils.java
+	(addPKCS12ToKeyStore, addPKCS12ToKeyStore, dumpPKCS12): New methods.
+	* netx/net/sourceforge/jnlp/security/viewer/CertificatePane.java
+	(getPasswords): New method.
+	(ImportButtonListener.actionPerformed): Import client certificates
+	in PKCS12 format.
+	(ExportButtonListener.actionPerformed): Export client certificates
+	in PKCS12 format.
+
+2011-09-23  Omair Majid  <omajid@redhat.com>
+
+	RH738814: Access denied at ssl handshake
+	* netx/net/sourceforge/jnlp/security/SecurityDialogs.java
+	(showCertWarningDialog): Add a javadoc comment.
+	* netx/net/sourceforge/jnlp/security/VariableX509TrustManager.java
+	(askUser): Wrap the call to showCertWarningDialog in a doPrivileged
+	block.
+
+2011-09-22  Omair Majid  <omajid@redhat.com>
+
+	PR788: Elluminate Live! is not working
+	* NEWS: Update.
+	* netx/net/sourceforge/jnlp/runtime/JNLPClassLoader.java
+	(checkForMain): If localFile is null (JAR couldn't be downloaded), try to
+	continue, rather than allowing the exception to cause an abort.
+
+2011-09-21  Omair Majid  <omajid@redhat.com>
+
+	PR766: javaws fails to parse an <argument> node that contains CDATA
+	* netx/net/sourceforge/nanoxml/XMLElement.java
+	(sanitizeInput): Do not remove CDATA sections along with comments.
+
+2011-09-20  Omair Majid  <omajid@redhat.com>
+
+	* tests/netx/unit/net/sourceforge/jnlp/ParserCornerCases.java
+	(testCdata, testCdataNested, testCDataFirstChild, testCDataSecondChild)
+	(testCommentInElements2, testDoubleDashesInComments): New methods
+	* tests/netx/unit/net/sourceforge/jnlp/application/application0.jnlp,
+	* tests/netx/unit/net/sourceforge/jnlp/templates/template0.jnlp:
+	Change <!CDATA[ to <![CDATA[.
+
+2011-09-22  Lars Herschke  <lhersch@dssgmbh.de>
+
+	PR789: typo in jrunscript.sh
+	* jrunscript.in: Use = instead of ==.
+
+2011-09-22  Jiri Vanek <jvanek@redhat.com>
+
+	* tests/jnlp_tests/signed/ReadPropertiesBySignedHack/resources/ReadPropertiesBySignedHack.jnlp: 
+	jnlp file to lunch ReadPropertiesBySignedHack, notice please dependenci 
+	on ReadProperties.jar from simple reproducers
+	* tests/jnlp_tests/signed/ReadPropertiesBySignedHack/srcs/ReadPropertiesBySignedHack.java: 
+	this reproducers verify, that even reflection-by enabled 
+	XtrustAll will not allow to lunch unsigned code
+	* tests/jnlp_tests/signed/ReadPropertiesBySignedHack/testcases/ReadPropertiesBySignedHackTest.java: 
+	testcase for this reproducer 
+
+2011-09-22  Jiri Vanek <jvanek@redhat.com>
+
+	* tests/jnlp_tests/signed/ReadPropertiesSigned/resources/ReadPropertiesSigned1.jnlp:
+	* tests/jnlp_tests/signed/ReadPropertiesSigned/resources/ReadPropertiesSigned2.jnlp:
+	* tests/jnlp_tests/signed/ReadPropertiesSigned/testcases/ReadPropertiesSignedTest.java:
+	* tests/jnlp_tests/signed/ReadPropertiesSigned/srcs/ReadPropertiesSigned.java: 
+	those four files are  example of signed reproducer
+	* tests/jnlp_tests/simple/ReadProperties/srcs/ReadProperties.java: now prints out got 
+	variable for comparsion with above created signed example
+
+2011-09-22  Jiri Vanek <jvanek@redhat.com>
+
+	Added signed reproducers engine
+	* Makefile.am: added variable KEYSTORE_NAME
+	(stamps/junit-jnlp-dist-dirs): creates stamp and depend on next two targets
+	(junit-jnlp-dist-simple.txt): creates list of simple reproducers, extracted
+	 from stamps/junit-jnlp-dist-dirs
+	(junit-jnlp-dist-signed.txt): creates list of signed reproducers
+	(stamps/netx-dist-tests-prepare-reproducers.stamp): now traverse over 
+	signed and simple
+	(stamps/netx-dist-tests-sign-some-reproducers.stamp): depends 
+	on netx-dist-tests-prepare-reproducers, traverse through signed 
+	reproducers and sign them
+	(stamps/netx-dist-tests-compile-testcases.stamp): now traverse over 
+	signed and simple
+	(stamps/bootstrap-directory.stamp): creates symlinks/stubs to 
+	jarsigner and keytool
+	(clean-netx-dist-tests):remove new stamps, signed and simple list and keysstore
+	* acinclude.m4: declared to proceed IT_FIND_KEYTOOL and IT_FIND_JARSIGNER macro
+	* configure.ac: declared macros to check for keytool and jarsigner
+	* tests/jnlp_tests/README: mentioned signed directory 
+
+2011-09-22  Jiri Vanek <jvanek@redhat.com>
+
+	* netx/net/sourceforge/jnlp/runtime/Boot.java: (main): added logic to 
+	handle -Xtrustall option
+	* netx/net/sourceforge/jnlp/runtime/JNLPRuntime.java: declared private static boolean
+	trustAll=false; with public getter and pkg.private  setter
+	* netx/net/sourceforge/jnlp/runtime/JNLPClassLoader.java: (checkTrustWithUser): modified,
+	when XtrustAll declared, then user is not asked and certificate is trusted
+	* netx/net/sourceforge/jnlp/security/VariableX509TrustManager.java:  (askUser): modified,
+	when XtrustAll declared, then user is not asked and certificate is trusted
+
+2011-09-15  Jiri Vanek <jvanek@redhat.com>
+
+	* tests/jnlp_tests/: all current reproducers (AccessClassInPackage
+	AddShutdownHook AllStackTraces CreateClassLoader deadlocktest
+	ReadEnvironment ReadProperties RedirectStreams ReplaceSecurityManager
+	SetContextClassLoader simpletest1 simpletest2) junit's asserts are enchanted
+	for reason, so junit assertion exception message is much clearer. 
+
+2011-09-13  Deepak Bhole <dbhole@redhat.com>
+
+	PR782: Support building against npapi-sdk as well
+	Patch from Michał Górny < mgorny at gentoo dot org >
+	* acinclude.m4: Build against npapi-sdk.
+
+2011-09-13  Deepak Bhole <dbhole@redhat.com>
+
+	* ChangeLog: Fixed formatting issues in previous entry.
+
+2011-09-01 Jiri Vanek<jvanek@redhat.com>
+
+	Added functionality to allow icedtea web to be buildable with
+	rhel5 libraries.
+	* configure.ac: added IT_CHECK_GLIB_VERSION check.
+	* acinclude.m4: added IT_CHECK_GLIB_VERSION definition block to test.
+	version of glib installed and add LEGACY_GLIB define macro into
+	 variable DEFS if version is <2.16.
+	* plugin/icedteanp/IcedTeaNPPlugin.cc: added replacements for incompatible
+	functions (g_strcmp0 and find_first_item_in_hash_table)if LEGACY_GLIB
+	is defined. Added define sections for use this function instead of glib ones.
+	Duplicated code moved into function getFirstInTableInstance(GHashTble* table).
+	* Makefile.am: ($(PLUGIN_DIR)/%.o): using DEFS setted by configure for compilation 
 
 2011-08-29  Deepak Bhole <dbhole@redhat.com>
 
@@ -26,6 +2305,12 @@
 
 2011-08-23  Omair Majid  <omajid@redhat.com>
 
+	* configure.ac: Add check for new non-standard classes
+	sun.net.www.protocol.jar.URLJarFile and
+	sun.net.www.protocol.jar.URLJarFileCallBack.
+
+2011-08-23  Omair Majid  <omajid@redhat.com>
+
 	* Makefile.am: Remove JRE. Replace uses with SYSTEM_JRE_DIR instead. Also
 	replace uses of SYSTEM_JDK_DIR/jre with SYSTEM_JRE_DIR.
 	* acinclude.m4
@@ -33,30 +2318,269 @@
 	(IT_FIND_JAVA): Require IT_CHECK_FOR_JRE. Use java binary from within the
 	JRE.
 
+2011-08-22  Saad Mohammad  <smohammad@redhat.com>
+	* netx/net/sourceforge/jnlp/JNLPFile.java:
+	(parse): After the file has been parsed, it calls 
+	checkForSpecialProperties() to check if the resources contain any special
+	properties.
+	(checkForSpecialProperties): Scans through resources and checks if it 
+	contains any special properties.
+	(requiresSignedJNLPWarning): Returns a boolean after determining if a signed
+	JNLP warning should be displayed.
+	(setSignedJNLPAsMissing): Informs JNLPFile that a signed JNLP file is
+	missing in the main jar.
+	* netx/net/sourceforge/jnlp/SecurityDesc.java:
+	(getJnlpRIAPermissions): Returns all the names of the basic JNLP system
+	properties accessible by RIAs.
+	* netx/net/sourceforge/jnlp/resources/Messages.properties:
+	Added LSignedJNLPFileDidNotMatch and SJNLPFileIsNotSigned.
+	* netx/net/sourceforge/jnlp/runtime/JNLPClassLoader.java:
+	(initializeResources): Locates the jar file that contains the main class
+	and verifies if a signed JNLP file is also located in that jar. This also
+	checks 'lazy' jars if the the main class was not found in 'eager' jars.
+	If the main jar was not found, a LaunchException is thrown which terminates
+	the launch of the application.
+	(checkForMain): A method that goes through each jar and checks to see
+	if it has the main class. If the main class is found, it calls
+	verifySignedJNLP() to verify if a valid signed JNLP file is also found in
+	the jar.
+	(verifySignedJNLP): A method that checks if the jar file contains a valid 
+	signed JNLP file.
+	(closeStream): Closes a stream.
+	(loadClassExt): Added a try/catch block when addNextResource() is called.
+	(addNextResource): If the main jar has not been found, checkForMain() is
+	called to check if the jar contains the main class, and verifies if a signed
+	JNLP file is also located.
+	* netx/net/sourceforge/jnlp/security/MoreInfoPane.java:
+	(addComponents): Displays the signed JNLP warning message if necessary.
+	* netx/net/sourceforge/jnlp/security/SecurityDialog.java:
+	(SecurityDialog): Stores the value of whether a signed JNLP warning should 
+	be displayed.
+	(showMoreInfoDialog): Passes in the associated JNLP file when creating a
+	SecurityDialog object.
+	(requiresSignedJNLPWarning): Returns a boolean after determining if a signed
+	JNLP warning should be displayed.
+
+2011-08-17  Danesh Dadachanji <ddadacha@redhat.com>
+
+	Update UI for SecurityDialog
+	* netx/net/sourceforge/jnlp/resources/question.png: New icon added.
+	* netx/net/sourceforge/jnlp/security/CertWarningPane.java:
+	(addComponents): When certs are verified, question.png is used as the icon 
+	and SAlwaysTrustPublisher is automatically selected.
+	* netx/net/sourceforge/jnlp/security/SecurityDialog.java: 
+	(initDialog): Changed the title of a CERT_WARNING dialog.
+
+2011-08-17  Danesh Dadachanji <ddadacha@redhat.com>
+
+	AUTHORS: Adding myself and Denis Lila. Removing the extra email from
+	Andrew Hughes.
+
+2011-08-11  Danesh Dadachanji <ddadacha@redhat.com>
+
+	PR742: IcedTea-Web checks certs only upto 1 level deep before declaring 
+	them untrusted.
+	* NEWS: Updated.
+	* netx/net/sourceforge/jnlp/tools/JarSigner.java:
+	(checkTrustedCerts): All certs along certPath are now checked for trust.
+
+2011-08-09  Deepak Bhole <dbhole@redhat.com>
+
+	PR771: IcedTea-Web certificate verification code does not use the right
+	API
+	* netx/net/sourceforge/jnlp/security/CertificateUtils.java
+	(inKeyStores): Use Certificate.verify to correctly verify a certificate
+	against a public key in the store.
+
+2011-08-09  Saad Mohammad  <smohammad@redhat.com>
+
+	PR765: JNLP file with all resource jars marked as 'lazy' fails to validate 
+	signature and stops the launch of application
+	* netx/net/sourceforge/jnlp/runtime/JNLPClassLoader.java:
+	(initializeResources): Initializes the first jar file if all resources
+	are marked as lazy jars
+
+2011-08-03  Saad Mohammad  <smohammad@redhat.com>
+
+	* netx/net/sourceforge/jnlp/JNLPMatcher.java:
+	  (JNLPMatcher): Removed NullPointerException from being thrown, caught and 
+	  then thrown again via JNLPMatcherException. This was replaced by throwing 
+	  a checked exception [JNLPMatcherException] directly. 
+  	  (JNLPMatcher): Removed unused code [getters]
+	  (JNLPMatcher): Closed Input/Output streams that were opened.
+	  (isMatch): Removed caching of return value
+	  (closeInputStream): Added this method to close input streams
+	  (closeOutputStream): Added this method to close output streams
+	* netx/net/sourceforge/jnlp/Node.java:
+	  Removed getAttributeNames() method from the commented section
+
 2011-08-03  Deepak Bhole <dbhole@redhat.com>
 
 	PR768: Signed applets/Web Start apps don't work with OpenJDK7 and up
 	* netx/net/sourceforge/jnlp/tools/JarSigner.java (verifyJar): Put entry in
 	cert hashtable only if the entry is expected to be signed.
 
+2011-08-02 Jiri Vanek <jvanek@redhat.com>
+
+	*Makefile.am: (stamps/netx-dist-tests-prepare-reproducers.stamp):
+	now are compiled files correctly compiled from directory structure.
+	Also not java files are copied with expected directory structure and
+	jarred together with classes.
+
+2011-07-26  Jiri Vanek <jvanek@redhat.com>
+
+	*tests/netx/jnlp_testsengine/net/sourceforge/jnlp/ServerAccess.java: String
+	 containing "localhost"  have been declared as final constant.
+	(SERVER_NAME) have been  moved instant Server instance so each server can
+	 have it name without affecting others
+	(getUrl()) added -  can return URL of server singleton. Implementation of
+	 this method is inside server, so each server can return its own useful URL.
+	(saveFile()) is now public.
+	Added identification for ThreadedProcess based on commandlineArgs and its
+	 run is now slowed by Thread.sleep
+	(ServerLuncher) inner class is now public (it was bug to not be as we have
+	 getIndependentInstance of it method ) and renamed to ServerLauncher
+	Enchanted wrapping of executeProcess
+
+
 2011-07-21  Deepak Bhole <dbhole@redhat.com>
 
 	PR749: sun.applet.PluginStreamHandler#handleMessage(String) really slow
-	Patch from: Ricardo Martín Camarero (Ricky) <rickyepoderi at yahoo dot es>
+	Original patch from: Ricardo Martín Camarero <rickyepoderi at yahoo dot es>
 	* plugin/icedteanp/java/sun/applet/PluginStreamHandler.java
 	(readPair): New function.
 	(handleMessage): Use readPair to incrementally tokenize message, rather
 	than using String.split().
 
-2011-07-20  Deepak Bhole <dbhole@redhat.com>
+2011-07-19  Saad Mohammad  <smohammad@redhat.com>
 
-	* configure.ac: Prepare for 1.1.2
-	* NEWS: Same
+	* netx/net/sourceforge/jnlp/JNLPMatcher.java:
+	  Created this class to compare signed JNLP file with the launching  
+	  JNLP file. When comparing, it has support for both method of signing
+	  of a JNLP file: APPLICATION_TEMPLATE.JNLP and APPLICATION.JNLP.
+	* netx/net/sourceforge/jnlp/JNLPMatcherException.java:
+	  Added a custom exception: JNLPMatcherException. Thrown if verifying 
+	  signed JNLP files fails.
+	* netx/net/sourceforge/jnlp/Node.java:
+	  Created a method that retrieves the attribute names of the Node and 
+	  stores it in private string [] member. The method returns the
+	  attribute names.
+	* tests/netx/unit/net/sourceforge/jnlp/JNLPMatcherTest.java:
+	  This is a test case that tests the functionality of JNLPMatcher. 
+	  It tests the algorithm with a variety of template and application
+	  JNLP files.
+	* tests/netx/unit/net/sourceforge/jnlp/launchApp.jnlp:
+	  Launching JNLP file: This is the launching JNLP file used to compare 
+	  with templates and application JNLP files in JNLPMatcherTest.java
+	* tests/netx/unit/net/sourceforge/jnlp/templates/template0.jnlp:
+	  Test Template JNLP file: Contains CDATA.
+	* tests/netx/unit/net/sourceforge/jnlp/templates/template1.jnlp:
+	  Test Template JNLP file: An exact duplicate of the launching
+	  JNLP file.
+	* tests/netx/unit/net/sourceforge/jnlp/templates/template2.jnlp:
+	  Test Template JNLP file: Contains wildchars as attribute/element
+	  values.
+	* tests/netx/unit/net/sourceforge/jnlp/templates/template3.jnlp:
+	  Test Template JNLP file: Different order of elements/attributes
+	  (same value)
+	* tests/netx/unit/net/sourceforge/jnlp/templates/template4.jnlp:
+	  Test Template JNLP file: Contains wildchars as values of ALL elements 
+	  and attribute.
+	* tests/netx/unit/net/sourceforge/jnlp/templates/template5.jnlp:
+	  Test Template JNLP file: Contains comments.
+	* tests/netx/unit/net/sourceforge/jnlp/templates/template6.jnlp:
+	  Test Template JNLP file: Contains different attribute and element
+	  values.
+	* tests/netx/unit/net/sourceforge/jnlp/templates/template7.jnlp:
+	  Test Template JNLP file: Contains additional children in element.
+	* tests/netx/unit/net/sourceforge/jnlp/templates/template8.jnlp:
+	  Test Template JNLP file: Contains fewer children in element.
+	* tests/netx/unit/net/sourceforge/jnlp/templates/template9.jnlp:
+	  Test Template JNLP file: All values are different from the launching 
+	  JNLP file.
+	* tests/netx/unit/net/sourceforge/jnlp/application/application0.jnlp:
+	  Test Application JNLP file: Contains CDATA.
+	* tests/netx/unit/net/sourceforge/jnlp/application/application1.jnlp:
+	  Test Application JNLP file: An exact duplicate of the launching
+	  JNLP file.
+	* tests/netx/unit/net/sourceforge/jnlp/application/application2.jnlp:
+	  Test Application JNLP file: Different order of element/attributes
+	  (same value).
+	* tests/netx/unit/net/sourceforge/jnlp/application/application3.jnlp:
+	  Test Application JNLP file: Contains comments.
+	* tests/netx/unit/net/sourceforge/jnlp/application/application4.jnlp:
+	  Test Application JNLP file: Contains wildchars as attribute/element
+	  values.
+	* tests/netx/unit/net/sourceforge/jnlp/application/application5.jnlp:
+	  Test Application JNLP file: Contains a different attribute (codebase)
+	  value.
+	* tests/netx/unit/net/sourceforge/jnlp/application/application6.jnlp:
+	  Test Application JNLP file: Contains additional children in element.
+	* tests/netx/unit/net/sourceforge/jnlp/application/application7.jnlp:
+	  Test Application JNLP file: Contains fewer children in element.
+	* tests/netx/unit/net/sourceforge/jnlp/application/application8.jnlp:
+	  Test Application JNLP file: All values are different from the
+	  launching JNLP file.
+	* Makefile.am:
+	  (run-netx-unit-tests): Copies resources(non java files) to test.build
+	  before running the unit tests.
 
-2011-07-15  Deepak Bhole <dbhole@redhat.com>
+2011-06-22 Jiri Vanek <jvanek@redhat.com>
 
-	* configure.ac: Prepare to release 1.1.1
-	* NEWS: Same
+	* tests/report-styles/jreport.xsl: part with classes statistics is now collapsable
+
+2011-06-21 Jiri Vanek <jvanek@redhat.com>
+
+	*tests/jnlp_tests/simple: AccessClassInPackage, ReplaceSecurityManager,
+	AddShutdownHook, ReadEnvironment,  SetContextClassLoader,
+	AllStackTraces,  ReadProperties, CreateClassLoader, RedirectStreams tests 
+
+2011-06-21 Jiri Vanek <jvanek@redhat.com>
+
+	*Makefile.am: (run-netx-dist-tests): no depends on copying of styles
+	(clean-netx-dist-tests): depends also on removing of styles 
+
+2011-06-17 Jiri Vanek <jvanek@redhat.com>
+
+	* tests/jnlp_tests: directory for reproducers
+	* tests/jnlp_tests/advanced: reproducers which must care about
+	 deploying and compiling thmselves
+	* tests/jnlp_tests/simple: reproducers compiled, jared and deployed
+	automatically 
+	* tests/jnlp_tests/simple/name/srcs|testcases|resources/: sourcefiles,
+	resources and testaces for simple reproducers
+	* tests/jnlp_tests/simple/deadlocktest: test for tracing not-killable
+	javaws
+	* tests/jnlp_tests/simple/simpletest1: tutorial test
+	* tests/jnlp_tests/simple/simpletest2: tutorial test with exception
+	* tests/netx/jnlp_testsengine/net/sourceforge/jnlp/ResourcesTest.java:
+	tests for server basic functionality
+	* tests/netx/jnlp_testsengine/net/sourceforge/jnlp/ServerAccess.java:
+	implementation of server to produce jnlps and resources. Implementation
+	of helpers to run javaws process.
+	*Makefile.am: new variables pointing to structure above; 
+	(junit-jnlp-dist-dirs.txt): prepare destination directory structure
+	(stamps/netx-dist-tests-prepare-reproducers.stamp):compile tescascases of simple reproducers
+	(netx-dist-tests-source-files.txt): lookup for server and helping classes
+	(stamps/netx-dist-tests-compile.stamp): compile server and helping classes
+	(stamps/netx-dist-tests-compile-testcases.stamp): compile, jar and deploy all simple testcases and their resources
+	(run-netx-dist-tests): after make install run junit testsuite upon reproducers on virtual server
+	(clean-netx-tests): added dependence on  clean-netx-dist-tests
+	(clean-netx-dist-tests): deleting  of reproducers
+
+2011-06-16 Jiri Vanek <jvanek@redhat.com>
+
+	* tests/report-styles/index.js: fast navigation functions
+	* tests/report-styles/report.css: styles for transformed result
+	* tests/report-styles/jreport.xsl: template for human-readable
+	xml->html transformation.
+	* Makefile.am: New variable for report-styles directory;
+	($(TESTS_DIR)/$(REPORT_STYLES_DIRNAME)): goal for copying styles and    
+	javascripts; (run-netx-unit-tests): added nonfaling xsltproc
+	transformation of sheet and unit-tests' xml report to index_unit.html;
+	(clean-netx-unit-tests): now depends also on clean_tests_reports;
+	(clean_tests_reports): new goal to remove report styles directory and
+	indexs html files. 
 
 2011-07-14  Omair Majid  <omajid@redhat.com>
 
@@ -96,19 +2620,57 @@
 	* netx/net/sourceforge/jnlp/security/viewer/CertificatePane.java
 	addComponents): Changed to a layout that will resize itself.
 
-2011-06-08  Deepak Bhole <dbhole@redhat.com>
+2011-06-10  Denis Lila  <dlila@redhat.com>
 
-	* configure.ac: Prepare for 1.1.1
-	* NEWS: Same
+	* netx/net/sourceforge/jnlp/GuiLaunchHandler.java:
+	(mutex): New mutex for synchronizing splashScreen.
+	(closeSplashScreen): New method to hide and dispose
+	splashScreen.
+	(launchStarting): Call closeSplashScreen instead of doing it
+	inline.
+	(launchInitialized): Sync splashScreen creation.
+	(validationError, launchError): Call closeSplashScreen.
 
-2011-06-08  Deepak Bhole <dbhole@redhat.com>
+2011-06-10  Denis Lila  <dlila@redhat.com>
 
-	* configure.ac: Update for release.
-	* NEWS: Update for release.
+	* netx/net/sourceforge/jnlp/cache/DefaultDownloadIndicator.java:
+	(frameMutex): New mutex to synchronize accesses to "frame".
+	(getListener): Make almost all of it synchronized on frameMutex.
+	(disposeListener): Sync hider's body around frameMutex and call
+	dispose on the frame so that the awt threads die when they should.
+	(addProgressPanel): Sync "frame" usage.
 
-2011-06-08  Deepak Bhole <dbhole@redhat.com>
+2011-06-08  Saad Mohammad  <smohammad@redhat.com>
 
-	* NEWS: Remove security update notes from NEWS as they are not "New"
+	* AUTHORS: Updated
+	* netx/net/sourceforge/jnlp/services/ServiceUtil.java
+	(checkAccess): Moved the process of checking if the application is a trusted
+	application to a new method called isSigned().
+	* netx/net/sourceforge/jnlp/services/XPersistenceService.java
+	(checkLocation): Allows trusted application to have access to
+	PersistenceService data from different hosts. It uses ServiceUtil.isSigned() 
+	to determine if the current application is a trusted application.
+
+2011-06-08  Andrew Su  <asu@redhat.com>
+
+	* NEWS: Updated.
+	* netx/net/sourceforge/jnlp/JNLPFile.java:
+	(JNLPFile): Calls new constructor.
+	(JNLPFile): New constructor to take an option for forcing a codebase.
+	(JNLPFile): Call parse with extra parameter.
+	(parse): Use the given codebase passed in if we did not find one.
+	* netx/net/sourceforge/jnlp/Parser.java:
+	(Parser): Calls new constructor.
+	(Parser): New constructor which takes in a codebase as a last option.
+	* netx/net/sourceforge/jnlp/PluginBridge.java:
+	(PluginBridge): Calls new JNLPFile's constructor with current codebase
+
+2011-06-08  Andrew Su  <asu@redhat.com>
+
+	* netx/net/sourceforge/jnlp/PluginBridge.java:
+	(jars): Changed to use HashSet instead of String[].
+	(PluginBridge): Updated to work with HashSet instead of String[]
+	(getResources): Likewise.
 
 2011-06-08  Deepak Bhole <dbhole@redhat.com>
 
@@ -157,6 +2719,17 @@
 	(get_scriptable_java_object): Use
 	IcedTeaPluginUtilities::callAndWaitForResult to post async callback for
 	_createAndRetainJavaObject.
+
+2011-05-31  Omair Majid  <omajid@redhat.com>
+
+	* netx/net/sourceforge/jnlp/JNLPSplashScreen.java: Subclass JDialog, not
+	JFrame.
+
+2011-05-30  Andrew Su  <asu@redhat.com>
+
+	* netx/net/sourceforge/jnlp/controlpanel/TemporaryInternetFilesPanel.java:
+	(addComponent): Add check to see if specified cache directory is
+	writable.
 
 2011-05-30  Andrew Su  <asu@redhat.com>
 
@@ -229,11 +2802,34 @@
 	(CacheLRUWrapper): New constructor to create file.
 	(lock): Removed creation of file here.
 
+2011-05-17 Jiri Vanek <jvanek@redhat.com>
+
+	* tests/junit-runner/JunitLikeXmlOutputListener: This listener exports
+	results of junit in xml which "follows junit-output schema". Extended
+	for date, duration and some statististics for future purpose
+	* Makefile.am (run-netx-unit-tests): backuping stdout/stderr of tests 
+	* tests/junit-runner/CommandLine.java: registered 
+	JunitLikeXmlOutputListener
+
 2011-05-10  Andrew Su  <asu@redhat.com>
 
 	* netx/net/sourceforge/jnlp/controlpanel/CachePane.java:
 	(addComponents):Created a new comparator for sorting by file size and
 	date.
+
+2011-05-09  Jiri Vanek  <jvanek@redhat.com>
+	* tests/junit-runner/CommandLine.java:r added skipping of inner 
+	classes and one jnlp file from sources package.
+
+2011-05-03  Denis Lila  <dlila@redhat.com>
+
+	* netx/net/sourceforge/jnlp/NetxPanel.java:
+	Add imports.
+	(uKeyToTG): Change to HashMap.
+	(TGMapMutex): New mutex to synchronize uKeyToTG.
+	(getThreadGroup): Synchronize on TGMapMutex.
+	(NetxPanel): Only create a new thread group if one doesn't already
+	exist for the computed uKey.
 
 2011-05-02  Deepak Bhole <dbhole@redhat.com>
 
@@ -242,6 +2838,30 @@
 	and the thread group for applets on a page is identical. Call dispose from
 	invokeAndWait.
 	(appletSystemExit): Exit the VM when called.
+
+2011-04-28  Denis Lila  <dlila@redhat.com>
+
+	* netx/net/sourceforge/jnlp/NetxPanel.java:
+	Remove unused import; add imports.
+	(uKey, uKeyToTG, appContextCreated): New members.
+	(getThreadGroup, createNewAppContext): New methods.
+	(runLoader): Pass uKey to PluginBridge's constructor.
+	(run): Remove. No longer needed.
+	(NetxPanel): Initialize uKey. If it is a new key, make a new thread
+	group for it and save it in the hash map.
+	(createAppletThread): Use getFutureTG instead of creating a thread
+	group on the spot.
+	* plugin/icedteanp/java/sun/applet/PluginAppletViewer.java:
+	(createPanel): Initialize and frame the panel in a separate thread.
+	* netx/net/sourceforge/jnlp/Launcher.java:
+	Remove unused import.
+	(createApplet, createApplication, createThreadGroup): Replace
+	AppThreadGroup with ThreadGroup. Remove all calls to setApplication.
+	* netx/net/sourceforge/jnlp/PluginBridge.java:
+	(PluginBridge): Remove the uniqueKey initialization logic. Set
+	uniqueKey to the uKey parameter.
+	* netx/net/sourceforge/jnlp/runtime/AppThreadGroup.java:
+	Remove file.
 
 2011-04-28  Omair Majid  <omajid@redhat.com>
 
@@ -254,6 +2874,10 @@
 	(launcher.build/$(javaws)): New target.
 	(launcher.build/itweb-settings): Replace with...
 	(launcher.build/$(itweb-settings)): New target. 
+
+2011-04-21  Deepak Bhole <dbhole@redhat.com>
+
+	* configure.ac: Bumped version to 1.2pre
 
 2011-04-21  Deepak Bhole <dbhole@redhat.com>
 

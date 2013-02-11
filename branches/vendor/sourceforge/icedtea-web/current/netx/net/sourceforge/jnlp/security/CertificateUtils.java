@@ -38,22 +38,30 @@ exception statement from your version.
 package net.sourceforge.jnlp.security;
 
 import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.math.BigInteger;
+import java.security.InvalidKeyException;
+import java.security.Key;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.SignatureException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.util.Enumeration;
 import java.util.Random;
 
 import net.sourceforge.jnlp.runtime.JNLPRuntime;
-
-import sun.misc.BASE64Encoder;
+import net.sourceforge.jnlp.runtime.Translator;
+import net.sourceforge.jnlp.util.replacements.BASE64Encoder;
 import sun.security.provider.X509Factory;
 
 /**
@@ -113,6 +121,41 @@ public class CertificateUtils {
         ks.setCertificateEntry(alias, cert);
     }
 
+    public static void addPKCS12ToKeyStore(File file, KeyStore ks, char[] password)
+            throws Exception {
+        BufferedInputStream bis = new BufferedInputStream(new FileInputStream(file));
+        KeyStore keyStore = KeyStore.getInstance("PKCS12");
+        keyStore.load(bis, password);
+
+        Enumeration<String> aliasList = keyStore.aliases();
+
+        while (aliasList.hasMoreElements()) {
+            String alias = aliasList.nextElement();
+            Certificate[] certChain = keyStore.getCertificateChain(alias);
+            Key key = keyStore.getKey(alias, password);
+            addPKCS12ToKeyStore(certChain, key, ks);
+        }
+    }
+
+    public static void addPKCS12ToKeyStore(Certificate[] certChain, Key key, KeyStore ks)
+            throws KeyStoreException {
+        String alias = null;
+
+        // does this certificate already exist?
+        alias = ks.getCertificateAlias(certChain[0]);
+        if (alias != null) {
+            return;
+        }
+
+        // create a unique alias for this new certificate
+        Random random = new Random();
+        do {
+            alias = new BigInteger(20, random).toString();
+        } while (ks.getCertificate(alias) != null);
+
+        ks.setKeyEntry(alias, key, KeyStores.getPassword(), certChain);
+    }
+
     /**
      * Checks whether an X509Certificate is already in one of the keystores
      * @param c the certificate
@@ -122,12 +165,22 @@ public class CertificateUtils {
     public static final boolean inKeyStores(X509Certificate c, KeyStore[] keyStores) {
         for (int i = 0; i < keyStores.length; i++) {
             try {
-                if (keyStores[i].getCertificateAlias(c) != null) {
-                    if (JNLPRuntime.isDebug()) {
-                        System.out.println(c.getSubjectX500Principal().getName() + " found in cacerts");
-                    }
-                    return true;
+                // Check against all certs
+                Enumeration<String> aliases = keyStores[i].aliases();
+                while (aliases.hasMoreElements()) {
+
+                    // Verify against this entry
+                    String alias = aliases.nextElement();
+
+                    if (c.equals(keyStores[i].getCertificate(alias))) {
+                        if (JNLPRuntime.isDebug()) {
+                            System.out.println(Translator.R("LCertFoundIn", c.getSubjectX500Principal().getName(), KeyStores.getPathToKeystore(keyStores[i].hashCode())));
+                        }
+
+                        return true;
+                    } // else continue
                 }
+
             } catch (KeyStoreException e) {
                 e.printStackTrace();
                 // continue
@@ -147,5 +200,16 @@ public class CertificateUtils {
         out.println(X509Factory.BEGIN_CERT);
         encoder.encodeBuffer(cert.getEncoded(), out);
         out.println(X509Factory.END_CERT);
+    }
+
+    public static void dumpPKCS12(String alias, File file, KeyStore ks, char[] password)
+            throws Exception {
+        Certificate[] certChain = ks.getCertificateChain(alias);
+        Key key = ks.getKey(alias, KeyStores.getPassword());
+        BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(file));
+        KeyStore keyStore = KeyStore.getInstance("PKCS12");
+        keyStore.load(null, null);
+        keyStore.setKeyEntry(alias, key, password, certChain);
+        keyStore.store(bos, password);
     }
 }

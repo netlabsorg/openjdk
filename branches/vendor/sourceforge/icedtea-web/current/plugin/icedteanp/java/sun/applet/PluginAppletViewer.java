@@ -123,10 +123,10 @@ import com.sun.jndi.toolkit.url.UrlUtil;
 class PluginAppletPanelFactory {
 
     public AppletPanel createPanel(PluginStreamHandler streamhandler,
-                                    int identifier,
-                                    long handle, int x, int y,
-                                    final URL doc,
-                                    final Hashtable<String, String> atts) {
+                                   final int identifier,
+                                   final long handle, int x, int y,
+                                   final URL doc,
+                                   final Hashtable<String, String> atts) {
         final NetxPanel panel = AccessController.doPrivileged(new PrivilegedAction<NetxPanel>() {
             public NetxPanel run() {
                 NetxPanel panel = new NetxPanel(doc, atts, false);
@@ -136,13 +136,29 @@ class PluginAppletPanelFactory {
             }
         });
 
-        // create the frame.
-        PluginAppletViewer.framePanel(identifier, handle, panel);
+        // Framing the panel needs to happen in a thread whose thread group
+        // is the same as the threadgroup of the applet thread. If this
+        // isn't the case, the awt eventqueue thread's context classloader
+        // won't be set to a JNLPClassLoader, and when an applet class needs
+        // to be loaded from the awt eventqueue, it won't be found.
+        Thread panelInit = new Thread(panel.getThreadGroup(), new Runnable() {
+            @Override public void run() {
+                panel.createNewAppContext();
+                // create the frame.
+                PluginAppletViewer.framePanel(identifier, handle, panel);
+                panel.init();
+                // Start the applet
+                initEventQueue(panel);
+            }
+        }, "NetXPanel initializer");
 
-        panel.init();
-
-        // Start the applet
-        initEventQueue(panel);
+        panelInit.start();
+        while(panelInit.isAlive()) {
+            try {
+                panelInit.join();
+            } catch (InterruptedException e) {
+            }
+        }
 
         // Wait for the panel to initialize
         PluginAppletViewer.waitForAppletInit(panel);
@@ -221,27 +237,27 @@ class PluginAppletPanelFactory {
             // ","-separated list.  No error-checking will be done on the list.
             String[] events = eventList.split(",");
 
-            for (int i = 0; i < events.length; i++) {
-                PluginDebug.debug("Adding event to queue: ", events[i]);
-                if (events[i].equals("dispose"))
+            for (String event : events) {
+                PluginDebug.debug("Adding event to queue: ", event);
+                if ("dispose".equals(event))
                     panel.sendEvent(AppletPanel.APPLET_DISPOSE);
-                else if (events[i].equals("load"))
+                else if ("load".equals(event))
                     panel.sendEvent(AppletPanel.APPLET_LOAD);
-                else if (events[i].equals("init"))
+                else if ("init".equals(event))
                     panel.sendEvent(AppletPanel.APPLET_INIT);
-                else if (events[i].equals("start"))
+                else if ("start".equals(event))
                     panel.sendEvent(AppletPanel.APPLET_START);
-                else if (events[i].equals("stop"))
+                else if ("stop".equals(event))
                     panel.sendEvent(AppletPanel.APPLET_STOP);
-                else if (events[i].equals("destroy"))
+                else if ("destroy".equals(event))
                     panel.sendEvent(AppletPanel.APPLET_DESTROY);
-                else if (events[i].equals("quit"))
+                else if ("quit".equals(event))
                     panel.sendEvent(AppletPanel.APPLET_QUIT);
-                else if (events[i].equals("error"))
+                else if ("error".equals(event))
                     panel.sendEvent(AppletPanel.APPLET_ERROR);
                 else
                     // non-fatal error if we get an unrecognized event
-                    PluginDebug.debug("Unrecognized event name: ", events[i]);
+                    PluginDebug.debug("Unrecognized event name: ", event);
             }
 
             while (!panel.emptyEventQueue())
@@ -1609,6 +1625,9 @@ public class PluginAppletViewer extends XEmbeddedFrame
 
                 appletShutdown(p);
                 appletPanels.removeElement(p);
+                
+                // Mark classloader unusable
+                ((JNLPClassLoader) cl).decrementLoaderUseCount();
 
                 try {
                     SwingUtilities.invokeAndWait(new Runnable() {
@@ -1903,9 +1922,6 @@ public class PluginAppletViewer extends XEmbeddedFrame
                     if (nm.equalsIgnoreCase("param")) {
                         Hashtable<String, String> t = scanTag(c, in);
                         String att = t.get("name");
-
-                        if (atts.containsKey(att))
-                            continue;
 
                         if (att == null) {
                             statusMsgStream.println(requiresNameWarning);
