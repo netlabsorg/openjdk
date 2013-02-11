@@ -316,7 +316,7 @@ g_strcmp0(char *str1, char *str2)
 #endif
 
 
-/* 
+/*
  * Find first member in GHashTable* depending on version of glib
  */
 gpointer getFirstInTableInstance(GHashTable* table)
@@ -1202,7 +1202,7 @@ plugin_get_documentbase (NPP instance)
 
   NPVariant href;
   NPIdentifier href_id = browser_functions.getstringidentifier("href");
-  browser_functions.getproperty(instance, NPVARIANT_TO_OBJECT(location), 
+  browser_functions.getproperty(instance, NPVARIANT_TO_OBJECT(location),
                                href_id, &href);
 
   std::string href_str = IcedTeaPluginUtilities::NPVariantAsString(href);
@@ -1825,7 +1825,7 @@ plugin_start_appletviewer (ITNPPluginData* data)
 /*
  * Replaces certain characters (\r, \n, etc) with HTML escape equivalents.
  *
- * Return string is allocated on the heap. Caller assumes responsibility 
+ * Return string is allocated on the heap. Caller assumes responsibility
  * for freeing the memory via free()
  */
 static char*
@@ -1861,9 +1861,9 @@ encode_string(char* to_encode)
            char* orig_char = (char*) calloc(2, sizeof(char));
            orig_char[0] = to_encode[i];
            orig_char[1] = '\0';
- 
+
            strcat(encoded, orig_char);
- 
+
            free(orig_char);
            orig_char = NULL;
       }
@@ -2353,8 +2353,8 @@ OSCALL NP_Initialize (NPNetscapeFuncs* browserTable, NPPluginFuncs* pluginTable)
   }
 #endif
 
-  // Re-setting the above tables multiple times is OK (as the 
-  // browser may change its function locations). However 
+  // Re-setting the above tables multiple times is OK (as the
+  // browser may change its function locations). However
   // anything beyond this point should only run once.
   if (initialized)
     return NPERR_NO_ERROR;
@@ -2368,6 +2368,7 @@ OSCALL NP_Initialize (NPNetscapeFuncs* browserTable, NPPluginFuncs* pluginTable)
     }
 #endif
 
+  NPError np_error = NPERR_NO_ERROR;
 #ifndef __OS2__
   // Make sure the plugin data directory exists, creating it if
   // necessary.
@@ -2377,8 +2378,6 @@ OSCALL NP_Initialize (NPNetscapeFuncs* browserTable, NPPluginFuncs* pluginTable)
       PLUGIN_ERROR ("Failed to create data directory name.");
       return NPERR_OUT_OF_MEMORY_ERROR;
     }
-  NPError np_error = NPERR_NO_ERROR;
-  gchar* filename = NULL;
 
   // If P_tmpdir does not exist, try /tmp directly
 
@@ -2567,9 +2566,9 @@ OSCALL NP_GetEntryPoints (NPPluginFuncs* pluginTable)
 // Returns a string describing the MIME type that this plugin
 // handles.
 #ifdef LEGACY_XULRUNNERAPI
-  char* 
+  char*
 #else
-  const char* 
+  const char*
 #endif
 OSCALL NP_GetMIMEDescription ()
 {
