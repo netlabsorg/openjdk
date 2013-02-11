@@ -37,6 +37,8 @@ exception statement from your version. */
 
 package net.sourceforge.jnlp;
 
+import java.io.PrintStream;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 
 import javax.swing.SwingUtilities;
@@ -50,10 +52,15 @@ import net.sourceforge.jnlp.util.BasicExceptionDialog;
  * A {@link LaunchHandler} that gives feedback to the user using GUI elements
  * including splash screens and exception dialogs.
  */
-public class GuiLaunchHandler implements LaunchHandler {
+public class GuiLaunchHandler extends AbstractLaunchHandler {
 
     private JNLPSplashScreen splashScreen = null;
+    private final Object mutex = new Object();
     private UpdatePolicy policy = UpdatePolicy.ALWAYS;
+
+    public GuiLaunchHandler(PrintStream outputStream) {
+        super(outputStream);
+    }
 
     @Override
     public void launchCompleted(ApplicationInstance application) {
@@ -65,9 +72,22 @@ public class GuiLaunchHandler implements LaunchHandler {
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
+                closeSplashScreen();
                 BasicExceptionDialog.show(exception);
             }
         });
+        printMessage(exception);
+    }
+
+    private void closeSplashScreen() {
+        synchronized(mutex) {
+            if (splashScreen != null) {
+                if (splashScreen.isSplashScreenValid()) {
+                    splashScreen.setVisible(false);
+                }
+                splashScreen.dispose();
+            }
+        }
     }
 
     @Override
@@ -75,33 +95,50 @@ public class GuiLaunchHandler implements LaunchHandler {
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
-                if (splashScreen != null) {
-                    if (splashScreen.isSplashScreenValid()) {
-                        splashScreen.setVisible(false);
-                    }
-                    splashScreen.dispose();
-                }
+                closeSplashScreen();
             }
         });
     }
 
     @Override
     public void launchInitialized(final JNLPFile file) {
+        
+        int preferredWidth = 500;
+        int preferredHeight = 400;
+
+        final URL splashImageURL = file.getInformation().getIconLocation(
+                IconDesc.SPLASH, preferredWidth, preferredHeight);
+
+        if (splashImageURL != null) {
+            final ResourceTracker resourceTracker = new ResourceTracker(true);
+            resourceTracker.addResource(splashImageURL, file.getFileVersion(), null, policy);
+            synchronized(mutex) {
+                try {
+                    SwingUtilities.invokeAndWait(new Runnable() {
+                        @Override
+                        public void run() {
+                            splashScreen = new JNLPSplashScreen(resourceTracker, null, null);
+                        }
+                    });
+                } catch (InterruptedException ie) {
+                    // Wait till splash screen is created
+                    while (splashScreen == null);
+                } catch (InvocationTargetException ite) {
+                    ite.printStackTrace();
+                }
+
+                splashScreen.setSplashImageURL(splashImageURL);
+            }
+        }
+        
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
-                final int preferredWidth = 500;
-                final int preferredHeight = 400;
-
-                URL splashImageURL = file.getInformation().getIconLocation(
-                        IconDesc.SPLASH, preferredWidth, preferredHeight);
                 if (splashImageURL != null) {
-                    ResourceTracker resourceTracker = new ResourceTracker(true);
-                    resourceTracker.addResource(splashImageURL, file.getFileVersion(), null, policy);
-                    splashScreen = new JNLPSplashScreen(resourceTracker, null, null);
-                    splashScreen.setSplashImageURL(splashImageURL);
-                    if (splashScreen.isSplashScreenValid()) {
-                        splashScreen.setVisible(true);
+                    synchronized(mutex) {
+                        if (splashScreen.isSplashScreenValid()) {
+                            splashScreen.setVisible(true);
+                        }
                     }
                 }
             }
@@ -110,13 +147,14 @@ public class GuiLaunchHandler implements LaunchHandler {
 
     @Override
     public boolean launchWarning(LaunchException warning) {
-        DefaultLaunchHandler.printMessage(warning);
+        printMessage(warning);
         return true;
     }
 
     @Override
-    public boolean validationError(LaunchException security) {
-        DefaultLaunchHandler.printMessage(security);
+    public boolean validationError(LaunchException error) {
+        closeSplashScreen();
+        printMessage(error);
         return true;
     }
 

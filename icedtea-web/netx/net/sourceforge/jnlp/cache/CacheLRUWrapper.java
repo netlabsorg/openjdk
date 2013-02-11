@@ -36,6 +36,9 @@ exception statement from your version.
  */
 package net.sourceforge.jnlp.cache;
 
+import java.util.Set;
+import static  net.sourceforge.jnlp.runtime.Translator.R;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.channels.FileLock;
@@ -43,6 +46,7 @@ import java.nio.channels.OverlappingFileLockException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 
@@ -67,8 +71,8 @@ enum CacheLRUWrapper {
     private FileLock fl = null;
 
     /* location of cache directory */
-    private final String cacheDir = new File(JNLPRuntime.getConfiguration()
-            .getProperty(DeploymentConfiguration.KEY_USER_CACHE_DIR)).getPath();
+    private final String setCachePath = JNLPRuntime.getConfiguration().getProperty(DeploymentConfiguration.KEY_USER_CACHE_DIR);
+    private final String cacheDir = new File(setCachePath != null ? setCachePath : System.getProperty("java.io.tmpdir")).getPath();
 
     /*
      * back-end of how LRU is implemented This file is to keep track of the most
@@ -104,7 +108,58 @@ enum CacheLRUWrapper {
      * Update map for keeping track of recently used items.
      */
     public synchronized void load() {
-        cacheOrder.load();
+        boolean loaded = cacheOrder.load();
+        /* 
+         * clean up possibly corrupted entries
+         */
+        if (loaded && checkData()) {
+            if (JNLPRuntime.isDebug()) {
+                new LruCacheException().printStackTrace();
+            }
+            System.out.println(R("CFakeCache"));
+            store();
+            System.out.println(R("CFakedCache"));
+        }
+    }
+
+    /**
+     * check content of cacheOrder and remove invalid/corrupt entries
+     *
+     * @return true, if cache was corrupted and affected entry removed
+     */
+    private boolean checkData () {
+        boolean modified = false;
+        Set<Entry<Object, Object>> q = cacheOrder.entrySet();
+        for (Iterator<Entry<Object, Object>> it = q.iterator(); it.hasNext();) {
+            Entry<Object, Object> currentEntry = it.next();
+
+            final String key = (String) currentEntry.getKey();
+            final String path = (String) currentEntry.getValue();
+
+            // 1. check key format: "milliseconds,number"
+            try {
+                String sa[] = key.split(",");
+                Long l1 = Long.parseLong(sa[0]);
+                Long l2 = Long.parseLong(sa[1]);
+            } catch (Exception ex) {
+                it.remove();
+                modified = true;
+                continue;
+            }
+
+            // 2. check path format - does the path look correct?
+            if (path != null) {
+                if (path.indexOf(cacheDir) < 0) {
+                    it.remove();
+                    modified = true;
+                }
+            } else {
+                it.remove();
+                modified = true;
+            }
+        }
+        
+        return modified;
     }
 
     /**
@@ -172,17 +227,11 @@ enum CacheLRUWrapper {
         Collections.sort(entries, new Comparator<Entry<String, String>>() {
             @Override
             public int compare(Entry<String, String> e1, Entry<String, String> e2) {
-                try {
-                    Long t1 = Long.parseLong(e1.getKey().split(",")[0]);
-                    Long t2 = Long.parseLong(e2.getKey().split(",")[0]);
+                Long t1 = Long.parseLong(e1.getKey().split(",")[0]);
+                Long t2 = Long.parseLong(e2.getKey().split(",")[0]);
 
-                    int c = t1.compareTo(t2);
-                    return c < 0 ? 1 : (c > 0 ? -1 : 0);
-                } catch (NumberFormatException e) {
-                    // Perhaps an error is too harsh. Maybe just somehow turn
-                    // caching off if this is the case.
-                    throw new InternalError("Corrupt LRU file entries");
-                }
+                int c = t1.compareTo(t2);
+                return c < 0 ? 1 : (c > 0 ? -1 : 0);
             }
         });
         return entries;
@@ -248,5 +297,9 @@ enum CacheLRUWrapper {
      */
     public String generateKey(String path) {
         return System.currentTimeMillis() + "," + getIdForCacheFolder(path);
+    }
+
+    void clearLRUSortedEntries() {
+        cacheOrder.clear();
     }
 }

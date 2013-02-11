@@ -243,7 +243,7 @@ public class PluginAppletSecurityContext {
         // that JNLPRuntime will try to install
         if (System.getSecurityManager() == null) {
             JNLPRuntime.initialize(/* isApplication */false);
-            JNLPRuntime.setDefaultLaunchHandler(new DefaultLaunchHandler());
+            JNLPRuntime.setDefaultLaunchHandler(new DefaultLaunchHandler(System.err));
         }
 
         JNLPRuntime.disableExit();
@@ -1295,9 +1295,7 @@ public class PluginAppletSecurityContext {
 
         Permissions grantedPermissions = new Permissions();
 
-        for (int i = 0; i < nsPrivilegeList.length; i++) {
-            String privilege = nsPrivilegeList[i];
-
+        for (String privilege : nsPrivilegeList) {
             if (privilege.equals("UniversalBrowserRead")) {
                 BrowserReadPermission bp = new BrowserReadPermission();
                 grantedPermissions.add(bp);
