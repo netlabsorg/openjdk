@@ -29,6 +29,7 @@ import java.security.*;
 import javax.jnlp.*;
 import javax.naming.ConfigurationException;
 import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
@@ -93,9 +94,6 @@ public class JNLPRuntime {
     /** update policy that controls when to check for updates */
     private static UpdatePolicy updatePolicy = UpdatePolicy.ALWAYS;
 
-    /** netx window icon */
-    private static Image windowIcon = null;
-
     /** whether initialized */
     private static boolean initialized = false;
 
@@ -123,6 +121,9 @@ public class JNLPRuntime {
     /** set to false to indicate another JVM should not be spawned, even if necessary */
     private static boolean forksAllowed = true;
 
+    /** all security dialogs will be consumed and pretented as beeing verified by user and allowed.*/
+    private static boolean trustAll=false;
+
     /** contains the arguments passed to the jnlp runtime */
     private static List<String> initialArguments;
 
@@ -131,6 +132,7 @@ public class JNLPRuntime {
 
     public static final String STDERR_FILE = "java.stderr";
     public static final String STDOUT_FILE = "java.stdout";
+
 
     /**
      * Returns whether the JNLP runtime environment has been
@@ -183,17 +185,14 @@ public class JNLPRuntime {
         if (headless == false)
             checkHeadless();
 
-        if (!headless && windowIcon == null)
-            loadWindowIcon();
-
         if (!headless && indicator == null)
             indicator = new DefaultDownloadIndicator();
 
         if (handler == null) {
             if (headless) {
-                handler = new DefaultLaunchHandler();
+                handler = new DefaultLaunchHandler(System.err);
             } else {
-                handler = new GuiLaunchHandler();
+                handler = new GuiLaunchHandler(System.err);
             }
         }
 
@@ -221,8 +220,11 @@ public class JNLPRuntime {
         try {
             SSLSocketFactory sslSocketFactory;
             SSLContext context = SSLContext.getInstance("SSL");
+            KeyStore ks = KeyStores.getKeyStore(KeyStores.Level.USER, KeyStores.Type.CLIENT_CERTS);
+            KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
+            kmf.init(ks, KeyStores.getPassword());
             TrustManager[] trust = new TrustManager[] { VariableX509TrustManager.getInstance() };
-            context.init(null, trust, null);
+            context.init(kmf.getKeyManagers(), trust, null);
             sslSocketFactory = context.getSocketFactory();
 
             HttpsURLConnection.setDefaultSSLSocketFactory(sslSocketFactory);
@@ -325,24 +327,6 @@ public class JNLPRuntime {
      */
     public static boolean isWebstartApplication() {
         return isWebstartApplication;
-    }
-
-    /**
-     * Returns the window icon.
-     */
-    public static Image getWindowIcon() {
-        return windowIcon;
-    }
-
-    /**
-     * Sets the window icon that is displayed in Java applications
-     * and applets instead of the default Java icon.
-     *
-     * @throws IllegalStateException if caller is not the exit class
-     */
-    public static void setWindowIcon(Image image) {
-        checkExitClass();
-        windowIcon = image;
     }
 
     /**
@@ -614,22 +598,6 @@ public class JNLPRuntime {
     }
 
     /**
-     * Load the window icon.
-     */
-    private static void loadWindowIcon() {
-        if (windowIcon != null)
-            return;
-
-        try {
-            windowIcon = new javax.swing.ImageIcon((new sun.misc.Launcher())
-                        .getClassLoader().getResource("net/sourceforge/jnlp/resources/netx-icon.png")).getImage();
-        } catch (Exception ex) {
-            if (JNLPRuntime.isDebug())
-                ex.printStackTrace();
-        }
-    }
-
-    /**
      * @return true if running on Windows
      */
     public static boolean isWindows() {
@@ -730,6 +698,14 @@ public class JNLPRuntime {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    static void setTrustAll(boolean b) {
+        trustAll=b;
+    }
+
+    public static boolean isTrustAll() {
+        return trustAll;
     }
 
 }

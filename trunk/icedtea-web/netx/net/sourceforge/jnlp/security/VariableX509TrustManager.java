@@ -37,7 +37,9 @@ exception statement from your version.
 
 package net.sourceforge.jnlp.security;
 
+import java.security.AccessController;
 import java.security.KeyStore;
+import java.security.PrivilegedAction;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -53,6 +55,7 @@ import sun.security.util.HostnameChecker;
 import sun.security.validator.ValidatorException;
 
 import com.sun.net.ssl.internal.ssl.X509ExtendedTrustManager;
+import net.sourceforge.jnlp.runtime.JNLPRuntime;
 
 import net.sourceforge.jnlp.security.SecurityDialogs.AccessType;
 
@@ -379,14 +382,23 @@ final public class VariableX509TrustManager extends X509ExtendedTrustManager {
      * @param authType The authentication algorithm
      * @return user's response
      */
-    private boolean askUser(X509Certificate[] chain, String authType,
-                            boolean isTrusted, boolean hostMatched,
-                            String hostName) {
-        return SecurityDialogs.showCertWarningDialog(
+    private boolean askUser(final X509Certificate[] chain, final String authType,
+                            final boolean isTrusted, final boolean hostMatched,
+                            final String hostName) {
+        if (JNLPRuntime.isTrustAll()){
+            return true;
+        }
+        final VariableX509TrustManager trustManager = this;
+        return AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
+            @Override
+            public Boolean run() {
+                return SecurityDialogs.showCertWarningDialog(
                         AccessType.UNVERIFIED, null,
-                        new HttpsCertVerifier(this, chain, authType,
+                        new HttpsCertVerifier(trustManager, chain, authType,
                                               isTrusted, hostMatched,
                                               hostName));
+            }
+        });
     }
 
     /**

@@ -108,6 +108,18 @@ exception statement from your version. */
 #define PLUGIN_FULL_NAME PLUGIN_NAME " (using " PLUGIN_VERSION ")"
 #define PLUGIN_DESC "The <a href=\"" PACKAGE_URL "\">" PLUGIN_NAME "</a> executes Java applets."
 
+#ifdef HAVE_JAVA7
+ #define JPI_VERSION "1.7.0_" JDK_UPDATE_VERSION
+ #define PLUGIN_APPLET_MIME_DESC7 \
+  "application/x-java-applet;version=1.7:class,jar:IcedTea;"
+ #define PLUGIN_BEAN_MIME_DESC7 \
+  "application/x-java-bean;version=1.7:class,jar:IcedTea;"
+#else
+ #define JPI_VERSION "1.6.0_" JDK_UPDATE_VERSION
+ #define PLUGIN_APPLET_MIME_DESC7
+ #define PLUGIN_BEAN_MIME_DESC7
+#endif
+
 #define PLUGIN_MIME_DESC                                               \
   "application/x-java-vm:class,jar:IcedTea;"                           \
   "application/x-java-applet:class,jar:IcedTea;"                       \
@@ -125,7 +137,8 @@ exception statement from your version. */
   "application/x-java-applet;version=1.4.2:class,jar:IcedTea;"         \
   "application/x-java-applet;version=1.5:class,jar:IcedTea;"           \
   "application/x-java-applet;version=1.6:class,jar:IcedTea;"           \
-  "application/x-java-applet;jpi-version=1.6.0_" JDK_UPDATE_VERSION ":class,jar:IcedTea;"  \
+  PLUGIN_APPLET_MIME_DESC7 \
+  "application/x-java-applet;jpi-version=" JPI_VERSION ":class,jar:IcedTea;"  \
   "application/x-java-bean:class,jar:IcedTea;"                         \
   "application/x-java-bean;version=1.1:class,jar:IcedTea;"             \
   "application/x-java-bean;version=1.1.1:class,jar:IcedTea;"           \
@@ -141,7 +154,8 @@ exception statement from your version. */
   "application/x-java-bean;version=1.4.2:class,jar:IcedTea;"           \
   "application/x-java-bean;version=1.5:class,jar:IcedTea;"             \
   "application/x-java-bean;version=1.6:class,jar:IcedTea;"             \
-  "application/x-java-bean;jpi-version=1.6.0_" JDK_UPDATE_VERSION ":class,jar:IcedTea;"    \
+  PLUGIN_BEAN_MIME_DESC7 \
+  "application/x-java-bean;jpi-version=" JPI_VERSION ":class,jar:IcedTea;"    \
   "application/x-java-vm-npruntime::IcedTea;"
 
 #define PLUGIN_URL NS_INLINE_PLUGIN_CONTRACTID_PREFIX NS_JVM_MIME_TYPE
@@ -279,6 +293,45 @@ int plugin_debug_suspend = (getenv("ICEDTEAPLUGIN_DEBUG") != NULL) &&
 
 pthread_cond_t cond_message_available = PTHREAD_COND_INITIALIZER;
 
+
+#ifdef LEGACY_GLIB
+// Returns key from first item stored in hashtable
+gboolean
+find_first_item_in_hash_table(gpointer key, gpointer value, gpointer user_data)
+{
+    user_data = key;
+    return (gboolean)TRUE;
+}
+
+int
+g_strcmp0(char *str1, char *str2)
+{
+   if (str1 != NULL)
+     return str2 != NULL ? strcmp(str1, str2) : 1;
+   else // str1 == NULL
+     return str2 != NULL ? 1 : 0;
+}
+
+
+#endif
+
+
+/* 
+ * Find first member in GHashTable* depending on version of glib
+ */
+gpointer getFirstInTableInstance(GHashTable* table)
+{
+      gpointer id, instance;
+      #ifndef LEGACY_GLIB
+        GHashTableIter iter;
+        g_hash_table_iter_init (&iter, table);
+        g_hash_table_iter_next (&iter, &instance, &id);
+      #else
+        g_hash_table_find(table, (GHRFunc)find_first_item_in_hash_table, &instance);
+      #endif
+        return instance;
+}
+
 // Functions prefixed by ITNP_ are instance functions.  They are called
 // by the browser and operate on instances of ITNPPluginData.
 // Functions prefixed by plugin_ are static helper functions.
@@ -404,7 +457,7 @@ ITNP_New (NPMIMEType pluginType, NPP instance, uint16_t mode,
   goto cleanup_done;
 
  cleanup_appletviewer_mutex:
-  g_free (data->appletviewer_mutex);
+  g_mutex_free (data->appletviewer_mutex);
   data->appletviewer_mutex = NULL;
 
   // cleanup_instance_string:
@@ -964,6 +1017,11 @@ ITNP_URLNotify (NPP instance, const char* url, NPReason reason,
 NPError
 get_cookie_info(const char* siteAddr, char** cookieString, uint32_t* len)
 {
+  // Only attempt to perform this operation if there is a valid plugin instance
+  if (g_hash_table_size(instance_to_id_map) <= 0)
+  {
+    return NPERR_GENERIC_ERROR;
+  }
 #if MOZILLA_VERSION_COLLAPSED < 1090100
   nsresult rv;
   nsCOMPtr<nsIScriptSecurityManager> sec_man =
@@ -1007,12 +1065,7 @@ get_cookie_info(const char* siteAddr, char** cookieString, uint32_t* len)
 
   if (browser_functions.getvalueforurl)
   {
-      GHashTableIter iter;
-      gpointer id, instance;
-
-      g_hash_table_iter_init (&iter, instance_to_id_map);
-      g_hash_table_iter_next (&iter, &instance, &id);
-
+      gpointer instance=getFirstInTableInstance(instance_to_id_map);
       return browser_functions.getvalueforurl((NPP) instance, NPNURLVCookie, siteAddr, cookieString, len);
   } else
   {
@@ -1022,6 +1075,21 @@ get_cookie_info(const char* siteAddr, char** cookieString, uint32_t* len)
 #endif
 
   return NPERR_NO_ERROR;
+}
+
+static NPError
+set_cookie_info(const char* siteAddr, const char* cookieString, uint32_t len)
+{
+  // Only attempt to perform this operation if there is a valid plugin instance
+  if (g_hash_table_size(instance_to_id_map) > 0 && browser_functions.getvalueforurl)
+  {
+      // We arbitrarily use the first valid instance we can grab
+      // For an explanation of the logic behind this, see get_cookie_info
+      gpointer instance = getFirstInTableInstance(instance_to_id_map);
+      return browser_functions.setvalueforurl((NPP) instance, NPNURLVCookie, siteAddr, cookieString, len);
+  }
+
+  return NPERR_GENERIC_ERROR;;
 }
 
 // HELPER FUNCTIONS
@@ -1137,22 +1205,8 @@ plugin_get_documentbase (NPP instance)
   browser_functions.getproperty(instance, NPVARIANT_TO_OBJECT(location), 
                                href_id, &href);
 
-  // Strip everything after the last "/"
-#if MOZILLA_VERSION_COLLAPSED < 1090200
-  gchar** parts = g_strsplit (NPVARIANT_TO_STRING(href).utf8characters, "/", -1);
-#else
-  gchar** parts = g_strsplit (NPVARIANT_TO_STRING(href).UTF8Characters, "/", -1);
-#endif
-  guint parts_sz = g_strv_length (parts);
-
-  std::string location_str;
-  for (int i=0; i < parts_sz - 1; i++)
-  {
-      location_str += parts[i];
-      location_str += "/";
-  }
-
-  documentbase_copy = g_strdup (location_str.c_str());
+  std::string href_str = IcedTeaPluginUtilities::NPVariantAsString(href);
+  documentbase_copy = g_strdup (href_str.c_str());
 
   // Release references.
   browser_functions.releasevariantvalue(&href);
@@ -1257,6 +1311,99 @@ plugin_in_pipe_callback (GIOChannel* source,
   return keep_installed;
 }
 
+static
+void consume_plugin_message(gchar* message) {
+  // internal plugin related message
+  gchar** parts = g_strsplit (message, " ", 5);
+  if (g_str_has_prefix(parts[1], "PluginProxyInfo"))
+  {
+    gchar* proxy;
+    uint32_t len;
+
+    gchar* decoded_url = (gchar*) calloc(strlen(parts[4]) + 1, sizeof(gchar));
+    IcedTeaPluginUtilities::decodeURL(parts[4], &decoded_url);
+    PLUGIN_DEBUG("parts[0]=%s, parts[1]=%s, reference, parts[3]=%s, parts[4]=%s -- decoded_url=%s\n", parts[0], parts[1], parts[3], parts[4], decoded_url);
+
+    gchar* proxy_info;
+
+#if MOZILLA_VERSION_COLLAPSED < 1090100
+	proxy = (char*) malloc(sizeof(char)*2048);
+#endif
+
+    proxy_info = g_strconcat ("plugin PluginProxyInfo reference ", parts[3], " ", NULL);
+    if (get_proxy_info(decoded_url, &proxy, &len) == NPERR_NO_ERROR)
+      {
+        proxy_info = g_strconcat (proxy_info, proxy, NULL);
+      }
+
+    PLUGIN_DEBUG("Proxy info: %s\n", proxy_info);
+    plugin_send_message_to_appletviewer(proxy_info);
+
+    free(decoded_url);
+    decoded_url = NULL;
+    g_free(proxy_info);
+    proxy_info = NULL;
+
+#if MOZILLA_VERSION_COLLAPSED < 1090100
+	g_free(proxy);
+	proxy = NULL;
+#endif
+
+  } else if (g_str_has_prefix(parts[1], "PluginCookieInfo"))
+  {
+    gchar* decoded_url = (gchar*) calloc(strlen(parts[4])+1, sizeof(gchar));
+    IcedTeaPluginUtilities::decodeURL(parts[4], &decoded_url);
+
+    gchar* cookie_info = g_strconcat ("plugin PluginCookieInfo reference ", parts[3], " ", NULL);
+    gchar* cookie_string;
+    uint32_t len;
+    if (get_cookie_info(decoded_url, &cookie_string, &len) == NPERR_NO_ERROR)
+    {
+        cookie_info = g_strconcat (cookie_info, cookie_string, NULL);
+    }
+
+    PLUGIN_DEBUG("Cookie info: %s\n", cookie_info);
+    plugin_send_message_to_appletviewer(cookie_info);
+
+    free(decoded_url);
+    decoded_url = NULL;
+    g_free(cookie_info);
+    cookie_info = NULL;
+  } else if (g_str_has_prefix(parts[1], "PluginSetCookie"))
+  {
+    // Message structure: plugin PluginSetCookie reference -1 <url> <cookie>
+    gchar** cookie_parts = g_strsplit (message, " ", 6);
+
+    if (g_strv_length(cookie_parts) < 6)
+    {
+       g_strfreev (parts);
+       g_strfreev (cookie_parts);
+       return; // Defensive, message _should_ be properly formatted
+    }
+
+    gchar* decoded_url = (gchar*) calloc(strlen(cookie_parts[4])+1, sizeof(gchar));
+    IcedTeaPluginUtilities::decodeURL(cookie_parts[4], &decoded_url);
+
+    gchar* cookie_string = cookie_parts[5];
+    uint32_t len = strlen(cookie_string);
+    if (set_cookie_info(decoded_url, cookie_string, len) == NPERR_NO_ERROR)
+    {
+  	  PLUGIN_DEBUG("Setting cookie for URL %s to %s\n", decoded_url, cookie_string);
+    } else
+    {
+  	  PLUGIN_DEBUG("Not able to set cookie for URL %s to %s\n", decoded_url, cookie_string);
+    }
+
+    free(decoded_url);
+    decoded_url = NULL;
+    g_strfreev (cookie_parts);
+    cookie_parts = NULL;
+  }
+
+  g_strfreev (parts);
+  parts = NULL;
+}
+
 void consume_message(gchar* message) {
 
 	PLUGIN_DEBUG ("  PIPE: plugin read: %s\n", message);
@@ -1286,9 +1433,9 @@ void consume_message(gchar* message) {
         {
 
           // clear the "instance X status" parts
-          sprintf(parts[0], "");
-          sprintf(parts[1], "");
-          sprintf(parts[2], "");
+          strcpy(parts[0], "");
+          strcpy(parts[1], "");
+          strcpy(parts[2], "");
 
           // join the rest
           gchar* status_message = g_strjoinv(" ", parts);
@@ -1319,68 +1466,13 @@ void consume_message(gchar* message) {
     }
   else if (g_str_has_prefix (message, "plugin "))
     {
-      // internal plugin related message
-      gchar** parts = g_strsplit (message, " ", 5);
-      if (g_str_has_prefix(parts[1], "PluginProxyInfo"))
-      {
-        gchar* proxy;
-        uint32_t len;
-
-        gchar* decoded_url = (gchar*) calloc(strlen(parts[4]) + 1, sizeof(gchar));
-        IcedTeaPluginUtilities::decodeURL(parts[4], &decoded_url);
-        PLUGIN_DEBUG("parts[0]=%s, parts[1]=%s, reference, parts[3]=%s, parts[4]=%s -- decoded_url=%s\n", parts[0], parts[1], parts[3], parts[4], decoded_url);
-
-        gchar* proxy_info;
-
-#if MOZILLA_VERSION_COLLAPSED < 1090100
-	proxy = (char*) malloc(sizeof(char)*2048);
-#endif
-
-        proxy_info = g_strconcat ("plugin PluginProxyInfo reference ", parts[3], " ", NULL);
-        if (get_proxy_info(decoded_url, &proxy, &len) == NPERR_NO_ERROR)
-          {
-            proxy_info = g_strconcat (proxy_info, proxy, NULL);
-          }
-
-        PLUGIN_DEBUG("Proxy info: %s\n", proxy_info);
-        plugin_send_message_to_appletviewer(proxy_info);
-
-        g_free(decoded_url);
-        decoded_url = NULL;
-        g_free(proxy_info);
-        proxy_info = NULL;
-
-#if MOZILLA_VERSION_COLLAPSED < 1090100
-	g_free(proxy);
-	proxy = NULL;
-#endif
-
-      } else if (g_str_has_prefix(parts[1], "PluginCookieInfo"))
-      {
-        gchar* decoded_url = (gchar*) calloc(strlen(parts[4])+1, sizeof(gchar));
-        IcedTeaPluginUtilities::decodeURL(parts[4], &decoded_url);
-
-        gchar* cookie_info = g_strconcat ("plugin PluginCookieInfo reference ", parts[3], " ", NULL);
-        gchar* cookie_string;
-        uint32_t len;
-        if (get_cookie_info(decoded_url, &cookie_string, &len) == NPERR_NO_ERROR)
-        {
-            cookie_info = g_strconcat (cookie_info, cookie_string, NULL);
-        }
-
-        PLUGIN_DEBUG("Cookie info: %s\n", cookie_info);
-        plugin_send_message_to_appletviewer(cookie_info);
-
-        g_free(decoded_url);
-        decoded_url = NULL;
-        g_free(cookie_info);
-        cookie_info = NULL;
-      }
+        consume_plugin_message(message);
     }
   else
     {
         g_print ("  Unable to handle message: %s\n", message);
     }
+
 }
 
 void get_instance_from_id(int id, NPP& instance)
@@ -1400,6 +1492,11 @@ int get_id_from_instance(NPP instance)
 NPError
 get_proxy_info(const char* siteAddr, char** proxy, uint32_t* len)
 {
+  // Only attempt to perform this operation if there is a valid plugin instance
+  if (g_hash_table_size(instance_to_id_map) <= 0)
+  {
+	  return NPERR_GENERIC_ERROR;
+  }
 #if MOZILLA_VERSION_COLLAPSED < 1090100
   nsresult rv;
 
@@ -1474,12 +1571,7 @@ get_proxy_info(const char* siteAddr, char** proxy, uint32_t* len)
   {
 
       // As in get_cookie_info, we use the first active instance
-      GHashTableIter iter;
-      gpointer id, instance;
-
-      g_hash_table_iter_init (&iter, instance_to_id_map);
-      g_hash_table_iter_next (&iter, &instance, &id);
-
+      gpointer instance=getFirstInTableInstance(instance_to_id_map);
       browser_functions.getvalueforurl((NPP) instance, NPNURLVProxy, siteAddr, proxy, len);
   } else
   {
@@ -2085,7 +2177,7 @@ plugin_data_destroy (NPP instance)
   tofree->window_width = 0;
 
   // cleanup_appletviewer_mutex:
-  g_free (tofree->appletviewer_mutex);
+  g_mutex_free (tofree->appletviewer_mutex);
   tofree->appletviewer_mutex = NULL;
 
   // cleanup_instance_string:
@@ -2108,19 +2200,53 @@ plugin_data_destroy (NPP instance)
   PLUGIN_DEBUG ("plugin_data_destroy return\n");
 }
 
-static NPError
-plugin_get_entry_points (NPPluginFuncs* pluginTable)
+static bool
+initialize_browser_functions(const NPNetscapeFuncs* browserTable)
 {
-  // Ensure that the plugin function table we've received is large
-  // enough to store the number of functions that we may provide.
-  if (pluginTable->size < sizeof (NPPluginFuncs))
-    {
-      PLUGIN_ERROR ("Invalid plugin function table.");
+#if MOZILLA_VERSION_COLLAPSED < 1090100
+#define NPNETSCAPEFUNCS_LAST_FIELD_USED (browserTable->pluginthreadasynccall)
+#else
+#define NPNETSCAPEFUNCS_LAST_FIELD_USED (browserTable->setvalueforurl)
+#endif
 
-      return NPERR_INVALID_FUNCTABLE_ERROR;
-    }
+  //Determine the size in bytes, as a difference of the address past the last used field
+  //And the browser table address
+  size_t usedSize = (char*)(1 + &NPNETSCAPEFUNCS_LAST_FIELD_USED) - (char*)browserTable;
 
-  // Return to the browser the plugin functions that we implement.
+  // compare the reported size versus the size we required
+  if (browserTable->size < usedSize)
+  {
+    return false;
+  }
+
+  //Ensure any unused fields are NULL
+  memset(&browser_functions, 0, sizeof(NPNetscapeFuncs));
+
+  //browserTable->size can be larger than sizeof(NPNetscapeFuncs) (PR1106)
+  size_t copySize = browserTable->size < sizeof(NPNetscapeFuncs) ?
+                    browserTable->size : sizeof(NPNetscapeFuncs);
+
+  //Copy fields according to given size
+  memcpy(&browser_functions, browserTable, copySize);
+
+  return true;
+}
+
+/* Set the plugin table to the correct contents, taking care not to write past
+ * the provided object space */
+static bool
+initialize_plugin_table(NPPluginFuncs* pluginTable)
+{
+#define NPPLUGINFUNCS_LAST_FIELD_USED (pluginTable->getvalue)
+
+  //Determine the size in bytes, as a difference of the address past the last used field
+  //And the browser table address
+  size_t usedSize = (char*)(1 + &NPPLUGINFUNCS_LAST_FIELD_USED) - (char*)pluginTable;
+
+  // compare the reported size versus the size we required
+  if (pluginTable->size < usedSize)
+    return false;
+
   pluginTable->version = (NP_VERSION_MAJOR << 8) + NP_VERSION_MINOR;
   pluginTable->size = sizeof (NPPluginFuncs);
 
@@ -2150,7 +2276,7 @@ plugin_get_entry_points (NPPluginFuncs* pluginTable)
   pluginTable->getvalue = NPP_GetValueProcPtr (ITNP_GetValue);
 #endif
 
-  return NPERR_NO_ERROR;
+  return true;
 }
 
 // FACTORY FUNCTIONS
@@ -2199,67 +2325,32 @@ OSCALL NP_Initialize (NPNetscapeFuncs* browserTable, NPPluginFuncs* pluginTable)
       return NPERR_INCOMPATIBLE_VERSION_ERROR;
     }
 
-  // Ensure that the browser function table is large enough to store
-  // the number of browser functions that we may use.
-  if (browserTable->size < sizeof (NPNetscapeFuncs))
-    {
-      fprintf (stderr, "ERROR: Invalid browser function table. Some functionality may be restricted.\n");
-    }
+  // Copy into a global table (browser_functions) the browser functions that we may use.
+  // If the browser functions needed change, update NPNETSCAPEFUNCS_LAST_FIELD_USED
+  // within this function
+  bool browser_functions_supported = initialize_browser_functions(browserTable);
 
-  // Store in a local table the browser functions that we may use.
-  browser_functions.size                    = browserTable->size;
-  browser_functions.version                 = browserTable->version;
-  browser_functions.geturlnotify            = browserTable->geturlnotify;
-  browser_functions.geturl                  = browserTable->geturl;
-  browser_functions.posturlnotify           = browserTable->posturlnotify;
-  browser_functions.posturl                 = browserTable->posturl;
-  browser_functions.requestread             = browserTable->requestread;
-  browser_functions.newstream               = browserTable->newstream;
-  browser_functions.write                   = browserTable->write;
-  browser_functions.destroystream           = browserTable->destroystream;
-  browser_functions.status                  = browserTable->status;
-  browser_functions.uagent                  = browserTable->uagent;
-  browser_functions.memalloc                = browserTable->memalloc;
-  browser_functions.memfree                 = browserTable->memfree;
-  browser_functions.memflush                = browserTable->memflush;
-  browser_functions.reloadplugins           = browserTable->reloadplugins;
-  browser_functions.getJavaEnv              = browserTable->getJavaEnv;
-  browser_functions.getJavaPeer             = browserTable->getJavaPeer;
-  browser_functions.getvalue                = browserTable->getvalue;
-  browser_functions.setvalue                = browserTable->setvalue;
-  browser_functions.invalidaterect          = browserTable->invalidaterect;
-  browser_functions.invalidateregion        = browserTable->invalidateregion;
-  browser_functions.forceredraw             = browserTable->forceredraw;
-  browser_functions.getstringidentifier     = browserTable->getstringidentifier;
-  browser_functions.getstringidentifiers    = browserTable->getstringidentifiers;
-  browser_functions.getintidentifier        = browserTable->getintidentifier;
-  browser_functions.identifierisstring      = browserTable->identifierisstring;
-  browser_functions.utf8fromidentifier      = browserTable->utf8fromidentifier;
-  browser_functions.intfromidentifier       = browserTable->intfromidentifier;
-  browser_functions.createobject            = browserTable->createobject;
-  browser_functions.retainobject            = browserTable->retainobject;
-  browser_functions.releaseobject           = browserTable->releaseobject;
-  browser_functions.invoke                  = browserTable->invoke;
-  browser_functions.invokeDefault           = browserTable->invokeDefault;
-  browser_functions.evaluate                = browserTable->evaluate;
-  browser_functions.getproperty             = browserTable->getproperty;
-  browser_functions.setproperty             = browserTable->setproperty;
-  browser_functions.removeproperty          = browserTable->removeproperty;
-  browser_functions.hasproperty             = browserTable->hasproperty;
-  browser_functions.hasmethod               = browserTable->hasmethod;
-  browser_functions.releasevariantvalue     = browserTable->releasevariantvalue;
-  browser_functions.setexception            = browserTable->setexception;
-  browser_functions.pluginthreadasynccall   = browserTable->pluginthreadasynccall;
-#if MOZILLA_VERSION_COLLAPSED >= 1090100
-  browser_functions.getvalueforurl          = browserTable->getvalueforurl;
-  browser_functions.setvalueforurl          = browserTable->setvalueforurl;
-#endif
+  // Check if everything we rely on is supported
+  if ( !browser_functions_supported )
+  {
+	PLUGIN_ERROR ("Invalid browser function table.");
 
-  NPError np_error = NPERR_NO_ERROR;
+	return NPERR_INVALID_FUNCTABLE_ERROR;
+  }
+
 #if !defined(_WIN32) && !defined (__OS2__)
-  np_error = plugin_get_entry_points (pluginTable);
-  if (np_error != NPERR_NO_ERROR)
-    return np_error;
+  // Return to the browser the plugin functions that we implement.
+  // If the plugin functions needed change, update NPPLUGINFUNCS_LAST_FIELD_USED
+  // within this function
+  bool plugin_functions_supported = initialize_plugin_table(pluginTable);
+
+  // Check if everything we rely on is supported
+  if ( !plugin_functions_supported )
+  {
+    PLUGIN_ERROR ("Invalid plugin function table.");
+
+    return NPERR_INVALID_FUNCTABLE_ERROR;
+  }
 #endif
 
   // Re-setting the above tables multiple times is OK (as the 
@@ -2286,12 +2377,16 @@ OSCALL NP_Initialize (NPNetscapeFuncs* browserTable, NPPluginFuncs* pluginTable)
       PLUGIN_ERROR ("Failed to create data directory name.");
       return NPERR_OUT_OF_MEMORY_ERROR;
     }
+  NPError np_error = NPERR_NO_ERROR;
+  gchar* filename = NULL;
 
   // If P_tmpdir does not exist, try /tmp directly
 
   if (!g_file_test (data_directory,
                     (GFileTest) (G_FILE_TEST_EXISTS | G_FILE_TEST_IS_DIR)))
     {
+      int file_error = 0;
+
       data_directory = g_strconcat ("/tmp", NULL);
         if (!data_directory)
           {
@@ -2452,13 +2547,30 @@ OSCALL NP_GetEntryPoints (NPPluginFuncs* pluginTable)
     return NPERR_INVALID_FUNCTABLE_ERROR;
   }
 
-  return plugin_get_entry_points (pluginTable);
+  // Return to the browser the plugin functions that we implement.
+  // If the plugin functions needed change, update NPPLUGINFUNCS_LAST_FIELD_USED
+  // within this function
+  bool plugin_functions_supported = initialize_plugin_table(pluginTable);
+
+  // Check if everything we rely on is supported
+  if ( !plugin_functions_supported )
+  {
+    PLUGIN_ERROR ("Invalid plugin function table.");
+
+    return NPERR_INVALID_FUNCTABLE_ERROR;
+  }
+
+  return NPERR_NO_ERROR;
 }
 #endif
 
 // Returns a string describing the MIME type that this plugin
 // handles.
-const char*
+#ifdef LEGACY_XULRUNNERAPI
+  char* 
+#else
+  const char* 
+#endif
 OSCALL NP_GetMIMEDescription ()
 {
   PLUGIN_DEBUG ("NP_GetMIMEDescription\n");

@@ -25,6 +25,7 @@ import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.URL;
 import java.net.UnknownHostException;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -32,7 +33,6 @@ import java.util.jar.JarFile;
 
 import net.sourceforge.jnlp.cache.CacheUtil;
 import net.sourceforge.jnlp.cache.UpdatePolicy;
-import net.sourceforge.jnlp.runtime.AppThreadGroup;
 import net.sourceforge.jnlp.runtime.AppletInstance;
 import net.sourceforge.jnlp.runtime.ApplicationInstance;
 import net.sourceforge.jnlp.runtime.JNLPClassLoader;
@@ -587,6 +587,10 @@ public class Launcher {
             handler.launchStarting(app);
 
             main.setAccessible(true);
+
+            if (JNLPRuntime.isDebug()) {
+                System.out.println("Invoking main() with args: " + Arrays.toString(args));
+            }
             main.invoke(null, new Object[] { args });
 
             return app;
@@ -702,25 +706,28 @@ public class Launcher {
                 throw new ClassNotFoundException("Can't do a codebase look up and there are no jars. Failing sooner rather than later");
             }
 
-            AppThreadGroup group = (AppThreadGroup) Thread.currentThread().getThreadGroup();
+            ThreadGroup group = Thread.currentThread().getThreadGroup();
 
-            String appletName = file.getApplet().getMainClass();
-
-            //Classloader chokes if there's '/' in the path to the main class.
-            //Must replace with '.' instead.
-            appletName = appletName.replace('/', '.');
-            Class appletClass = loader.loadClass(appletName);
-            Applet applet = (Applet) appletClass.newInstance();
-
+            // appletInstance is needed by ServiceManager when looking up 
+            // services. This could potentially be done in applet constructor
+            // so initialize appletInstance before creating applet.
             AppletInstance appletInstance;
             if (cont == null)
-                appletInstance = new AppletInstance(file, group, loader, applet);
+                appletInstance = new AppletInstance(file, group, loader, null);
             else
-                appletInstance = new AppletInstance(file, group, loader, applet, cont);
+                appletInstance = new AppletInstance(file, group, loader, null, cont);
 
-            group.setApplication(appletInstance);
             loader.setApplication(appletInstance);
 
+            // Initialize applet now that ServiceManager has access to its
+            // appletInstance.
+            String appletName = file.getApplet().getMainClass();
+            Class appletClass = loader.loadClass(appletName);
+            Applet applet = (Applet) appletClass.newInstance();
+            // Finish setting up appletInstance.
+            appletInstance.setApplet(applet);
+            appletInstance.getAppletEnvironment().setApplet(applet);
+            
             setContextClassLoaderForAllThreads(appletInstance.getThreadGroup(), appletInstance.getClassLoader());
 
             return appletInstance;
@@ -746,10 +753,6 @@ public class Launcher {
             }
 
             String appletName = file.getApplet().getMainClass();
-
-            //Classloader chokes if there's '/' in the path to the main class.
-            //Must replace with '.' instead.
-            appletName = appletName.replace('/', '.');
             Class appletClass = loader.loadClass(appletName);
             Applet applet = (Applet) appletClass.newInstance();
 
@@ -765,10 +768,9 @@ public class Launcher {
     protected ApplicationInstance createApplication(JNLPFile file) throws LaunchException {
         try {
             JNLPClassLoader loader = JNLPClassLoader.getInstance(file, updatePolicy);
-            AppThreadGroup group = (AppThreadGroup) Thread.currentThread().getThreadGroup();
+            ThreadGroup group = Thread.currentThread().getThreadGroup();
 
             ApplicationInstance app = new ApplicationInstance(file, group, loader);
-            group.setApplication(app);
             loader.setApplication(app);
 
             return app;
@@ -784,16 +786,16 @@ public class Launcher {
      * then this method simply returns the existing ThreadGroup. The applet
      * ThreadGroup has to be created at an earlier point in the applet code.
      */
-    protected AppThreadGroup createThreadGroup(JNLPFile file) {
-        AppThreadGroup appThreadGroup = null;
+    protected ThreadGroup createThreadGroup(JNLPFile file) {
+        ThreadGroup tg = null;
 
         if (file instanceof PluginBridge) {
-            appThreadGroup = (AppThreadGroup) Thread.currentThread().getThreadGroup();
+            tg = Thread.currentThread().getThreadGroup();
         } else {
-            appThreadGroup = new AppThreadGroup(mainGroup, file.getTitle());
+            tg = new ThreadGroup(mainGroup, file.getTitle());
         }
 
-        return appThreadGroup;
+        return tg;
     }
 
     /**

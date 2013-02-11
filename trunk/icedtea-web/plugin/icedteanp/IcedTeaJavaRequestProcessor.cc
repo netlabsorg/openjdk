@@ -920,11 +920,7 @@ createJavaObjectFromVariant(NPP instance, NPVariant variant, std::string* id)
     } else if (NPVARIANT_IS_STRING(variant))
     {
     	className = "java.lang.String";
-#if MOZILLA_VERSION_COLLAPSED < 1090200
-    	stringArg += NPVARIANT_TO_STRING(variant).utf8characters;
-#else
-    	stringArg += NPVARIANT_TO_STRING(variant).UTF8Characters;
-#endif
+    	stringArg = IcedTeaPluginUtilities::NPVariantAsString(variant);
     } else if (NPVARIANT_IS_OBJECT(variant))
     {
 
@@ -937,6 +933,7 @@ createJavaObjectFromVariant(NPP instance, NPVariant variant, std::string* id)
         {
             PLUGIN_DEBUG("NPObject is not a Java object\n");
             NPIdentifier length_id = browser_functions.getstringidentifier("length");
+            bool isJSObjectArray = false;
 
             // FIXME: We currently only handle <= 2 dim arrays. Do we really need more though?
 
@@ -952,7 +949,7 @@ createJavaObjectFromVariant(NPP instance, NPVariant variant, std::string* id)
                 std::string length_str = std::string();
                 IcedTeaPluginUtilities::itoa(NPVARIANT_TO_INT32(length), &length_str);
 
-                if (NPVARIANT_TO_INT32(length) > 0)
+                if (NPVARIANT_TO_INT32(length) >= 0)
                 {
                     NPIdentifier id_0 = browser_functions.getintidentifier(0);
                     NPVariant first_element = NPVariant();
@@ -972,8 +969,14 @@ createJavaObjectFromVariant(NPP instance, NPVariant variant, std::string* id)
                     {
                         getArrayTypeForJava(instance, first_element, &java_array_type);
                     }
-                } else
-                    java_array_type.append("jsobject");
+                }
+
+                // For JSObject arrays, we create a regular object (accessible via JSObject.getSlot())
+                if (NPVARIANT_TO_INT32(length) < 0 || !java_array_type.compare("jsobject"))
+                {
+                    isJSObjectArray = true;
+                    goto createRegularObject;
+                }
 
                 java_result = java_request.newArray(java_array_type, length_str);
 
@@ -1011,7 +1014,10 @@ createJavaObjectFromVariant(NPP instance, NPVariant variant, std::string* id)
 
                 // Got here => no errors above. We're good to return!
                 return;
-            } else // Else it is not an array
+            }
+
+            createRegularObject:
+            if (!IcedTeaPluginUtilities::isObjectJSArray(instance, obj) || isJSObjectArray) // Else it is not an array
             {
 
                 NPVariant* variant_copy = new NPVariant();

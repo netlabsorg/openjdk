@@ -1,4 +1,4 @@
-AC_INIT([icedtea-web],[1.1.2],[distro-pkg-dev@openjdk.java.net], [icedtea-web], [http://icedtea.classpath.org/wiki/IcedTea-Web])
+AC_INIT([icedtea-web],[1.3],[distro-pkg-dev@openjdk.java.net], [icedtea-web], [http://icedtea.classpath.org/wiki/IcedTea-Web])
 AM_INIT_AUTOMAKE([1.9 tar-pax foreign])
 AC_CONFIG_FILES([Makefile netx.manifest])
 
@@ -33,6 +33,8 @@ FIND_JAVAC
 FIND_JAR
 FIND_ECJ_JAR
 IT_FIND_JAVADOC
+IT_FIND_KEYTOOL
+IT_FIND_JARSIGNER
 AC_CONFIG_FILES([javac], [chmod +x javac])
 
 IT_SET_VERSION
@@ -51,7 +53,6 @@ AC_SUBST(X11_LIBS)
 
 dnl PR46074 (gcc) - Missing java.net cookie code required by IcedTea plugin
 dnl IT563 - NetX uses sun.security code
-dnl IT564 - NetX depends on sun.misc.BASE64Encoder
 dnl IT605 - NetX depends on sun.misc.HexDumpEncoder
 dnl IT570 - NetX depends on sun.applet.AppletViewPanel
 dnl IT571 - NetX depends on com.sun.net.ssl.internal.ssl.X509ExtendedTrustManager.java
@@ -68,25 +69,42 @@ IT_CHECK_FOR_CLASS(SUN_SECURITY_PROVIDER_X509FACTORY, [sun.security.provider.X50
 IT_CHECK_FOR_CLASS(SUN_SECURITY_UTIL_SECURITYCONSTANTS, [sun.security.util.SecurityConstants])
 IT_CHECK_FOR_CLASS(SUN_SECURITY_UTIL_HOSTNAMECHECKER, [sun.security.util.HostnameChecker])
 IT_CHECK_FOR_CLASS(SUN_SECURITY_X509_X500NAME, [sun.security.x509.X500Name])
-IT_CHECK_FOR_CLASS(SUN_MISC_BASE64ENCODER, [sun.misc.BASE64Encoder])
 IT_CHECK_FOR_CLASS(SUN_MISC_HEXDUMPENCODER, [sun.misc.HexDumpEncoder])
 IT_CHECK_FOR_CLASS(SUN_SECURITY_VALIDATOR_VALIDATOREXCEPTION, [sun.security.validator.ValidatorException])
 IT_CHECK_FOR_CLASS(COM_SUN_NET_SSL_INTERNAL_SSL_X509EXTENDEDTRUSTMANAGER,
 	[com.sun.net.ssl.internal.ssl.X509ExtendedTrustManager])
+IT_CHECK_FOR_CLASS(SUN_NET_WWW_PROTOCOL_JAR_URLJARFILE, [sun.net.www.protocol.jar.URLJarFile])
+IT_CHECK_FOR_CLASS(SUN_NET_WWW_PROTOCOL_JAR_URLJARFILECALLBACK, [sun.net.www.protocol.jar.URLJarFileCallBack])
 IT_CHECK_FOR_CLASS(SUN_AWT_X11_XEMBEDDEDFRAME, [sun.awt.X11.XEmbeddedFrame])
 IT_CHECK_FOR_CLASS(SUN_MISC_REF, [sun.misc.Ref])
 IT_CHECK_FOR_CLASS(COM_SUN_JNDI_TOOLKIT_URL_URLUTIL, [com.sun.jndi.toolkit.url.UrlUtil])
 IT_CHECK_FOR_CLASS(SUN_APPLET_APPLETIMAGEREF, [sun.applet.AppletImageRef])
 IT_CHECK_FOR_APPLETVIEWERPANEL_HOLE
+IT_CHECK_GLIB_VERSION
+IT_CHECK_XULRUNNER_API_VERSION
 
 #
 # Find optional depedencies
 #
 
+AC_CHECK_PROGS([XSLTPROC],[xsltproc],[], [])
+# browser to be linked/tested
+# Example: IT_FIND_BROWSER([browser-name],[variable-to-store-path],[default-run-command-if-different-from-the-browser-name])
+IT_FIND_BROWSER([firefox],[FIREFOX])
+IT_FIND_BROWSER([chrome],[CHROME],[google-chrome])
+IT_FIND_BROWSER([chromium],[CHROMIUM],[chromium-browser])
+IT_FIND_BROWSER([opera],[OPERA])
+IT_FIND_BROWSER([midori],[MIDORI])
+IT_FIND_BROWSER([epiphany],[EPIPHANY])
+IT_SET_GLOBAL_BROWSERTESTS_BEHAVIOUR
+
+AM_CONDITIONAL([WITH_XSLTPROC], [test x"$XSLTPROC" != x ])
 IT_FIND_OPTIONAL_JAR([rhino], RHINO,
     [/usr/share/java/js.jar /usr/share/rhino-1.6/lib/js.jar])
 IT_FIND_OPTIONAL_JAR([junit], JUNIT,
     [/usr/share/java/junit4.jar /usr/share/junit-4/lib/junit.jar])
+IT_FIND_OPTIONAL_JAR([emma], EMMA,
+    [/usr/share/java/emma.jar])
 
 AC_CONFIG_FILES([jrunscript], [chmod u+x jrunscript])
 AC_CONFIG_FILES([build.properties])

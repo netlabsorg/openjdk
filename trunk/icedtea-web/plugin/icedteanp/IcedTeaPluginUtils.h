@@ -96,6 +96,10 @@ extern int plugin_debug; // defined in IcedTeaNPPlugin.cc
      (*c >= 'a' && *c <= 'f') || \
      (*c >= 'A' && *c <= 'F'))
 
+//long long max ~ 19 chars + terminator
+//leave some room for converting strings like "<var> = %d"
+const size_t NUM_STR_BUFFER_SIZE = 32;
+
 /*
  * This struct holds data specific to a Java operation requested by the plugin
  */
@@ -204,6 +208,9 @@ class IcedTeaPluginUtilities
 
     	/* Converts the given integer to a string */
     	static void itoa(int i, std::string* result);
+
+    	/* Copies a variant data type into a C++ string */
+    	static std::string NPVariantAsString(NPVariant variant);
 
     	/* Frees the given vector and the strings that its contents point to */
     	static void freeStringPtrVector(std::vector<std::string*>* v);
