@@ -4,6 +4,20 @@ in the OpenJDK product from release to release.
 
 CHANGES
 
+1.6.0 Build 27 GA5 (2013-02-17)
+
+  - Make sure RICHED32.DLL is used for java.awt.TextArea. This makes this class
+    actually work. Affects many AWT applications.
+
+  - Fix missing menu bars in AWT applications.
+
+  - Fix broken file open dialogs in AWT applications that couldn't be dismissed
+    and would not let navigate through directories.
+
+  - Implement saving JPEG images through com.sun.image.codec.jpeg.JPEGImageEncoder.
+    This fixes some old Java applications using this deprecated class.
+
+
 1.6.0 Build 27 GA4 (2012-12-31)
 
   - Updated OpenJDK sources to b27 (released October 26, 2012). The list of

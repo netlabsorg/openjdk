@@ -2,7 +2,7 @@
 
 ver_id = 'openjdk6_b27'
 
-build_id = 'ga4-20121231'
+build_id = 'ga5-20130217'
 
 src_path = '..'
 
