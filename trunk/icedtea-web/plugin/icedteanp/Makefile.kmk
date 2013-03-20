@@ -50,7 +50,7 @@ PLUGIN_RC           = $(npicedt_0_OUTDIR)/plugin_os2.rc
 OTHER_CLEAN        += $(PLUGIN_RC)
 npicedt_SOURCES    += $(PLUGIN_RC)
 
-$$(PLUGIN_RC): $(PATH_ROOT)/plugin_os2.rc.in | $$(call DIRDEP,$$(dir $$(@)))
+$$(PLUGIN_RC): $(PATH_ROOT)/Config.kmk $(PATH_ROOT)/plugin_os2.rc.in | $$(call DIRDEP,$$(dir $$(@)))
 	sed " \
         s/@PLUGIN_NAME@/$(PLUGIN_NAME)/g; \
         s/@PLUGIN_VERSION@/$(PLUGIN_VERSION)/g; \
