@@ -1,0 +1,114 @@
+IcedTea-Web for OS/2 and eCS
+
+Version 1.3 Beta (2013-03-20)
+
+This is a beta release intended for testing purposes.
+
+
+
+INTRODUCTION
+
+This document contains a brief information on the OS/2 version of the
+IcedTea-Web product. Please read it carefully before starting your work.
+You may also visit the project page at
+
+  http://svn.netlabs.org/java/wiki
+
+to get more information and the latest news and also to report bugs.
+
+To get a brief list of OS/2-specific changes from release to release
+please see the CHANGES.OS2 file included in this distribution.
+
+
+
+REQUIREMENTS
+
+In order to use the IcedTea-Web browser plugin, you will need the following:
+
+  - A OS/2 Warp 4 Fixpack 16+, OS/2 Warp 4.5 or eComStation operating system.
+
+  - OpenJDK 1.6.0 Build 25 GA3 or later (and all its requirements):
+
+    ftp://ftp.netlabs.org/pub/java/openjdk6_b25_ga3/openjdk6_b25_jre_os2_ga3-20120721.zip
+
+  - GLib2 libraries version 2.25.15 build 4:
+
+    ftp://ftp.netlabs.org/pub/java/icedtea-web/misc/glib2-2_25_15-4.zip
+
+If you use the YUM/RPM package manager, you may install all the requirements
+with a single command from the command line (except OpenJDK which is not in RPM
+yet):
+
+    yum install glib2
+
+
+
+INSTALLATION
+
+  Make sure that the correct version of OpenJDK is installed and listed in your
+  PATH environment variable and the correct version of GLib2 libraries is
+  installed.
+
+  Unszip the contents of the distribution archive to a directory containing
+  Mozilla plugins in your system. This directory is pointed to by the
+  MOZ_PLUGIN_PATH environment variable and is usually:
+
+    X:\PROGRAMS\MOZ_PLUG
+
+  where X: is your boot drive (check your CONFIG.SYS for the exact location).
+
+  Now (re)start your Mozilla family product (e.g. Firefox). If everything is
+  done correctly, you should now see the IcedTea-Web browser plugin in the list
+  of installed plugins if you visit the special web-page "about:plugins" from
+  the browser.
+
+  You may check the plugin functionality by visiting the following test web-page
+  on the Java web-site:
+
+    http://www.java.com/en/download/testjava.jsp
+
+  Note that you may also specify the location of the Java runtime and plugin
+  jars using the ICEDTEA_WEB_JRE and ICEDTEA_WEB_DATA environment variables,
+  respectively:
+
+    set ICEDTEA_WEB_JRE=<path_to_jre>
+    set ICEDTEA_WEB_DATA=<path_to_jars>
+
+
+
+CURRENT LIMITATIONS
+
+  1. Some Java applets may stop redrawing their contents. You may need to
+     refresh the page or restart the browser. This will be fixed later.
+
+  See the project roadmap for more information on the current progress and
+  future plans:
+
+    http://svn.netlabs.org/java/roadmap
+
+  Feel free to request new features and report bugs using the project bug
+  tracker abaialble at:
+
+    http://svn.netlabs.org/java/report
+
+
+
+CREDITS
+
+Dmitriy Kuminov (development)
+Silvan Scherrer (management)
+
+netlabs.org (hosting & support)
+
+Oracle Corporation (original OpenJDK product)
+
+All IcedTea-Web authors (see AUTHORS)
+
+We also want to THANK all individuals and organizations who made the donations
+to this project and helped to make it happen.
+
+
+Oracle and Java are registered trademarks of Oracle and/or its affiliates.
+OS/2 and OS/2 Warp are trademarks of the IBM Corporation and/or its subsidiary(-ies).
+eComStation is a trademark of Serenity Systems International and/or its subsidiary(-ies).
+Other names may be trademarks of their respective owners.

@@ -1,0 +1,116 @@
+## @file
+#
+
+SUB_DEPTH = ../..
+include $(KBUILD_PATH)/subheader.kmk
+
+PLUGIN_NAME     = IcedTea-Web Plugin
+PLUGIN_VERSION  = IcedTea-Web $(FULL_VERSION)
+
+#
+# Plugin DLL
+#
+
+DLLS               += npicedt
+npicedt_TEMPLATE    = Cxx
+npicedt_INCS        = . $(PATH_MOZILLA_INCS) $(PATH_GLIB_INCS)
+npicedt_INCS.os2    = os2
+npicedt_DEFS        = MOZILLA_VERSION_COLLAPSED=$(MOZILLA_VERSION_COLLAPSED) \
+                      DETECT_DATA_DIR=$(DETECT_DATA_DIR) \
+                      DETECT_JRE_DIR=$(DETECT_JRE_DIR) \
+                      WITHOUT_GTK
+npicedt_CXXFLAGS    = -DJDK_UPDATE_VERSION="\"$(JDK_UPDATE_VERSION)\"" \
+                      -DPLUGIN_NAME="\"$(PLUGIN_NAME)\"" \
+                      -DPLUGIN_VERSION="\"$(PLUGIN_VERSION)\"" \
+                      -DPACKAGE_URL="\"$(PACKAGE_URL)\"" \
+                      $(if $(ICEDTEA_WEB_JRE_DIR),-DICEDTEA_WEB_JRE_DIR="\"$(ICEDTEA_WEB_JRE_DIR)\"") \
+                      -DICEDTEA_WEB_JRE="$(ICEDTEA_WEB_JRE)" \
+                      $(if $(ICEDTEA_WEB_DATA_DIR),-DICEDTEA_WEB_DATA_DIR="\"$(ICEDTEA_WEB_DATA_DIR)\"") \
+                      -DPLUGIN_BOOTCLASSPATH="$(PLUGIN_BOOTCLASSPATH)"
+npicedt_LIBS        = $(PATH_GLIB_LIBS) pthread
+npicedt_LIBS.os2    = kernel32.lib user32.lib
+npicedt_LIBPATH     = $(PATH_GLIB_LIBPATH)
+npicedt_LIBPATH.os2 = kernel32.lib user32.lib $(SDK_ODIN_LIBPATH)
+
+npicedt_SOURCES     = \
+    IcedTeaNPPlugin.cc \
+    IcedTeaScriptablePluginObject.cc \
+    IcedTeaJavaRequestProcessor.cc \
+    IcedTeaPluginRequestProcessor.cc \
+    IcedTeaPluginUtils.cc
+
+npicedt_SOURCES.os2 = \
+    os2/OS_OS2.cc \
+    os2/OS_OS2_WinOS2.cc \
+    $(PATH_ROOT)/plugin_os2.def
+
+os2/OS_OS2_WinOS2.cc_SDKS.os2 += ODIN
+
+PLUGIN_RC           = $(npicedt_0_OUTDIR)/plugin_os2.rc
+OTHER_CLEAN        += $(PLUGIN_RC)
+npicedt_SOURCES    += $(PLUGIN_RC)
+
+$$(PLUGIN_RC): $(PATH_ROOT)/Config.kmk $(PATH_ROOT)/plugin_os2.rc.in | $$(call DIRDEP,$$(dir $$(@)))
+	sed " \
+        s/@PLUGIN_NAME@/$(PLUGIN_NAME)/g; \
+        s/@PLUGIN_VERSION@/$(PLUGIN_VERSION)/g; \
+        s/@PACKAGE_VER_MAJOR@/$(PACKAGE_VER_MAJOR)/g; \
+        s/@PACKAGE_VER_MINOR@/$(PACKAGE_VER_MINOR)/g; \
+        s/@PACKAGE_VER_PATCH@/$(PACKAGE_VER_PATCH)/g; \
+        s/@PACKAGE_VER_PATCH@/$(PACKAGE_VER_PATCH)/g; \
+        s/@TIMESTAMP@/$(TIMESTAMP)/g; \
+        s/@HOSTNAME@/$(HOSTNAME)/g; \
+        s/@BUILDDATE@/$(shell LANG=C date '+%d %b %Y %T')   /g; \
+        " < $^ > $@
+
+#
+# Plugin JAR
+#
+
+OTHERS += liveconnect
+BLDDIRS += $(liveconnect_0_OUTDIR)
+
+liveconnect_JAVASRCDIRS := $(PATH_SUB_CURRENT)/java
+ifeq ($(KBUILD_TARGET),os2)
+liveconnect_JAVASRCDIRS += $(PATH_SUB_CURRENT)/os2/java
+else # assume Linux
+liveconnect_JAVASRCDIRS += $(PATH_SUB_CURRENT)/x11/java
+endif
+
+liveconnect_JAVASRCLIST = $(liveconnect_0_OUTDIR)/javasrc.list
+BLDDIRS += $(dir $(liveconnect_JAVASRCLIST))
+OTHER_CLEAN += $(liveconnect_JAVASRCLIST) $(liveconnect_JAVASRCLIST).stamp
+
+liveconnect_JARFILE = $(PATH_STAGE)/lib/plugin.jar
+BLDDIRS += $(dir $(liveconnect_JARFILE))
+OTHER_CLEAN += $(liveconnect_JARFILE)
+
+$$(liveconnect_JAVASRCLIST): $(MAKEFILE) | $$(call DIRDEP,$$(dir $$(@)))
+	@echo 'JAVASRC = \' > $@
+	find $(liveconnect_JAVASRCDIRS) -name '*.java' \
+        -printf '%p \\\n' >> $@
+
+$$(liveconnect_JAVASRCLIST).stamp: $$(JAVASRC) | $(PATH_STAGE)/lib/netx.jar $$(call DIRDEP,$$(dir $$(@)))
+	$(call MSG_COMPILE,liveconnect,$(words $?) sources,$@,JAVA)
+	@echo $? > $(liveconnect_JAVASRCLIST).rsp
+	$(PATH_BOOTSTRAP_JDK)/bin/javac $(IT_JAVACFLAGS) \
+        -d "$(liveconnect_0_OUTDIR)" \
+        -classpath "$(liveconnect_0_OUTDIR)" \
+        -sourcepath "$(subst ; ,;,$(foreach d,$(liveconnect_JAVASRCDIRS),$(d);))" \
+        -bootclasspath "$(BOOTSTRAP_JDK_RUNTIME);$(PATH_STAGE)/lib/netx.jar" \
+        @"$(liveconnect_JAVASRCLIST).rsp"
+	@$(RM) "$(liveconnect_JAVASRCLIST).rsp"
+	@touch "$@"
+
+$$(liveconnect_JARFILE): $$(liveconnect_JAVASRCLIST).stamp | $$(call DIRDEP,$$(dir $$(@)))
+	(cd $(liveconnect_0_OUTDIR); \
+        $(PATH_BOOTSTRAP_JDK)/bin/jar cf $(liveconnect_JARFILE) \
+            netscape sun/applet)
+
+liveconnect: $$(liveconnect_JARFILE)
+
+install:: liveconnect
+
+include $(FILE_KBUILD_SUB_FOOTER)
+
+-include $(liveconnect_JAVASRCLIST)
