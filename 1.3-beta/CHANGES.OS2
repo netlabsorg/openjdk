@@ -1,0 +1,20 @@
+This document contains a brief list of the most important OS/2-specific changes
+in the IcedTea-Web product from release to release.
+
+
+CHANGES
+
+1.3 Beta (2013-03-20)
+
+  - Update to version 1.3 from upstream (released Sep. 5, 2012).
+    This update fixes many problems on various Java-enabled web-sites.
+    In particular, it fixes crashes when using the Desktop On Call 
+    web-basaed client in Firefox. For an overview of the changes see:
+
+    http://mail.openjdk.java.net/pipermail/distro-pkg-dev/2012-September/020197.html
+
+	The complete change log is available in the ChangeLog file.
+
+1.1.2 Beta (2012-07-21)
+
+  - First public release.
