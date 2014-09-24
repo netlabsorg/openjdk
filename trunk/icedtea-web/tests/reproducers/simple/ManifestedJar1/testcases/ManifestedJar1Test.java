@@ -35,10 +35,13 @@ obligated to do so.  If you do not wish to do so, delete this
 exception statement from your version.
  */
 
+import java.util.Arrays;
+import net.sourceforge.jnlp.ProcessResult;
 import net.sourceforge.jnlp.ServerAccess;
 import net.sourceforge.jnlp.annotations.Bug;
-import org.junit.Assert;
+import net.sourceforge.jnlp.runtime.Translator;
 
+import org.junit.Assert;
 import org.junit.Test;
 
 @Bug(id="http://mail.openjdk.java.net/pipermail/distro-pkg-dev/2012-February/017435.html")
@@ -49,30 +52,30 @@ public class ManifestedJar1Test {
     //actually this on eis never printed as stderr will not recieve this message in headless mode :(
     private static final String twoMainException = "net.sourceforge.jnlp.ParseException: Invalid XML document syntax";
 
-    private void assertManifestedJar1(String id, ServerAccess.ProcessResult q) {
+    private void assertManifestedJar1(String id, ProcessResult q) {
         String s = "Hello from ManifestedJar1";
         Assert.assertTrue(id + " stdout should contains `" + s + "`, but didn't ", q.stdout.contains(s));
     }
 
-    private void assertManifestedJar2(String id, ServerAccess.ProcessResult q) {
+    private void assertManifestedJar2(String id, ProcessResult q) {
         String s = "Hello from ManifestedJar2";
         Assert.assertTrue(id + " stdout should contains `" + s + "`, but didn't ", q.stdout.contains(s));
     }
 
-    private void assertNotManifestedJar1(String id, ServerAccess.ProcessResult q) {
+    private void assertNotManifestedJar1(String id, ProcessResult q) {
         String s = "Hello from ManifestedJar1";
         Assert.assertFalse(id + " stdout should NOT contains `" + s + "`, but didn ", q.stdout.contains(s));
     }
-    private void assertAppError(String id, ServerAccess.ProcessResult q) {
+    private void assertAppError(String id, ProcessResult q) {
         Assert.assertTrue(id + " stderr should contains `" + nonLunchableMessage + "`, but didnn't ", q.stderr.contains(nonLunchableMessage));
     }
 
-    private void assertNotManifestedJar2(String id, ServerAccess.ProcessResult q) {
+    private void assertNotManifestedJar2(String id, ProcessResult q) {
         String s = "Hello from ManifestedJar2";
         Assert.assertFalse(id + " stdout should NOT contains `" + s + "`, but didn ", q.stdout.contains(s));
     }
 
-    private void assertNotDead(String id, ServerAccess.ProcessResult pr) {
+    private void assertNotDead(String id, ProcessResult pr) {
         String cc = "ClassNotFoundException";
         Assert.assertFalse(id + " stderr should NOT contains `" + cc + "`, but did", pr.stderr.contains(cc));
         Assert.assertFalse(id + " should not be terminated, but was", pr.wasTerminated);
@@ -85,7 +88,7 @@ public class ManifestedJar1Test {
      */
     public void manifestedJar1nothing2nothingNoAppDesc() throws Exception {
         String id = "ManifestedJar-1nothing2nothingNoAppDesc";
-        ServerAccess.ProcessResult pr = server.executeJavawsHeadless(null, "/" + id + ".jnlp");
+        ProcessResult pr = server.executeJavawsHeadless(null, "/" + id + ".jnlp");
         assertManifestedJar1(id, pr);
         assertNotDead(id, pr);
     }
@@ -97,7 +100,7 @@ public class ManifestedJar1Test {
     @Test
     public void manifestedJar1noAppDesc() throws Exception {
         String id = "ManifestedJar-1noAppDesc";
-        ServerAccess.ProcessResult pr = server.executeJavawsHeadless(null, "/" + id + ".jnlp");
+        ProcessResult pr = server.executeJavawsHeadless(null, "/" + id + ".jnlp");
         assertManifestedJar1(id, pr);
         assertNotDead(id, pr);
     }
@@ -109,7 +112,7 @@ public class ManifestedJar1Test {
     @Test
     public void manifestedJar1mainNoAppDesc() throws Exception {
         String id = "ManifestedJar-1mainNoAppDesc";
-        ServerAccess.ProcessResult pr = server.executeJavawsHeadless(null, "/" + id + ".jnlp");
+        ProcessResult pr = server.executeJavawsHeadless(null, "/" + id + ".jnlp");
         assertManifestedJar1(id, pr);
         assertNotDead(id, pr);
     }
@@ -121,7 +124,7 @@ public class ManifestedJar1Test {
     @Test
     public void ManifestedJar1mainHaveAppDesc() throws Exception {
         String id = "ManifestedJar-1mainHaveAppDesc";
-        ServerAccess.ProcessResult pr = server.executeJavawsHeadless(null, "/" + id + ".jnlp");
+        ProcessResult pr = server.executeJavawsHeadless(null, "/" + id + ".jnlp");
         assertManifestedJar2(id, pr);
         assertNotDead(id, pr);
     }
@@ -133,7 +136,7 @@ public class ManifestedJar1Test {
     @Test
     public void ManifestedJar1main2nothingNoAppDesc() throws Exception {
         String id = "ManifestedJar-1main2nothingNoAppDesc";
-        ServerAccess.ProcessResult pr = server.executeJavawsHeadless(null, "/" + id + ".jnlp");
+        ProcessResult pr = server.executeJavawsHeadless(null, "/" + id + ".jnlp");
         assertManifestedJar2(id, pr);
         assertNotDead(id, pr);
     }
@@ -145,7 +148,7 @@ public class ManifestedJar1Test {
     @Test
     public void manifestedJar1main2nothingNoAppDesc() throws Exception {
         String id = "ManifestedJar-1main2nothingNoAppDesc";
-        ServerAccess.ProcessResult pr = server.executeJavawsHeadless(null, "/" + id + ".jnlp");
+        ProcessResult pr = server.executeJavawsHeadless(null, "/" + id + ".jnlp");
         assertManifestedJar2(id, pr);
         assertNotDead(id, pr);
     }
@@ -153,16 +156,32 @@ public class ManifestedJar1Test {
     /**
      *
      * Two jars, both with manifest, sboth with main tag, no app desc
+     * first jar is taken
      *
-     * thisis passing, SUSPICIOUS, but to lunch at least something is better then to lunch nothing at all.
-     * althoug it maybe SHOULD throw twoMainException
      */
     @Test
     public void manifestedJar1main2mainNoAppDesc() throws Exception {
         String id = "ManifestedJar-1main2mainNoAppDesc";
-        ServerAccess.ProcessResult pr = server.executeJavawsHeadless(null, "/" + id + ".jnlp");
+        ProcessResult pr = server.executeJavawsHeadless(null, "/" + id + ".jnlp");
         assertManifestedJar1(id, pr);
+        assertNotManifestedJar2(id, pr);
         assertNotDead(id, pr);
+    }
+    
+    /**
+     *
+     * Two jars, both with manifest, sboth with main tag, no app desc
+     * two main jars reported
+     *
+     */
+    @Test
+    public void manifestedJar1main2mainNoAppDescStrict() throws Exception {
+        String id = "ManifestedJar-1main2mainNoAppDesc";
+        ProcessResult pr = server.executeJavawsHeadless(Arrays.asList(new String[]{"-strict"}), "/" + id + ".jnlp");
+        assertNotManifestedJar1(id, pr);
+        assertNotManifestedJar2(id, pr);
+        assertNotDead(id, pr);
+        Assert.assertTrue(pr.stderr.contains(Translator.R("PTwoMains")) || pr.stdout.contains(Translator.R("PTwoMains")));
     }
 
     /**
@@ -174,7 +193,7 @@ public class ManifestedJar1Test {
     @Test
     public void manifestedJar1main2mainAppDesc() throws Exception {
         String id = "ManifestedJar-1main2mainAppDesc";
-        ServerAccess.ProcessResult pr = server.executeJavawsHeadless(null, "/" + id + ".jnlp");
+        ProcessResult pr = server.executeJavawsHeadless(null, "/" + id + ".jnlp");
         assertNotManifestedJar1(id, pr);
         assertNotManifestedJar2(id, pr);
         assertNotDead(id, pr);
@@ -189,7 +208,7 @@ public class ManifestedJar1Test {
     @Test
     public void manifestedJar1noAppDescAtAll() throws Exception {
         String id = "ManifestedJar-1noAppDescAtAll";
-        ServerAccess.ProcessResult pr = server.executeJavawsHeadless(null, "/" + id + ".jnlp");
+        ProcessResult pr = server.executeJavawsHeadless(null, "/" + id + ".jnlp");
         assertNotManifestedJar1(id, pr);
         assertNotManifestedJar2(id, pr);
         assertAppError(id, pr);
@@ -208,8 +227,8 @@ public class ManifestedJar1Test {
     @Test
     public void manifestedJar1nothing2nothingAppDesc() throws Exception {
         String id = "ManifestedJar-1nothing2nothingAppDesc";
-        ServerAccess.ProcessResult pr = server.executeJavawsHeadless(null, "/" + id + ".jnlp");
-        assertNotManifestedJar2(id, pr);
+        ProcessResult pr = server.executeJavawsHeadless(null, "/" + id + ".jnlp");
+        assertManifestedJar2(id, pr);
         assertNotManifestedJar1(id, pr);
         assertNotDead(id, pr);
     }

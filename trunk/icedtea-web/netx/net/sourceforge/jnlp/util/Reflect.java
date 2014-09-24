@@ -16,21 +16,25 @@
 
 package net.sourceforge.jnlp.util;
 
-import java.lang.reflect.*;
+import java.lang.reflect.Method;
+import net.sourceforge.jnlp.util.logging.OutputController;
+
 
 /**
  * Provides simply, convenient methods to invoke methods by
- * name.  This class is used to consolidate reflection needed to
+ * name. This class is used to consolidate reflection needed to
  * access methods specific to Sun's JVM or to remain backward
- * compatible while supporting method in newer JVMs.<p>
- *
+ * compatible while supporting method in newer JVMs.
+ * <p>
  * Most methods of this class invoke the first method on the
  * specified object that matches the name and number of
- * parameters.  The type of the parameters are not considered, so
+ * parameters. The type of the parameters are not considered, so
  * do not attempt to use this class to invoke overloaded
- * methods.<p>
- *
- * Instances of this class are not synchronized.<p>
+ * methods.
+ * </p>
+ * <p>
+ * Instances of this class are not synchronized.
+ * </p>
  *
  * @author <a href="mailto:jon.maxwell@acm.org">Jon A. Maxwell (JAM)</a> - initial author
  * @version $Revision: 1.1 $
@@ -74,11 +78,12 @@ public class Reflect {
      */
     public Object invokeStatic(String className, String method, Object args[]) {
         try {
-            Class c = Class.forName(className, true, Reflect.class.getClassLoader());
+            Class<?> c = Class.forName(className, true, Reflect.class.getClassLoader());
 
             Method m = getMethod(c, method, args);
-            if (m.isAccessible() != accessible)
+            if (m.isAccessible() != accessible) {
                 m.setAccessible(accessible);
+            }
 
             return m.invoke(null, args);
         } catch (Exception ex) { // eat
@@ -102,12 +107,13 @@ public class Reflect {
     public Object invoke(Object object, String method, Object args[]) {
         try {
             Method m = getMethod(object.getClass(), method, args);
-            if (m.isAccessible() != accessible)
+            if (m.isAccessible() != accessible) {
                 m.setAccessible(accessible);
+            }
 
             return m.invoke(object, args);
         } catch (Exception ex) { // eat
-            ex.printStackTrace();
+            OutputController.getLogger().log(OutputController.Level.ERROR_ALL, ex);
             return null;
         }
     }
@@ -116,22 +122,23 @@ public class Reflect {
      * Return the Method matching the specified name and number of
      * arguments.
      */
-    public Method getMethod(Class type, String method, Object args[]) {
+    public Method getMethod(Class<?> type, String method, Object args[]) {
         try {
-            for (Class c = type; c != null; c = c.getSuperclass()) {
+            for (Class<?> c = type; c != null; c = c.getSuperclass()) {
                 Method methods[] = c.getMethods();
 
                 for (int i = 0; i < methods.length; i++) {
                     if (methods[i].getName().equals(method)) {
                         Class parameters[] = methods[i].getParameterTypes();
 
-                        if (parameters.length == args.length)
+                        if (parameters.length == args.length) {
                             return methods[i];
+                        }
                     }
                 }
             }
         } catch (Exception ex) { // eat
-            ex.printStackTrace();
+            OutputController.getLogger().log(OutputController.Level.ERROR_ALL, ex);
         }
 
         return null;

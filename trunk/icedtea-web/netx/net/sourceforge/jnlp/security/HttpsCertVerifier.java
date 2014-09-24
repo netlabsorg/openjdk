@@ -52,6 +52,7 @@ import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import net.sourceforge.jnlp.util.logging.OutputController;
 
 import sun.security.util.DerValue;
 import sun.security.util.HostnameChecker;
@@ -59,7 +60,6 @@ import sun.security.x509.X500Name;
 
 public class HttpsCertVerifier implements CertVerifier {
 
-    private VariableX509TrustManager tm;
     private X509Certificate[] chain;
     private String authType;
     private String hostName;
@@ -67,11 +67,9 @@ public class HttpsCertVerifier implements CertVerifier {
     private boolean hostMatched;
     private ArrayList<String> details = new ArrayList<String>();
 
-    public HttpsCertVerifier(VariableX509TrustManager tm,
-                             X509Certificate[] chain, String authType,
+    public HttpsCertVerifier(X509Certificate[] chain, String authType,
                              boolean isTrusted, boolean hostMatched,
                              String hostName) {
-        this.tm = tm;
         this.chain = chain;
         this.authType = authType;
         this.hostName = hostName;
@@ -79,11 +77,19 @@ public class HttpsCertVerifier implements CertVerifier {
         this.hostMatched = hostMatched;
     }
 
+    @Override
     public boolean getAlreadyTrustPublisher() {
         return isTrusted;
     }
 
-    public CertPath getCertPath() {
+
+    /* XXX: Most of these methods have a CertPath param that should be passed
+     * from the UI dialogs. However, this is not implemented yet so most of
+     * the params are ignored.
+     */
+
+    @Override
+    public CertPath getCertPath(CertPath certPath) { // Parameter ignored.
 
         ArrayList<X509Certificate> list = new ArrayList<X509Certificate>();
         for (int i = 0; i < chain.length; i++)
@@ -94,7 +100,7 @@ public class HttpsCertVerifier implements CertVerifier {
         try {
             certPaths.add(CertificateFactory.getInstance("X.509").generateCertPath(list));
         } catch (CertificateException ce) {
-            ce.printStackTrace();
+            OutputController.getLogger().log(OutputController.Level.ERROR_ALL, ce);
 
             // carry on
         }
@@ -102,7 +108,8 @@ public class HttpsCertVerifier implements CertVerifier {
         return certPaths.get(0);
     }
 
-    public ArrayList<String> getDetails() {
+    @Override
+    public List<String> getDetails(CertPath certPath) { // Parameter ignored.
 
         boolean hasExpiredCert = false;
         boolean hasExpiringCert = false;
@@ -182,9 +189,9 @@ public class HttpsCertVerifier implements CertVerifier {
                 names = names.substring(2); // remove proceeding ", "
 
         } catch (CertificateParsingException cpe) {
-            cpe.printStackTrace();
+            OutputController.getLogger().log(OutputController.Level.ERROR_ALL, cpe);
         } catch (IOException ioe) {
-            ioe.printStackTrace();
+            OutputController.getLogger().log(OutputController.Level.ERROR_ALL, ioe);
         }
 
         return names;
@@ -195,13 +202,15 @@ public class HttpsCertVerifier implements CertVerifier {
             details.add(detail);
     }
 
-    public Certificate getPublisher() {
+    @Override
+    public Certificate getPublisher(CertPath certPath) { // Paramater ignored.
         if (chain.length > 0)
             return (Certificate) chain[0];
         return null;
     }
 
-    public Certificate getRoot() {
+    @Override
+    public Certificate getRoot(CertPath certPath) { // Parameter ignored.
         if (chain.length > 0)
             return (Certificate) chain[chain.length - 1];
         return null;
@@ -210,18 +219,14 @@ public class HttpsCertVerifier implements CertVerifier {
     public boolean getRootInCacerts() {
         try {
             KeyStore[] caCertsKeyStores = KeyStores.getCAKeyStores();
-            return CertificateUtils.inKeyStores((X509Certificate) getRoot(), caCertsKeyStores);
+            return CertificateUtils.inKeyStores((X509Certificate) getRoot(null), caCertsKeyStores);
         } catch (Exception e) {
         }
         return false;
     }
 
-    public boolean hasSigningIssues() {
+    @Override
+    public boolean hasSigningIssues(CertPath certPath) {
         return false;
     }
-
-    public boolean noSigningIssues() {
-        return false;
-    }
-
 }

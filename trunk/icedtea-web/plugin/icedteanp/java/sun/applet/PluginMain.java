@@ -63,44 +63,85 @@ exception statement from your version. */
 package sun.applet;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.net.Authenticator;
 import java.net.CookieHandler;
 import java.net.CookieManager;
 import java.net.ProxySelector;
+import java.net.URL;
+import java.net.URLStreamHandler;
 import java.util.Enumeration;
+import java.util.Hashtable;
+import java.util.Map;
 import java.util.Properties;
+import sun.awt.AppContext;
+import sun.awt.SunToolkit;
 
 import net.sourceforge.jnlp.config.DeploymentConfiguration;
 import net.sourceforge.jnlp.runtime.JNLPRuntime;
 import net.sourceforge.jnlp.security.JNLPAuthenticator;
+import net.sourceforge.jnlp.util.logging.JavaConsole;
+import net.sourceforge.jnlp.util.logging.LogConfig;
+import net.sourceforge.jnlp.util.logging.OutputController;
 
 /**
  * The main entry point into PluginAppletViewer.
  */
 public class PluginMain extends PluginMainBase {
-    // the files where stdout/stderr are sent to
-    public static final String PLUGIN_STDERR_FILE = "java.stderr";
-    public static final String PLUGIN_STDOUT_FILE = "java.stdout";
 
     // This is used in init().  Getting rid of this is desirable but depends
     // on whether the property that uses it is necessary/standard.
     private static final String theVersion = System.getProperty("java.version");
+
+    /* Install a handler directly using reflection. This ensures that java doesn't error-out
+     * when javascript is used in a URL. We can then handle these URLs correctly in eg PluginAppletViewer.showDocument().
+     */
+    static private void installDummyJavascriptProtocolHandler() {
+        try {
+            Field handlersField = URL.class.getDeclaredField("handlers");
+            handlersField.setAccessible(true);
+
+            @SuppressWarnings("unchecked")
+            Hashtable<String, URLStreamHandler> handlers = (Hashtable<String,URLStreamHandler>)handlersField.get(null);
+
+            // Place an arbitrary handler, we only need the URL construction to not error-out
+            handlers.put("javascript", new sun.net.www.protocol.http.Handler());
+        } catch (Exception e) {
+            OutputController.getLogger().log(OutputController.Level.ERROR_ALL, "Unable to install 'javascript:' URL protocol handler!");
+            OutputController.getLogger().log(e);
+        }
+    }
 
     /**
      * The main entry point into AppletViewer.
      */
     public static void main(String args[])
             throws IOException {
-        if (!checkArgs(args)) {
-            System.exit(1);
+        //we are polite, we reprint start arguments
+        OutputController.getLogger().log("startup arguments: ");
+        for (int i = 0; i < args.length; i++) {
+            String string = args[i];
+            OutputController.getLogger().log(i + ": "+string);
+            
         }
+        if (AppContext.getAppContext() == null) {
+            SunToolkit.createNewAppContext();
+        }
+        installDummyJavascriptProtocolHandler();
 
+        if (!checkArgs(args)) {
+            JNLPRuntime.exit(1);
+        }
+        DeploymentConfiguration.move14AndOlderFilesTo15StructureCatched();
+        if (JavaConsole.isEnabled()) {
+            if ((args.length < 3) || !new File(args[2]).exists()) {
+                OutputController.getLogger().log(OutputController.Level.ERROR_ALL, "Warning, although console is on, plugin debug connection do not exists. No plugin information will be displayed in console (only java ones).");
+            } else {
+                JavaConsole.getConsole().createPluginReader(new File(args[2]));
+            }
+        }
         try {
             PluginStreamHandler streamHandler = connect(args);
-            boolean redirectStreams = System.getenv().containsKey("ICEDTEAPLUGIN_DEBUG");
-
-            // must be called before JNLPRuntime.initialize()
-            JNLPRuntime.setRedirectStreams(redirectStreams);
 
             PluginAppletSecurityContext sc = new PluginAppletSecurityContext(0);
             sc.prePopulateLCClasses();
@@ -116,11 +157,18 @@ public class PluginMain extends PluginMainBase {
             streamHandler.startProcessing();
 
             setCookieHandler(streamHandler);
+            JavaConsole.getConsole().setClassLoaderInfoProvider(new JavaConsole.ClassLoaderInfoProvider() {
+
+                @Override
+                public Map<String, String> getLoaderInfo() {
+                    return PluginAppletSecurityContext.getLoaderInfo();
+                }
+            });
 
         } catch (Exception e) {
-            e.printStackTrace();
-            System.err.println("Something very bad happened. I don't know what to do, so I am going to exit :(");
-            System.exit(1);
+            OutputController.getLogger().log(e);
+            OutputController.getLogger().log(OutputController.Level.ERROR_ALL, "Something very bad happened. I don't know what to do, so I am going to exit :(");
+            JNLPRuntime.exit(1);
         }
     }
 
@@ -186,7 +234,7 @@ public class PluginMain extends PluginMainBase {
             Authenticator.setDefault(new JNLPAuthenticator());
         }
         // override the proxy selector set by JNLPRuntime
-        ProxySelector.setDefault(new PluginProxySelector());
+        ProxySelector.setDefault(new PluginProxySelector(JNLPRuntime.getConfiguration()));
     }
 
     private static void setCookieHandler(PluginStreamHandler streamHandler) {

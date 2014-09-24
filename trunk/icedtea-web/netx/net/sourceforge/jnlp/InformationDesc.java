@@ -21,7 +21,7 @@ import java.net.*;
 import java.util.*;
 
 /**
- * The information element.<p>
+ * The information element.
  *
  * @author <a href="mailto:jmaxwell@users.sourceforge.net">Jon A. Maxwell (JAM)</a> - initial author
  * @version $Revision: 1.9 $
@@ -34,7 +34,8 @@ public class InformationDesc {
     // specification name.
 
     /** one-line description */
-    public static final Object ONE_LINE = "oneline";
+    /**http://docs.oracle.com/javase/6/docs/technotes/guides/javaws/developersguide/syntax.html**/
+    public static final Object ONE_LINE = "one-line";
 
     /** short description */
     public static final Object SHORT = "short";
@@ -51,17 +52,13 @@ public class InformationDesc {
     /** the data as list of key,value pairs */
     private List<Object> info;
 
-    /** the JNLPFile this information is for */
-    private JNLPFile jnlpFile;
 
     /**
      * Create an information element object.
      *
-     * @param jnlpFile file that the information is for
      * @param locales the locales the information is for
      */
-    public InformationDesc(JNLPFile jnlpFile, Locale locales[]) {
-        this.jnlpFile = jnlpFile;
+    public InformationDesc(Locale locales[]) {
         this.locales = locales;
     }
 
@@ -110,11 +107,22 @@ public class InformationDesc {
      * Information.TOOLTIP, Information.DEFAULT
      */
     public String getDescription(Object kind) {
-        String result = (String) getItem("description-" + kind);
+        String result = getDescriptionStrict(kind);
         if (result == null)
             return (String) getItem("description-" + DEFAULT);
         else
             return result;
+    }
+
+      /**
+     * Returns the application's description of the specified type.
+     *
+     * @param kind one of Information.SHORT, Information.ONE_LINE,
+     * Information.TOOLTIP, Information.DEFAULT
+     */
+    public String getDescriptionStrict(Object kind) {
+        return (String) getItem("description-" + kind);
+        
     }
 
     /**
@@ -159,6 +167,8 @@ public class InformationDesc {
             }
         }
 
+        // FIXME if there's no larger icon, choose the closest smaller icon
+        // instead of the first
         if (best == null)
             best = icons[0];
 
@@ -170,13 +180,6 @@ public class InformationDesc {
      */
     public Locale[] getLocales() {
         return locales;
-    }
-
-    /**
-     * Returns the JNLPFile the information is for.
-     */
-    public JNLPFile getJNLPFile() {
-        return jnlpFile;
     }
 
     /**

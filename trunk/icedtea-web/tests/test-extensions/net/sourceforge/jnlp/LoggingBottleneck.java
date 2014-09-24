@@ -45,6 +45,7 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.lang.reflect.Method;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -80,10 +81,10 @@ public class LoggingBottleneck {
      * map of classes, each have map of methods, each have errorlist, outLIst, and allList (allist contains also not std or err messages)
      * class.testMethod.logs
      */
-    final Map<String, Map<String, TestsLogs>> processLogs = new HashMap<String, Map<String, TestsLogs>>(100);
+    final Map<String, Map<String, TestsLogs>> processLogs = Collections.synchronizedMap(new HashMap<String, Map<String, TestsLogs>>(1000));
     private boolean added = false;
 
-    public static LoggingBottleneck getDefaultLoggingBottleneck() {
+    synchronized public static LoggingBottleneck getDefaultLoggingBottleneck() {
         if (loggingBottleneck == null) {
             loggingBottleneck = new LoggingBottleneck();
         }
@@ -101,11 +102,15 @@ public class LoggingBottleneck {
         }
     }
 
-    void writeXmlLog() throws FileNotFoundException, IOException {
+   synchronized void writeXmlLog() throws FileNotFoundException, IOException {
         writeXmlLog(DEFAULT_LOG_FILE);
     }
 
-    void writeXmlLog(File f) throws FileNotFoundException, IOException {
+    synchronized void writeXmlLog(File f) throws FileNotFoundException, IOException {
+        writeXmlLog(f, Collections.unmodifiableMap(processLogs));
+    }
+        
+    synchronized static void writeXmlLog(File f, Map<String, Map<String, TestsLogs>> processLogs) throws FileNotFoundException, IOException {
         Writer w = new OutputStreamWriter(new FileOutputStream(f));
         Set<Entry<String, Map<String, TestsLogs>>> classes = processLogs.entrySet();
         w.write("<" + LOGS_ELEMENT + ">");
@@ -117,7 +122,7 @@ public class LoggingBottleneck {
                 String testName = testLog.getKey();
                 String testLogs = testLog.getValue().toString();
                 w.write("<" + TESTLOG_ELEMENT + " " + TESTMETHOD_ATTRIBUTE + "=\"" + testName + "\" " + FULLID_ATTRIBUTE + "=\"" + className + "." + testName + "\"  >");
-                w.write(testLogs);
+                w.write(clearChars(testLogs));
                 w.write("</" + TESTLOG_ELEMENT + ">");
             }
             w.write("</" + CLASSLOG_ELEMENT + ">");
@@ -127,7 +132,7 @@ public class LoggingBottleneck {
         w.close();
     }
 
-    void addToXmlLog(String message, boolean printToOut, boolean printToErr, StackTraceElement ste) {
+    synchronized  void addToXmlLog(String message, boolean printToOut, boolean printToErr, StackTraceElement ste) {
         Map<String, TestsLogs> classLog = processLogs.get(ste.getClassName());
         if (classLog == null) {
             classLog = new HashMap<String, TestsLogs>(50);
@@ -157,9 +162,9 @@ public class LoggingBottleneck {
         methodLog.add(printToErr, printToOut, message);
     }
 
-    public String modifyMethodWithForBrowser(String methodBrowseredName, String className) {
+   synchronized public String modifyMethodWithForBrowser(String methodBrowseredName, String className) {
         try {
-            Class clazz = Class.forName(className);
+            Class<?> clazz = Class.forName(className);
             /*
              * By using this isAssignable to ensure corect class before invocation,
              * then we lost possibility to track manualy set browsers, but it is correct,
@@ -180,11 +185,11 @@ public class LoggingBottleneck {
         return methodBrowseredName;
     }
 
-    public void setLoggedBrowser(String loggedBrowser) {
+   synchronized public void setLoggedBrowser(String loggedBrowser) {
         this.loggedBrowser = loggedBrowser;
     }
 
-    public void logIntoPlaintextLog(String message, boolean printToOut, boolean printToErr) {
+  synchronized  public void logIntoPlaintextLog(String message, boolean printToOut, boolean printToErr) {
         try {
             if (printToOut) {
                 LoggingBottleneck.getDefaultLoggingBottleneck().stdout(message);
@@ -201,15 +206,38 @@ public class LoggingBottleneck {
     private void stdout(String idded) throws IOException {
         DEFAULT_STDOUT_WRITER.write(idded);
         DEFAULT_STDOUT_WRITER.newLine();
+        DEFAULT_STDOUT_WRITER.flush();
     }
 
     private void stderr(String idded) throws IOException {
         DEFAULT_STDERR_WRITER.write(idded);
         DEFAULT_STDERR_WRITER.newLine();
+        DEFAULT_STDERR_WRITER.flush();
     }
 
     private void stdeall(String idded) throws IOException {
         DEFAULT_STDLOGS_WRITER.write(idded);
         DEFAULT_STDLOGS_WRITER.newLine();
+        DEFAULT_STDLOGS_WRITER.flush();
+    }
+    
+   synchronized public  static String clearChars(String ss) {
+        StringBuilder s = new StringBuilder(ss);
+        for (int i = 0; i < s.length(); i++) {
+            char q = s.charAt(i);
+            if (q == '\n') {
+                continue;
+            }
+            if (q == '\t') {
+                continue;
+            }
+            int iq = (int) q;
+            if ((iq <= 31 || iq > 65533)||(iq >= 64976 && iq <= 65007)) {
+                s.setCharAt(i, 'I');
+                s.insert(i + 1, "NVALID_CHAR_" + iq);
+                i--;
+            }
+        }
+        return s.toString();
     }
 }

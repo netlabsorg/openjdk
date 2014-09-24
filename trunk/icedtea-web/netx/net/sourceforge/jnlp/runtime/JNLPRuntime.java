@@ -16,51 +16,74 @@
 
 package net.sourceforge.jnlp.runtime;
 
-import java.io.*;
+import java.awt.EventQueue;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.net.Authenticator;
+import java.net.InetAddress;
 import java.net.ProxySelector;
+import java.net.URL;
+import java.net.UnknownHostException;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
-import java.awt.*;
-import java.text.*;
-import java.util.*;
+import java.security.AllPermission;
+import java.security.KeyStore;
+import java.security.Policy;
+import java.security.Security;
+import java.text.MessageFormat;
 import java.util.List;
-import java.security.*;
-import javax.jnlp.*;
+import java.util.ResourceBundle;
+
+import javax.jnlp.ServiceManager;
 import javax.naming.ConfigurationException;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
+import javax.swing.JOptionPane;
 import javax.swing.UIManager;
 import javax.swing.text.html.parser.ParserDelegator;
 
-import sun.net.www.protocol.jar.URLJarFile;
-
-import net.sourceforge.jnlp.*;
+import net.sourceforge.jnlp.DefaultLaunchHandler;
+import net.sourceforge.jnlp.GuiLaunchHandler;
+import net.sourceforge.jnlp.LaunchHandler;
+import net.sourceforge.jnlp.Launcher;
 import net.sourceforge.jnlp.browser.BrowserAwareProxySelector;
-import net.sourceforge.jnlp.cache.*;
+import net.sourceforge.jnlp.cache.CacheUtil;
+import net.sourceforge.jnlp.cache.DefaultDownloadIndicator;
+import net.sourceforge.jnlp.cache.DownloadIndicator;
+import net.sourceforge.jnlp.cache.UpdatePolicy;
 import net.sourceforge.jnlp.config.DeploymentConfiguration;
 import net.sourceforge.jnlp.security.JNLPAuthenticator;
 import net.sourceforge.jnlp.security.KeyStores;
 import net.sourceforge.jnlp.security.SecurityDialogMessageHandler;
-import net.sourceforge.jnlp.security.VariableX509TrustManager;
-import net.sourceforge.jnlp.services.*;
-import net.sourceforge.jnlp.util.*;
+import net.sourceforge.jnlp.services.XServiceManagerStub;
+import net.sourceforge.jnlp.util.FileUtils;
+import net.sourceforge.jnlp.util.logging.JavaConsole;
+import net.sourceforge.jnlp.util.logging.OutputController;
+import net.sourceforge.jnlp.util.logging.LogConfig;
+import sun.net.www.protocol.jar.URLJarFile;
 
 /**
+ * <p>
  * Configure and access the runtime environment.  This class
  * stores global jnlp properties such as default download
  * indicators, the install/base directory, the default resource
  * update policy, etc.  Some settings, such as the base directory,
- * cannot be changed once the runtime has been initialized.<p>
- *
+ * cannot be changed once the runtime has been initialized.
+ * </p>
+ * <p>
  * The JNLP runtime can be locked to prevent further changes to
  * the runtime environment except by a specified class.  If set,
  * only instances of the <i>exit class</i> can exit the JVM or
  * change the JNLP runtime settings once the runtime has been
- * initialized.<p>
+ * initialized.
+ * </p>
  *
  * @author <a href="mailto:jmaxwell@users.sourceforge.net">Jon A. Maxwell (JAM)</a> - initial author
  * @version $Revision: 1.19 $
@@ -71,10 +94,16 @@ public class JNLPRuntime {
         loadResources();
     }
 
+    /**
+     * java-abrt-connector can print out specific application String method, it is good to save visited urls for reproduce purposes.
+     * For javaws we can read the destination jnlp from commandline
+     * However for plugin (url arrive via pipes). Also for plugin we can not be sure which opened tab/window
+     * have caused the crash. Thats why the individual urls are added, not replaced.
+     */
+    private static String history = "";
+
     /** the localized resource strings */
     private static ResourceBundle resources;
-
-    private static final DeploymentConfiguration config = new DeploymentConfiguration();
 
     /** the security manager */
     private static JNLPSecurityManager security;
@@ -109,8 +138,10 @@ public class JNLPRuntime {
     /** whether debug mode is on */
     private static boolean debug = false;
 
-    /** whether streams should be redirected */
-    private static boolean redirectStreams = false;
+    /**
+     * whether plugin debug mode is on
+     */
+    private static Boolean pluginDebug = null;
 
     /** mutex to wait on, for initialization */
     public static Object initMutex = new Object();
@@ -121,8 +152,30 @@ public class JNLPRuntime {
     /** set to false to indicate another JVM should not be spawned, even if necessary */
     private static boolean forksAllowed = true;
 
-    /** all security dialogs will be consumed and pretented as beeing verified by user and allowed.*/
+    /** all security dialogs will be consumed and pretented as being verified by user and allowed.*/
     private static boolean trustAll=false;
+
+    /** all security dialogs will be consumed and we will pretend the Sandbox option was chosen */
+    private static boolean trustNone = false;
+    
+    /** allows 301.302.303.307.308 redirects to be followed when downloading resources*/
+    private static boolean allowRedirect = false;;
+    
+    /** when this is true, ITW will not attempt any inet connections and will work only with what is in cache*/
+    private static boolean offlineForced = false;
+
+    private static Boolean onlineDetected = null;
+
+
+    /** 
+     * Header is not checked and so eg
+     * <a href="https://en.wikipedia.org/wiki/Gifar">gifar</a> exploit is
+     * possible.<br/>
+     * However if jar file is a bit corrupted, then it sometimes can work so 
+     * this switch can disable the header check.
+     * @see <a href="https://en.wikipedia.org/wiki/Gifar">Gifar attack</a>
+     */
+    private static boolean ignoreHeaders=false;
 
     /** contains the arguments passed to the jnlp runtime */
     private static List<String> initialArguments;
@@ -130,14 +183,10 @@ public class JNLPRuntime {
     /** a lock which is held to indicate that an instance of netx is running */
     private static FileLock fileLock;
 
-    public static final String STDERR_FILE = "java.stderr";
-    public static final String STDOUT_FILE = "java.stdout";
-
-
     /**
      * Returns whether the JNLP runtime environment has been
-     * initialized.  Once initialized, some properties such as the
-     * base directory cannot be changed.  Before
+     * initialized. Once initialized, some properties such as the
+     * base directory cannot be changed. Before
      */
     public static boolean isInitialized() {
         return initialized;
@@ -146,34 +195,43 @@ public class JNLPRuntime {
     /**
      * Initialize the JNLP runtime environment by installing the
      * security manager and security policy, initializing the JNLP
-     * standard services, etc.<p>
-     *
-     * This method should be called from the main AppContext/Thread. <p>
-     *
-     * This method cannot be called more than once.  Once
+     * standard services, etc.
+     * <p>
+     * This method should be called from the main AppContext/Thread.
+     * </p>
+     * <p>
+     * This method cannot be called more than once. Once
      * initialized, methods that alter the runtime can only be
-     * called by the exit class.<p>
+     * called by the exit class.
+     * </p>
      *
-     * @param isApplication is true if a webstart application is being initialized
-     *
+     * @param isApplication is {@code true} if a webstart application is being
+     * initialized
      * @throws IllegalStateException if the runtime was previously initialized
      */
     public static void initialize(boolean isApplication) throws IllegalStateException {
         checkInitialized();
 
         try {
-            config.load();
-        } catch (ConfigurationException e) {
-            /* exit if there is a fatal exception loading the configuration */
-            if (isApplication) {
-                System.out.println(getMessage("RConfigurationError"));
-                System.exit(1);
-            }
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        } catch (Exception e) {
+            OutputController.getLogger().log("Unable to set system look and feel");
         }
 
-        KeyStores.setConfiguration(config);
-
-        initializeStreams();
+        if (JavaConsole.canShowOnStartup(isApplication)) {
+            JavaConsole.getConsole().showConsoleLater();
+        }
+        /* exit if there is a fatal exception loading the configuration */
+        if (getConfiguration().getLoadingException() != null) {
+            if (getConfiguration().getLoadingException() instanceof ConfigurationException){
+                // ConfigurationException is thrown only if deployment.config's field
+                // deployment.system.config.mandatory is true, and the destination
+                //where deployment.system.config points is not readable
+                throw new RuntimeException(getConfiguration().getLoadingException());
+            }
+            OutputController.getLogger().log(OutputController.Level.WARNING_ALL, getMessage("RConfigurationError")+": "+getConfiguration().getLoadingException().getMessage());
+        }
+        KeyStores.setConfiguration(getConfiguration());
 
         isWebstartApplication = isApplication;
 
@@ -190,9 +248,9 @@ public class JNLPRuntime {
 
         if (handler == null) {
             if (headless) {
-                handler = new DefaultLaunchHandler(System.err);
+                handler = new DefaultLaunchHandler(OutputController.getLogger());
             } else {
-                handler = new GuiLaunchHandler(System.err);
+                handler = new GuiLaunchHandler(OutputController.getLogger());
             }
         }
 
@@ -200,12 +258,6 @@ public class JNLPRuntime {
 
         policy = new JNLPPolicy();
         security = new JNLPSecurityManager(); // side effect: create JWindow
-
-        try {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        } catch (Exception e) {
-            // ignore it
-        }
 
         doMainAppContextHacks();
 
@@ -223,19 +275,21 @@ public class JNLPRuntime {
             KeyStore ks = KeyStores.getKeyStore(KeyStores.Level.USER, KeyStores.Type.CLIENT_CERTS);
             KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
             kmf.init(ks, KeyStores.getPassword());
-            TrustManager[] trust = new TrustManager[] { VariableX509TrustManager.getInstance() };
+            TrustManager[] trust = new TrustManager[] { getSSLSocketTrustManager() };
             context.init(kmf.getKeyManagers(), trust, null);
             sslSocketFactory = context.getSocketFactory();
 
             HttpsURLConnection.setDefaultSSLSocketFactory(sslSocketFactory);
         } catch (Exception e) {
-            System.err.println("Unable to set SSLSocketfactory (may _prevent_ access to sites that should be trusted)! Continuing anyway...");
-            e.printStackTrace();
+            OutputController.getLogger().log(OutputController.Level.ERROR_ALL, "Unable to set SSLSocketfactory (may _prevent_ access to sites that should be trusted)! Continuing anyway...");
+            OutputController.getLogger().log(OutputController.Level.ERROR_ALL, e);
         }
 
         // plug in a custom authenticator and proxy selector
         Authenticator.setDefault(new JNLPAuthenticator());
-        ProxySelector.setDefault(new BrowserAwareProxySelector());
+        BrowserAwareProxySelector proxySelector = new BrowserAwareProxySelector(getConfiguration());
+        proxySelector.initialize();
+        ProxySelector.setDefault(proxySelector);
 
         // Restrict access to netx classes
         Security.setProperty("package.access", 
@@ -245,6 +299,57 @@ public class JNLPRuntime {
 
         initialized = true;
 
+    }
+
+    public static void reloadPolicy() {
+        policy.refresh();
+    }
+
+    /**
+     * Returns a TrustManager ideal for the running VM.
+     *
+     * @return TrustManager the trust manager to use for verifying https certificates
+     */
+    private static TrustManager getSSLSocketTrustManager() throws
+                                ClassNotFoundException, IllegalAccessException, InstantiationException, InvocationTargetException {
+
+        try {
+
+            Class<?> trustManagerClass;
+            Constructor<?> tmCtor = null;
+
+            if (System.getProperty("java.version").startsWith("1.6")) { // Java 6
+                try {
+                    trustManagerClass = Class.forName("net.sourceforge.jnlp.security.VariableX509TrustManagerJDK6");
+                 } catch (ClassNotFoundException cnfe) {
+                     OutputController.getLogger().log(OutputController.Level.ERROR_ALL, "Unable to find class net.sourceforge.jnlp.security.VariableX509TrustManagerJDK6");
+                     return null;
+                 }
+            } else { // Java 7 or more (technically could be <= 1.5 but <= 1.5 is unsupported)
+                try {
+                    trustManagerClass = Class.forName("net.sourceforge.jnlp.security.VariableX509TrustManagerJDK7");
+                 } catch (ClassNotFoundException cnfe) {
+                     OutputController.getLogger().log(OutputController.Level.ERROR_ALL, "Unable to find class net.sourceforge.jnlp.security.VariableX509TrustManagerJDK7");
+                     return null;
+                 }
+            }
+
+            Constructor<?>[] tmCtors = trustManagerClass.getDeclaredConstructors();
+            tmCtor = tmCtors[0];
+
+            for (Constructor<?> ctor : tmCtors) {
+                if (tmCtor.getGenericParameterTypes().length == 0) {
+                    tmCtor = ctor;
+                    break;
+                }
+            }
+
+            return (TrustManager) tmCtor.newInstance();
+        } catch (RuntimeException e) {
+            OutputController.getLogger().log(OutputController.Level.ERROR_ALL, "Unable to load JDK-specific TrustManager. Was this version of IcedTea-Web compiled with JDK 6 or 7?");
+            OutputController.getLogger().log(e);
+            throw e;
+        }
     }
 
     /**
@@ -281,44 +386,99 @@ public class JNLPRuntime {
         new ParserDelegator();
     }
 
-    /**
-     * Initializes the standard output and error streams, redirecting them or
-     * duplicating them as required.
-     */
-    private static void initializeStreams() {
-        Boolean enableLogging = Boolean.valueOf(config
-                .getProperty(DeploymentConfiguration.KEY_ENABLE_LOGGING));
-        if (redirectStreams || enableLogging) {
-            String logDir = config.getProperty(DeploymentConfiguration.KEY_USER_LOG_DIR);
 
-            try {
-                File errFile = new File(logDir, JNLPRuntime.STDERR_FILE);
-                FileUtils.createParentDir(errFile);
-                FileUtils.createRestrictedFile(errFile, true);
-                File outFile = new File(logDir, JNLPRuntime.STDOUT_FILE);
-                FileUtils.createParentDir(outFile);
-                FileUtils.createRestrictedFile(outFile, true);
+    
+     
+    
+    
 
-                if (redirectStreams) {
-                    System.setErr(new PrintStream(new FileOutputStream(errFile)));
-                    System.setOut(new PrintStream(new FileOutputStream(outFile)));
-                } else {
-                    System.setErr(new TeeOutputStream(new FileOutputStream(errFile), System.err));
-                    System.setOut(new TeeOutputStream(new FileOutputStream(outFile), System.out));
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
+    public static boolean isOfflineForced() {
+        return offlineForced;
+    }
+
+    public static void setOnlineDetected(boolean online) {
+        onlineDetected = online;
+        OutputController.getLogger().log(OutputController.Level.MESSAGE_DEBUG, "Detected online set to: " + onlineDetected);
+    }
+
+    public static boolean isOnlineDetected() {
+        if (onlineDetected == null) {
+            //"file" protocol do not do online check
+            //sugest online for this case
+            return true;
+        }
+        return onlineDetected;
+    }
+
+    public static boolean isOnline() {
+        if (isOfflineForced()) {
+            return false;
+        }
+        return isOnlineDetected();
+    }
+
+    public static void detectOnline(URL location) {
+        if (onlineDetected != null) {
+            return;
+        }
+        try {
+            if (location.getProtocol().equals("file")) {
+                return;
             }
+            //Checks the offline/online status of the system.
+            InetAddress.getByName(location.getHost());
+        } catch (UnknownHostException ue) {
+            OutputController.getLogger().log(OutputController.Level.ERROR_ALL, "The host of " + location.toExternalForm() + " file should be located seems down, or you are simply offline.");
+            JNLPRuntime.setOnlineDetected(false);
+            return;
+        }
+        setOnlineDetected(true);
+    }
+   
+    /**
+     * see <a href="https://en.wikipedia.org/wiki/Double-checked_locking#Usage_in_Java">Double-checked locking in Java</a>
+     * for cases how not to do lazy initialization
+     * and <a href="https://en.wikipedia.org/wiki/Initialization_on_demand_holder_idiom">Initialization on demand holder idiom</a>
+     * for ITW approach
+     */
+    private static class DeploymentConfigurationHolder {
+
+        private static final DeploymentConfiguration INSTANCE = initConfiguration();
+
+        private static DeploymentConfiguration initConfiguration() {
+            DeploymentConfiguration config = new DeploymentConfiguration();
+            try {
+                config.load();
+                config.copyTo(System.getProperties());
+            } catch (ConfigurationException ex) {
+                OutputController.getLogger().log(OutputController.Level.MESSAGE_ALL, Translator.R("RConfigurationError"));
+                //mark this exceptionas we can die on it later
+                config.setLoadingException(ex);
+                //to be sure - we MUST die - http://docs.oracle.com/javase/6/docs/technotes/guides/deployment/deployment-guide/properties.html
+            }catch(Exception t){
+                //all exceptions are causing InstantiatizationError so this do it much more readble
+                OutputController.getLogger().log(OutputController.Level.ERROR_ALL, t);
+                OutputController.getLogger().log(OutputController.Level.WARNING_ALL, Translator.R("RFailingToDefault"));
+                if (!JNLPRuntime.isHeadless()){
+                    JOptionPane.showMessageDialog(null, getMessage("RFailingToDefault")+"\n"+t.toString());
+                }
+                //try to survive this unlikely exception
+                config.resetToDefaults();
+            } finally {
+                OutputController.getLogger().startConsumer();
+            }
+            return config;
         }
     }
 
     /**
      * Gets the Configuration associated with this runtime
+     *
      * @return a {@link DeploymentConfiguration} object that can be queried to
      * find relevant configuration settings
      */
     public static DeploymentConfiguration getConfiguration() {
-        return config;
+        return DeploymentConfigurationHolder.INSTANCE;
     }
 
     /**
@@ -348,7 +508,7 @@ public class JNLPRuntime {
      * Sets whether the JNLP client will use any AWT/Swing
      * components.  In headless mode, client features that use the
      * AWT are disabled such that the client can be used in
-     * headless mode (<code>java.awt.headless=true</code>).
+     * headless mode ({@code java.awt.headless=true}).
      *
      * @throws IllegalStateException if the runtime was previously initialized
      */
@@ -356,6 +516,16 @@ public class JNLPRuntime {
         checkInitialized();
         headless = enabled;
     }
+    
+    public static void setAllowRedirect(boolean enabled) {
+        checkInitialized();
+        allowRedirect = enabled;
+    }
+
+    public static boolean isAllowRedirect() {
+        return allowRedirect;
+    }
+    
 
     /**
          * Sets whether we will verify code signing.
@@ -378,10 +548,11 @@ public class JNLPRuntime {
      * Disabling security can increase performance for some
      * applications, and can be used to use netx with other code
      * that uses its own security manager or policy.
-     *
+     * <p>
      * Disabling security is not recommended and should only be
-     * used if the JNLP files opened are trusted.  This method can
-     * only be called before initalizing the runtime.<p>
+     * used if the JNLP files opened are trusted. This method can
+     * only be called before initalizing the runtime.
+     * </p>
      *
      * @param enabled whether security should be enabled
      * @throws IllegalStateException if the runtime is already initialized
@@ -410,7 +581,7 @@ public class JNLPRuntime {
      *
      * @throws IllegalStateException if caller is not the exit class
      */
-    public static void setExitClass(Class exitClass) {
+    public static void setExitClass(Class<?> exitClass) {
         checkExitClass();
         security.setExitClass(exitClass);
     }
@@ -437,6 +608,10 @@ public class JNLPRuntime {
      * should be printed.
      */
     public static boolean isDebug() {
+        return isSetDebug() ||  isPluginDebug() || LogConfig.getLogConfig().isEnableLogging();
+    }
+
+     public static boolean isSetDebug() {
         return debug;
     }
 
@@ -451,17 +626,7 @@ public class JNLPRuntime {
         debug = enabled;
     }
 
-    /**
-     * Sets whether the standard output/error streams should be redirected to
-     * the loggging files.
-     *
-     * @throws IllegalStateException if the runtime has already been initialized
-     */
-    public static void setRedirectStreams(boolean redirect) {
-        checkInitialized();
-        redirectStreams = redirect;
-    }
-
+  
     /**
      * Sets the default update policy.
      *
@@ -513,7 +678,7 @@ public class JNLPRuntime {
 
     /**
      * Returns the localized resource string identified by the
-     * specified key.  If the message is empty, a null is
+     * specified key. If the message is empty, a null is
      * returned.
      */
     public static String getMessage(String key) {
@@ -532,8 +697,7 @@ public class JNLPRuntime {
     }
 
     /**
-     * Returns the localized resource string using the specified
-     * arguments.
+     * Returns the localized resource string using the specified arguments.
      *
      * @param args the formatting arguments to the resource string
      */
@@ -542,7 +706,7 @@ public class JNLPRuntime {
     }
 
     /**
-     * Returns true if the current runtime will fork
+     * Returns {@code true} if the current runtime will fork
      */
     public static boolean getForksAllowed() {
         return forksAllowed;
@@ -554,8 +718,7 @@ public class JNLPRuntime {
     }
 
     /**
-     * Throws an exception if called when the runtime is
-     * already initialized.
+     * Throws an exception if called when the runtime is already initialized.
      */
     private static void checkInitialized() {
         if (initialized)
@@ -563,9 +726,8 @@ public class JNLPRuntime {
     }
 
     /**
-     * Throws an exception if called with security enabled but
-     * a caller is not the exit class and the runtime has been
-     * initialized.
+     * Throws an exception if called with security enabled but a caller is not
+     * the exit class and the runtime has been initialized.
      */
     private static void checkExitClass() {
         if (securityEnabled && initialized)
@@ -598,7 +760,7 @@ public class JNLPRuntime {
     }
 
     /**
-     * @return true if running on Windows
+     * @return {@code true} if running on Windows
      */
     public static boolean isWindows() {
         String os = System.getProperty("os.name");
@@ -606,8 +768,8 @@ public class JNLPRuntime {
     }
 
     /**
-     * @return true if running on a Unix or Unix-like system (including Linux
-     * and *BSD)
+     * @return {@code true} if running on a Unix or Unix-like system (including
+     * Linux and *BSD)
      */
     public static boolean isUnix() {
         String sep = System.getProperty("file.separator");
@@ -627,7 +789,8 @@ public class JNLPRuntime {
     }
 
     /**
-     * Indicate that netx is running by creating the {@link JNLPRuntime#INSTANCE_FILE} and
+     * Indicate that netx is running by creating the
+     * {@link DeploymentConfiguration#KEY_USER_NETX_RUNNING_FILE} and
      * acquiring a shared lock on it
      */
     public synchronized static void markNetxRunning() {
@@ -661,16 +824,14 @@ public class JNLPRuntime {
             }
             
             if (fileLock != null && fileLock.isShared()) {
-                if (JNLPRuntime.isDebug()) {
-                    System.out.println("Acquired shared lock on " +
+                OutputController.getLogger().log("Acquired shared lock on " +
                             netxRunningFile.toString() + " to indicate javaws is running");
-                }
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            OutputController.getLogger().log(OutputController.Level.ERROR_ALL, e);
         }
 
-        Runtime.getRuntime().addShutdownHook(new Thread() {
+        Runtime.getRuntime().addShutdownHook(new Thread("JNLPRuntimeShutdownHookThread") {
             public void run() {
                 markNetxStopped();
                 CacheUtil.cleanCache();
@@ -680,7 +841,7 @@ public class JNLPRuntime {
 
     /**
      * Indicate that netx is stopped by releasing the shared lock on
-     * {@link JNLPRuntime#INSTANCE_FILE}.
+     * {@link DeploymentConfiguration#KEY_USER_NETX_RUNNING_FILE}.
      */
     private static void markNetxStopped() {
         if (fileLock == null) {
@@ -690,13 +851,10 @@ public class JNLPRuntime {
             fileLock.release();
             fileLock.channel().close();
             fileLock = null;
-            if (JNLPRuntime.isDebug()) {
-                String file = JNLPRuntime.getConfiguration()
-                        .getProperty(DeploymentConfiguration.KEY_USER_NETX_RUNNING_FILE);
-                System.out.println("Release shared lock on " + file);
-            }
+            OutputController.getLogger().log("Release shared lock on " + JNLPRuntime.getConfiguration()
+                        .getProperty(DeploymentConfiguration.KEY_USER_NETX_RUNNING_FILE));
         } catch (IOException e) {
-            e.printStackTrace();
+            OutputController.getLogger().log(e);
         }
     }
 
@@ -707,5 +865,55 @@ public class JNLPRuntime {
     public static boolean isTrustAll() {
         return trustAll;
     }
+
+    static void setTrustNone(final boolean b) {
+        trustNone = b;
+    }
+
+    public static boolean isTrustNone() {
+        return trustNone;
+    }
+
+    public static boolean isIgnoreHeaders() {
+        return ignoreHeaders;
+    }
+
+    public static void setIgnoreHeaders(boolean ignoreHeaders) {
+        JNLPRuntime.ignoreHeaders = ignoreHeaders;
+    }
+
+    private static boolean isPluginDebug() {
+        if (pluginDebug == null) {
+            try {
+                //there are cases when this itself is not allowed by security manager, and so
+                //throws exception. Under some conditions it can couse deadlock
+                pluginDebug = System.getenv().containsKey("ICEDTEAPLUGIN_DEBUG");
+            } catch (Exception ex) {
+                pluginDebug = false;
+                OutputController.getLogger().log(ex);
+            }
+        }
+        return pluginDebug;
+    }
+
+    public static void exit(int i) {
+        OutputController.getLogger().close();
+        System.exit(i);
+    }
+
+
+    public static void saveHistory(String documentBase) {
+        JNLPRuntime.history += " " + documentBase + " ";
+    }
+
+    /**
+     * Used by java-abrt-connector via reflection
+     * @return history
+     */
+    private static String getHistory() {
+        return history;
+    }
+    
+    
 
 }

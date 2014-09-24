@@ -1,5 +1,5 @@
 // Copyright (C) 2001-2003 Jon A. Maxwell (JAM)
-// Copyright (C) 2012 Red Hat, Inc.
+// Copyright (C) 2009-2013 Red Hat, Inc.
 //
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -20,16 +20,16 @@ package net.sourceforge.jnlp;
 import static net.sourceforge.jnlp.runtime.Translator.R;
 
 import java.io.*;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.*;
 import java.util.*;
-//import javax.xml.parsers.*; // commented to use right Node
-//import org.w3c.dom.*;       // class for using Tiny XML | NanoXML
-//import org.xml.sax.*;
-//import gd.xml.tiny.*;
+
+import net.sourceforge.jnlp.SecurityDesc.RequestedPermissionLevel;
 import net.sourceforge.jnlp.UpdateDesc.Check;
 import net.sourceforge.jnlp.UpdateDesc.Policy;
 import net.sourceforge.jnlp.runtime.JNLPRuntime;
-import net.sourceforge.nanoxml.*;
+import net.sourceforge.jnlp.util.logging.OutputController;
 
 /**
  * Contains methods to parse an XML document into a JNLPFile.
@@ -60,8 +60,8 @@ class Parser {
             //throw exception;
         }
         public void warning(SAXParseException exception) {
-            System.err.println("XML parse warning:");
-            exception.printStackTrace();
+            OutputController.getLogger().log(OutputController.Level.WARNING_ALL, "XML parse warning:");
+            OutputController.getLogger().log(OutputController.Level.ERROR_ALL, exception);
         }
     };
     */
@@ -95,47 +95,45 @@ class Parser {
     private boolean allowExtensions; // true if extensions to JNLP spec are ok
 
     /**
-     * Create a parser for the JNLP file.  If the location
+     * Create a parser for the JNLP file. If the location
      * parameters is not null it is used as the default codebase
      * (does not override value of jnlp element's href
-     * attribute).<p>
-     *
+     * attribute).
+     * <p>
      * The root node may be normalized as a side effect of this
      * constructor.
-     *
+     * </p>
      * @param file the (uninitialized) file reference
      * @param base if codebase is not specified, a default base for relative URLs
      * @param root the root node
-     * @param strict whether to enforce strict compliance with the JNLP spec
-     * @param allowExtensions whether to allow extensions to the JNLP spec
+     * @param settings the parser settings to use when parsing the JNLP file
      * @throws ParseException if the JNLP file is invalid
      */
-    public Parser(JNLPFile file, URL base, Node root, boolean strict, boolean allowExtensions) throws ParseException {
-	this(file, base, root, strict, allowExtensions, null);
+    public Parser(JNLPFile file, URL base, Node root, ParserSettings settings) throws ParseException {
+	this(file, base, root, settings, null);
     }
 
     /**
-     * Create a parser for the JNLP file.  If the location
+     * Create a parser for the JNLP file. If the location
      * parameters is not null it is used as the default codebase
      * (does not override value of jnlp element's href
-     * attribute).<p>
-     *
+     * attribute).
+     * <p>
      * The root node may be normalized as a side effect of this
      * constructor.
-     *
+     * </p>
      * @param file the (uninitialized) file reference
      * @param base if codebase is not specified, a default base for relative URLs
      * @param root the root node
-     * @param strict whether to enforce strict compliance with the JNLP spec
-     * @param allowExtensions whether to allow extensions to the JNLP spec
+     * @param settings the parser settings to use when parsing the JNLP file
      * @param codebase codebase to use if we did not parse one from JNLP file.
      * @throws ParseException if the JNLP file is invalid
      */
-    public Parser(JNLPFile file, URL base, Node root, boolean strict, boolean allowExtensions, URL codebase) throws ParseException {
+    public Parser(JNLPFile file, URL base, Node root, ParserSettings settings, URL codebase) throws ParseException {
         this.file = file;
         this.root = root;
-        this.strict = strict;
-        this.allowExtensions = allowExtensions;
+        this.strict = settings.isStrict();
+        this.allowExtensions = settings.isExtensionAllowed();
 
         // ensure it's a JNLP node
         if (root == null || !root.getNodeName().equals("jnlp"))
@@ -143,9 +141,16 @@ class Parser {
 
         // JNLP tag information
         this.spec = getVersion(root, "spec", "1.0+");
-        this.codebase = addSlash(getURL(root, "codebase", base));
-        if (this.codebase == null) // We only override it if it is not specified.
+
+        try {
+            this.codebase = addSlash(getURL(root, "codebase", base));
+        } catch (ParseException e) {
+            //If parsing fails, continue by overriding the codebase with the one passed in
+        }
+
+        if (this.codebase == null) // Codebase is overwritten if codebase was not specified in file or if parsing of it failed
             this.codebase = codebase;
+
         this.base = (this.codebase != null) ? this.codebase : base; // if codebase not specified use default codebase
         fileLocation = getURL(root, "href", this.base);
 
@@ -246,13 +251,13 @@ class Parser {
         Node resources[] = getChildNodes(parent, "resources");
 
         // ensure that there are at least one information section present
-        if (resources.length == 0 && !j2se)
+        if (resources.length == 0 && !j2se) {
             throw new ParseException(R("PNoResources"));
-
+        }
         // create objects from the resources sections
-        for (int i = 0; i < resources.length; i++)
+        for (int i = 0; i < resources.length; i++) {
             result.add(getResourcesDesc(resources[i], j2se));
-
+        }
         return result;
     }
 
@@ -298,9 +303,11 @@ class Parser {
 
                 // check for duplicate main entries
                 if (jar.isMain()) {
-                    if (mainFlag == true)
-                        if (strict)
+                    if (mainFlag == true) {
+                        if (strict) {
                             throw new ParseException(R("PTwoMains"));
+                        }
+                    }
                     mainFlag = true;
                 }
 
@@ -339,7 +346,7 @@ class Parser {
         }
         String initialHeap = getAttribute(node, "initial-heap-size", null);
         String maxHeap = getAttribute(node, "max-heap-size", null);
-        List resources = getResources(node, true);
+        List<ResourcesDesc> resources = getResources(node, true);
 
         // require version attribute
         getRequiredAttribute(node, "version", null);
@@ -435,23 +442,19 @@ class Parser {
      * @throws RequiredElementException
      */
     void checkForInformation() throws RequiredElementException {
-        if (JNLPRuntime.isDebug()) {
-            System.out.println("Homepage: " + file.getInformation().getHomepage());
-            System.out.println("Description: " + file.getInformation().getDescription());
-        }
+        OutputController.getLogger().log("Homepage: " + file.getInformation().getHomepage());
+        OutputController.getLogger().log("Description: " + file.getInformation().getDescription());
 
         String title = file.getTitle();
         String vendor = file.getVendor();
 
         if (title == null || title.trim().isEmpty())
             throw new MissingTitleException();
-        else if (JNLPRuntime.isDebug())
-            System.out.println("Acceptable title tag found, contains: " + title);
+        else OutputController.getLogger().log("Acceptable title tag found, contains: " + title);
 
         if (vendor == null || vendor.trim().isEmpty())
             throw new MissingVendorException();
-        else if (JNLPRuntime.isDebug())
-            System.out.println("Acceptable vendor tag found, contains: " + vendor);
+        else OutputController.getLogger().log("Acceptable vendor tag found, contains: " + vendor);
     }
 
     /**
@@ -491,7 +494,7 @@ class Parser {
         Locale locales[] = getLocales(node);
 
         // create information
-        InformationDesc info = new InformationDesc(file, locales);
+        InformationDesc info = new InformationDesc(locales);
 
         // step through the elements
         Node child = node.getFirstChild();
@@ -593,20 +596,26 @@ class Parser {
                 throw new ParseException(R("PTwoSecurity"));
 
         Object type = SecurityDesc.SANDBOX_PERMISSIONS;
+        RequestedPermissionLevel requestedPermissionLevel = RequestedPermissionLevel.NONE;
 
-        if (nodes.length == 0)
+        if (nodes.length == 0) {
             type = SecurityDesc.SANDBOX_PERMISSIONS;
-        else if (null != getChildNode(nodes[0], "all-permissions"))
+            requestedPermissionLevel = RequestedPermissionLevel.NONE;
+        } else if (null != getChildNode(nodes[0], "all-permissions")) {
             type = SecurityDesc.ALL_PERMISSIONS;
-        else if (null != getChildNode(nodes[0], "j2ee-application-client-permissions"))
+            requestedPermissionLevel = RequestedPermissionLevel.ALL;
+        } else if (null != getChildNode(nodes[0], "j2ee-application-client-permissions")) {
             type = SecurityDesc.J2EE_PERMISSIONS;
-        else if (strict)
+            requestedPermissionLevel = RequestedPermissionLevel.J2EE;
+        } else if (strict) {
             throw new ParseException(R("PEmptySecurity"));
+        }
 
-        if (base != null)
-            return new SecurityDesc(file, type, base.getHost());
-        else
-            return new SecurityDesc(file, type, null);
+        if (base != null) {
+            return new SecurityDesc(file, requestedPermissionLevel, type, base.getHost());
+        } else {
+            return new SecurityDesc(file, requestedPermissionLevel, type, null);
+        }
     }
 
     /**
@@ -912,9 +921,9 @@ class Parser {
     }
 
     /**
-     * Returns a Locale from a single locale.
+     * Returns a {@link Locale} from a single locale.
      *
-     * @param locale the locale string
+     * @param localeStr the locale string
      */
     public Locale getLocale(String localeStr) {
         if (localeStr.length() < 2)
@@ -1046,9 +1055,9 @@ class Parser {
 
     /**
      * Returns a URL object from a href string relative to the
-     * code base.  If the href denotes a relative URL, it must
+     * code base. If the href denotes a relative URL, it must
      * reference a location that is a subdirectory of the
-     * codebase.<p>
+     * codebase.
      *
      * @param node the node
      * @param name the attribute containing an href
@@ -1073,10 +1082,11 @@ class Parser {
                 URL result = new URL(base, href);
 
                 // check for going above the codebase
-                if (!result.toString().startsWith(base.toString()))
-                    if (strict)
+                if (!result.toString().startsWith(base.toString()) &&  !base.toString().startsWith(result.toString())){
+                    if (strict) {
                         throw new ParseException(R("PUrlNotInCodebase", node.getNodeName(), href, base));
-
+                    }
+                }
                 return result;
             }
 
@@ -1258,116 +1268,33 @@ class Parser {
      *
      * @throws ParseException if the JNLP file is invalid
      */
-    public static Node getRootNode(InputStream input) throws ParseException {
+    public static Node getRootNode(InputStream input, ParserSettings settings) throws ParseException {
+        String className = null;
+        if (settings.isMalformedXmlAllowed()) {
+            className = "net.sourceforge.jnlp.MalformedXMLParser";
+        } else {
+            className = "net.sourceforge.jnlp.XMLParser";
+        }
+
         try {
-            /* SAX
-            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-            factory.setValidating(false);
-            factory.setNamespaceAware(true);
-            DocumentBuilder builder = factory.newDocumentBuilder();
-            builder.setErrorHandler(errorHandler);
-
-            Document doc = builder.parse(input);
-            return doc.getDocumentElement();
-            */
-
-            /* TINY
-            Node document = new Node(TinyParser.parseXML(input));
-            Node jnlpNode = getChildNode(document, "jnlp"); // skip comments
-            */
-
-            //A BufferedInputStream is used to allow marking and reseting
-            //of a stream.
-            BufferedInputStream bs = new BufferedInputStream(input);
-
-            /* NANO */
-            final XMLElement xml = new XMLElement();
-            final PipedInputStream pin = new PipedInputStream();
-            final PipedOutputStream pout = new PipedOutputStream(pin);
-            final InputStreamReader isr = new InputStreamReader(bs, getEncoding(bs));
-            // Clean the jnlp xml file of all comments before passing
-            // it to the parser.
-            new Thread(
-                    new Runnable() {
-                        public void run() {
-                            (new XMLElement()).sanitizeInput(isr, pout);
-                            try {
-                                pout.close();
-                            } catch (IOException ioe) {
-                                ioe.printStackTrace();
-                            }
-                        }
-                    }).start();
-            xml.parseFromReader(new InputStreamReader(pin));
-            Node jnlpNode = new Node(xml);
-            return jnlpNode;
-        } catch (Exception ex) {
-            throw new ParseException(R("PBadXML"), ex);
-        }
-    }
-
-    /**
-     * Returns the name of the encoding used in this InputStream.
-     *
-     * @param input the InputStream
-     * @return a String representation of encoding
-     */
-    private static String getEncoding(InputStream input) throws IOException {
-        //Fixme: This only recognizes UTF-8, UTF-16, and
-        //UTF-32, which is enough to parse the prolog portion of xml to
-        //find out the exact encoding (if it exists). The reason being
-        //there could be other encodings, such as ISO 8859 which is 8-bits
-        //but it supports latin characters.
-        //So what needs to be done is to parse the prolog and retrieve
-        //the exact encoding from it.
-
-        int[] s = new int[4];
-        String encoding = "UTF-8";
-
-        //Determine what the first four bytes are and store
-        //them into an int array.
-        input.mark(4);
-        for (int i = 0; i < 4; i++) {
-            s[i] = input.read();
-        }
-        input.reset();
-
-        //Set the encoding base on what the first four bytes of the
-        //inputstream turn out to be (following the information from
-        //www.w3.org/TR/REC-xml/#sec-guessing).
-        if (s[0] == 255) {
-            if (s[1] == 254) {
-                if (s[2] != 0 || s[3] != 0) {
-                    encoding = "UnicodeLittle";
-                } else {
-                    encoding = "X-UTF-32LE-BOM";
-                }
+            Class<?> klass = null;
+            try {
+                klass = Class.forName(className);
+            } catch (ClassNotFoundException e) {
+                klass = Class.forName("net.sourceforge.jnlp.XMLParser");
             }
-        } else if (s[0] == 254 && s[1] == 255 && (s[2] != 0 ||
-                s[3] != 0)) {
-            encoding = "UTF-16";
+            Object instance = klass.newInstance();
+            Method m = klass.getMethod("getRootNode", InputStream.class);
 
-        } else if (s[0] == 0 && s[1] == 0 && s[2] == 254 &&
-                s[3] == 255) {
-            encoding = "X-UTF-32BE-BOM";
-
-        } else if (s[0] == 0 && s[1] == 0 && s[2] == 0 &&
-                s[3] == 60) {
-            encoding = "UTF-32BE";
-
-        } else if (s[0] == 60 && s[1] == 0 && s[2] == 0 &&
-                s[3] == 0) {
-            encoding = "UTF-32LE";
-
-        } else if (s[0] == 0 && s[1] == 60 && s[2] == 0 &&
-                s[3] == 63) {
-            encoding = "UTF-16BE";
-        } else if (s[0] == 60 && s[1] == 0 && s[2] == 63 &&
-                s[3] == 0) {
-            encoding = "UTF-16LE";
+            return (Node) m.invoke(instance, input);
+        } catch (InvocationTargetException e) {
+            if (e.getCause() instanceof ParseException) {
+                throw (ParseException)(e.getCause());
+            }
+            throw new ParseException(R("PBadXML"), e);
+        } catch (Exception e) {
+            throw new ParseException(R("PBadXML"), e);
         }
-
-        return encoding;
     }
 
 }

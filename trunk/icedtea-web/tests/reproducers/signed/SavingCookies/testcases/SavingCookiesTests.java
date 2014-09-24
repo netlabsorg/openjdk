@@ -50,7 +50,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 public class SavingCookiesTests extends BrowserTest {
-    
+
     static final String ENTERING_CHECK = "Entered CheckingCookies";
     static final String CHECKING_COMPLETION = "Finished CheckingCookies";
     static final String SAVING_COMPLETION = "Finished SavingCookies";
@@ -85,9 +85,9 @@ public class SavingCookiesTests extends BrowserTest {
                     }
                 };
                 if (url.endsWith(".html")) {
-                    pr = server.executeBrowser(url, stdoutListener, stdoutListener);
+                    pr = server.executeBrowser(url, stdoutListener, null);
                 } else if (url.endsWith(".jnlp")) {
-                    pr = server.executeJavawsHeadless(TRUSTALL, url, stdoutListener, stdoutListener);
+                    pr = server.executeJavawsHeadless(TRUSTALL, url, stdoutListener, null, null);
                 }
             } catch (Exception ex) {
                 throw new RuntimeException(ex);
@@ -105,11 +105,11 @@ public class SavingCookiesTests extends BrowserTest {
     public void AppletCheckCookieIsntSet() throws Exception {
         final String COOKIE_SANITY_CHECK = "Found cookie: TEST=";
         ProcessResult pr = server.executeBrowser("/CheckCookie.html");
-        
+
         Assert.assertFalse("stdout should NOT contain '" + COOKIE_SANITY_CHECK + "' but did.", pr.stdout.contains(COOKIE_SANITY_CHECK));
         Assert.assertTrue("stdout should contain '" + CHECKING_COMPLETION + "' but did not.", pr.stdout.contains(CHECKING_COMPLETION));
     }
-    
+
     @Test
     @TestInBrowsers(testIn = { Browsers.one })
     @Bug(id = "PR588")
@@ -129,10 +129,10 @@ public class SavingCookiesTests extends BrowserTest {
         while (!save.completed) {
             Thread.sleep(100);
         }
-        
+
         ProcessResult check = server.executeBrowser("/CheckCookie.html");
         save.join();
-        
+
         Assert.assertTrue("stdout should contain '" + ENTERING_CHECK + "' but did not.", save.pr.stdout.contains(ENTERING_CHECK));
         //XXX: It is necessary to check save.pr's stdout, because it does not show up in 'check.stdout' for some reason
         Assert.assertTrue("stdout should contain '" + COOKIE_SESSION_CHECK + "' but did not.", save.pr.stdout.contains(COOKIE_SESSION_CHECK));
@@ -154,7 +154,7 @@ public class SavingCookiesTests extends BrowserTest {
     @Bug(id = "PR588")
     public void AppletPersistentCookieShowDoc() throws Exception {
         ProcessResult pr = server.executeBrowser("/SavePersistentCookieAndGotoCheck.html");
-        
+
         Assert.assertTrue("stdout should contain '" + ENTERING_CHECK + "' but did not.", pr.stdout.contains(ENTERING_CHECK));
         Assert.assertTrue("stdout should contain '" + COOKIE_PERSISTENT_CHECK + "' but did not.", pr.stdout.contains(COOKIE_PERSISTENT_CHECK));
     }

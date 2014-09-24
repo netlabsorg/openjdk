@@ -26,10 +26,9 @@ public class CommandLine extends JUnitCore {
 
     public static void runMainAndExit(JUnitSystem system, String... args) {
         new CommandLine().runMain(system, args);
-        system.exit(0);
+        System.exit(0);
     }
 
-    @Override
     public Result runMain(JUnitSystem system, String... args) {
         List<Class<?>> classes = new ArrayList<Class<?>>();
         List<Failure> missingClasses = new ArrayList<Failure>();
@@ -46,7 +45,7 @@ public class CommandLine extends JUnitCore {
         addListener(jXmlOutput);
         RunListener listener = new LessVerboseTextListener(system);
         addListener(listener);
-        Result result = run(classes.toArray(new Class[0]));
+        Result result = run(classes.toArray(new Class<?>[0]));
         for (Failure each : missingClasses) {
             result.getFailures().add(each);
         }

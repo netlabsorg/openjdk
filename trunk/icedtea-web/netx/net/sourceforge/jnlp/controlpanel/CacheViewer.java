@@ -1,5 +1,5 @@
 /* CacheViewer.java -- Display the GUI for viewing and deleting cache files.
-Copyright (C) 2010 Red Hat
+Copyright (C) 2013 Red Hat
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -22,7 +22,10 @@ import java.awt.Dimension;
 import java.awt.Frame;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.KeyEventDispatcher;
+import java.awt.KeyboardFocusManager;
 import java.awt.Toolkit;
+import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 
@@ -31,6 +34,7 @@ import javax.swing.JDialog;
 import net.sourceforge.jnlp.config.DeploymentConfiguration;
 import net.sourceforge.jnlp.runtime.Translator;
 import net.sourceforge.jnlp.util.ImageResources;
+import net.sourceforge.jnlp.util.ScreenFinder;
 
 /**
  * This class will provide a visual way of viewing cache.
@@ -52,8 +56,11 @@ public class CacheViewer extends JDialog {
      */
     public CacheViewer(DeploymentConfiguration config) {
         super((Frame) null, dialogTitle, true); // Don't need a parent.
-        setIconImages(ImageResources.INSTANCE.getApplicationImages());
         this.config = config;
+        if (config == null) {
+            throw new IllegalArgumentException("config: " + config);
+        }
+        setIconImages(ImageResources.INSTANCE.getApplicationImages());
 
         /* Prepare for adding components to dialog box */
         Container contentPane = getContentPane();
@@ -69,11 +76,13 @@ public class CacheViewer extends JDialog {
         contentPane.add(topPanel, c);
 
         pack();
+        this.topPanel.invokeLaterPopulateTable();
 
         /* Set focus to default button when first activated */
         WindowAdapter adapter = new WindowAdapter() {
             private boolean gotFocus = false;
 
+            @Override
             public void windowGainedFocus(WindowEvent we) {
                 // Once window gets focus, set initial focus
                 if (!gotFocus) {
@@ -83,6 +92,33 @@ public class CacheViewer extends JDialog {
             }
         };
         addWindowFocusListener(adapter);
+
+        // Add a KeyEventDispatcher to dispatch events when this CacheViewer has focus
+        final CacheViewer cacheViewer = this;
+        KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(new KeyEventDispatcher() {
+            /**
+             * Dispatches mainly the {@code KeyEvent.VK_ESCAPE} key event to
+             * close the {@code CacheViewer} dialog.
+             * @return {@code true} after an {@link KeyEvent#VK_ESCAPE
+             * VK_ESCAPE} has been processed, otherwise {@code false}
+             * @see KeyEventDispatcher
+             */
+            public boolean dispatchKeyEvent(final KeyEvent keyEvent) {
+                // Check if Esc key has been pressed
+                if (keyEvent.getKeyCode() == KeyEvent.VK_ESCAPE &&
+                    keyEvent.getID() == KeyEvent.KEY_PRESSED) {
+                    // Exclude this key event from further processing
+                    keyEvent.consume();
+                    // Remove this low-level KeyEventDispatcher
+                    KeyboardFocusManager.getCurrentKeyboardFocusManager().removeKeyEventDispatcher(this);
+                    // Post close event to CacheViewer dialog
+                    Toolkit.getDefaultToolkit().getSystemEventQueue().postEvent(
+                            new WindowEvent(cacheViewer, WindowEvent.WINDOW_CLOSING));
+                    return true;
+                }
+                return false;
+            }
+        });
 
         initialized = true;
     }
@@ -113,9 +149,6 @@ public class CacheViewer extends JDialog {
      * Center the dialog box.
      */
     private void centerDialog() {
-        Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
-        Dimension dialogSize = getSize();
-
-        setLocation((screen.width - dialogSize.width) / 2, (screen.height - dialogSize.height) / 2);
+        ScreenFinder.centerWindowsToCurrentScreen(this);
     }
 }

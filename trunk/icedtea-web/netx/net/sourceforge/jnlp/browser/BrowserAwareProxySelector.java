@@ -40,22 +40,21 @@ import static net.sourceforge.jnlp.runtime.Translator.R;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.Proxy;
-import java.net.SocketAddress;
 import java.net.URI;
 import java.net.URL;
-import java.net.Proxy.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import net.sourceforge.jnlp.config.DeploymentConfiguration;
 import net.sourceforge.jnlp.runtime.JNLPProxySelector;
 import net.sourceforge.jnlp.runtime.JNLPRuntime;
 import net.sourceforge.jnlp.runtime.PacEvaluator;
 import net.sourceforge.jnlp.runtime.PacEvaluatorFactory;
+import net.sourceforge.jnlp.util.logging.OutputController;
 
 /**
  * A ProxySelector which can read proxy settings from a browser's
@@ -77,6 +76,7 @@ public class BrowserAwareProxySelector extends JNLPProxySelector {
 
     private int browserProxyType = BROWSER_PROXY_TYPE_NONE;
     private URL browserAutoConfigUrl;
+    /** Whether the http proxy should be used for http, https, ftp and socket protocols */
     private Boolean browserUseSameProxy;
     private String browserHttpProxyHost;
     private int browserHttpProxyPort;
@@ -92,15 +92,16 @@ public class BrowserAwareProxySelector extends JNLPProxySelector {
     /**
      * Create a new instance of this class, reading configuration fropm the browser
      */
-    public BrowserAwareProxySelector() {
-        super();
+    public BrowserAwareProxySelector(DeploymentConfiguration config) {
+        super(config);
+    }
+
+    public void initialize() {
         try {
             initFromBrowserConfig();
         } catch (IOException e) {
-            if (JNLPRuntime.isDebug()) {
-                e.printStackTrace();
-            }
-            System.err.println(R("RProxyFirefoxNotFound"));
+            OutputController.getLogger().log(e);
+            OutputController.getLogger().log(OutputController.Level.ERROR_ALL, R("RProxyFirefoxNotFound"));
             browserProxyType = PROXY_TYPE_NONE;
         }
     }
@@ -110,11 +111,7 @@ public class BrowserAwareProxySelector extends JNLPProxySelector {
      */
     private void initFromBrowserConfig() throws IOException {
 
-        File preferencesFile = FirefoxPreferencesFinder.find();
-
-        FirefoxPreferencesParser parser = new FirefoxPreferencesParser(preferencesFile);
-        parser.parse();
-        Map<String, String> prefs = parser.getPreferences();
+        Map<String, String> prefs = parseBrowserPreferences();
 
         String type = prefs.get("network.proxy.type");
         if (type != null) {
@@ -129,7 +126,7 @@ public class BrowserAwareProxySelector extends JNLPProxySelector {
                 browserAutoConfigUrl = new URL(url);
             }
         } catch (MalformedURLException e) {
-            e.printStackTrace();
+            OutputController.getLogger().log(OutputController.Level.ERROR_ALL, e);
         }
 
         if (browserProxyType == BROWSER_PROXY_TYPE_PAC) {
@@ -146,8 +143,15 @@ public class BrowserAwareProxySelector extends JNLPProxySelector {
         browserHttpsProxyPort = stringToPort(prefs.get("network.proxy.ssl_port"));
         browserFtpProxyHost = prefs.get("network.proxy.ftp");
         browserFtpProxyPort = stringToPort(prefs.get("network.proxy.ftp_port"));
-        browserSocks4ProxyHost = prefs.get("networking.proxy.socks");
+        browserSocks4ProxyHost = prefs.get("network.proxy.socks");
         browserSocks4ProxyPort = stringToPort(prefs.get("network.proxy.socks_port"));
+    }
+
+    Map<String, String> parseBrowserPreferences() throws IOException {
+        File preferencesFile = FirefoxPreferencesFinder.find();
+        FirefoxPreferencesParser parser = new FirefoxPreferencesParser(preferencesFile);
+        parser.parse();
+        return parser.getPreferences();
     }
 
     /**
@@ -166,12 +170,15 @@ public class BrowserAwareProxySelector extends JNLPProxySelector {
     }
 
     /**
+     * <p>
      * The main entry point for {@link BrowserAwareProxySelector}. Based on
      * the browser settings, determines proxy information for a given URI.
+     * </p>
      * <p>
      * The appropriate proxy may be determined by reading static information
      * from the browser's preferences file, or it may be computed dynamically,
      * by, for example, running javascript code.
+     * </p>
      */
     @Override
     protected List<Proxy> getFromBrowser(URI uri) {
@@ -208,15 +215,11 @@ public class BrowserAwareProxySelector extends JNLPProxySelector {
                 if (optionDescription == null) {
                     optionDescription = "Unknown";
                 }
-                if (JNLPRuntime.isDebug()) {
-                    System.err.println(R("RProxyFirefoxOptionNotImplemented", browserProxyType, optionDescription));
-                }
+                OutputController.getLogger().log(OutputController.Level.ERROR_DEBUG,R("RProxyFirefoxOptionNotImplemented", browserProxyType, optionDescription));
                 proxies.add(Proxy.NO_PROXY);
         }
 
-        if (JNLPRuntime.isDebug()) {
-            System.out.println("Browser selected proxies: " + proxies.toString());
-        }
+        OutputController.getLogger().log("Browser selected proxies: " + proxies.toString());
 
         return proxies;
     }
@@ -236,7 +239,7 @@ public class BrowserAwareProxySelector extends JNLPProxySelector {
             String proxiesString = browserProxyAutoConfig.getProxies(uri.toURL());
             proxies.addAll(getProxiesFromPacResult(proxiesString));
         } catch (MalformedURLException e) {
-            e.printStackTrace();
+            OutputController.getLogger().log(OutputController.Level.ERROR_ALL, e);
             proxies.add(Proxy.NO_PROXY);
         }
 
@@ -248,36 +251,11 @@ public class BrowserAwareProxySelector extends JNLPProxySelector {
      * the browser's preferences file.
      */
     private List<Proxy> getFromBrowserConfiguration(URI uri) {
-        List<Proxy> proxies = new ArrayList<Proxy>();
-
-        String scheme = uri.getScheme();
-
-        if (browserUseSameProxy) {
-            SocketAddress sa = new InetSocketAddress(browserHttpProxyHost, browserHttpProxyPort);
-            Proxy proxy;
-            if (scheme.equals("socket")) {
-                proxy = new Proxy(Type.SOCKS, sa);
-            } else {
-                proxy = new Proxy(Type.HTTP, sa);
-            }
-            proxies.add(proxy);
-        } else if (scheme.equals("http")) {
-            SocketAddress sa = new InetSocketAddress(browserHttpProxyHost, browserHttpProxyPort);
-            proxies.add(new Proxy(Type.HTTP, sa));
-        } else if (scheme.equals("https")) {
-            SocketAddress sa = new InetSocketAddress(browserHttpsProxyHost, browserHttpsProxyPort);
-            proxies.add(new Proxy(Type.HTTP, sa));
-        } else if (scheme.equals("ftp")) {
-            SocketAddress sa = new InetSocketAddress(browserFtpProxyHost, browserFtpProxyPort);
-            proxies.add(new Proxy(Type.HTTP, sa));
-        } else if (scheme.equals("socket")) {
-            SocketAddress sa = new InetSocketAddress(browserSocks4ProxyHost, browserSocks4ProxyPort);
-            proxies.add(new Proxy(Type.SOCKS, sa));
-        } else {
-            proxies.add(Proxy.NO_PROXY);
-        }
-
-        return proxies;
+        return getFromArguments(uri, browserUseSameProxy, true,
+                browserHttpsProxyHost, browserHttpsProxyPort,
+                browserHttpProxyHost, browserHttpProxyPort,
+                browserFtpProxyHost, browserFtpProxyPort,
+                browserSocks4ProxyHost, browserSocks4ProxyPort);
     }
 
 }

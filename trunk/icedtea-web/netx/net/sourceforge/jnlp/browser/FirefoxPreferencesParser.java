@@ -45,18 +45,20 @@ import java.util.HashMap;
 import java.util.Map;
 
 import net.sourceforge.jnlp.runtime.JNLPRuntime;
+import net.sourceforge.jnlp.util.logging.OutputController;
 
 /**
+ * <p>
  * A parser for Firefox's preferences file. It can 'parse' Firefox's
  * preferences file and expose the prefrences in a simple to use format.
- * <p>
+ * </p>
  * Sample usage:
- * <pre>
+ * <pre><code>
  * FirefoxPreferencesParser p = new FirefoxPreferencesParser(prefsFile);
  * p.parse();
  * Map&lt;String,String&gt; prefs = p.getPreferences();
  * System.out.println("blink allowed: " + prefs.get("browser.blink_allowed"));
- * </pre>
+ * </code></pre>
  */
 public final class FirefoxPreferencesParser {
 
@@ -128,7 +130,7 @@ public final class FirefoxPreferencesParser {
                             foundValue = true;
 
                             if (foundKey && foundValue) {
-                                // System.out.println("added (\"" + key + "\", \"" + value + "\")");
+                                //ItwLogger.getLogger().printOutLn("added (\"" + key + "\", \"" + value + "\")");
                                 prefs.put(key, value);
                             }
                         }
@@ -138,9 +140,7 @@ public final class FirefoxPreferencesParser {
         } finally {
             reader.close();
         }
-        if (JNLPRuntime.isDebug()) {
-            System.out.println("Read " + prefs.size() + " entries from Firefox's preferences");
-        }
+        OutputController.getLogger().log("Read " + prefs.size() + " entries from Firefox's preferences");
     }
 
     /**

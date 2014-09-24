@@ -16,11 +16,12 @@
 
 package net.sourceforge.jnlp;
 
+import java.io.File;
+import java.io.FileInputStream;
 import static net.sourceforge.jnlp.runtime.Translator.R;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.Reader;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -28,29 +29,42 @@ import java.util.Calendar;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
+import java.util.jar.Attributes;
 
+import net.sourceforge.jnlp.SecurityDesc.RequestedPermissionLevel;
 import net.sourceforge.jnlp.cache.ResourceTracker;
 import net.sourceforge.jnlp.cache.UpdatePolicy;
+import net.sourceforge.jnlp.runtime.JNLPClassLoader;
 import net.sourceforge.jnlp.runtime.JNLPRuntime;
+import net.sourceforge.jnlp.util.ClasspathMatcher;
+import net.sourceforge.jnlp.util.logging.OutputController;
 
 /**
+ * <p>
  * Provides methods to access the information in a Java Network
  * Launching Protocol (JNLP) file.  The Java Network Launching
  * Protocol specifies in an XML file the information needed to
  * load, cache, and run Java code over the network and in a secure
- * environment.<p>
- *
+ * environment.
+ * </p>
+ * <p>
  * This class represents the overall information about a JNLP file
  * from the jnlp element.  Other information is accessed through
  * objects that represent the elements of a JNLP file
  * (information, resources, application-desc, etc).  References to
  * these objects are obtained by calling the getInformation,
- * getResources, getSecurity, etc methods.<p>
+ * getResources, getSecurity, etc methods.
+ * </p>
  *
  * @author <a href="mailto:jmaxwell@users.sourceforge.net">Jon A. Maxwell (JAM)</a> - initial author
  * @version $Revision: 1.21 $
  */
 public class JNLPFile {
+
+    public static enum ManifestBoolean {
+        TRUE, FALSE, UNDEFINED;
+    }
+   
 
     // todo: save the update policy, then if file was not updated
     // then do not check resources for being updated.
@@ -66,6 +80,9 @@ public class JNLPFile {
 
     /** the network location of this JNLP file */
     protected URL fileLocation;
+
+    /** the ParserSettings which were used to parse this file */
+    protected ParserSettings parserSettings = null;
 
     /** A key that uniquely identifies connected instances (main jnlp+ext) */
     protected String uniqueKey = null;
@@ -118,6 +135,12 @@ public class JNLPFile {
      * List of acceptable properties (not-special)
      */
     private String[] generalProperties = SecurityDesc.getJnlpRIAPermissions();
+    
+    /** important manifests' attributes */
+    private final ManifestsAttributes manifestsAttributes = new ManifestsAttributes();
+
+    public static final String TITLE_NOT_FOUND = "Application title was not found in manifest. Check with application vendor";
+
 
     { // initialize defaults if security allows
         try {
@@ -145,7 +168,7 @@ public class JNLPFile {
      * @throws ParseException if the JNLP file was invalid
      */
     public JNLPFile(URL location) throws IOException, ParseException {
-        this(location, false); // not strict
+        this(location, new ParserSettings());
     }
 
     /**
@@ -153,12 +176,12 @@ public class JNLPFile {
      * default policy.
      *
      * @param location the location of the JNLP file
-     * @param strict whether to enforce the spec when
+     * @param settings the parser settings to use while parsing the file
      * @throws IOException if an IO exception occurred
      * @throws ParseException if the JNLP file was invalid
      */
-    public JNLPFile(URL location, boolean strict) throws IOException, ParseException {
-        this(location, (Version) null, strict);
+    public JNLPFile(URL location, ParserSettings settings) throws IOException, ParseException {
+        this(location, (Version) null, settings);
     }
 
     /**
@@ -167,12 +190,12 @@ public class JNLPFile {
      *
      * @param location the location of the JNLP file
      * @param version the version of the JNLP file
-     * @param strict whether to enforce the spec when
+     * @param settings the parser settings to use while parsing the file
      * @throws IOException if an IO exception occurred
      * @throws ParseException if the JNLP file was invalid
      */
-    public JNLPFile(URL location, Version version, boolean strict) throws IOException, ParseException {
-        this(location, version, strict, JNLPRuntime.getDefaultUpdatePolicy());
+    public JNLPFile(URL location, Version version, ParserSettings settings) throws IOException, ParseException {
+        this(location, version, settings, JNLPRuntime.getDefaultUpdatePolicy());
     }
 
     /**
@@ -181,13 +204,13 @@ public class JNLPFile {
      *
      * @param location the location of the JNLP file
      * @param version the version of the JNLP file
-     * @param strict whether to enforce the spec when
+     * @param settings the {@link ParserSettings} to use when parsing the {@code location}
      * @param policy the update policy
      * @throws IOException if an IO exception occurred
      * @throws ParseException if the JNLP file was invalid
      */
-    public JNLPFile(URL location, Version version, boolean strict, UpdatePolicy policy) throws IOException, ParseException {
-        this(location, version, strict, policy, null);
+    public JNLPFile(URL location, Version version, ParserSettings settings, UpdatePolicy policy) throws IOException, ParseException {
+	    this(location, version, settings, policy, null);
     }
 
     /**
@@ -196,15 +219,16 @@ public class JNLPFile {
      *
      * @param location the location of the JNLP file
      * @param version the version of the JNLP file
-     * @param strict whether to enforce the spec when
+     * @param settings the parser settings to use while parsing the file
      * @param policy the update policy
      * @param forceCodebase codebase to use if not specified in JNLP file.
      * @throws IOException if an IO exception occurred
      * @throws ParseException if the JNLP file was invalid
      */
-    protected JNLPFile(URL location, Version version, boolean strict, UpdatePolicy policy, URL forceCodebase) throws IOException, ParseException {
-        Node root = Parser.getRootNode(openURL(location, version, policy));
-        parse(root, strict, location, forceCodebase);
+    protected JNLPFile(URL location, Version version, ParserSettings settings, UpdatePolicy policy, URL forceCodebase) throws IOException, ParseException {
+        InputStream input = openURL(location, version, policy);
+        this.parserSettings = settings;
+        parse(input, location, forceCodebase);
 
         //Downloads the original jnlp file into the cache if possible
         //(i.e. If the jnlp file being launched exist locally, but it
@@ -220,8 +244,7 @@ public class JNLPFile {
                          ((int)(Math.random()*Integer.MAX_VALUE)) + "-" +
                          location;
 
-        if (JNLPRuntime.isDebug())
-            System.err.println("UNIQUEKEY=" + this.uniqueKey);
+        OutputController.getLogger().log(OutputController.Level.ERROR_DEBUG, "UNIQUEKEY=" + this.uniqueKey);
     }
 
     /**
@@ -231,17 +254,16 @@ public class JNLPFile {
      * @param location the location of the JNLP file
      * @param uniqueKey A string that uniquely identifies connected instances
      * @param version the version of the JNLP file
-     * @param strict whether to enforce the spec when
+     * @param settings the parser settings to use while parsing the file
      * @param policy the update policy
      * @throws IOException if an IO exception occurred
      * @throws ParseException if the JNLP file was invalid
      */
-    public JNLPFile(URL location, String uniqueKey, Version version, boolean strict, UpdatePolicy policy) throws IOException, ParseException {
-        this(location, version, strict, policy);
+    public JNLPFile(URL location, String uniqueKey, Version version, ParserSettings settings, UpdatePolicy policy) throws IOException, ParseException {
+        this(location, version, settings, policy);
         this.uniqueKey = uniqueKey;
 
-        if (JNLPRuntime.isDebug())
-            System.err.println("UNIQUEKEY (override) =" + this.uniqueKey);
+        OutputController.getLogger().log(OutputController.Level.ERROR_DEBUG, "UNIQUEKEY (override) =" + this.uniqueKey);
     }
 
     /**
@@ -250,22 +272,25 @@ public class JNLPFile {
      * @throws IOException if an IO exception occurred
      * @throws ParseException if the JNLP file was invalid
      */
-    public JNLPFile(InputStream input, boolean strict) throws ParseException {
-        parse(Parser.getRootNode(input), strict, null, null);
+    public JNLPFile(InputStream input, ParserSettings settings) throws ParseException {
+        this.parserSettings = settings;
+        parse(input, null, null);
     }
 
     /**
-     * Create a JNLPFile from a character stream.
+     * Create a JNLPFile from an input stream.
      *
-     * @param input the stream
-     * @param strict whether to enforce the spec when
+     * @param input input stream of JNLP file.
+     * @param codebase codebase to use if not specified in JNLP file..
+     * @param settings the {@link ParserSettings} to use when parsing
      * @throws IOException if an IO exception occurred
      * @throws ParseException if the JNLP file was invalid
      */
-    private JNLPFile(Reader input, boolean strict) throws ParseException {
-        // todo: now that we are using NanoXML we can use a Reader
-        //parse(Parser.getRootNode(input), strict, null);
+    public JNLPFile(InputStream input, URL codebase, ParserSettings settings) throws ParseException {
+        this.parserSettings = settings;
+        parse(input, null, codebase);
     }
+
 
     /**
      * Open the jnlp file URL from the cache if there, otherwise
@@ -278,8 +303,8 @@ public class JNLPFile {
         try {
             ResourceTracker tracker = new ResourceTracker(false); // no prefetch
             tracker.addResource(location, version, null, policy);
-
-            return tracker.getInputStream(location);
+            File f = tracker.getCacheFile(location);
+            return new FileInputStream(f);
         } catch (Exception ex) {
             throw new IOException(ex.getMessage());
         }
@@ -288,10 +313,46 @@ public class JNLPFile {
     /**
      * Returns the JNLP file's best localized title. This method returns the same
      * value as InformationDesc.getTitle().
+     * 
+     * Since jdk7 u45, also manifest title, and mainclass are taken to consideration;
+     * See PluginBridge
      */
     public String getTitle() {
+        String jnlpTitle = getTitleFromJnlp();
+        String manifestTitle = getTitleFromManifest();
+        if (jnlpTitle != null && manifestTitle != null) {
+            if (jnlpTitle.equals(manifestTitle)) {
+                return jnlpTitle;
+            }
+            return jnlpTitle+" ("+manifestTitle+")";
+        }
+        if (jnlpTitle != null && manifestTitle == null) {
+            return jnlpTitle;
+        }
+        if (jnlpTitle == null && manifestTitle != null) {
+            return manifestTitle;
+        }
+        String mainClass = getManifestsAttributes().getMainClass();
+        return mainClass;        
+    }
+    
+    /**
+     * Returns the JNLP file's best localized title. This method returns the same
+     * value as InformationDesc.getTitle().
+     */
+    public String getTitleFromJnlp() {
         return getInformation().getTitle();
     }
+    
+    public String getTitleFromManifest() {
+        String inManifestTitle = getManifestsAttributes().getApplicationName();
+        if (inManifestTitle == null && getManifestsAttributes().isLoader()){
+            OutputController.getLogger().log(OutputController.Level.WARNING_ALL, TITLE_NOT_FOUND);
+        }
+        return inManifestTitle;
+    }
+    
+    
 
     /**
      * Returns the JNLP file's best localized vendor. This method returns the same
@@ -322,6 +383,13 @@ public class JNLPFile {
      */
     public String getUniqueKey() {
         return uniqueKey;
+    }
+
+    /**
+     * Returns the ParserSettings that was used to parse this file
+     */
+    public ParserSettings getParserSettings() {
+        return parserSettings;
     }
 
     /**
@@ -358,7 +426,7 @@ public class JNLPFile {
      * through the specified locale.
      */
     public InformationDesc getInformation(final Locale locale) {
-        return new InformationDesc(this, new Locale[] { locale }) {
+        return new InformationDesc(new Locale[] { locale }) {
             @Override
             protected List<Object> getItems(Object key) {
                 List<Object> result = new ArrayList<Object>();
@@ -421,6 +489,10 @@ public class JNLPFile {
      */
     public SecurityDesc getSecurity() {
         return security;
+    }
+
+    public RequestedPermissionLevel getRequestedPermissionLevel() {
+        return this.security.getRequestedPermissionLevel();
     }
 
     /**
@@ -596,19 +668,19 @@ public class JNLPFile {
 
     /**
      * Returns whether a locale is matched by one of more other
-     * locales.  Only the non-empty language, country, and variant
+     * locales. Only the non-empty language, country, and variant
      * codes are compared; for example, a requested locale of
      * Locale("","","") would always return true.
      *
-     * @param requested the local
+     * @param requested the requested locale
      * @param available the available locales
-     * @param precision the depth with which to match locales. 1 checks only
-     * language, 2 checks language and country, 3 checks language, country and
-     * variant for matches. Passing 0 will always return true.
-     * @return true if requested matches any of available, or if
-     * available is empty or null.
+     * @param matchLevel the depth with which to match locales.
+     * @return {@code true} if {@code requested} matches any of {@code available}, or if
+     * {@code available} is empty or {@code null}.
+     * @see Locale
+     * @see Match
      */
-    public boolean localeMatches(Locale requested, Locale available[], Match matchLevel) {
+    public boolean localeMatches(Locale requested, Locale[] available, Match matchLevel) {
 
         if (matchLevel == Match.GENERALIZED)
             return available == null || available.length == 0;
@@ -671,16 +743,15 @@ public class JNLPFile {
      * Initialize the JNLPFile fields. Private because it's called
      * from the constructor.
      *
-     * @param root the root node
-     * @param strict whether to enforce the spec when
-     * @param location the file location or null
+     * @param location the file location or {@code null}
      */
-    private void parse(Node root, boolean strict, URL location, URL forceCodebase) throws ParseException {
+    private void parse(InputStream input, URL location, URL forceCodebase) throws ParseException {
         try {
             //if (location != null)
             //  location = new URL(location, "."); // remove filename
 
-            Parser parser = new Parser(this, location, root, strict, true, forceCodebase); // true == allow extensions
+            Node root = Parser.getRootNode(input, parserSettings);
+            Parser parser = new Parser(this, location, root, parserSettings, forceCodebase); // true == allow extensions
 
             // JNLP tag information
             specVersion = parser.getSpecVersion();
@@ -700,9 +771,7 @@ public class JNLPFile {
         } catch (ParseException ex) {
             throw ex;
         } catch (Exception ex) {
-            if (JNLPRuntime.isDebug())
-                ex.printStackTrace();
-
+            OutputController.getLogger().log(ex);
             throw new RuntimeException(ex.toString());
         }
     }
@@ -776,29 +845,17 @@ public class JNLPFile {
     }
 
     /**
-     * XXX: this method does a "==" comparison between the input JARDesc and
-     * jars it finds through getResourcesDescs(). If ever the implementation
-     * of that function should change to return copies of JARDescs objects,
-     * then the "jar == aJar" comparison below should change accordingly.
-     * @param jar: the jar whose download options to get.
-     * @return the download options.
+     * @return the download options to use for downloading jars listed in this jnlp file.
      */
-    public DownloadOptions getDownloadOptionsForJar(JARDesc jar) {
+    public DownloadOptions getDownloadOptions() {
         boolean usePack = false;
         boolean useVersion = false;
-        ResourcesDesc[] descs = getResourcesDescs();
-        for (ResourcesDesc desc: descs) {
-            JARDesc[] jars = desc.getJARs();
-            for (JARDesc aJar: jars) {
-                if (jar == aJar) {
-                    if (Boolean.valueOf(desc.getPropertiesMap().get("jnlp.packEnabled"))) {
-                        usePack = true;
-                    }
-                    if (Boolean.valueOf(desc.getPropertiesMap().get("jnlp.versionEnabled"))) {
-                        useVersion = true;
-                    }
-                }
-            }
+        ResourcesDesc desc = getResources();
+        if (Boolean.valueOf(desc.getPropertiesMap().get("jnlp.packEnabled"))) {
+            usePack = true;
+        }
+        if (Boolean.valueOf(desc.getPropertiesMap().get("jnlp.versionEnabled"))) {
+            useVersion = true;
         }
         return new DownloadOptions(usePack, useVersion);
     }
@@ -819,4 +876,168 @@ public class JNLPFile {
     public void setSignedJNLPAsMissing() {
         missingSignedJNLP = true;
     }
+
+    public ManifestsAttributes getManifestsAttributes() {
+        return manifestsAttributes;
+    }
+    
+    
+    public class ManifestsAttributes {
+
+        public static final String APP_NAME = "Application-Name";
+        public static final String CALLER_ALLOWABLE = "Caller-Allowable-Codebase";
+        public static final String APP_LIBRARY_ALLOWABLE = "Application-Library-Allowable-Codebase";
+        public static final String PERMISSIONS = "Permissions";
+        public static final String CODEBASE = "Codebase";
+        public static final String TRUSTED_ONLY = "Trusted-Only";
+        public static final String TRUSTED_LIBRARY = "Trusted-Library";
+        private JNLPClassLoader loader;
+
+
+        public void setLoader(JNLPClassLoader loader) {
+            this.loader = loader;
+        }
+
+        public boolean isLoader() {
+            return loader != null;
+        }
+        
+        
+
+        /**
+         * main class can be defined outside of manifest.
+         * This method is mostly for completeness
+         */
+        public String getMainClass(){
+            if (loader == null) {
+                OutputController.getLogger().log(OutputController.Level.ERROR_DEBUG, "Jars not ready to provide main class");
+                return null;    
+            }
+            return loader.getMainClass();
+        }
+        
+        /**
+         * http://docs.oracle.com/javase/7/docs/technotes/guides/jweb/manifest.html#app_name
+         */
+        public String getApplicationName(){
+            return getAttribute(APP_NAME);
+        }
+        
+        /**
+         * http://docs.oracle.com/javase/7/docs/technotes/guides/jweb/manifest.html#caller_allowable
+         */
+        public ClasspathMatcher.ClasspathMatchers getCallerAllowableCodebase() {
+            return getCodeBaseMatchersAttribute(CALLER_ALLOWABLE, false);
+        }
+
+        /**
+         * http://docs.oracle.com/javase/7/docs/technotes/guides/jweb/manifest.html#app_library
+         */
+        public ClasspathMatcher.ClasspathMatchers getApplicationLibraryAllowableCodebase() {
+            return getCodeBaseMatchersAttribute(APP_LIBRARY_ALLOWABLE, true);
+        }
+
+        /**
+         * http://docs.oracle.com/javase/7/docs/technotes/guides/jweb/manifest.html#codebase
+         */
+        public ClasspathMatcher.ClasspathMatchers getCodebase() {
+            return getCodeBaseMatchersAttribute(CODEBASE, false);
+        }
+
+        /**
+         * http://docs.oracle.com/javase/7/docs/technotes/guides/jweb/manifest.html#trusted_only
+         */
+        public ManifestBoolean isTrustedOnly() {
+            return processBooleanAttribute(TRUSTED_ONLY);
+
+        }
+
+        /**
+         * http://docs.oracle.com/javase/7/docs/technotes/guides/jweb/manifest.html#trusted_library
+         */
+        public ManifestBoolean isTrustedLibrary() {
+            return processBooleanAttribute(TRUSTED_LIBRARY);
+
+        }
+
+        /**
+         * http://docs.oracle.com/javase/7/docs/technotes/guides/jweb/manifest.html#permissions
+         */
+        public ManifestBoolean isSandboxForced() {
+            String s = getAttribute(PERMISSIONS);
+            if (s == null) {
+                return ManifestBoolean.UNDEFINED;
+            } else if (s.trim().equalsIgnoreCase(SecurityDesc.RequestedPermissionLevel.SANDBOX.toHtmlString())) {
+                return ManifestBoolean.TRUE;
+            } else if (s.trim().equalsIgnoreCase(SecurityDesc.RequestedPermissionLevel.ALL.toHtmlString())) {
+                return ManifestBoolean.FALSE;
+            } else {
+                throw new IllegalArgumentException("Unknown value of " + PERMISSIONS + " attribute " + s + ". Expected "+SecurityDesc.RequestedPermissionLevel.SANDBOX.toHtmlString()+" or "+SecurityDesc.RequestedPermissionLevel.ALL.toHtmlString());
+            }
+
+
+        }
+        /**
+         * http://docs.oracle.com/javase/7/docs/technotes/guides/jweb/manifest.html#permissions
+         */
+        public String permissionsToString() {
+            String s = getAttribute(PERMISSIONS);
+            if (s == null) {
+                return "Not defined";
+            } else if (s.trim().equalsIgnoreCase(SecurityDesc.RequestedPermissionLevel.SANDBOX.toHtmlString())) {
+                return s.trim();
+            } else if (s.trim().equalsIgnoreCase(SecurityDesc.RequestedPermissionLevel.ALL.toHtmlString())) {
+                return s.trim();
+            } else {
+                return "illegal";
+            }
+        }
+
+        /**
+         * get custom attribute.
+         */
+        public String getAttribute(String name) {
+            return getAttribute(new Attributes.Name(name));
+        }
+
+        /**
+         * get standard attribute
+         */
+        public String getAttribute(Attributes.Name name) {
+            if (loader == null) {
+                OutputController.getLogger().log(OutputController.Level.ERROR_DEBUG, "Jars not ready to provide attribute " + name);
+                return null;
+            }
+            return loader.checkForAttributeInJars(Arrays.asList(getResources().getJARs()), name);
+        }
+
+        public ClasspathMatcher.ClasspathMatchers getCodeBaseMatchersAttribute(String s, boolean includePath) {
+            return getCodeBaseMatchersAttribute(new Attributes.Name(s), includePath);
+        }
+
+        public ClasspathMatcher.ClasspathMatchers getCodeBaseMatchersAttribute(Attributes.Name name, boolean includePath) {
+            String s = getAttribute(name);
+            if (s == null) {
+                return null;
+            }
+            return ClasspathMatcher.ClasspathMatchers.compile(s, includePath);
+        }
+
+        private ManifestBoolean processBooleanAttribute(String id) throws IllegalArgumentException {
+            String s = getAttribute(id);
+            if (s == null) {
+                return ManifestBoolean.UNDEFINED;
+            } else {
+                s = s.toLowerCase().trim();
+                if (s.equals("true")) {
+                    return  ManifestBoolean.TRUE;
+                } else if (s.equals("false")) {
+                    return ManifestBoolean.FALSE;
+                } else {
+                    throw new IllegalArgumentException("Unknown value of " + id + " attribute " + s + ". Expected true or false");
+                }
+            }
+        }
+    }
 }
+

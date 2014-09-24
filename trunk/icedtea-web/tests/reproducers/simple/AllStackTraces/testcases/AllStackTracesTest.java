@@ -35,6 +35,7 @@ obligated to do so.  If you do not wish to do so, delete this
 exception statement from your version.
  */
 
+import net.sourceforge.jnlp.ProcessResult;
 import net.sourceforge.jnlp.ServerAccess;
 import org.junit.Assert;
 
@@ -48,12 +49,11 @@ public class AllStackTracesTest {
 
     @Test
     public void AllStackTracesTest1() throws Exception {
-        ServerAccess.ProcessResult pr=server.executeJavawsHeadless(null,"/AllStackTraces.jnlp");
+        ProcessResult pr=server.executeJavawsHeadless(null,"/AllStackTraces.jnlp");
         String c = "(?s).*java.security.AccessControlException.{0,5}access denied.{0,5}java.lang.RuntimePermission.{0,5}" + "getStackTrace" + ".*";
         Assert.assertTrue("stderr should match `"+c+"`, but didn't ",pr.stderr.matches(c));
         String cc="ClassNotFoundException";
         Assert.assertFalse("stderr should NOT contains `"+cc+"`, but did ",pr.stderr.contains(cc));
-        Assert.assertFalse("stdout length should be <=2, but was "+pr.stdout.length(),pr.stdout.length()>2);
         Assert.assertFalse("AllStackTracesTest1 should not be terminated, but was",pr.wasTerminated);
         Assert.assertEquals((Integer)0, pr.returnValue);
     }

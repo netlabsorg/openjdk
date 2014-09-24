@@ -62,15 +62,18 @@ exception statement from your version. */
 
 package sun.applet;
 
+import static net.sourceforge.jnlp.runtime.Translator.R;
+
 import java.applet.Applet;
 import java.applet.AppletContext;
 import java.applet.AudioClip;
+import java.awt.BorderLayout;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.Image;
 import java.awt.Insets;
-import java.awt.Toolkit;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
@@ -78,199 +81,51 @@ import java.awt.print.PageFormat;
 import java.awt.print.Printable;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.PrintStream;
-import java.io.Reader;
-import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
-import java.lang.reflect.InvocationTargetException;
 import java.net.SocketPermission;
 import java.net.URI;
 import java.net.URL;
+import java.net.URLConnection;
 import java.security.AccessController;
 import java.security.AllPermission;
 import java.security.PrivilegedAction;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Vector;
-
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
-
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
 import javax.swing.SwingUtilities;
 
+import net.sourceforge.jnlp.LaunchException;
 import net.sourceforge.jnlp.NetxPanel;
+import net.sourceforge.jnlp.PluginParameters;
 import net.sourceforge.jnlp.runtime.JNLPClassLoader;
+import net.sourceforge.jnlp.security.appletextendedsecurity.AppletSecurityLevel;
+import net.sourceforge.jnlp.security.appletextendedsecurity.AppletStartupSecuritySettings;
+import net.sourceforge.jnlp.splashscreen.SplashController;
+import net.sourceforge.jnlp.splashscreen.SplashPanel;
+import net.sourceforge.jnlp.splashscreen.SplashUtils;
 import sun.awt.AppContext;
 import sun.awt.SunToolkit;
 import sun.misc.Ref;
 
 import com.sun.jndi.toolkit.url.UrlUtil;
-
-/**
- * Lets us construct one using unix-style one shot behaviors
- */
-
-class PluginAppletPanelFactory {
-
-    public AppletPanel createPanel(PluginStreamHandler streamhandler,
-                                   final int identifier,
-                                   final long handle, int x, int y,
-                                   final URL doc,
-                                   final Hashtable<String, String> atts) {
-        final NetxPanel panel = AccessController.doPrivileged(new PrivilegedAction<NetxPanel>() {
-            public NetxPanel run() {
-                NetxPanel panel = new NetxPanel(doc, atts, false);
-                NetxPanel.debug("Using NetX panel");
-                PluginDebug.debug(atts.toString());
-                return panel;
-            }
-        });
-
-        // Framing the panel needs to happen in a thread whose thread group
-        // is the same as the threadgroup of the applet thread. If this
-        // isn't the case, the awt eventqueue thread's context classloader
-        // won't be set to a JNLPClassLoader, and when an applet class needs
-        // to be loaded from the awt eventqueue, it won't be found.
-        Thread panelInit = new Thread(panel.getThreadGroup(), new Runnable() {
-            @Override public void run() {
-                panel.createNewAppContext();
-                // create the frame.
-                PluginAppletViewer.framePanel(identifier, handle, panel);
-                panel.init();
-                // Start the applet
-                initEventQueue(panel);
-            }
-        }, "NetXPanel initializer");
-
-        panelInit.start();
-        while(panelInit.isAlive()) {
-            try {
-                panelInit.join();
-            } catch (InterruptedException e) {
-            }
-        }
-
-        // Wait for the panel to initialize
-        PluginAppletViewer.waitForAppletInit(panel);
-
-        Applet a = panel.getApplet();
-
-        // Still null?
-        if (a == null) {
-            streamhandler.write("instance " + identifier + " reference " + -1 + " fatalError: " + "Initialization timed out");
-            return null;
-        }
-
-        PluginDebug.debug("Applet ", a.getClass(), " initialized");
-        streamhandler.write("instance " + identifier + " reference 0 initialized");
-
-        /* AppletViewerPanel sometimes doesn't set size right initially. This 
-         * causes the parent frame to be the default (10x10) size.
-         *  
-         * Normally it goes unnoticed since browsers like Firefox make a resize 
-         * call after init. However some browsers (e.g. Midori) don't.
-         * 
-         * We therefore manually set the parent to the right size.
-         */
-        try {
-            SwingUtilities.invokeAndWait(new Runnable() {
-                public void run() {
-                    panel.getParent().setSize(Integer.valueOf(atts.get("width")), Integer.valueOf(atts.get("height")));
-                }
-            });
-        } catch (InvocationTargetException ite) {
-            // Not being able to resize is non-fatal
-            PluginDebug.debug("Unable to resize panel: ");
-            ite.printStackTrace();
-        } catch (InterruptedException ie) {
-            // Not being able to resize is non-fatal
-            PluginDebug.debug("Unable to resize panel: ");
-            ie.printStackTrace();
-        }
-
-        AppletSecurityContextManager.getSecurityContext(0).associateSrc(panel.getAppletClassLoader(), doc);
-        AppletSecurityContextManager.getSecurityContext(0).associateInstance(identifier, panel.getAppletClassLoader());
-
-        return panel;
-    }
-
-    public boolean isStandalone() {
-        return false;
-    }
-
-    /**
-     * Send the initial set of events to the appletviewer event queue.
-     * On start-up the current behaviour is to load the applet and call
-     * Applet.init() and Applet.start().
-     */
-    private void initEventQueue(AppletPanel panel) {
-        // appletviewer.send.event is an undocumented and unsupported system
-        // property which is used exclusively for testing purposes.
-        PrivilegedAction<String> pa = new PrivilegedAction<String>() {
-            public String run() {
-                return System.getProperty("appletviewer.send.event");
-            }
-        };
-        String eventList = AccessController.doPrivileged(pa);
-
-        if (eventList == null) {
-            // Add the standard events onto the event queue.
-            panel.sendEvent(AppletPanel.APPLET_LOAD);
-            panel.sendEvent(AppletPanel.APPLET_INIT);
-            panel.sendEvent(AppletPanel.APPLET_START);
-        } else {
-            // We're testing AppletViewer.  Force the specified set of events
-            // onto the event queue, wait for the events to be processed, and
-            // exit.
-
-            // The list of events that will be executed is provided as a
-            // ","-separated list.  No error-checking will be done on the list.
-            String[] events = eventList.split(",");
-
-            for (String event : events) {
-                PluginDebug.debug("Adding event to queue: ", event);
-                if ("dispose".equals(event))
-                    panel.sendEvent(AppletPanel.APPLET_DISPOSE);
-                else if ("load".equals(event))
-                    panel.sendEvent(AppletPanel.APPLET_LOAD);
-                else if ("init".equals(event))
-                    panel.sendEvent(AppletPanel.APPLET_INIT);
-                else if ("start".equals(event))
-                    panel.sendEvent(AppletPanel.APPLET_START);
-                else if ("stop".equals(event))
-                    panel.sendEvent(AppletPanel.APPLET_STOP);
-                else if ("destroy".equals(event))
-                    panel.sendEvent(AppletPanel.APPLET_DESTROY);
-                else if ("quit".equals(event))
-                    panel.sendEvent(AppletPanel.APPLET_QUIT);
-                else if ("error".equals(event))
-                    panel.sendEvent(AppletPanel.APPLET_ERROR);
-                else
-                    // non-fatal error if we get an unrecognized event
-                    PluginDebug.debug("Unrecognized event name: ", event);
-            }
-
-            while (!panel.emptyEventQueue())
-                ;
-        }
-    }
-}
+import net.sourceforge.jnlp.runtime.JNLPRuntime;
+import net.sourceforge.jnlp.util.logging.OutputController;
 
 /*
  */
 // FIXME: declare JSProxy implementation
 @SuppressWarnings("serial")
 public class PluginAppletViewer extends PluginAppletViewerBase
-        implements AppletContext, Printable {
+        implements AppletContext, Printable, SplashController {
 
     /**
      *  Enumerates the current status of an applet
@@ -322,26 +177,49 @@ public class PluginAppletViewer extends PluginAppletViewerBase
     private Image bufFrameImg;
     private Graphics bufFrameImgGraphics;
 
+
+    private SplashPanel splashPanel;
+    
+    private static long REQUEST_TIMEOUT=60000;//60s
+
+    private static void waitForRequestCompletion(PluginCallRequest request) {
+        try {
+            if (!request.isDone()) {
+                request.wait(REQUEST_TIMEOUT);
+            }
+            if (!request.isDone()) {
+                // Do not wait indefinitely to avoid the potential of deadlock
+                throw new RuntimeException("Possible deadlock, releasing");
+            }
+        } catch (InterruptedException ex) {
+            throw new RuntimeException("Interrupted waiting for call request.", ex);
+        }
+    }
+
     /**
      * Null constructor to allow instantiation via newInstance()
      */
     public PluginAppletViewer() {
     }
 
-    public static void framePanel(int identifier, long handle, NetxPanel panel) {
+    public static PluginAppletViewer framePanel(int identifier, long handle, int width, int height, NetxPanel panel) {
 
         PluginDebug.debug("Framing ", panel);
-
-        // SecurityManager MUST be set, and only privileged code may call reFrame()
+ 
+        // SecurityManager MUST be set, and only privileged code may call framePanel()
         System.getSecurityManager().checkPermission(new AllPermission());
 
         PluginAppletViewer appletFrame = new PluginAppletViewer(handle, identifier, panel);
-
-        appletFrame.add("Center", panel);
-        appletFrame.pack();
-
+        appletFrame.setSize(width, height);
+        
         appletFrame.appletEventListener = new AppletEventListener(appletFrame, appletFrame);
         panel.addAppletListener(appletFrame.appletEventListener);
+         // Clear references, if any
+        if (applets.containsKey(identifier)) {
+            PluginAppletViewer oldFrame = applets.get(identifier);            
+            oldFrame.remove(panel);
+            panel.removeAppletListener(oldFrame.appletEventListener);
+        }
 
         appletsLock.lock();
         applets.put(identifier, appletFrame);
@@ -349,6 +227,7 @@ public class PluginAppletViewer extends PluginAppletViewerBase
         appletsLock.unlock();
 
         PluginDebug.debug(panel, " framed");
+        return appletFrame;
     }
 
     /**
@@ -368,21 +247,107 @@ public class PluginAppletViewer extends PluginAppletViewerBase
 
         windowEventListener = new WindowAdapter() {
 
+            @Override
             public void windowClosing(WindowEvent evt) {
                 destroyApplet(identifier);
             }
 
+            @Override
             public void windowIconified(WindowEvent evt) {
                 appletStop();
             }
 
+            @Override
             public void windowDeiconified(WindowEvent evt) {
                 appletStart();
             }
         };
 
         addWindowListener(windowEventListener);
+        final AppletPanel fPanel = panel;
+        try {
+            SwingUtilities.invokeAndWait(new SplashCreator(fPanel));
+        } catch (Exception e) {
+            OutputController.getLogger().log(OutputController.Level.ERROR_ALL,e); // Not much we can do other than  print
+        }
 
+    }
+
+    @Override
+    public void replaceSplash(final SplashPanel newSplash) {
+        if (splashPanel == null) {
+            return;
+        }
+        if (newSplash == null) {
+            removeSplash();
+            return;
+        }
+        try {
+            SwingUtilities.invokeAndWait(new Runnable() {
+
+                @Override
+                public void run() {
+                    splashPanel.getSplashComponent().setVisible(false);
+                    splashPanel.stopAnimation();
+                    remove(splashPanel.getSplashComponent());
+                    newSplash.setPercentage(splashPanel.getPercentage());
+                    newSplash.setSplashWidth(splashPanel.getSplashWidth());
+                    newSplash.setSplashHeight(splashPanel.getSplashHeight());
+                    newSplash.adjustForSize();
+                    splashPanel = newSplash;
+                    add("Center", splashPanel.getSplashComponent());
+                    pack();
+                }
+            });
+        } catch (Exception e) {
+            OutputController.getLogger().log(OutputController.Level.ERROR_ALL,e); // Not much we can do other than print
+        }
+    }
+
+    @Override
+    public void removeSplash() {
+        if (splashPanel == null) {
+            return;
+        }
+        try {
+            SwingUtilities.invokeAndWait(new Runnable() {
+
+                @Override
+                public void run() {
+                    splashPanel.getSplashComponent().setVisible(false);
+                    splashPanel.stopAnimation();
+                    removeAll();
+                    setLayout(new BorderLayout());
+                    //remove(splashPanel.getSplashComponent());
+                    splashPanel = null;
+                    //remove(panel);
+                    // Re-add the applet to notify container
+                    add(panel);
+                    panel.setVisible(true);
+                    pack();
+                }
+            });
+        } catch (Exception e) {
+            OutputController.getLogger().log(OutputController.Level.ERROR_ALL,e); // Not much we can do other than print
+        }
+    }
+
+    @Override
+    public int getSplashWidth() {
+        if (splashPanel != null) {
+            return splashPanel.getSplashWidth();
+        } else {
+            return -1;
+        }
+    }
+
+    @Override
+    public int getSplashHeigth() {
+        if (splashPanel != null) {
+            return splashPanel.getSplashHeight();
+        } else {
+            return -1;
+        }
     }
 
     private static class AppletEventListener implements AppletListener {
@@ -394,13 +359,13 @@ public class PluginAppletViewer extends PluginAppletViewerBase
             this.appletViewer = appletViewer;
         }
 
+        @Override
         public void appletStateChanged(AppletEvent evt) {
             AppletPanel src = (AppletPanel) evt.getSource();
 
             panelLock.lock();
             panelLive.signalAll();
             panelLock.unlock();
-
             switch (evt.getID()) {
                 case AppletPanel.APPLET_RESIZE: {
                     if (src != null) {
@@ -426,13 +391,32 @@ public class PluginAppletViewer extends PluginAppletViewerBase
                     // Swing also maintains a Frame list for the AppContext,
                     // so we will have to rearrange it as well.
                     //
-                    if (a != null)
+                    if (a != null) {
                         AppletPanel.changeFrameAppContext(frame, SunToolkit.targetToAppContext(a));
-                    else
+                    }
+                    else {
                         AppletPanel.changeFrameAppContext(frame, AppContext.getAppContext());
+                    }
 
                     updateStatus(appletViewer.identifier, PAV_INIT_STATUS.INIT_COMPLETE);
 
+                    break;
+                }
+                case AppletPanel.APPLET_START: {
+                    if (src.status != AppletPanel.APPLET_INIT && src.status != AppletPanel.APPLET_STOP) {
+                        String s="Applet started, but but reached invalid state";
+                        PluginDebug.debug(s);
+                        SplashPanel sp=SplashUtils.getErrorSplashScreen(appletViewer.panel.getWidth(), appletViewer.panel.getHeight(), new Exception(s));
+                        appletViewer.replaceSplash(sp);
+                    }
+
+                    break;
+                }
+                case AppletPanel.APPLET_ERROR: {
+                    String s="Undefined error causing applet not to staart appeared";
+                    PluginDebug.debug(s);
+                        SplashPanel sp=SplashUtils.getErrorSplashScreen(appletViewer.panel.getWidth(), appletViewer.panel.getHeight(), new Exception(s));
+                        appletViewer.replaceSplash(sp);
                     break;
                 }
             }
@@ -447,6 +431,93 @@ public class PluginAppletViewer extends PluginAppletViewerBase
         requestFactory = rf;
     }
 
+    private static void handleInitializationMessage(int identifier, String message) throws IOException, LaunchException {
+
+        /* The user has specified via a global setting that applets should not be run.*/
+        if (AppletStartupSecuritySettings.getInstance().getSecurityLevel() == AppletSecurityLevel.DENY_ALL) {
+            throw new LaunchException(null, null, R("LSFatal"), R("LCClient"), R("LUnsignedApplet"), R("LUnsignedAppletPolicyDenied"));
+        }
+
+        // If there is a key for this status, it means it
+        // was either initialized before, or destroy has been
+        // processed. Stop moving further.
+        if (updateStatus(identifier, PAV_INIT_STATUS.PRE_INIT) != null) {
+            return;
+        }
+
+        // Extract the information from the message
+        String[] msgParts = new String[4];
+        for (int i = 0; i < 3; i++) {
+            int spaceLocation = message.indexOf(' ');
+            int nextSpaceLocation = message.indexOf(' ', spaceLocation + 1);
+            msgParts[i] = message.substring(spaceLocation + 1, nextSpaceLocation);
+            message = message.substring(nextSpaceLocation + 1);
+        }
+
+        long handle = Long.parseLong(msgParts[0]);
+        String width = msgParts[1];
+        String height = msgParts[2];
+
+        int spaceLocation = message.indexOf(' ', "tag".length() + 1);
+        String documentBase = message.substring("tag".length() + 1, spaceLocation);
+        String paramString = message.substring(spaceLocation + 1);
+
+        PluginDebug.debug("Handle = ", handle, "\n",
+                            "Width = ", width, "\n",
+                            "Height = ", height, "\n",
+                            "DocumentBase = ", documentBase, "\n",
+                            "Params = ", paramString);
+        JNLPRuntime.saveHistory(documentBase);
+
+        PluginAppletPanelFactory factory = new PluginAppletPanelFactory();
+        AppletMessageHandler amh = new AppletMessageHandler("appletviewer");
+        URL url = new URL(documentBase);
+        URLConnection conn = url.openConnection();
+        /* The original URL may have been redirected - this
+         * sets it to whatever URL/codebase we ended up getting
+         */
+        url = conn.getURL();
+
+        PluginParameters params = new PluginParameterParser().parse(width, height, paramString);
+
+        // Let user know we are starting up
+        streamhandler.write("instance " + identifier + " status " + amh.getMessage("status.start"));
+        factory.createPanel(streamhandler, identifier, handle, url, params);
+
+        long maxTimeToSleep = APPLET_TIMEOUT;
+        appletsLock.lock();
+        try {
+            while (!applets.containsKey(identifier) &&
+                    maxTimeToSleep > 0) { // Map is populated only by reFrame
+                maxTimeToSleep -= waitTillTimeout(appletsLock, appletAdded,
+                                                  maxTimeToSleep);
+            }
+        }
+        finally {
+            appletsLock.unlock();
+        }
+
+        // If wait exceeded maxWait, we timed out. Throw an exception
+        if (maxTimeToSleep <= 0)  {
+            // Caught in handleMessage
+            throw new RuntimeException("Applet initialization timeout");
+        }
+
+        // We should not try to destroy an applet during
+        // initialization. It may cause an inconsistent state,
+        // which would bad if it's a trusted applet that
+        // read/writes to files
+        waitForAppletInit(applets.get(identifier).panel);
+
+        // Should we proceed with reframing?
+         PluginDebug.debug("Init complete");
+
+        if (updateStatus(identifier, PAV_INIT_STATUS.REFRAME_COMPLETE).equals(PAV_INIT_STATUS.INACTIVE)) {
+            destroyApplet(identifier);
+            return;
+        }
+    }
+
     /**
      * Handle an incoming message from the plugin.
      */
@@ -456,71 +527,7 @@ public class PluginAppletViewer extends PluginAppletViewerBase
 
         try {
             if (message.startsWith("handle")) {
-
-                // If there is a key for this status, it means it
-                // was either initialized before, or destroy has been
-                // processed. Stop moving further.
-                if (updateStatus(identifier, PAV_INIT_STATUS.PRE_INIT) != null)
-                    return;
-
-                // Extract the information from the message
-                String[] msgParts = new String[4];
-                for (int i = 0; i < 3; i++) {
-                    int spaceLocation = message.indexOf(' ');
-                    int nextSpaceLocation = message.indexOf(' ', spaceLocation + 1);
-                    msgParts[i] = message.substring(spaceLocation + 1, nextSpaceLocation);
-                    message = message.substring(nextSpaceLocation + 1);
-                }
-
-                long handle = Long.parseLong(msgParts[0]);
-                String width = msgParts[1];
-                String height = msgParts[2];
-
-                int spaceLocation = message.indexOf(' ', "tag".length() + 1);
-                String documentBase =
-                        UrlUtil.decode(message.substring("tag".length() + 1, spaceLocation));
-                String tag = message.substring(spaceLocation + 1);
-
-                PluginDebug.debug("Handle = ", handle, "\n",
-                                    "Width = ", width, "\n",
-                                    "Height = ", height, "\n",
-                                    "DocumentBase = ", documentBase, "\n",
-                                    "Tag = ", tag);
-
-                PluginAppletViewer.parse
-                                        (identifier, handle, width, height,
-                                                new StringReader(tag),
-                                                new URL(documentBase));
-
-                long maxTimeToSleep = APPLET_TIMEOUT;
-                appletsLock.lock();
-                try {
-                    while (!applets.containsKey(identifier) &&
-                            maxTimeToSleep > 0) { // Map is populated only by reFrame
-                        maxTimeToSleep -= waitTillTimeout(appletsLock, appletAdded,
-                                                          maxTimeToSleep);
-                    }
-                }
-                finally {
-                    appletsLock.unlock();
-                }
-
-                // If wait exceeded maxWait, we timed out. Throw an exception
-                if (maxTimeToSleep <= 0)
-                    throw new Exception("Applet initialization timeout");
-
-                // We should not try to destroy an applet during
-                // initialization. It may cause an inconsistent state,
-                // which would bad if it's a trusted applet that
-                // read/writes to files
-                waitForAppletInit(applets.get(identifier).panel);
-
-                // Should we proceed with reframing?
-                if (updateStatus(identifier, PAV_INIT_STATUS.REFRAME_COMPLETE).equals(PAV_INIT_STATUS.INACTIVE)) {
-                    destroyApplet(identifier);
-                    return;
-                }
-
+                handleInitializationMessage(identifier, message);
             } else if (message.startsWith("destroy")) {
 
                 // Set it inactive, and try to do cleanup is applicable
@@ -544,14 +551,15 @@ public class PluginAppletViewer extends PluginAppletViewerBase
                     ;
 
                 // don't bother processing further for inactive applets
-                if (status.get(identifier).equals(PAV_INIT_STATUS.INACTIVE))
+                if (status.get(identifier).equals(PAV_INIT_STATUS.INACTIVE)) {
                     return;
+                }
 
                 applets.get(identifier).handleMessage(reference, message);
             }
         } catch (Exception e) {
 
-            e.printStackTrace();
+            OutputController.getLogger().log(OutputController.Level.ERROR_ALL,e);
 
             // If an exception happened during pre-init, we need to update status
             updateStatus(identifier, PAV_INIT_STATUS.INACTIVE);
@@ -611,6 +619,10 @@ public class PluginAppletViewer extends PluginAppletViewerBase
 
     private static synchronized void destroyApplet(int identifier) {
 
+        // We should not try to destroy an applet during
+        // initialization. It may cause an inconsistent state.
+        waitForAppletInit( applets.get(identifier).panel );
+
         PluginDebug.debug("DestroyApplet called for ", identifier);
 
         PAV_INIT_STATUS prev = updateStatus(identifier, PAV_INIT_STATUS.DESTROYED);
@@ -629,7 +641,7 @@ public class PluginAppletViewer extends PluginAppletViewerBase
             pav.dispose();
 
             // If panel is already disposed, return
-            if (pav.panel.applet == null) {
+            if (pav.panel.getApplet() == null) {
                 PluginDebug.debug(identifier, " panel inactive. Returning.");
                 return;
             }
@@ -637,6 +649,7 @@ public class PluginAppletViewer extends PluginAppletViewerBase
             PluginDebug.debug("Attempting to destroy panel ", identifier);
 
             SwingUtilities.invokeLater(new Runnable() {
+                @Override
                 public void run() {
                     pav.appletClose();
                 }
@@ -655,13 +668,14 @@ public class PluginAppletViewer extends PluginAppletViewerBase
      */
     public static void waitForAppletInit(NetxPanel panel) {
 
+        PluginDebug.debug("Waiting for applet init");
+
         // Wait till initialization finishes
         long maxTimeToSleep = APPLET_TIMEOUT;
 
         panelLock.lock();
         try {
-            while (panel.getApplet() == null &&
-                    panel.isAlive() &&
+            while (!panel.isInitialized() && 
                     maxTimeToSleep > 0) {
                 PluginDebug.debug("Waiting for applet panel ", panel, " to initialize...");
                 maxTimeToSleep -= waitTillTimeout(panelLock, panelLive, maxTimeToSleep);
@@ -674,64 +688,63 @@ public class PluginAppletViewer extends PluginAppletViewerBase
         PluginDebug.debug("Applet panel ", panel, " initialized");
     }
 
+    /* Resizes an applet panel, waiting for the applet to initialze. 
+     * Should be done asynchronously to avoid the chance of deadlock. */
+    private void resizeAppletPanel(final int width, final int height) {
+        // Wait for panel to come alive
+        waitForAppletInit(panel);
+
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                panel.updateSizeInAtts(height, width);
+
+                setSize(width, height);
+
+                // There is a rather odd drawing bug whereby resizing
+                // the panel makes no difference on initial call
+                // because the panel thinks that it is already the
+                // right size. Validation has no effect there either.
+                // So we work around by setting size to 1, validating,
+                // and then setting to the right size and validating
+                // again. This is not very efficient, and there is
+                // probably a better way -- but resizing happens
+                // quite infrequently, so for now this is how we do it
+
+                panel.setSize(1, 1);
+                panel.validate();
+
+                panel.setSize(width, height);
+                panel.validate();
+
+                panel.getApplet().resize(width, height);
+                panel.getApplet().validate();
+            }
+        });
+    }
+
     public void handleMessage(int reference, String message) {
         if (message.startsWith("width")) {
-
-            // Wait for panel to come alive
-            long maxTimeToSleep = APPLET_TIMEOUT;
-            statusLock.lock();
-            try {
-                while (!status.get(identifier).equals(PAV_INIT_STATUS.INIT_COMPLETE) &&
-                        maxTimeToSleep > 0) {
-                    maxTimeToSleep -= waitTillTimeout(statusLock, initComplete,
-                                                      maxTimeToSleep);
-                }
-            }
-            finally {
-                statusLock.unlock();
-            }
 
             // 0 => width, 1=> width_value, 2 => height, 3=> height_value
             String[] dimMsg = message.split(" ");
 
-            final int height = Integer.parseInt(dimMsg[3]);
             final int width = Integer.parseInt(dimMsg[1]);
+            final int height = Integer.parseInt(dimMsg[3]);
 
-            panel.updateSizeInAtts(height, width);
+            /* Resize the applet asynchronously, to avoid the chance of 
+             * deadlock while waiting for the applet to initialize. 
+             * 
+             * In general, worker threads should spawn new threads for any blocking operations. */
+            Thread resizeAppletThread = new Thread("resizeAppletThread") {
+                @Override
+                public void run() {
+                    resizeAppletPanel(width, height);
+                }
+            };
 
-            try {
-                SwingUtilities.invokeAndWait(new Runnable() {
-                    public void run() {
-
-                        setSize(width, height);
-
-                        // There is a rather odd drawing bug whereby resizing
-                        // the panel makes no difference on initial call
-                        // because the panel thinks that it is already the
-                        // right size. Validation has no effect there either.
-                        // So we work around by setting size to 1, validating,
-                        // and then setting to the right size and validating
-                        // again. This is not very efficient, and there is
-                        // probably a better way -- but resizing happens
-                        // quite infrequently, so for now this is how we do it
-
-                        panel.setSize(1, 1);
-                        panel.validate();
-
-                        panel.setSize(width, height);
-                        panel.validate();
-
-                        panel.applet.resize(width, height);
-                        panel.applet.validate();
-                    }
-                });
-            } catch (InterruptedException e) {
-                // do nothing
-                e.printStackTrace();
-            } catch (InvocationTargetException e) {
-                // do nothing
-                e.printStackTrace();
-            }
+            /* Let it eventually complete */
+            resizeAppletThread.start();
 
         } else if (message.startsWith("GetJavaObject")) {
 
@@ -739,28 +752,16 @@ public class PluginAppletViewer extends PluginAppletViewerBase
             // object should belong to?
             Object o;
 
-            // First, wait for panel to instantiate
-            // Next, wait for panel to come alive
-            long maxTimeToSleep = APPLET_TIMEOUT;
-            panelLock.lock();
-            try {
-                while (panel == null || !panel.isAlive())
-                    maxTimeToSleep -= waitTillTimeout(panelLock, panelLive,
-                                                      maxTimeToSleep);
-            }
-            finally {
-                panelLock.unlock();
-            }
-
             // Wait for the panel to initialize
             // (happens in a separate thread)
             waitForAppletInit(panel);
 
-            PluginDebug.debug(panel, " -- ", panel.getApplet(), " -- ", panel.isAlive());
+            PluginDebug.debug(panel, " -- ", panel.getApplet(), " -- initialized: ", panel.isInitialized());
 
             // Still null?
             if (panel.getApplet() == null) {
-                streamhandler.write("instance " + identifier + " reference " + -1 + " fatalError: " + "Initialization timed out");
+                streamhandler.write("instance " + identifier + " reference " + -1 + " fatalError: " + "Initialization failed");
+                streamhandler.write("context 0 reference " + reference + " Error");
                 return;
             }
 
@@ -784,6 +785,7 @@ public class PluginAppletViewer extends PluginAppletViewerBase
     /**
      * Get an audio clip.
      */
+    @Override
     public AudioClip getAudioClip(URL url) {
         checkConnect(url);
         synchronized (audioClips) {
@@ -800,6 +802,7 @@ public class PluginAppletViewer extends PluginAppletViewerBase
     /**
      * Get an image.
      */
+    @Override
     public Image getImage(URL url) {
         return getCachedImage(url);
     }
@@ -825,13 +828,16 @@ public class PluginAppletViewer extends PluginAppletViewerBase
                 PluginDebug.debug("getCachedImageRef() plugin codebase = ", codeBase);
 
                 String resourceName = originalURL.substring(codeBase.length());
-                JNLPClassLoader loader = (JNLPClassLoader) panel.getAppletClassLoader();
+                if (panel.getAppletClassLoader() instanceof JNLPClassLoader) {
+                    JNLPClassLoader loader = (JNLPClassLoader) panel.getAppletClassLoader();
 
-                URL localURL = null;
-                if (loader.resourceAvailableLocally(resourceName))
-                    url = loader.getResource(resourceName);
+                    URL localURL = null;
+                    if (loader.resourceAvailableLocally(resourceName)) {
+                        url = loader.getResource(resourceName);
+                    }
 
-                url = localURL != null ? localURL : url;
+                    url = localURL != null ? localURL : url;
+                }
             }
 
             PluginDebug.debug("getCachedImageRef() getting img from URL = ", url);
@@ -845,8 +851,8 @@ public class PluginAppletViewer extends PluginAppletViewerBase
                 return ref;
             }
         } catch (Exception e) {
-            System.err.println("Error occurred when trying to fetch image:");
-            e.printStackTrace();
+            OutputController.getLogger().log(OutputController.Level.ERROR_ALL, "Error occurred when trying to fetch image:");
+            OutputController.getLogger().log(e);
             return null;
         }
     }
@@ -863,6 +869,7 @@ public class PluginAppletViewer extends PluginAppletViewerBase
     /**
      * Get an applet by name.
      */
+    @Override
     public Applet getApplet(String name) {
         name = name.toLowerCase();
         SocketPermission panelSp =
@@ -893,6 +900,7 @@ public class PluginAppletViewer extends PluginAppletViewerBase
      * Return an enumeration of all the accessible
      * applets on this page.
      */
+    @Override
     public Enumeration<Applet> getApplets() {
         Vector<Applet> v = new Vector<Applet>();
         SocketPermission panelSp =
@@ -914,18 +922,21 @@ public class PluginAppletViewer extends PluginAppletViewerBase
         return v.elements();
     }
 
-    /**
-     * Ignore.
-     */
+    @Override
     public void showDocument(URL url) {
         PluginDebug.debug("Showing document...");
         showDocument(url, "_self");
     }
 
-    /**
-     * Ignore.
-     */
+    @Override
     public void showDocument(URL url, String target) {
+        // If it is a javascript document, eval on current page.
+        if ("javascript".equals(url.getProtocol())) {
+            // Snip protocol off string
+            String evalString = url.toString().substring("javascript:".length());
+            eval(getWindow(), evalString);
+            return;
+        }
         try {
             Long reference = getRequestIdentifier();
             write("reference " + reference +  " LoadURL " + UrlUtil.encode(url.toString(), "UTF-8") + " " + target);
@@ -939,6 +950,7 @@ public class PluginAppletViewer extends PluginAppletViewerBase
     /**
      * Show status.
      */
+    @Override
     public void showStatus(String status) {
         try {
             // FIXME: change to postCallRequest
@@ -1027,43 +1039,21 @@ public class PluginAppletViewer extends PluginAppletViewerBase
     }
 
     public static void setMember(long internal, String name, Object value) {
-        System.err.println("Setting to class " + value.getClass() + ":" + value.getClass().isPrimitive());
-        AppletSecurityContextManager.getSecurityContext(0).store(name);
-        int nameID = AppletSecurityContextManager.getSecurityContext(0).getIdentifier(name);
+        PluginDebug.debug("Setting to class " + value.getClass() + ":" + value.getClass().isPrimitive());
+        PluginAppletSecurityContext securityContext = AppletSecurityContextManager.getSecurityContext(0);
+        securityContext.store(name);
+        int nameID = securityContext.getIdentifier(name);
         Long reference = getRequestIdentifier();
 
         // work on a copy of value, as we don't want to be manipulating
         // complex objects
-        String valueToSetTo;
-        if (value instanceof java.lang.Byte ||
-                value instanceof java.lang.Character ||
-                value instanceof java.lang.Short ||
-                value instanceof java.lang.Integer ||
-                value instanceof java.lang.Long ||
-                value instanceof java.lang.Float ||
-                value instanceof java.lang.Double ||
-                value instanceof java.lang.Boolean) {
-
-            valueToSetTo = "literalreturn " + value.toString();
-
-            // Character -> Str results in str value.. we need int value as
-            // per specs.
-            if (value instanceof java.lang.Character) {
-                valueToSetTo = "literalreturn " + (int) ((java.lang.Character) value).charValue();
-            } else if (value instanceof Float ||
-                        value instanceof Double) {
-                valueToSetTo = "literalreturn " + String.format("%308.308e", value);
-            }
-
-        } else {
-            AppletSecurityContextManager.getSecurityContext(0).store(value);
-            valueToSetTo = Integer.toString(AppletSecurityContextManager.getSecurityContext(0).getIdentifier(value));
-        }
+        String objIDStr = securityContext.toObjectIDString(value,
+                value.getClass(), true /* unbox primitives */);
 
         // Prefix with dummy instance for convenience.
         PluginCallRequest request = requestFactory.getPluginCallRequest("void",
                 "instance " + 0 + " reference " + reference + " SetMember " +
-                        internal + " " + nameID + " " + valueToSetTo, reference);
+                        internal + " " + nameID + " " + objIDStr, reference);
 
         streamhandler.postCallRequest(request);
         streamhandler.write(request.getMessage());
@@ -1085,41 +1075,17 @@ public class PluginAppletViewer extends PluginAppletViewerBase
 
     // FIXME: handle long index as well.
     public static void setSlot(long internal, int index, Object value) {
-        AppletSecurityContextManager.getSecurityContext(0).store(value);
+        PluginAppletSecurityContext securityContext = AppletSecurityContextManager.getSecurityContext(0);
+        securityContext.store(value);
         Long reference = getRequestIdentifier();
 
-        // work on a copy of value, as we don't want to be manipulating
-        // complex objects
-        String valueToSetTo;
-        if (value instanceof java.lang.Byte ||
-                value instanceof java.lang.Character ||
-                value instanceof java.lang.Short ||
-                value instanceof java.lang.Integer ||
-                value instanceof java.lang.Long ||
-                value instanceof java.lang.Float ||
-                value instanceof java.lang.Double ||
-                value instanceof java.lang.Boolean) {
-
-            valueToSetTo = "literalreturn " + value.toString();
-
-            // Character -> Str results in str value.. we need int value as
-            // per specs.
-            if (value instanceof java.lang.Character) {
-                valueToSetTo = "literalreturn " + (int) ((java.lang.Character) value).charValue();
-            } else if (value instanceof Float ||
-                        value instanceof Double) {
-                valueToSetTo = "literalreturn " + String.format("%308.308e", value);
-            }
-
-        } else {
-            AppletSecurityContextManager.getSecurityContext(0).store(value);
-            valueToSetTo = Integer.toString(AppletSecurityContextManager.getSecurityContext(0).getIdentifier(value));
-        }
+        String objIDStr = securityContext.toObjectIDString(value,
+                value.getClass(), true /* unbox primitives */);
 
         // Prefix with dummy instance for convenience.
         PluginCallRequest request = requestFactory.getPluginCallRequest("void",
                 "instance " + 0 + " reference " + reference + " SetSlot " +
-                        internal + " " + index + " " + valueToSetTo, reference);
+                        internal + " " + index + " " + objIDStr, reference);
 
         streamhandler.postCallRequest(request);
         streamhandler.write(request.getMessage());
@@ -1179,8 +1145,9 @@ public class PluginAppletViewer extends PluginAppletViewerBase
             PluginDebug.debug("wait eval request 1");
             synchronized (request) {
                 PluginDebug.debug("wait eval request 2");
-                while (request.isDone() == false)
+                while (request.isDone() == false) {
                     request.wait();
+                }
                 PluginDebug.debug("wait eval request 3");
             }
         } catch (InterruptedException e) {
@@ -1244,8 +1211,9 @@ public class PluginAppletViewer extends PluginAppletViewerBase
             PluginDebug.debug("wait call request 1");
             synchronized (request) {
                 PluginDebug.debug("wait call request 2");
-                while (request.isDone() == false)
+                while (request.isDone() == false) {
                     request.wait();
+                }
                 PluginDebug.debug("wait call request 3");
             }
         } catch (InterruptedException e) {
@@ -1268,7 +1236,7 @@ public class PluginAppletViewer extends PluginAppletViewerBase
                             " " + encodedURI, reference);
 
         } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
+            OutputController.getLogger().log(OutputController.Level.ERROR_ALL,e);
             return null;
         }
 
@@ -1279,8 +1247,9 @@ public class PluginAppletViewer extends PluginAppletViewerBase
             PluginDebug.debug("wait cookieinfo request 1");
             synchronized (request) {
                 PluginDebug.debug("wait cookieinfo request 2");
-                while (request.isDone() == false)
+                while (request.isDone() == false) {
                     request.wait();
+                }
                 PluginDebug.debug("wait cookieinfo request 3");
             }
         } catch (InterruptedException e) {
@@ -1291,32 +1260,18 @@ public class PluginAppletViewer extends PluginAppletViewerBase
         return request.getObject();
     }
 
-    public static Object requestPluginProxyInfo(URI uri) {
-
-        String requestURI = null;
+    /**
+     * Obtain information about the proxy from the browser.
+     *
+     * @param uri a String in url-encoded form
+     * @return a {@link URI} that indicates a proxy.
+     */
+    public static Object requestPluginProxyInfo(String uri) {
         Long reference = getRequestIdentifier();
-
-        try {
-
-            // there is no easy way to get SOCKS proxy info. So, we tell mozilla that we want proxy for
-            // an HTTP uri in case of non http/ftp protocols. If we get back a SOCKS proxy, we can
-            // use that, if we get back an http proxy, we fallback to DIRECT connect
-
-            String scheme = uri.getScheme();
-            String port = uri.getPort() != -1 ? ":" + uri.getPort() : "";
-            if (!uri.getScheme().startsWith("http") && !uri.getScheme().equals("ftp"))
-                scheme = "http";
-
-            requestURI = UrlUtil.encode(scheme + "://" + uri.getHost() + port + "/" + uri.getPath(), "UTF-8");
-        } catch (Exception e) {
-            PluginDebug.debug("Cannot construct URL from ", uri.toString(), " ... falling back to DIRECT proxy");
-            e.printStackTrace();
-            return null;
-        }
 
         PluginCallRequest request = requestFactory.getPluginCallRequest("proxyinfo",
                 "plugin PluginProxyInfo reference " + reference + " " +
-                        requestURI, reference);
+                        uri, reference);
 
         PluginMessageConsumer.registerPriorityWait(reference);
         streamhandler.postCallRequest(request);
@@ -1325,8 +1280,9 @@ public class PluginAppletViewer extends PluginAppletViewerBase
             PluginDebug.debug("wait call request 1");
             synchronized (request) {
                 PluginDebug.debug("wait call request 2");
-                while (request.isDone() == false)
+                while (request.isDone() == false) {
                     request.wait();
+                }
                 PluginDebug.debug("wait call request 3");
             }
         } catch (InterruptedException e) {
@@ -1351,8 +1307,9 @@ public class PluginAppletViewer extends PluginAppletViewerBase
             PluginDebug.debug("wait finalize request 1");
             synchronized (request) {
                 PluginDebug.debug("wait finalize request 2");
-                while (request.isDone() == false)
+                while (request.isDone() == false) {
                     request.wait();
+                }
                 PluginDebug.debug("wait finalize request 3");
             }
         } catch (InterruptedException e) {
@@ -1372,18 +1329,13 @@ public class PluginAppletViewer extends PluginAppletViewerBase
 
         streamhandler.postCallRequest(request);
         streamhandler.write(request.getMessage());
-        try {
-            PluginDebug.debug("wait ToString request 1");
-            synchronized (request) {
-                PluginDebug.debug("wait ToString request 2");
-                while (request.isDone() == false)
-                    request.wait();
-                PluginDebug.debug("wait ToString request 3");
-            }
-        } catch (InterruptedException e) {
-            throw new RuntimeException("Interrupted waiting for call request.",
-                                        e);
+        PluginDebug.debug("wait ToString request 1");
+        synchronized (request) {
+            PluginDebug.debug("wait ToString request 2");
+            waitForRequestCompletion(request);
+            PluginDebug.debug("wait ToString request 3");
         }
+
         PluginDebug.debug(" ToString DONE");
         return (String) request.getObject();
     }
@@ -1396,6 +1348,7 @@ public class PluginAppletViewer extends PluginAppletViewerBase
         PluginDebug.debug("WRITING 2 DONE");
     }
 
+    @Override
     public void setStream(String key, InputStream stream) throws IOException {
         // We do nothing.
     }
@@ -1410,24 +1363,6 @@ public class PluginAppletViewer extends PluginAppletViewerBase
     public Iterator<String> getStreamKeys() {
         // We do nothing.
         return null;
-    }
-
-    /**
-     * Decodes the string (converts html escapes into proper characters)
-     *
-     * @param toDecode The string to decode
-     * @return The decoded string
-     */
-    public static String decodeString(String toDecode) {
-
-        toDecode = toDecode.replace("&gt;", ">");
-        toDecode = toDecode.replace("&lt;", "<");
-        toDecode = toDecode.replace("&amp;", "&");
-        toDecode = toDecode.replace("&#10;", "\n");
-        toDecode = toDecode.replace("&#13;", "\r");
-        toDecode = toDecode.replace("&quot;", "\"");
-
-        return toDecode;
     }
 
     /**
@@ -1447,76 +1382,14 @@ public class PluginAppletViewer extends PluginAppletViewerBase
     }
 
     /**
-     * Print the HTML tag.
-     */
-    public static void printTag(PrintStream out, Hashtable<String, String> atts) {
-        out.print("<applet");
-
-        String v = atts.get("codebase");
-        if (v != null) {
-            out.print(" codebase=\"" + v + "\"");
-        }
-
-        v = atts.get("code");
-        if (v == null) {
-            v = "applet.class";
-        }
-        out.print(" code=\"" + v + "\"");
-        v = atts.get("width");
-        if (v == null) {
-            v = "150";
-        }
-        out.print(" width=" + v);
-
-        v = atts.get("height");
-        if (v == null) {
-            v = "100";
-        }
-        out.print(" height=" + v);
-
-        v = atts.get("name");
-        if (v != null) {
-            out.print(" name=\"" + v + "\"");
-        }
-        out.println(">");
-
-        // A very slow sorting algorithm
-        int len = atts.size();
-        String params[] = new String[len];
-        len = 0;
-        for (Enumeration<String> e = atts.keys(); e.hasMoreElements();) {
-            String param = e.nextElement();
-            int i = 0;
-            for (; i < len; i++) {
-                if (params[i].compareTo(param) >= 0) {
-                    break;
-                }
-            }
-            System.arraycopy(params, i, params, i + 1, len - i);
-            params[i] = param;
-            len++;
-        }
-
-        for (int i = 0; i < len; i++) {
-            String param = params[i];
-            if (systemParam.get(param) == null) {
-                out.println("<param name=" + param +
-                        " value=\"" + atts.get(param) + "\">");
-            }
-        }
-        out.println("</applet>");
-    }
-
-    /**
      * Make sure the atrributes are uptodate.
      */
     public void updateAtts() {
         Dimension d = panel.getSize();
         Insets in = panel.getInsets();
-        panel.atts.put("width",
-                       Integer.valueOf(d.width - (in.left + in.right)).toString());
-        panel.atts.put("height",
-                       Integer.valueOf(d.height - (in.top + in.bottom)).toString());
+        int width = d.width - (in.left + in.right);
+        int height = d.height - (in.top + in.bottom);
+        panel.updateSizeInAtts(height, width);
     }
 
     /**
@@ -1549,15 +1422,16 @@ public class PluginAppletViewer extends PluginAppletViewerBase
          * at the same time.
          */
         try {
-            ((AppletViewerPanel)panel).joinAppletThread();
-            ((AppletViewerPanel)panel).release();
+            ((AppletViewerPanelAccess)panel).joinAppletThread();
+            ((AppletViewerPanelAccess)panel).release();
         } catch (InterruptedException e) {
             return; // abort the reload
         }
 
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
+            @Override
             public Void run() {
-                ((AppletViewerPanel)panel).createAppletThread();
+                ((AppletViewerPanelAccess)panel).createAppletThread();
                 return null;
             }
         });
@@ -1567,6 +1441,7 @@ public class PluginAppletViewer extends PluginAppletViewerBase
         panel.sendEvent(AppletPanel.APPLET_START);
     }
 
+    @Override
     public int print(Graphics graphics, PageFormat pf, int pageIndex) {
         return Printable.NO_SUCH_PAGE;
     }
@@ -1612,24 +1487,27 @@ public class PluginAppletViewer extends PluginAppletViewerBase
 
         new Thread(new Runnable() {
             @SuppressWarnings("deprecation")
+            @Override
             public void run() {
                 ClassLoader cl = p.applet.getClass().getClassLoader();
 
                 // Since we want to deal with JNLPClassLoader, extract it if this
                 // is a codebase loader
-                if (cl instanceof JNLPClassLoader.CodeBaseClassLoader)
+                if (cl instanceof JNLPClassLoader.CodeBaseClassLoader) {
                     cl = ((JNLPClassLoader.CodeBaseClassLoader) cl).getParentJNLPClassLoader();
-
-                ThreadGroup tg = ((JNLPClassLoader) cl).getApplication().getThreadGroup();
+                }
 
                 appletShutdown(p);
                 appletPanels.removeElement(p);
                 
                 // Mark classloader unusable
-                ((JNLPClassLoader) cl).decrementLoaderUseCount();
+                if (cl instanceof JNLPClassLoader) {
+                    ((JNLPClassLoader) cl).decrementLoaderUseCount();
+                }
 
                 try {
                     SwingUtilities.invokeAndWait(new Runnable() {
+                        @Override
                         public void run() {
                             dispose();
                         }
@@ -1663,412 +1541,6 @@ public class PluginAppletViewer extends PluginAppletViewerBase
         return appletPanels.size();
     }
 
-    /**
-     * Scan spaces.
-     */
-    public static void skipSpace(int[] c, Reader in) throws IOException {
-        while ((c[0] >= 0) &&
-                ((c[0] == ' ') || (c[0] == '\t') || (c[0] == '\n') || (c[0] == '\r'))) {
-            c[0] = in.read();
-        }
-    }
-
-    /**
-     * Scan identifier
-     */
-    public static String scanIdentifier(int[] c, Reader in) throws IOException {
-        StringBuilder buf = new StringBuilder();
-
-        if (c[0] == '!') {
-            // Technically, we should be scanning for '!--' but we are reading
-            // from a stream, and there is no way to peek ahead. That said,
-            // a ! at this point can only mean comment here afaik, so we
-            // should be okay
-            skipComment(c, in);
-            return "";
-        }
-
-        while (true) {
-            if (((c[0] >= 'a') && (c[0] <= 'z')) ||
-                    ((c[0] >= 'A') && (c[0] <= 'Z')) ||
-                    ((c[0] >= '0') && (c[0] <= '9')) || (c[0] == '_')) {
-                buf.append((char) c[0]);
-                c[0] = in.read();
-            } else {
-                return buf.toString();
-            }
-        }
-    }
-
-    public static void skipComment(int[] c, Reader in) throws IOException {
-        StringBuilder buf = new StringBuilder();
-        boolean commentHeaderPassed = false;
-        c[0] = in.read();
-        buf.append((char) c[0]);
-
-        while (true) {
-            if (c[0] == '-' && (c[0] = in.read()) == '-') {
-                buf.append((char) c[0]);
-                if (commentHeaderPassed) {
-                    // -- encountered ... is > next?
-                    if ((c[0] = in.read()) == '>') {
-                        buf.append((char) c[0]);
-
-                        PluginDebug.debug("Comment skipped: ", buf.toString());
-
-                        // comment skipped.
-                        return;
-                    }
-                } else {
-                    // first -- is part of <!-- ... , just mark that we have passed it
-                    commentHeaderPassed = true;
-                }
-
-            } else if (commentHeaderPassed == false) {
-                buf.append((char) c[0]);
-                PluginDebug.debug("Warning: Attempted to skip comment, but this tag does not appear to be a comment: ", buf.toString());
-                return;
-            }
-
-            c[0] = in.read();
-            buf.append((char) c[0]);
-        }
-    }
-
-    /**
-     * Scan tag
-     */
-    public static Hashtable<String, String> scanTag(int[] c, Reader in) throws IOException {
-        Hashtable<String, String> atts = new Hashtable<String, String>();
-        skipSpace(c, in);
-        while (c[0] >= 0 && c[0] != '>') {
-            String att = decodeString(scanIdentifier(c, in));
-            String val = "";
-            skipSpace(c, in);
-            if (c[0] == '=') {
-                int quote = -1;
-                c[0] = in.read();
-                skipSpace(c, in);
-                if ((c[0] == '\'') || (c[0] == '\"')) {
-                    quote = c[0];
-                    c[0] = in.read();
-                }
-                StringBuilder buf = new StringBuilder();
-                while ((c[0] > 0) &&
-                        (((quote < 0) && (c[0] != ' ') && (c[0] != '\t') &&
-                                (c[0] != '\n') && (c[0] != '\r') && (c[0] != '>'))
-                         || ((quote >= 0) && (c[0] != quote)))) {
-                    buf.append((char) c[0]);
-                    c[0] = in.read();
-                }
-                if (c[0] == quote) {
-                    c[0] = in.read();
-                }
-                skipSpace(c, in);
-                val = decodeString(buf.toString());
-            }
-
-            PluginDebug.debug("PUT ", att, " = '", val, "'");
-            atts.put(att.toLowerCase(java.util.Locale.ENGLISH), val);
-
-            while (true) {
-                if ((c[0] == '>') || (c[0] < 0) ||
-                        ((c[0] >= 'a') && (c[0] <= 'z')) ||
-                        ((c[0] >= 'A') && (c[0] <= 'Z')) ||
-                        ((c[0] >= '0') && (c[0] <= '9')) || (c[0] == '_'))
-                    break;
-                c[0] = in.read();
-            }
-            //skipSpace(in);
-        }
-        return atts;
-    }
-
-    // private static final == inline
-    private static final boolean isInt(Object o) {
-        boolean isInt = false;
-        try {
-            Integer.parseInt((String) o);
-            isInt = true;
-        } catch (Exception e) {
-            // don't care
-        }
-
-        return isInt;
-    }
-
-    /* values used for placement of AppletViewer's frames */
-    private static int x = 0;
-    private static int y = 0;
-    private static final int XDELTA = 30;
-    private static final int YDELTA = XDELTA;
-
-    static String encoding = null;
-
-    /**
-     * Scan an html file for <applet> tags
-     */
-    public static void parse(int identifier, long handle, String width, String height, Reader in, URL url, String enc)
-            throws IOException {
-        encoding = enc;
-        parse(identifier, handle, width, height, in, url, System.out, new PluginAppletPanelFactory());
-    }
-
-    public static void parse(int identifier, long handle, String width, String height, Reader in, URL url)
-            throws PrivilegedActionException {
-
-        final int fIdentifier = identifier;
-        final long fHandle = handle;
-        final String fWidth = width;
-        final String fHeight = height;
-        final Reader fIn = in;
-        final URL fUrl = url;
-        AccessController.doPrivileged(new PrivilegedExceptionAction<Void>() {
-            public Void run() throws IOException {
-                parse(fIdentifier, fHandle, fWidth, fHeight, fIn, fUrl,
-                        System.out, new PluginAppletPanelFactory());
-                return null;
-            }
-        });
-    }
-
-    @SuppressWarnings("unused")
-    public static void parse(int identifier, long handle, String width,
-                 String height, Reader in, URL url,
-                              PrintStream statusMsgStream,
-                              PluginAppletPanelFactory factory)
-            throws IOException {
-        boolean isObjectTag = false;
-        boolean objectTagAlreadyParsed = false;
-
-        // The current character
-        // FIXME: This is an evil hack to force pass-by-reference.. the
-        // parsing code needs to be rewritten from scratch to prevent such
-        //a need
-        int[] c = new int[1];
-
-        // warning messages
-        String requiresNameWarning = amh.getMessage("parse.warning.requiresname");
-        String paramOutsideWarning = amh.getMessage("parse.warning.paramoutside");
-        String appletRequiresCodeWarning = amh.getMessage("parse.warning.applet.requirescode");
-        String appletRequiresHeightWarning = amh.getMessage("parse.warning.applet.requiresheight");
-        String appletRequiresWidthWarning = amh.getMessage("parse.warning.applet.requireswidth");
-        String objectRequiresCodeWarning = amh.getMessage("parse.warning.object.requirescode");
-        String objectRequiresHeightWarning = amh.getMessage("parse.warning.object.requiresheight");
-        String objectRequiresWidthWarning = amh.getMessage("parse.warning.object.requireswidth");
-        String embedRequiresCodeWarning = amh.getMessage("parse.warning.embed.requirescode");
-        String embedRequiresHeightWarning = amh.getMessage("parse.warning.embed.requiresheight");
-        String embedRequiresWidthWarning = amh.getMessage("parse.warning.embed.requireswidth");
-        String appNotLongerSupportedWarning = amh.getMessage("parse.warning.appnotLongersupported");
-
-        java.net.URLConnection conn = url.openConnection();
-        /* The original URL may have been redirected - this
-         * sets it to whatever URL/codebase we ended up getting
-         */
-        url = conn.getURL();
-
-        int ydisp = 1;
-        Hashtable<String, String> atts = null;
-
-        while (true) {
-            c[0] = in.read();
-            if (c[0] == -1)
-                break;
-
-            if (c[0] == '<') {
-                c[0] = in.read();
-                if (c[0] == '/') {
-                    c[0] = in.read();
-                    String nm = scanIdentifier(c, in);
-                    if (nm.equalsIgnoreCase("applet") ||
-                             nm.equalsIgnoreCase("object") ||
-                             nm.equalsIgnoreCase("embed")) {
-
-                        // We can't test for a code tag until </OBJECT>
-                        // because it is a parameter, not an attribute.
-                        if (isObjectTag) {
-                            if (atts.get("code") == null && atts.get("object") == null) {
-                                statusMsgStream.println(objectRequiresCodeWarning);
-                                atts = null;
-                            }
-                        }
-
-                        if (atts != null) {
-                            // XXX 5/18 In general this code just simply
-                            // shouldn't be part of parsing.  It's presence
-                            // causes things to be a little too much of a
-                            // hack.
-
-                            // Let user know we are starting up
-                            streamhandler.write("instance " + identifier + " status " + amh.getMessage("status.start"));
-                            factory.createPanel(streamhandler, identifier, handle, x, y, url, atts);
-
-                            x += XDELTA;
-                            y += YDELTA;
-                            // make sure we don't go too far!
-                            Dimension d = Toolkit.getDefaultToolkit().getScreenSize();
-                            if ((x > d.width - 300) || (y > d.height - 300)) {
-                                x = 0;
-                                y = 2 * ydisp * YDELTA;
-                                ydisp++;
-                            }
-                        }
-                        atts = null;
-                        isObjectTag = false;
-                    }
-                } else {
-                    String nm = scanIdentifier(c, in);
-                    if (nm.equalsIgnoreCase("param")) {
-                        Hashtable<String, String> t = scanTag(c, in);
-                        String att = t.get("name");
-
-                        if (att == null) {
-                            statusMsgStream.println(requiresNameWarning);
-                        } else {
-                            String val = t.get("value");
-                            if (val == null) {
-                                statusMsgStream.println(requiresNameWarning);
-                            } else {
-                                PluginDebug.debug("PUT ", att, " = ", val);
-                                atts.put(att.toLowerCase(), val);
-                            }
-                        }
-                    } else if (nm.equalsIgnoreCase("applet")) {
-                        atts = scanTag(c, in);
-
-                        // If there is a classid and no code tag present, transform it to code tag
-                        if (atts.get("code") == null && atts.get("classid") != null
-                                && !(atts.get("classid")).startsWith("clsid:")) {
-                            atts.put("code", atts.get("classid"));
-                        }
-
-                        // remove java: from code tag
-                        if (atts.get("code") != null && (atts.get("code")).startsWith("java:")) {
-                            atts.put("code", (atts.get("code")).substring(5));
-                        }
-
-                        if (atts.get("code") == null && atts.get("object") == null) {
-                            statusMsgStream.println(appletRequiresCodeWarning);
-                            atts = null;
-                        }
-
-                        if (atts.get("width") == null || !isInt(atts.get("width"))) {
-                            atts.put("width", width);
-                        }
-
-                        if (atts.get("height") == null || !isInt(atts.get("height"))) {
-                            atts.put("height", height);
-                        }
-                    } else if (nm.equalsIgnoreCase("object")) {
-                        isObjectTag = true;
-
-                        // Once code is set, additional nested objects are ignored
-                        if (!objectTagAlreadyParsed) {
-                            objectTagAlreadyParsed = true;
-                            atts = scanTag(c, in);
-                        }
-
-                        // If there is a classid and no code tag present, transform it to code tag
-                        if (atts.get("code") == null && atts.get("classid") != null
-                                && !(atts.get("classid")).startsWith("clsid:")) {
-                            atts.put("code", atts.get("classid"));
-                        }
-
-                        // remove java: from code tag
-                        if (atts.get("code") != null && (atts.get("code")).startsWith("java:")) {
-                            atts.put("code", (atts.get("code")).substring(5));
-                        }
-
-                        // java_* aliases override older names:
-                        // http://java.sun.com/j2se/1.4.2/docs/guide/plugin/developer_guide/using_tags.html#in-ie
-                        if (atts.get("java_code") != null) {
-                            atts.put("code", (atts.get("java_code")));
-                        }
-
-                        if (atts.containsKey("code")) {
-                            objectTagAlreadyParsed = true;
-                        }
-
-                        if (atts.get("java_codebase") != null) {
-                            atts.put("codebase", (atts.get("java_codebase")));
-                        }
-
-                        if (atts.get("java_archive") != null) {
-                            atts.put("archive", (atts.get("java_archive")));
-                        }
-
-                        if (atts.get("java_object") != null) {
-                            atts.put("object", (atts.get("java_object")));
-                        }
-
-                        if (atts.get("java_type") != null) {
-                            atts.put("type", (atts.get("java_type")));
-                        }
-
-                        if (atts.get("width") == null || !isInt(atts.get("width"))) {
-                            atts.put("width", width);
-                        }
-
-                        if (atts.get("height") == null || !isInt(atts.get("height"))) {
-                            atts.put("height", height);
-                        }
-                    } else if (nm.equalsIgnoreCase("embed")) {
-                        atts = scanTag(c, in);
-
-                        // If there is a classid and no code tag present, transform it to code tag
-                        if (atts.get("code") == null && atts.get("classid") != null
-                                && !(atts.get("classid")).startsWith("clsid:")) {
-                            atts.put("code", atts.get("classid"));
-                        }
-
-                        // remove java: from code tag
-                        if (atts.get("code") != null && (atts.get("code")).startsWith("java:")) {
-                            atts.put("code", (atts.get("code")).substring(5));
-                        }
-
-                        // java_* aliases override older names:
-                        // http://java.sun.com/j2se/1.4.2/docs/guide/plugin/developer_guide/using_tags.html#in-nav
-                        if (atts.get("java_code") != null) {
-                            atts.put("code", (atts.get("java_code")));
-                        }
-
-                        if (atts.get("java_codebase") != null) {
-                            atts.put("codebase", (atts.get("java_codebase")));
-                        }
-
-                        if (atts.get("java_archive") != null) {
-                            atts.put("archive", (atts.get("java_archive")));
-                        }
-
-                        if (atts.get("java_object") != null) {
-                            atts.put("object", (atts.get("java_object")));
-                        }
-
-                        if (atts.get("java_type") != null) {
-                            atts.put("type", (atts.get("java_type")));
-                        }
-
-                        if (atts.get("code") == null && atts.get("object") == null) {
-                            statusMsgStream.println(embedRequiresCodeWarning);
-                            atts = null;
-                        }
-
-                        if (atts.get("width") == null || !isInt(atts.get("width"))) {
-                            atts.put("width", width);
-                        }
-
-                        if (atts.get("height") == null || !isInt(atts.get("height"))) {
-                            atts.put("height", height);
-                        }
-
-                    }
-                }
-            }
-        }
-        in.close();
-    }
-
-    private static AppletMessageHandler amh = new AppletMessageHandler("appletviewer");
 
     private static void checkConnect(URL url) {
         SecurityManager security = System.getSecurityManager();
@@ -2076,10 +1548,12 @@ public class PluginAppletViewer extends PluginAppletViewerBase
             try {
                 java.security.Permission perm =
                         url.openConnection().getPermission();
-                if (perm != null)
+                if (perm != null) {
                     security.checkPermission(perm);
-                else
+                }
+                else {
                     security.checkConnect(url.getHost(), url.getPort());
+                }
             } catch (java.io.IOException ioe) {
                 security.checkConnect(url.getHost(), url.getPort());
             }
@@ -2093,21 +1567,32 @@ public class PluginAppletViewer extends PluginAppletViewerBase
      * the parent class's update() just does a couple of checks (both of
      * which are accounted for) and then calls paint anyway.
      */
-    public void update(Graphics g) {
+    @Override
+    public void paint(Graphics g) {
 
         // If the image or the graphics don't exist, create new ones
         if (bufFrameImg == null || bufFrameImgGraphics == null) {
-            bufFrameImg = createImage(getWidth(), getHeight());
+            // although invisible applets do not have right to paint
+            // we rather paint to 1x1 to be sure all callbacks  will be completed
+            bufFrameImg = createImage(Math.max(1, getWidth()), Math.max(1, getHeight()));
             bufFrameImgGraphics = bufFrameImg.getGraphics();
         }
 
         // Paint off-screen
-        paint(bufFrameImgGraphics);
+        for (Component c: this.getComponents()) {
+                c.paint(bufFrameImgGraphics);
+        }
 
         // Draw the painted image
         g.drawImage(bufFrameImg, 0, 0, this);
     }
-
+    
+    
+    @Override
+    public void update(Graphics g) {
+        paint(g);
+    }
+  
     /**
      * Waits on a given condition queue until timeout.
      *
@@ -2125,8 +1610,9 @@ public class PluginAppletViewer extends PluginAppletViewerBase
                                        long timeout) {
 
         // Can't wait on null. Return 0 indicating no wait happened.
-        if (lock == null)
-            return 0;
+        if (lock == null) {
+                                               return 0;
+                                           }
 
         assert lock.isHeldByCurrentThread();
 
@@ -2140,5 +1626,27 @@ public class PluginAppletViewer extends PluginAppletViewerBase
 
         // Return the difference
         return System.nanoTime() - sleepStart;
+    }
+
+    private class SplashCreator implements Runnable {
+
+        private final AppletPanel fPanel;
+
+        public SplashCreator(AppletPanel fPanel) {
+            this.fPanel = fPanel;
+        }
+
+        @Override
+        public void run() {
+            add("Center", fPanel);
+            fPanel.setVisible(false);
+            splashPanel = SplashUtils.getSplashScreen(fPanel.getWidth(), fPanel.getHeight());
+            if (splashPanel != null) {
+                splashPanel.startAnimation();
+                PluginDebug.debug("Added splash " + splashPanel);
+                add("Center", splashPanel.getSplashComponent());
+            }
+            pack();
+        }
     }
 }
