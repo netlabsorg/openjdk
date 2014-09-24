@@ -37,6 +37,7 @@ exception statement from your version.
 
 package net.sourceforge.jnlp.config;
 
+import java.io.File;
 import static net.sourceforge.jnlp.runtime.Translator.R;
 
 import java.io.File;
@@ -87,8 +88,9 @@ public class BasicValueValidators {
      * Checks if a value is a valid file path (not a valid file!). The actual
      * file may or may not exist
      */
-    private static class FilePathValidator implements ValueValidator {
-
+    //package private for testing purposes
+    static class FilePathValidator implements ValueValidator {
+        
         @Override
         public void validate(Object value) throws IllegalArgumentException {
             if (value == null) {
@@ -98,28 +100,21 @@ public class BasicValueValidators {
             Object possibleValue = value;
 
             if (!(possibleValue instanceof String)) {
-                throw new IllegalArgumentException();
+                throw new IllegalArgumentException("Value should be string!");
             }
 
             String possibleFile = (String) possibleValue;
-            if (Defaults.OS_DOS_LIKE) {
-                if (!(Character.isLetter(possibleFile.charAt(0)) &&
-                      possibleFile.charAt(1) == ':' &&
-                      (possibleFile.charAt(2) == File.separatorChar ||
-                       possibleFile.charAt(2) == '/'))) {
-                    throw new IllegalArgumentException();
+            
+                boolean absolute = new File(possibleFile).isAbsolute();
+                if (!absolute) {
+                    throw new IllegalArgumentException("File must be absolute");
                 }
-            }
-            else
-            if (!(possibleFile.startsWith("/"))) {
-                throw new IllegalArgumentException();
-            }
 
         }
 
         @Override
         public String getPossibleValues() {
-            return Defaults.OS_DOS_LIKE ? R("VVPossibleFileValuesDOS") : R("VVPossibleFileValues");
+            return R("VVPossibleFileValues");
         }
 
     }

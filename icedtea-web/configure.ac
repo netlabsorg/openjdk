@@ -1,4 +1,4 @@
-AC_INIT([icedtea-web],[1.3],[distro-pkg-dev@openjdk.java.net], [icedtea-web], [http://icedtea.classpath.org/wiki/IcedTea-Web])
+AC_INIT([icedtea-web],[1.5.1],[distro-pkg-dev@openjdk.java.net], [icedtea-web], [http://icedtea.classpath.org/wiki/IcedTea-Web])
 AM_INIT_AUTOMAKE([1.9 tar-pax foreign])
 AC_CONFIG_FILES([Makefile netx.manifest])
 
@@ -26,6 +26,11 @@ AC_ARG_ENABLE([docs],
 	      [ENABLE_DOCS="${enableval}"], [ENABLE_DOCS='yes'])
 AM_CONDITIONAL([ENABLE_DOCS], [test x$ENABLE_DOCS = xyes])
 AC_MSG_RESULT(${ENABLE_DOCS})
+
+AC_PATH_PROG([BIN_BASH], [bash],, [/bin])
+if test x"$BIN_BASH" = x ; then
+    AC_MSG_ERROR([/bin/bash is used in runtime and for about generation. Dying sooner rather then later])
+fi
 
 IT_CHECK_WITH_GCJ
 FIND_TOOL([ZIP], [zip])
@@ -79,9 +84,10 @@ IT_CHECK_FOR_CLASS(SUN_AWT_X11_XEMBEDDEDFRAME, [sun.awt.X11.XEmbeddedFrame])
 IT_CHECK_FOR_CLASS(SUN_MISC_REF, [sun.misc.Ref])
 IT_CHECK_FOR_CLASS(COM_SUN_JNDI_TOOLKIT_URL_URLUTIL, [com.sun.jndi.toolkit.url.UrlUtil])
 IT_CHECK_FOR_CLASS(SUN_APPLET_APPLETIMAGEREF, [sun.applet.AppletImageRef])
-IT_CHECK_FOR_APPLETVIEWERPANEL_HOLE
+IT_CHECK_FOR_SUN_APPLET_ACCESSIBILITY
 IT_CHECK_GLIB_VERSION
-IT_CHECK_XULRUNNER_API_VERSION
+IT_CHECK_XULRUNNER_MIMEDESCRIPTION_CONSTCHAR
+IT_CHECK_XULRUNNER_REQUIRES_C11
 
 #
 # Find optional depedencies
@@ -105,6 +111,12 @@ IT_FIND_OPTIONAL_JAR([junit], JUNIT,
     [/usr/share/java/junit4.jar /usr/share/junit-4/lib/junit.jar])
 IT_FIND_OPTIONAL_JAR([emma], EMMA,
     [/usr/share/java/emma.jar])
+IT_FIND_OPTIONAL_JAR([jacoco], JACOCO,
+    [/usr/share/java/jacoco/org.jacoco.core.jar])
+IT_FIND_OPTIONAL_JAR([asm], ASM,
+    [/usr/share/java/objectweb-asm4/asm-all.jar /usr/share/java/objectweb-asm4/asm-all-4.0.jar /usr/share/java/objectweb-asm/asm-all.jar])
+
+IT_CHECK_FOR_TAGSOUP
 
 AC_CONFIG_FILES([jrunscript], [chmod u+x jrunscript])
 AC_CONFIG_FILES([build.properties])

@@ -6,8 +6,11 @@
  * http://www.eclipse.org/legal/cpl-v10.html
  */
 import java.io.PrintStream;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import net.sourceforge.jnlp.annotations.KnownToFail;
+import net.sourceforge.jnlp.annotations.Remote;
+import net.sourceforge.jnlp.browsertesting.Browsers;
 
 import org.junit.internal.JUnitSystem;
 import org.junit.runner.Description;
@@ -37,6 +40,7 @@ public class LessVerboseTextListener extends RunListener {
     public void testIgnored(Description description) throws Exception {
         writer.println("Ignored: " + description.getClassName() + "." + description.getMethodName());
         printK2F(writer, null, description);
+        printRemote(writer, description);
     }
 
 
@@ -45,6 +49,7 @@ public class LessVerboseTextListener extends RunListener {
         testFailed = true;
         writer.println("FAILED: " + failure.getTestHeader() + " " + failure.getMessage());
         printK2F(writer,true,failure.getDescription());
+        printRemote(writer, failure.getDescription());
     }
 
     @Override
@@ -52,6 +57,7 @@ public class LessVerboseTextListener extends RunListener {
         if (!testFailed) {
             writer.println("Passed: " + description.getClassName() + "." + description.getMethodName());
             printK2F(writer,false,description);
+            printRemote(writer, description);
         }
     }
 
@@ -69,7 +75,22 @@ public class LessVerboseTextListener extends RunListener {
     private void printK2F(PrintStream writer, Boolean failed, Description description) {
         try {
             KnownToFail k2f = getK2F(description);
-            if (k2f != null) {
+            boolean thisTestIsK2F = false;
+            if (k2f != null){
+                //determine if k2f in the current browser
+                Browsers[] br = k2f.failsIn();
+                if(0 == br.length){ //@KnownToFail with default optional parameter failsIn={}
+                    thisTestIsK2F = true;
+                }else{
+                    for(Browsers b : br){
+                        if(description.toString().contains(b.toString())){
+                            thisTestIsK2F = true;
+                        }
+                    }
+                }
+            }
+
+            if( thisTestIsK2F ){
                 totalK2F++;
                 if (failed != null) {
                     if (failed) {
@@ -93,18 +114,23 @@ public class LessVerboseTextListener extends RunListener {
         }
     }
 
-    public static  KnownToFail getK2F(Description description) {
+
+    @SuppressWarnings("unchecked")
+    public static <T extends Annotation> T getAnnotation(Class<?> q, String methodName, Class<T> a) {
         try {
-            Class q = description.getTestClass();
             if (q != null) {
-                String qs = description.getMethodName();
+                T rem = q.getAnnotation(a);
+                if (rem != null) {
+                    return rem;
+                }
+                String qs = methodName;
                 if (qs.contains(" - ")) {
                     qs = qs.replaceAll(" - .*", "");
                 }
                 Method qm = q.getMethod(qs);
                 if (qm != null) {
-                    KnownToFail k2f = qm.getAnnotation(KnownToFail.class);
-                    return k2f;
+                    rem = qm.getAnnotation(a);
+                    return rem;
 
                 }
             }
@@ -114,4 +140,23 @@ public class LessVerboseTextListener extends RunListener {
         return null;
     }
 
+    public static KnownToFail getK2F(Description description) {
+        return getAnnotation(description.getTestClass(), description.getMethodName(), KnownToFail.class);
+    }
+
+    public static Remote getRemote(Description description) {
+        return getAnnotation(description.getTestClass(), description.getMethodName(), Remote.class);
+
+    }
+
+    private void printRemote(PrintStream writer, Description description) {
+        try {
+            Remote rem = getRemote(description);
+            if (rem != null) {
+                writer.println(" - This test is running remote content, note that failures may be caused by broken target application or connection");
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
 }

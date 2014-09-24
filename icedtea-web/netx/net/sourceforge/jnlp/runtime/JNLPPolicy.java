@@ -23,6 +23,7 @@ import java.security.*;
 import java.util.Enumeration;
 
 import net.sourceforge.jnlp.config.DeploymentConfiguration;
+import net.sourceforge.jnlp.util.logging.OutputController;
 
 /**
  * Policy for JNLP environment.  This class delegates to the
@@ -90,21 +91,30 @@ public class JNLPPolicy extends Policy {
 
                 // systempolicy permissions need to be accounted for as well
                 e = systemPolicy.getPermissions(appletCS).elements();
-                while (e.hasMoreElements())
+                while (e.hasMoreElements()) {
                     clPermissions.add(e.nextElement());
+                }
 
                 // and so do permissions from the jnlp-specific system policy
                 if (systemJnlpPolicy != null) {
                     e = systemJnlpPolicy.getPermissions(appletCS).elements();
-                    while (e.hasMoreElements())
+                    while (e.hasMoreElements()) {
                         clPermissions.add(e.nextElement());
+                    }
                 }
 
                 // and permissiosn from jnlp-specific user policy too
                 if (userJnlpPolicy != null) {
                     e = userJnlpPolicy.getPermissions(appletCS).elements();
-                    while (e.hasMoreElements())
+                    while (e.hasMoreElements()) {
                         clPermissions.add(e.nextElement());
+                    }
+
+                    CodeSource appletCodebaseSource = new CodeSource(JNLPRuntime.getApplication().getJNLPFile().getCodeBase(), (java.security.cert.Certificate[]) null);
+                    e = userJnlpPolicy.getPermissions(appletCodebaseSource).elements();
+                    while (e.hasMoreElements()) {
+                        clPermissions.add(e.nextElement());
+                    }
                 }
 
                 return clPermissions;
@@ -119,7 +129,9 @@ public class JNLPPolicy extends Policy {
      * Refresh.
      */
     public void refresh() {
-        // no op
+        if (userJnlpPolicy != null) {
+            userJnlpPolicy.refresh();
+        }
     }
 
     /**
@@ -167,11 +179,11 @@ public class JNLPPolicy extends Policy {
                 URI policyUri = new URI(policyLocation);
                 policy = getInstance("JavaPolicy", new URIParameter(policyUri));
             } catch (IllegalArgumentException e) {
-                e.printStackTrace();
+                OutputController.getLogger().log(OutputController.Level.ERROR_ALL, e);
             } catch (NoSuchAlgorithmException e) {
-                e.printStackTrace();
+                OutputController.getLogger().log(OutputController.Level.ERROR_ALL, e);
             } catch (URISyntaxException e) {
-                e.printStackTrace();
+                OutputController.getLogger().log(OutputController.Level.ERROR_ALL, e);
             }
         }
         return policy;

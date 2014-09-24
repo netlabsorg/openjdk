@@ -38,9 +38,14 @@ exception statement from your version. */
 package net.sourceforge.jnlp.cache;
 
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.util.LinkedList;
 import java.util.List;
+import java.io.UnsupportedEncodingException;
 
 import net.sourceforge.jnlp.DownloadOptions;
 
@@ -58,7 +63,7 @@ public class ResourceUrlCreator {
      * Returns a list of URLs that the resources might be downloadable from.
      * The Resources may not be downloadable from any of them. The returned order is the order
      * the urls should be attempted in.
-     * @return
+     * @return a list of URLs that the resources might be downloadable from
      */
     public List<URL> getUrls() {
         List<URL> urls = new LinkedList<URL>();
@@ -89,7 +94,7 @@ public class ResourceUrlCreator {
             }
         }
 
-        url = getVersionedUrlUsingQuery(resource);
+        url = getVersionedUrl();
         urls.add(url);
 
         urls.add(resource.getLocation());
@@ -102,9 +107,9 @@ public class ResourceUrlCreator {
      * @param resource the resource
      * @param usePack whether the URL should point to the pack200 file
      * @param useVersion whether the URL should be modified to include the version
-     * @return a URL for the resource or null if an appropraite URL can not be found
+     * @return a URL for the resource or null if an appropriate URL can not be found
      */
-    protected URL getUrl(Resource resource, boolean usePack, boolean useVersion) {
+    static URL getUrl(Resource resource, boolean usePack, boolean useVersion) {
         if (!(usePack || useVersion)) {
             throw new IllegalArgumentException("either pack200 or version required");
         }
@@ -116,10 +121,21 @@ public class ResourceUrlCreator {
         }
         String filename = location.substring(lastSlash + 1);
         if (useVersion && resource.requestVersion != null) {
-            String parts[] = filename.split("\\.", 2);
-            String name = parts[0];
-            String extension = parts[1];
-            filename = name + "__V" + resource.requestVersion + "." + extension;
+            // With 'useVersion', j2-commons-cli.jar becomes, for example, j2-commons-cli__V1.0.jar
+            String parts[] = filename.split("\\.", -1 /* Keep blank strings*/);
+
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < parts.length; i++) {
+                sb.append(parts[i]);
+                // Append __V<number> before last '.'
+                if (i == parts.length -2) {
+                    sb.append("__V" + resource.requestVersion);
+                }
+                sb.append('.');
+            }
+            sb.setLength(sb.length() - 1); // remove last '.'
+
+            filename = sb.toString();
         }
         if (usePack) {
             filename = filename + ".pack.gz";
@@ -135,29 +151,47 @@ public class ResourceUrlCreator {
     }
 
     /**
-     * Returns the URL for a resource, relying on HTTP query for getting the
-     * right version
-     *
-     * @param resource the resource to get the url for
+     * Returns the URL for this resource, including the resource's version number in the query string
      */
-    protected URL getVersionedUrlUsingQuery(Resource resource) {
-        String actualLocation = resource.getLocation().getProtocol() + "://"
-                + resource.getLocation().getHost();
-        if (resource.getLocation().getPort() != -1) {
-            actualLocation += ":" + resource.getLocation().getPort();
+    protected URL getVersionedUrl() {
+        URL resourceUrl = resource.getLocation();
+        String protocol = uriPartToString(resourceUrl.getProtocol()) + "://";
+        String userInfo = uriPartToString(resourceUrl.getUserInfo());
+        if (!userInfo.isEmpty()) {
+            userInfo += "@";
         }
-        actualLocation += resource.getLocation().getPath();
-        if (resource.requestVersion != null
-                && resource.requestVersion.isVersionId()) {
-            actualLocation += "?version-id=" + resource.requestVersion;
+        String host = uriPartToString(resourceUrl.getHost());
+        String port;
+        if (resourceUrl.getPort() == -1) {
+            port = "";
+        } else {
+            port = ":" + String.valueOf(resourceUrl.getPort());
         }
-        URL versionedURL;
+        String path = uriPartToString(resourceUrl.getPath());
+        String query = uriPartToString(resourceUrl.getQuery());
+        if (!query.isEmpty()) {
+            query = "?" + query;
+        }
+        if (resource.requestVersion != null && resource.requestVersion.isVersionId()) {
+            if (!query.isEmpty()) {
+                query += "&";
+            } else {
+                query = "?" + query;
+            }
+            query += "version-id=" + resource.requestVersion;
+        }
         try {
-            versionedURL = new URL(actualLocation);
+            URL url = new URL(protocol + userInfo + host + port + path + query);
+            return url;
         } catch (MalformedURLException e) {
-            return resource.getLocation();
+            return resourceUrl;
         }
-        return versionedURL;
+    }
+
+    private static String uriPartToString(String part) {
+        if (part == null)
+            return "";
+        return part;
     }
 
 }

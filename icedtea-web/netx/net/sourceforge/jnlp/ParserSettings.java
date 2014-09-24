@@ -35,8 +35,10 @@ obligated to do so.  If you do not wish to do so, delete this
 exception statement from your version.
 */
 
-
 package net.sourceforge.jnlp;
+
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Contains settings to be used by the Parser while parsing JNLP files.
@@ -45,17 +47,65 @@ package net.sourceforge.jnlp;
  */
 public class ParserSettings {
 
+    private static ParserSettings globalParserSettings = new ParserSettings();
+
     private final boolean isStrict;
+    private final boolean extensionAllowed;
+    private final boolean malformedXmlAllowed;
 
+    /** Create a new ParserSettings with the defautl parser settings */
     public ParserSettings() {
-        isStrict = false;
+        this(false, true, true);
     }
 
-    public ParserSettings(boolean strict) {
-        isStrict = strict;
+    /** Create a new ParserSettings object */
+    public ParserSettings(boolean strict, boolean extensionAllowed, boolean malformedXmlAllowed) {
+        this.isStrict = strict;
+        this.extensionAllowed = extensionAllowed;
+        this.malformedXmlAllowed = malformedXmlAllowed;
     }
 
+    /** @return true if extensions to the spec are allowed */
+    public boolean isExtensionAllowed() {
+        return extensionAllowed;
+    }
+
+    /** @return true if parsing malformed xml is allowed */
+    public boolean isMalformedXmlAllowed() {
+        return malformedXmlAllowed;
+    }
+
+    /** @return true if strict parsing mode is to be used */
     public boolean isStrict() {
         return isStrict;
     }
+
+    /**
+     * Return the global parser settings in use.
+     */
+    public static ParserSettings getGlobalParserSettings() {
+        return globalParserSettings;
+    }
+
+    /**
+     * Set the global ParserSettings to match the given settings.
+     */
+    public static void setGlobalParserSettings(ParserSettings parserSettings) {
+        globalParserSettings = parserSettings;
+    }
+
+    /**
+     * Return the ParserSettings to be used according to arguments specified
+     * at boot on the command line. These settings are also stored so they
+     * can be retrieved at a later time.
+     */
+    public static ParserSettings setGlobalParserSettingsFromArgs(String[] cmdArgs) {
+        List<String> argList = Arrays.asList(cmdArgs);
+        boolean strict = argList.contains("-strict");
+        boolean malformedXmlAllowed = !argList.contains("-xml");
+
+        globalParserSettings = new ParserSettings(strict, true, malformedXmlAllowed);
+        return globalParserSettings;
+    }
+
 }

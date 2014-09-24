@@ -47,11 +47,6 @@ exception statement from your version. */
  * information, script execution and variable get/set
  */
 
-// Initialize static members used by the queue processing framework
-pthread_mutex_t message_queue_mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t syn_write_mutex = PTHREAD_MUTEX_INITIALIZER;
-std::vector< std::vector<std::string*>* >* message_queue = new std::vector< std::vector<std::string*>* >();
-
 /**
  * PluginRequestProcessor constructor.
  *
@@ -60,14 +55,13 @@ std::vector< std::vector<std::string*>* >* message_queue = new std::vector< std:
 
 PluginRequestProcessor::PluginRequestProcessor()
 {
-    this->pendingRequests = new std::map<pthread_t, uintmax_t>();
+    this->message_queue = new std::vector< std::vector<std::string*>* >();
 
     internal_req_ref_counter = 0;
 
-    pthread_mutex_init(&message_queue_mutex, NULL);
-    pthread_mutex_init(&syn_write_mutex, NULL);
-
-    pthread_cond_init(&cond_message_available, NULL);
+    pthread_mutex_init(&this->message_queue_mutex, NULL);
+    pthread_mutex_init(&this->syn_write_mutex, NULL);
+    pthread_cond_init(&this->cond_message_available, NULL);
 }
 
 /**
@@ -80,12 +74,11 @@ PluginRequestProcessor::~PluginRequestProcessor()
 {
     PLUGIN_DEBUG("PluginRequestProcessor::~PluginRequestProcessor\n");
 
-    if (pendingRequests)
-        delete pendingRequests;
+    if (message_queue)
+        delete message_queue;
 
     pthread_mutex_destroy(&message_queue_mutex);
     pthread_mutex_destroy(&syn_write_mutex);
-
     pthread_cond_destroy(&cond_message_available);
 }
 
@@ -142,10 +135,9 @@ PluginRequestProcessor::newMessageOnBus(const char* message)
             // Update queue synchronously
             pthread_mutex_lock(&message_queue_mutex);
             message_queue->push_back(message_parts);
+            pthread_cond_signal(&cond_message_available);
             pthread_mutex_unlock(&message_queue_mutex);
 
-            // Broadcast that a message is now available
-            pthread_cond_broadcast(&cond_message_available);
 
             return true;
         }
@@ -413,7 +405,7 @@ PluginRequestProcessor::setMember(std::vector<std::string*>* message_parts)
     member = (NPVariant*) (IcedTeaPluginUtilities::stringToJSID(*(message_parts->at(5))));
     propertyNameID = *(message_parts->at(6));
 
-    if (*(message_parts->at(7)) == "literalreturn")
+    if (*(message_parts->at(7)) == "literalreturn" || *(message_parts->at(7)) == "jsobject" )
     {
         value.append(*(message_parts->at(7)));
         value.append(" ");
@@ -440,7 +432,7 @@ PluginRequestProcessor::setMember(std::vector<std::string*>* message_parts)
         // the result we want is in result_string (assuming there was no error)
         if (java_result->error_occurred)
         {
-	    printf("Unable to get member name for setMember. Error occurred: %s\n", java_result->error_msg->c_str());
+	    PLUGIN_ERROR("Unable to get member name for setMember. Error occurred: %s\n", java_result->error_msg->c_str());
             //goto cleanup;
         }
 
@@ -471,7 +463,7 @@ PluginRequestProcessor::setMember(std::vector<std::string*>* message_parts)
  *
  * This is a static function, called in another thread. Since certain data
  * can only be requested from the main thread in Mozilla, this function
- * does whatever it can seperately, and then makes an internal request that
+ * does whatever it can separately, and then makes an internal request that
  * causes _getMember to do the rest of the work.
  *
  * @param message_parts The request message
@@ -521,7 +513,7 @@ PluginRequestProcessor::sendMember(std::vector<std::string*>* message_parts)
         // the result we want is in result_string (assuming there was no error)
         if (java_result->error_occurred)
         {
-	    printf("Unable to process getMember request. Error occurred: %s\n", java_result->error_msg->c_str());
+	    PLUGIN_ERROR("Unable to process getMember request. Error occurred: %s\n", java_result->error_msg->c_str());
             //goto cleanup;
         }
 
@@ -635,10 +627,13 @@ PluginRequestProcessor::loadURL(std::vector<std::string*>* message_parts)
 static void
 queue_cleanup(void* data)
 {
-
-    pthread_mutex_destroy((pthread_mutex_t*) data);
-
     PLUGIN_DEBUG("Queue processing stopped.\n");
+}
+
+static void
+queue_wait_cleanup(void* data)
+{
+    pthread_mutex_unlock((pthread_mutex_t*) data);
 }
 
 void*
@@ -650,18 +645,22 @@ queue_processor(void* data)
 #else
     PluginRequestProcessor* processor = (PluginRequestProcessor*) data;
 #endif
+    processor->queueProcessorThread();
+    return NULL;
+}
+
+void
+PluginRequestProcessor::queueProcessorThread()
+{
     std::vector<std::string*>* message_parts = NULL;
     std::string command;
-    pthread_mutex_t wait_mutex = PTHREAD_MUTEX_INITIALIZER;
 
     PLUGIN_DEBUG("Queue processor initialized. Queue = %p\n", message_queue);
-
-    pthread_mutex_init(&wait_mutex, NULL);
 
 #ifdef __OS2__
     queue_processor_data->stopRequested = false;
 #else
-    pthread_cleanup_push(queue_cleanup, (void*) &wait_mutex);
+    pthread_cleanup_push(queue_cleanup, NULL);
 #endif
 
     while (true)
@@ -680,45 +679,45 @@ queue_processor(void* data)
 
             if (command == "GetMember")
             {
-                processor->sendMember(message_parts);
+                sendMember(message_parts);
             } else if (command == "ToString")
             {
-                processor->sendString(message_parts);
+                sendString(message_parts);
             } else if (command == "SetMember")
             {
             	// write methods are synchronized
             	pthread_mutex_lock(&syn_write_mutex);
-                processor->setMember(message_parts);
+                setMember(message_parts);
                 pthread_mutex_unlock(&syn_write_mutex);
             } else if (command == "Call")
             {
                 // write methods are synchronized
                 pthread_mutex_lock(&syn_write_mutex);
-                processor->call(message_parts);
+                call(message_parts);
                 pthread_mutex_unlock(&syn_write_mutex);
             } else if (command == "Eval")
             {
                 // write methods are synchronized
                 pthread_mutex_lock(&syn_write_mutex);
-                processor->eval(message_parts);
+                eval(message_parts);
                 pthread_mutex_unlock(&syn_write_mutex);
             } else if (command == "GetSlot")
             {
                 // write methods are synchronized
                 pthread_mutex_lock(&syn_write_mutex);
-                processor->sendMember(message_parts);
+                sendMember(message_parts);
                 pthread_mutex_unlock(&syn_write_mutex);
             } else if (command == "SetSlot")
             {
                 // write methods are synchronized
                 pthread_mutex_lock(&syn_write_mutex);
-                processor->setMember(message_parts);
+                setMember(message_parts);
                 pthread_mutex_unlock(&syn_write_mutex);
             } else if (command == "LoadURL") // For instance X url <url> <target>
             {
                 // write methods are synchronized
                 pthread_mutex_lock(&syn_write_mutex);
-                processor->loadURL(message_parts);
+                loadURL(message_parts);
                 pthread_mutex_unlock(&syn_write_mutex);
             } else
             {
@@ -731,9 +730,18 @@ queue_processor(void* data)
 
         } else
         {
-	    pthread_mutex_lock(&wait_mutex);
-	    pthread_cond_wait(&cond_message_available, &wait_mutex);
-	    pthread_mutex_unlock(&wait_mutex);
+	    pthread_mutex_lock(&message_queue_mutex);
+            if (message_queue->size() == 0)
+            {
+#ifndef __OS2__            
+	        pthread_cleanup_push(queue_wait_cleanup, &message_queue_mutex);
+#endif
+	        pthread_cond_wait(&cond_message_available, &message_queue_mutex);
+#ifndef __OS2__
+	        pthread_cleanup_pop(0);
+#endif
+            }
+	    pthread_mutex_unlock(&message_queue_mutex);
         }
 
         message_parts = NULL;
@@ -747,7 +755,8 @@ queue_processor(void* data)
     }
 
 #ifdef __OS2__
-    queue_cleanup((void*) &wait_mutex);
+    queue_cleanup(NULL);
+    queue_wait_cleanup(&message_queue_mutex);
 #else
     pthread_cleanup_pop(1);
 #endif
@@ -780,7 +789,7 @@ _setMember(void* data)
     else
     	property_identifier = browser_functions.getstringidentifier(property_id->c_str());
 
-    PLUGIN_DEBUG("Setting %s on instance %p, object %p to value %s\n", browser_functions.utf8fromidentifier(property_identifier), instance, member, value->c_str());
+    PLUGIN_DEBUG("Setting %s on instance %p, object %p to value %s\n", IcedTeaPluginUtilities::NPIdentifierAsString(property_identifier).c_str(), instance, member, value->c_str());
 
     IcedTeaPluginUtilities::javaResultToNPVariant(instance, value, &value_variant);
 
@@ -800,6 +809,7 @@ _getMember(void* data)
     std::vector<void*> parameters = ((AsyncCallThreadData*) data)->parameters;
 
     instance = (NPP) parameters.at(0);
+
     parent_ptr = (NPObject*) parameters.at(1);
     std::string*  member_id = (std::string*) parameters.at(2);
     NPIdentifier member_identifier;
@@ -812,11 +822,11 @@ _getMember(void* data)
     	member_identifier = browser_functions.getstringidentifier(member_id->c_str());
 
     // Get the NPVariant corresponding to this member
-    PLUGIN_DEBUG("Looking for %p %p %p (%s)\n", instance, parent_ptr, member_identifier, browser_functions.utf8fromidentifier(member_identifier));
+    PLUGIN_DEBUG("Looking for %p %p %p (%s)\n", instance, parent_ptr, member_identifier, IcedTeaPluginUtilities::NPIdentifierAsString(member_identifier).c_str());
 
     if (!browser_functions.hasproperty(instance, parent_ptr, member_identifier))
     {
-        printf("%s not found!\n", browser_functions.utf8fromidentifier(member_identifier));
+        PLUGIN_ERROR("%s not found!\n", IcedTeaPluginUtilities::NPIdentifierAsString(member_identifier).c_str());
     }
     ((AsyncCallThreadData*) data)->call_successful = browser_functions.getproperty(instance, parent_ptr, member_identifier, member_ptr);
 
@@ -826,7 +836,9 @@ _getMember(void* data)
     {
         createJavaObjectFromVariant(instance, *member_ptr, &member_ptr_str);
         ((AsyncCallThreadData*) data)->result.append(member_ptr_str);
-
+    } else
+    {
+        ((AsyncCallThreadData*) data)->result.append("null");
     }
     ((AsyncCallThreadData*) data)->result_ready = true;
 
@@ -855,17 +867,10 @@ _eval(void* data)
     window_ptr = (NPObject*) call_data->at(1);
     script_str = (std::string*) call_data->at(2);
 
-#if MOZILLA_VERSION_COLLAPSED < 1090200
-    script.utf8characters = script_str->c_str();
-    script.utf8length = script_str->size();
-
-    PLUGIN_DEBUG("Evaluating: %s\n", script_str->c_str());
-#else
     script.UTF8Characters = script_str->c_str();
     script.UTF8Length = script_str->size();
 
     PLUGIN_DEBUG("Evaluating: %s\n", script_str->c_str());
-#endif
 
     ((AsyncCallThreadData*) data)->call_successful = browser_functions.evaluate(instance, window_ptr, &script, eval_variant);
     IcedTeaPluginUtilities::printNPVariant(*eval_variant);
@@ -979,6 +984,9 @@ _getString(void* data)
     if (((AsyncCallThreadData*) data)->call_successful)
     {
         createJavaObjectFromVariant(instance, tostring_result, &(((AsyncCallThreadData*) data)->result));
+    } else
+    {
+        ((AsyncCallThreadData*) data)->result.append("null");
     }
     ((AsyncCallThreadData*) data)->result_ready = true;
 

@@ -53,16 +53,17 @@ import java.util.Map.Entry;
 import net.sourceforge.jnlp.config.DeploymentConfiguration;
 import net.sourceforge.jnlp.runtime.JNLPRuntime;
 import net.sourceforge.jnlp.util.FileUtils;
+import net.sourceforge.jnlp.util.logging.OutputController;
 import net.sourceforge.jnlp.util.PropertiesFile;
 
 /**
  * This class helps maintain the ordering of most recently use items across
  * multiple jvm instances.
  * 
- * @author Andrew Su (asu@redhat.com, andrew.su@utoronto.ca)
+ * @author <a href="mailto:Andrew%20Su%20&lt;asu@redhat.com&gt;">Andrew Su (asu@redhat.com</a>, <a href="mailto:Andrew%20Su%20&lt;andrew.su@utoronto.ca&gt;">andrew.su@utoronto.ca)</a>
  * 
  */
-enum CacheLRUWrapper {
+public enum CacheLRUWrapper {
     INSTANCE;
 
     private int lockCount = 0;
@@ -72,24 +73,25 @@ enum CacheLRUWrapper {
 
     /* location of cache directory */
     private final String setCachePath = JNLPRuntime.getConfiguration().getProperty(DeploymentConfiguration.KEY_USER_CACHE_DIR);
-    private final String cacheDir = new File(setCachePath != null ? setCachePath : System.getProperty("java.io.tmpdir")).getPath();
+    String cacheDir = new File(setCachePath != null ? setCachePath : System.getProperty("java.io.tmpdir")).getPath();
 
     /*
      * back-end of how LRU is implemented This file is to keep track of the most
      * recently used items. The items are to be kept with key = (current time
      * accessed) followed by folder of item. value = path to file.
      */
-    private PropertiesFile cacheOrder = new PropertiesFile(
-            new File(cacheDir + File.separator + "recently_used"));
+    PropertiesFile cacheOrder = new PropertiesFile(
+            new File(cacheDir + File.separator + CACHE_INDEX_FILE_NAME));
+    public static final String CACHE_INDEX_FILE_NAME = "recently_used";
 
-    private CacheLRUWrapper(){
+    private CacheLRUWrapper() {
         File f = cacheOrder.getStoreFile();
         if (!f.exists()) {
             try {
                 FileUtils.createParentDir(f);
                 FileUtils.createRestrictedFile(f, true);
             } catch (IOException e) {
-                e.printStackTrace();
+                OutputController.getLogger().log(OutputController.Level.ERROR_ALL, e);
             }
         }
     }
@@ -97,8 +99,7 @@ enum CacheLRUWrapper {
     /**
      * Returns an instance of the policy.
      * 
-     * @param propertiesFile
-     * @return
+     * @return an instance of the policy
      */
     public static CacheLRUWrapper getInstance() {
         return INSTANCE;
@@ -113,12 +114,10 @@ enum CacheLRUWrapper {
          * clean up possibly corrupted entries
          */
         if (loaded && checkData()) {
-            if (JNLPRuntime.isDebug()) {
-                new LruCacheException().printStackTrace();
-            }
-            System.out.println(R("CFakeCache"));
+            OutputController.getLogger().log(new LruCacheException());
+            OutputController.getLogger().log(OutputController.Level.MESSAGE_ALL, R("CFakeCache"));
             store();
-            System.out.println(R("CFakedCache"));
+            OutputController.getLogger().log(OutputController.Level.MESSAGE_ALL, R("CFakedCache"));
         }
     }
 
@@ -221,8 +220,11 @@ enum CacheLRUWrapper {
      * 
      * @return List of Strings sorted by ascending order.
      */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    //although Properties are pretending to be <object,Object> they are always <String,String>
+    //bug in jdk?
     public synchronized List<Entry<String, String>> getLRUSortedEntries() {
-        ArrayList<Entry<String, String>> entries = new ArrayList(cacheOrder.entrySet());
+        List<Entry<String, String>> entries = new ArrayList(cacheOrder.entrySet());
         // sort by keys in descending order.
         Collections.sort(entries, new Comparator<Entry<String, String>>() {
             @Override
@@ -245,7 +247,7 @@ enum CacheLRUWrapper {
             fl = FileUtils.getFileLock(cacheOrder.getStoreFile().getPath(), false, true);
         } catch (OverlappingFileLockException e) { // if overlap we just increase the count.
         } catch (Exception e) { // We didn't get a lock..
-            e.printStackTrace();
+            OutputController.getLogger().log(e);
         }
         if (fl != null) lockCount++;
     }
@@ -263,7 +265,7 @@ enum CacheLRUWrapper {
                     fl = null;
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+                OutputController.getLogger().log(e);
             }
         }
     }

@@ -80,6 +80,7 @@ import net.sourceforge.jnlp.security.SecurityUtil;
 import net.sourceforge.jnlp.security.SecurityDialog;
 import net.sourceforge.jnlp.security.KeyStores.Level;
 import net.sourceforge.jnlp.util.FileUtils;
+import net.sourceforge.jnlp.util.logging.OutputController;
 
 public class CertificatePane extends JPanel {
 
@@ -150,12 +151,12 @@ public class CertificatePane extends JPanel {
         try {
             keyStore = KeyStores.getKeyStore(currentKeyStoreLevel, currentKeyStoreType);
         } catch (Exception e) {
-            e.printStackTrace();
+            OutputController.getLogger().log(OutputController.Level.ERROR_ALL, e);
         }
     }
 
     //create the GUI here.
-    protected void addComponents() {
+    private void addComponents() {
 
         JPanel main = new JPanel(new BorderLayout());
 
@@ -263,8 +264,9 @@ public class CertificatePane extends JPanel {
             aliases = keyStore.aliases();
             while (aliases.hasMoreElements()) {
                 Certificate c = keyStore.getCertificate(aliases.nextElement());
-                if (c instanceof X509Certificate)
+                if (c instanceof X509Certificate) {
                     certs.add((X509Certificate) c);
+                }
             }
 
             //get the publisher and root information
@@ -278,7 +280,7 @@ public class CertificatePane extends JPanel {
             }
         } catch (Exception e) {
             //TODO
-            e.printStackTrace();
+           OutputController.getLogger().log(OutputController.Level.ERROR_ALL, e);
         }
     }
 
@@ -309,10 +311,12 @@ public class CertificatePane extends JPanel {
                                 new Object[]{label, jpf},  R("CVPasswordTitle"),
                                 JOptionPane.OK_CANCEL_OPTION,
                                 JOptionPane.INFORMATION_MESSAGE);
-        if (result == JOptionPane.OK_OPTION)
+        if (result == JOptionPane.OK_OPTION) {
             return jpf.getPassword();
-        else
+        }
+        else {
             return null;
+        }
     }
 
     /** Allows storing KeyStores.Types in a JComponent */
@@ -327,6 +331,7 @@ public class CertificatePane extends JPanel {
             return type;
         }
 
+        @Override
         public String toString() {
             return KeyStores.toDisplayableString(null, type);
         }
@@ -335,6 +340,7 @@ public class CertificatePane extends JPanel {
     /** Invoked when a user selects a different certificate type */
     private class CertificateTypeListener implements ActionListener {
         @Override
+        @SuppressWarnings("unchecked")//this is just certificateTypeCombo, nothing else
         public void actionPerformed(ActionEvent e) {
             JComboBox source = (JComboBox) e.getSource();
             CertificateType type = (CertificateType) source.getSelectedItem();
@@ -371,6 +377,7 @@ public class CertificatePane extends JPanel {
     }
 
     private class ImportButtonListener implements ActionListener {
+        @Override
         public void actionPerformed(ActionEvent e) {
 
             JFileChooser chooser = new JFileChooser();
@@ -404,16 +411,17 @@ public class CertificatePane extends JPanel {
                     repopulateTables();
                 } catch (Exception ex) {
                     // TODO: handle exception
-                    ex.printStackTrace();
+                    OutputController.getLogger().log(OutputController.Level.ERROR_ALL, ex);
                 }
             }
         }
     }
 
     private class ExportButtonListener implements ActionListener {
+        @Override
         public void actionPerformed(ActionEvent e) {
 
-            JTable table = null;
+            final JTable table ;
             if (currentKeyStoreLevel == Level.USER) {
                 table = userTable;
             } else {
@@ -434,8 +442,9 @@ public class CertificatePane extends JPanel {
                         if (alias != null) {
                             if (currentKeyStoreType == KeyStores.Type.CLIENT_CERTS) {
                                 char[] password = getPassword(R("CVExportPasswordMessage"));
-                                if (password != null)
+                                if (password != null) {
                                     CertificateUtils.dumpPKCS12(alias, chooser.getSelectedFile(), keyStore, password);
+                                }
                             } else {
                                 Certificate c = keyStore.getCertificate(alias);
                                 PrintStream ps = new PrintStream(chooser.getSelectedFile().getAbsolutePath());
@@ -446,8 +455,7 @@ public class CertificatePane extends JPanel {
                     }
                 }
             } catch (Exception ex) {
-                // TODO
-                ex.printStackTrace();
+                OutputController.getLogger().log(OutputController.Level.ERROR_ALL, ex);
             }
         }
     }
@@ -457,9 +465,10 @@ public class CertificatePane extends JPanel {
         /**
          * Removes a certificate from the keyStore and writes changes to disk.
          */
+        @Override
         public void actionPerformed(ActionEvent e) {
 
-            JTable table = null;
+            final JTable table;
             if (currentKeyStoreLevel == Level.USER) {
                 table = userTable;
             } else {
@@ -491,8 +500,7 @@ public class CertificatePane extends JPanel {
                     repopulateTables();
                 }
             } catch (Exception ex) {
-                // TODO
-                ex.printStackTrace();
+                OutputController.getLogger().log(OutputController.Level.ERROR_ALL, ex);
             }
 
         }
@@ -503,9 +511,10 @@ public class CertificatePane extends JPanel {
         /**
          * Shows the details of a trusted certificate.
          */
+        @Override
         public void actionPerformed(ActionEvent e) {
 
-            JTable table = null;
+            final JTable table;
             if (currentKeyStoreLevel == Level.USER) {
                 table = userTable;
             } else {

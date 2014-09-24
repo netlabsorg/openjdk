@@ -45,7 +45,12 @@ exception statement from your version. */
 
 #include <pthread.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#include <syslog.h>
+#include <sys/time.h>
 
+#include <fcntl.h>
 #include <cstring>
 #include <iostream>
 #include <list>
@@ -54,33 +59,165 @@ exception statement from your version. */
 #include <sstream>
 #include <string>
 #include <vector>
+#include <queue>
 
 #include <npapi.h>
-
-#if MOZILLA_VERSION_COLLAPSED < 1090100
-#include <npupp.h>
-#else
-#include <npapi.h>
+#include <glib.h>
 #include <npruntime.h>
-#endif
 
-extern int plugin_debug; // defined in IcedTeaNPPlugin.cc
+#include "IcedTeaParseProperties.h"
 
-#define PLUGIN_DEBUG(...) \
-  do                                                          \
-  {                                                           \
-    if (plugin_debug)                                         \
-    {                                                         \
-      fprintf (stderr, "ITNPP Thread# %ld: ", pthread_self()); \
-      fprintf (stderr, __VA_ARGS__);                          \
-    }                                                         \
+void *flush_pre_init_messages(void* data);
+void push_pre_init_messages(char * ldm);
+void reset_pre_init_messages();
+
+// debugging macro.
+#define initialize_debug()                                                    \
+  do                                                                          \
+  {                                                                           \
+    if (!debug_initiated) {                                                   \
+      debug_initiated = true;                                                 \
+      plugin_debug = getenv ("ICEDTEAPLUGIN_DEBUG") != NULL || is_debug_on(); \
+      plugin_debug_headers = is_debug_header_on();                            \
+      plugin_debug_to_file = is_logging_to_file();                            \
+      plugin_debug_to_streams = is_logging_to_stds();                         \
+      plugin_debug_to_system = is_logging_to_system();                        \
+      plugin_debug_to_console = is_java_console_enabled();                    \
+      if (plugin_debug_to_file) {                                             \
+           IcedTeaPluginUtilities::initFileLog();                             \
+      }                                                                       \
+      if (plugin_debug_to_console) {                                          \
+          /*initialisation done during jvm startup*/                          \
+      }                                                                       \
+      IcedTeaPluginUtilities::printDebugStatus();                             \
+    }                                                                         \
+  } while (0) 
+
+
+#define  HEADER_SIZE  500
+#define  BODY_SIZE  500
+#define  MESSAGE_SIZE  HEADER_SIZE + BODY_SIZE 
+#define  LDEBUG_MESSAGE_SIZE MESSAGE_SIZE+50
+
+//header is destination char array
+#define CREATE_HEADER(ldebug_header)                   \
+  do                                                   \
+  {                                                    \
+    char times[100];                                   \
+    time_t t = time(NULL);                             \
+    struct tm  p;                                      \
+    localtime_r(&t, &p);                               \
+    strftime(times, 100, "%a %b %d %H:%M:%S %Z %Y", &p);\
+    const char *userNameforDebug = (getenv("USERNAME") == NULL) ? "unknown user" : getenv("USERNAME");  \
+    /*this message is parsed in JavaConsole*/          \
+    snprintf(ldebug_header, HEADER_SIZE, "[%s][ITW-C-PLUGIN][MESSAGE_DEBUG][%s][%s:%d] ITNPP Thread# %ld, gthread %p: ",        \
+    userNameforDebug, times, __FILE__, __LINE__,  pthread_self(), g_thread_self ());                        \
   } while (0)
+  
+
+#define PLUGIN_DEBUG(...)              \
+  do                                   \
+  {                                    \
+    initialize_debug();                \
+    if (plugin_debug)  {               \
+      char ldebug_header[HEADER_SIZE]; \
+      char ldebug_body[BODY_SIZE];     \
+      char ldebug_message[MESSAGE_SIZE];\
+      if (plugin_debug_headers) {      \
+        CREATE_HEADER(ldebug_header);  \
+      } else {                         \
+        sprintf(ldebug_header,"");     \
+      }                                \
+      snprintf(ldebug_body, BODY_SIZE,  __VA_ARGS__);                               \
+      if (plugin_debug_to_streams) {   \
+        snprintf(ldebug_message, MESSAGE_SIZE, "%s%s", ldebug_header, ldebug_body); \
+        fprintf  (stdout, "%s", ldebug_message);\
+      }                                \
+      if (plugin_debug_to_file) {      \
+        snprintf(ldebug_message, MESSAGE_SIZE, "%s%s", ldebug_header, ldebug_body);   \
+        fprintf (plugin_file_log, "%s", ldebug_message);   \
+        fflush(plugin_file_log);       \
+      }                                \
+      if (plugin_debug_to_console) {   \
+        /*headers are always going to console*/            \
+        if (!plugin_debug_headers){      \
+          CREATE_HEADER(ldebug_header);  \
+        }                                \
+        snprintf(ldebug_message, MESSAGE_SIZE, "%s%s", ldebug_header, ldebug_body); \
+        char ldebug_channel_message[LDEBUG_MESSAGE_SIZE];                               \
+        struct timeval current_time;   \
+        gettimeofday (&current_time, NULL);\
+        if (jvm_up) {                  \
+          snprintf(ldebug_channel_message, LDEBUG_MESSAGE_SIZE, "%s %ld %s", "plugindebug", current_time.tv_sec*1000000L+current_time.tv_usec, ldebug_message);   \
+          push_pre_init_messages(ldebug_channel_message);                           \
+        } else {                       \
+          snprintf(ldebug_channel_message, LDEBUG_MESSAGE_SIZE, "%s %ld %s", "preinit_plugindebug", current_time.tv_sec*1000000L+current_time.tv_usec, ldebug_message);   \
+          push_pre_init_messages(ldebug_channel_message);                            \
+        }                              \
+      }                                \
+     if (plugin_debug_to_system){      \
+     /*no debug messages to systemlog*/\
+     }                                 \
+    }                                  \
+  } while (0)
+
+
+#define PLUGIN_ERROR(...)              \
+  do                                   \
+  {                                    \
+    initialize_debug();                \
+    char ldebug_header[HEADER_SIZE];   \
+    char ldebug_body[BODY_SIZE];       \
+    char ldebug_message[MESSAGE_SIZE]; \
+    if (plugin_debug_headers) {        \
+      CREATE_HEADER(ldebug_header);    \
+    } else {                           \
+      sprintf(ldebug_header,"");       \
+    }                                  \
+    snprintf(ldebug_body, BODY_SIZE,  __VA_ARGS__);   \
+    if (plugin_debug_to_streams) {     \
+      snprintf(ldebug_message, MESSAGE_SIZE, "%s%s", ldebug_header, ldebug_body); \
+      fprintf  (stderr, "%s", ldebug_message);                                    \
+    }                                  \
+    if (plugin_debug_to_file) {        \
+      snprintf(ldebug_message, MESSAGE_SIZE, "%s%s", ldebug_header, ldebug_body); \
+      fprintf (plugin_file_log, "%s", ldebug_message);   \
+      fflush(plugin_file_log);         \
+    }                                  \
+    if (plugin_debug_to_console) {     \
+      /*headers are always going to console*/            \
+      if (!plugin_debug_headers){            \
+        CREATE_HEADER(ldebug_header);  \
+      }                                \
+      snprintf(ldebug_message, MESSAGE_SIZE, "%s%s", ldebug_header, ldebug_body); \
+      char ldebug_channel_message[LDEBUG_MESSAGE_SIZE];                               \
+      struct timeval current_time;     \
+      gettimeofday (&current_time, NULL);\
+        if (jvm_up) {                  \
+          snprintf(ldebug_channel_message, LDEBUG_MESSAGE_SIZE, "%s %ld %s", "pluginerror", current_time.tv_sec*1000000L+current_time.tv_usec, ldebug_message);   \
+          push_pre_init_messages(ldebug_channel_message);                         \
+        } else {                       \
+          snprintf(ldebug_channel_message, LDEBUG_MESSAGE_SIZE, "%s %ld %s", "preinit_pluginerror", current_time.tv_sec*1000000L+current_time.tv_usec, ldebug_message);   \
+          push_pre_init_messages(ldebug_channel_message);                         \
+        }                              \
+    }                                  \
+    if (plugin_debug_to_system){      \
+      /*java can not have prefix*/    \
+      openlog("", LOG_NDELAY, LOG_USER);\
+      syslog(LOG_ERR, "%s", "IcedTea-Web c-plugin - for more info see itweb-settings debug options or console. See http://icedtea.classpath.org/wiki/IcedTea-Web#Filing_bugs for help.");\
+      syslog(LOG_ERR, "%s", "IcedTea-Web c-plugin error manual log:");\
+      /*no headers to syslog*/        \
+      syslog(LOG_ERR, "%s", ldebug_body);   \
+      closelog();                     \
+    }                                 \
+   } while (0)
+
 
 #define CHECK_JAVA_RESULT(result_data)                               \
 {                                                                    \
     if (((JavaResultData*) result_data)->error_occurred)             \
     {                                                                \
-        printf("Error: Error occurred on Java side: %s.\n",          \
+        PLUGIN_ERROR("Error: Error occurred on Java side: %s.\n",    \
                ((JavaResultData*) result_data)->error_msg->c_str()); \
         return;                                                      \
     }                                                                \
@@ -212,6 +349,15 @@ class IcedTeaPluginUtilities
     	/* Copies a variant data type into a C++ string */
     	static std::string NPVariantAsString(NPVariant variant);
 
+        /* This must be freed with browserfunctions.memfree */
+        static NPString NPStringCopy(const std::string& result);
+
+        /* This must be freed with browserfunctions.releasevariantvalue */
+        static NPVariant NPVariantStringCopy(const std::string& result);
+
+        /* Returns an std::string represented by the given identifier. */
+        static std::string NPIdentifierAsString(NPIdentifier id);
+
     	/* Frees the given vector and the strings that its contents point to */
     	static void freeStringPtrVector(std::vector<std::string*>* v);
 
@@ -243,7 +389,7 @@ class IcedTeaPluginUtilities
 
     	static void printNPVariant(NPVariant variant);
 
-    	static void NPVariantToString(NPVariant variant, std::string* result);
+        static void NPVariantToString(NPVariant variant, std::string* result);
 
         static bool javaResultToNPVariant(NPP instance,
                                           std::string* java_result,
@@ -253,9 +399,12 @@ class IcedTeaPluginUtilities
 
     	static void storeInstanceID(void* member_ptr, NPP instance);
 
-    	static void	removeInstanceID(void* member_ptr);
+    	static void removeInstanceID(void* member_ptr);
 
-        static NPP getInstanceFromMemberPtr(void* member_ptr);
+    	/* Clear object_map. Useful for tests. */
+    	static void clearInstanceIDs();
+
+    	static NPP getInstanceFromMemberPtr(void* member_ptr);
 
     	static NPObject* getNPObjectFromJavaKey(std::string key);
 
@@ -263,14 +412,30 @@ class IcedTeaPluginUtilities
 
     	static void removeObjectMapping(std::string key);
 
+    	/* Clear object_map. Useful for tests. */
+    	static void clearObjectMapping();
+
     	static void invalidateInstance(NPP instance);
 
     	static bool isObjectJSArray(NPP instance, NPObject* object);
 
     	static void decodeURL(const char* url, char** decoded_url);
 
+    	/* Returns a vector of gchar* pointing to the elements of the vector string passed in*/
+    	static std::vector<gchar*> vectorStringToVectorGchar(const std::vector<std::string>* stringVec);
+
     	/* Posts call in async queue and waits till execution completes */
     	static void callAndWaitForResult(NPP instance, void (*func) (void *), AsyncCallThreadData* data);
+
+        /*cutting whitespaces from end and start of string*/
+        static void trim(std::string& str);
+        static bool file_exists(std::string filename);
+        //file-loggers helpers
+        static std::string generateLogFileName();
+        static void initFileLog();
+        static void printDebugStatus();
+        static std::string getTmpPath();
+        static std::string getRuntimePath();
 };
 
 /*
@@ -336,5 +501,7 @@ class MessageBus
            after this function returns) */
         void post(const char* message);
 };
+
+
 
 #endif // __ICEDTEAPLUGINUTILS_H__

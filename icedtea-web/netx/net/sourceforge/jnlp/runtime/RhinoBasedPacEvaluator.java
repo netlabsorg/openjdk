@@ -48,6 +48,8 @@ import java.security.AccessController;
 import java.security.Permissions;
 import java.security.PrivilegedAction;
 import java.security.ProtectionDomain;
+import java.util.PropertyPermission;
+import net.sourceforge.jnlp.util.logging.OutputController;
 
 import net.sourceforge.jnlp.util.TimedHashMap;
 
@@ -59,7 +61,7 @@ import org.mozilla.javascript.Scriptable;
  * Represents a Proxy Auto Config file. This object can be used to evaluate the
  * proxy file to find the proxy for a given url.
  *
- * @see http://en.wikipedia.org/wiki/Proxy_auto-config#The_PAC_file
+ * @see <a href="http://en.wikipedia.org/wiki/Proxy_auto-config#The_PAC_file">The PAC File</a>
  */
 public class RhinoBasedPacEvaluator implements PacEvaluator {
 
@@ -74,9 +76,7 @@ public class RhinoBasedPacEvaluator implements PacEvaluator {
      * @param pacUrl the url of the PAC file to use
      */
     public RhinoBasedPacEvaluator(URL pacUrl) {
-        if (JNLPRuntime.isDebug()) {
-            System.err.println("Using the Rhino based PAC evaluator for url " + pacUrl);
-        }
+        OutputController.getLogger().log(OutputController.Level.ERROR_DEBUG, "Using the Rhino based PAC evaluator for url " + pacUrl);
         pacHelperFunctionContents = getHelperFunctionContents();
         this.pacUrl = pacUrl;
         pacContents = getPacContents(pacUrl);
@@ -118,15 +118,21 @@ public class RhinoBasedPacEvaluator implements PacEvaluator {
      */
     private String getProxiesWithoutCaching(URL url) {
         if (pacHelperFunctionContents == null) {
-            System.err.println("Error loading pac functions");
+            OutputController.getLogger().log(OutputController.Level.ERROR_ALL, "Error loading pac functions");
             return "DIRECT";
         }
 
         EvaluatePacAction evaluatePacAction = new EvaluatePacAction(pacContents, pacUrl.toString(),
                 pacHelperFunctionContents, url);
+
+        // Purposefully giving only these permissions rather than using java.policy. The "evaluatePacAction"
+        // isn't supposed to do very much and so doesn't require all the default permissions given by
+        // java.policy
         Permissions p = new Permissions();
         p.add(new RuntimePermission("accessClassInPackage.org.mozilla.javascript"));
         p.add(new SocketPermission("*", "resolve"));
+        p.add(new PropertyPermission("java.vm.name", "read"));
+
         ProtectionDomain pd = new ProtectionDomain(null, p);
         AccessControlContext context = new AccessControlContext(new ProtectionDomain[] { pd });
 
@@ -144,7 +150,7 @@ public class RhinoBasedPacEvaluator implements PacEvaluator {
             BufferedReader pacReader = new BufferedReader(new InputStreamReader(pacUrl.openStream()));
             try {
                 while ((line = pacReader.readLine()) != null) {
-                    // System.out.println(line);
+                    // OutputController.getLogger().log(OutputController.Level.MESSAGE_ALL, line);
                     contents = contents.append(line).append("\n");
                 }
             } finally {
@@ -174,14 +180,14 @@ public class RhinoBasedPacEvaluator implements PacEvaluator {
             try {
                 contents = new StringBuilder();
                 while ((line = pacFuncsReader.readLine()) != null) {
-                    // System.out.println(line);
+                    // OutputController.getLogger().log(OutputController.Level.MESSAGE_ALL,line);
                     contents = contents.append(line).append("\n");
                 }
             } finally {
                 pacFuncsReader.close();
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            OutputController.getLogger().log(OutputController.Level.ERROR_ALL, e);
             contents = null;
         }
 
@@ -242,7 +248,7 @@ public class RhinoBasedPacEvaluator implements PacEvaluator {
 
                 Object functionObj = scope.get("FindProxyForURL", scope);
                 if (!(functionObj instanceof Function)) {
-                    System.err.println("FindProxyForURL not found");
+                    OutputController.getLogger().log(OutputController.Level.ERROR_ALL, "FindProxyForURL not found");
                     return null;
                 } else {
                     Function findProxyFunction = (Function) functionObj;
@@ -252,7 +258,7 @@ public class RhinoBasedPacEvaluator implements PacEvaluator {
                     return (String) result;
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                OutputController.getLogger().log(OutputController.Level.ERROR_ALL, e);
                 return "DIRECT";
             } finally {
                 Context.exit();

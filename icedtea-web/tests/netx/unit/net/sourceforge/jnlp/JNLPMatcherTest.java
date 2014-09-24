@@ -71,7 +71,7 @@ public class JNLPMatcherTest {
             "Testing application with a complete different JNLP application file",
             "Testing by calling JNLPMatcher.match() multiple times. Checking to see if the returns value is consistent" };
 
-    final ClassLoader cl = JNLPMatcherTest.class.getClassLoader();
+    final ClassLoader cl = ClassLoader.getSystemClassLoader();
 
     private InputStreamReader getLaunchReader() {
         InputStream launchStream = cl
@@ -466,7 +466,7 @@ public class JNLPMatcherTest {
         launchReader.close();
     }
 
-    @Test (timeout=1000 /*ms*/)
+    @Test (timeout=5000 /*ms*/)
     public void testIsMatchDoesNotHangOnLargeData() throws JNLPMatcherException {
         /* construct an alphabet containing characters 'a' to 'z' */
         final int ALPHABET_SIZE = 26;
