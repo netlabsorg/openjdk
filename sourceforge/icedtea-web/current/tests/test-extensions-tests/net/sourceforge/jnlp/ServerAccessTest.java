@@ -39,6 +39,7 @@ package net.sourceforge.jnlp;
 import java.io.File;
 import java.io.FileInputStream;
 import java.net.URL;
+
 import org.junit.Assert;
 import org.junit.Test;
 

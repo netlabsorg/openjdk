@@ -1,5 +1,5 @@
 /*
- * Copyright 2007 Red Hat, Inc.
+ * Copyright 2012 Red Hat, Inc.
  * This file is part of IcedTea, http://icedtea.classpath.org
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -22,32 +22,34 @@
 
 package net.sourceforge.jnlp;
 
-import net.sourceforge.jnlp.AppletLog;
 import net.sourceforge.jnlp.runtime.AppletInstance;
 import net.sourceforge.jnlp.runtime.JNLPRuntime;
 
 import java.net.URL;
 import java.util.HashMap;
-import java.util.Hashtable;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import net.sourceforge.jnlp.splashscreen.SplashController;
+import net.sourceforge.jnlp.splashscreen.SplashPanel;
+import net.sourceforge.jnlp.splashscreen.SplashUtils;
+import net.sourceforge.jnlp.util.logging.OutputController;
 
-import sun.applet.AppletViewerPanel;
+import sun.applet.AppletViewerPanelAccess;
 import sun.awt.SunToolkit;
 
 /**
  * This panel calls into netx to run an applet, and pipes the display
- * into a panel from gcjwebplugin.
+ * into a panel from the icedtea-web browser plugin.
  *
- * @author      Francis Kung <fkung@redhat.com>
+ * @author      Francis Kung &lt;fkung@redhat.com&gt;
  */
-public class NetxPanel extends AppletViewerPanel {
+public class NetxPanel extends AppletViewerPanelAccess implements SplashController {
+    private final PluginParameters parameters;
     private PluginBridge bridge = null;
-    private boolean exitOnFailure = true;
     private AppletInstance appInst = null;
-    private boolean appletAlive;
-    private final String uKey;
+    private SplashController splashController;
+    private volatile boolean initialized;
 
     // We use this so that we can create exactly one thread group
     // for all panels with the same uKey.
@@ -65,53 +67,19 @@ public class NetxPanel extends AppletViewerPanel {
     private static final ConcurrentMap<String, Boolean> appContextCreated =
         new ConcurrentHashMap<String, Boolean>();
 
-    public NetxPanel(URL documentURL, Hashtable<String, String> atts) {
-        super(documentURL, atts);
+    public NetxPanel(URL documentURL, PluginParameters params) {
+        super(documentURL, params.getUnderlyingHashtable());
 
-        /* According to http://download.oracle.com/javase/6/docs/technotes/guides/deployment/deployment-guide/applet-compatibility.html, 
-         * classloaders are shared iff these properties match:
-         * codebase, cache_archive, java_archive, archive
-         * 
-         * To achieve this, we create the uniquekey based on those 4 values,
-         * always in the same order. The initial "<NAME>=" parts ensure a 
-         * bad tag cannot trick the loader into getting shared with another.
-         */
+        this.parameters = params;
+        this.initialized = false;
 
-        // Firefox sometimes skips the codebase if it is default  -- ".", 
-        // so set it that way if absent
-        String codebaseAttr =      atts.get("codebase") != null ?
-                                   atts.get("codebase") : ".";
-
-        String cache_archiveAttr = atts.get("cache_archive") != null ? 
-                                   atts.get("cache_archive") : "";
-
-        String java_archiveAttr =  atts.get("java_archive") != null ? 
-                                   atts.get("java_archive") : "";
-
-        String archiveAttr =       atts.get("archive") != null ? 
-                                   atts.get("archive") : "";
-
-        this.uKey = "codebase=" + codebaseAttr +
-                    "cache_archive=" + cache_archiveAttr + 
-                    "java_archive=" + java_archiveAttr + 
-                    "archive=" +  archiveAttr;
-
-        // when this was being done (incorrectly) in Launcher, the call was
-        // new AppThreadGroup(mainGroup, file.getTitle());
+        String uniqueKey = params.getUniqueKey(getCodeBase());
         synchronized(TGMapMutex) {
-            if (!uKeyToTG.containsKey(this.uKey)) {
-                ThreadGroup tg = new ThreadGroup(Launcher.mainGroup, this.documentURL.toString());
-                uKeyToTG.put(this.uKey, tg);
+            if (!uKeyToTG.containsKey(uniqueKey)) {
+                ThreadGroup tg = new ThreadGroup(Launcher.mainGroup, this.getDocumentURL().toString());
+                uKeyToTG.put(uniqueKey, tg);
             }
         }
-    }
-
-    // overloaded constructor, called when initialized via plugin
-    public NetxPanel(URL documentURL, Hashtable<String, String> atts,
-                     boolean exitOnFailure) {
-        this(documentURL, atts);
-        this.exitOnFailure = exitOnFailure;
-        this.appletAlive = true;
     }
 
     @Override
@@ -120,62 +88,53 @@ public class NetxPanel extends AppletViewerPanel {
          * Log any exceptions thrown while loading, initializing, starting,
          * and stopping the applet. 
          */
-        AppletLog.log(t);
+        OutputController.getLogger().log(OutputController.Level.MESSAGE_ALL, t); //new logger
         super.showAppletException(t);
     }
 
     //Overriding to use Netx classloader. You might need to relax visibility
     //in sun.applet.AppletPanel for runLoader().
-    protected void runLoader() {
+    @Override
+    protected void ourRunLoader() {
 
         try {
-            bridge = new PluginBridge(baseURL,
+            bridge = new PluginBridge(getBaseURL(),
                                 getDocumentBase(),
                                 getJarFiles(),
                                 getCode(),
                                 getWidth(),
                                 getHeight(),
-                                atts, uKey);
+                                parameters);
 
             doInit = true;
             dispatchAppletEvent(APPLET_LOADING, null);
             status = APPLET_LOAD;
 
-            Launcher l = new Launcher(exitOnFailure);
+            Launcher l = new Launcher(false);
 
-            try {
-                appInst = (AppletInstance) l.launch(bridge, this);
-            } catch (LaunchException e) {
-                // Assume user has indicated he does not trust the
-                // applet.
-                if (exitOnFailure)
-                    System.exit(1);
-            }
-            applet = appInst.getApplet();
+            // May throw LaunchException:
+            appInst = (AppletInstance) l.launch(bridge, this);
+            setApplet(appInst.getApplet());
 
-            //On the other hand, if you create an applet this way, it'll work
-            //fine. Note that you might to open visibility in sun.applet.AppletPanel
-            //for this to work (the loader field, and getClassLoader).
-            //loader = getClassLoader(getCodeBase(), getClassLoaderCacheKey());
-            //applet = createApplet(loader);
-
-            // This shows that when using NetX's JNLPClassLoader, keyboard input
-            // won't make it to the applet, whereas using sun.applet.AppletClassLoader
-            // works just fine.
-
-            dispatchAppletEvent(APPLET_LOADING_COMPLETED, null);
-
-            if (applet != null) {
+            if (getApplet() != null) {
                 // Stick it in the frame
-                applet.setStub(this);
-                applet.setVisible(false);
-                add("Center", applet);
+                getApplet().setStub(this);
+                getApplet().setVisible(false);
+                add("Center", getApplet());
                 showAppletStatus("loaded");
                 validate();
             }
         } catch (Exception e) {
-            this.appletAlive = false;
-            e.printStackTrace();
+            status = APPLET_ERROR;
+            OutputController.getLogger().log(OutputController.Level.ERROR_ALL, e);
+            replaceSplash(SplashUtils.getErrorSplashScreen(getWidth(), getHeight(), e));
+        } finally {
+            // PR1157: This needs to occur even in the case of an exception
+            // so that the applet's event listeners are signaled.
+            // Once PluginAppletViewer.AppletEventListener is signaled PluginAppletViewer can properly stop waiting
+            // in PluginAppletViewer.waitForAppletInit
+            this.initialized = true;
+            dispatchAppletEvent(APPLET_LOADING_COMPLETED, null);
         }
     }
 
@@ -184,41 +143,39 @@ public class NetxPanel extends AppletViewerPanel {
      * the applet
      */
     // Reminder: Relax visibility in sun.applet.AppletPanel
+    @Override
     protected synchronized void createAppletThread() {
         // initialize JNLPRuntime in the main threadgroup
         synchronized (JNLPRuntime.initMutex) {
             //The custom NetX Policy and SecurityManager are set here.
             if (!JNLPRuntime.isInitialized()) {
-                if (JNLPRuntime.isDebug())
-                    System.out.println("initializing JNLPRuntime...");
+                OutputController.getLogger().log("initializing JNLPRuntime...");
 
                 JNLPRuntime.initialize(false);
             } else {
-                if (JNLPRuntime.isDebug())
-                    System.out.println("JNLPRuntime already initialized");
+                OutputController.getLogger().log("JNLPRuntime already initialized");
             }
         }
 
-        handler = new Thread(getThreadGroup(), this);
+        handler = new Thread(getThreadGroup(), this, "NetxPanelThread@" + this.getDocumentURL());
         handler.start();
     }
 
     public void updateSizeInAtts(int height, int width) {
-        this.atts.put("height", Integer.toString(height));
-        this.atts.put("width", Integer.toString(width));
+        parameters.updateSize(width, height);
     }
 
     public ClassLoader getAppletClassLoader() {
         return appInst.getClassLoader();
     }
 
-    public boolean isAlive() {
-        return handler != null && handler.isAlive() && this.appletAlive;
+    public boolean isInitialized() {
+        return initialized;
     }
 
     public ThreadGroup getThreadGroup() {
         synchronized(TGMapMutex) {
-            return uKeyToTG.get(uKey);
+            return uKeyToTG.get(parameters.getUniqueKey(getCodeBase()));
         }
     }
 
@@ -228,8 +185,33 @@ public class NetxPanel extends AppletViewerPanel {
         }
         // only create a new context if one hasn't already been created for the
         // applets with this unique key.
-        if (null == appContextCreated.putIfAbsent(uKey, Boolean.TRUE)) {
+        if (null == appContextCreated.putIfAbsent(parameters.getUniqueKey(getCodeBase()), Boolean.TRUE)) {
             SunToolkit.createNewAppContext();
         }
     }
+
+    public void setAppletViewerFrame(SplashController framePanel) {
+        splashController=framePanel;
+    }
+
+    @Override
+    public void removeSplash() {
+        splashController.removeSplash();
+    }
+
+    @Override
+    public void replaceSplash(SplashPanel r) {
+        splashController.replaceSplash(r);
+    }
+
+    @Override
+    public int getSplashWidth() {
+        return splashController.getSplashWidth();
+    }
+
+    @Override
+    public int getSplashHeigth() {
+        return splashController.getSplashHeigth();
+    }
+   
 }

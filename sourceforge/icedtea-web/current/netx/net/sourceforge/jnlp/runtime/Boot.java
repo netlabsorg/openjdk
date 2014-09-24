@@ -28,21 +28,28 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.swing.UIManager;
+
 import net.sourceforge.jnlp.LaunchException;
 import net.sourceforge.jnlp.Launcher;
 import net.sourceforge.jnlp.ParserSettings;
+import net.sourceforge.jnlp.about.AboutDialog;
 import net.sourceforge.jnlp.cache.CacheUtil;
 import net.sourceforge.jnlp.cache.UpdatePolicy;
+import net.sourceforge.jnlp.config.DeploymentConfiguration;
 import net.sourceforge.jnlp.security.viewer.CertificateViewer;
 import net.sourceforge.jnlp.services.ServiceUtil;
+import net.sourceforge.jnlp.util.logging.OutputController;
+import sun.awt.AppContext;
+import sun.awt.SunToolkit;
 
 /**
- * This is the main entry point for the JNLP client.  The main
+ * This is the main entry point for the JNLP client. The main
  * method parses the command line parameters and loads a JNLP
- * file into the secure runtime environment.  This class is meant
+ * file into the secure runtime environment. This class is meant
  * to be called from the command line or file association; to
  * initialize the netx engine from other code invoke the
- * <code>JNLPRuntime.initialize</code> method after configuring
+ * {@link JNLPRuntime#initialize} method after configuring
  * the runtime.
  *
  * @author <a href="mailto:jmaxwell@users.sourceforge.net">Jon A. Maxwell (JAM)</a> - initial author
@@ -53,14 +60,10 @@ public final class Boot implements PrivilegedAction<Void> {
     // todo: decide whether a spawned netx (external launch)
     // should inherit the same options as this instance (store argv?)
 
-    private static final String name = Boot.class.getPackage().getImplementationTitle();
-    private static final String version = Boot.class.getPackage().getImplementationVersion();
+    public static final String name = Boot.class.getPackage().getImplementationTitle();
+    public static final String version = Boot.class.getPackage().getImplementationVersion();
 
-    /** the text to display before launching the about link */
-    private static final String aboutMessage = ""
-            + name + " " + version
-            + "\n"
-            + R("BLaunchAbout");
+    private static final String nameAndVersion = name + " " + version;
 
     private static final String miniLicense = "\n"
             + "   netx - an open-source JNLP client.\n"
@@ -81,6 +84,17 @@ public final class Boot implements PrivilegedAction<Void> {
             + "   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.\n"
             + "\n";
 
+    private static final String itwInfoMessage = ""
+            + nameAndVersion
+            + "\n\n*  "
+            + R("BAboutITW")
+            + "\n*  "
+            + R("BFileInfoAuthors")
+            + "\n*  "
+            + R("BFileInfoNews")
+            + "\n*  "
+            + R("BFileInfoCopying");
+
     private static final String helpMessage = "\n"
             + "Usage:   " + R("BOUsage") + "\n"
             + "         " + R("BOUsage2") + "\n"
@@ -90,6 +104,7 @@ public final class Boot implements PrivilegedAction<Void> {
             + "  -viewer               " + R("BOViewer") + "\n"
             + "\n"
             + "run-options:" + "\n"
+            + "  -version              " + R("BOVersion") + "\n"
             + "  -arg arg              " + R("BOArg") + "\n"
             + "  -param name=value     " + R("BOParam") + "\n"
             + "  -property name=value  " + R("BOProperty") + "\n"
@@ -100,8 +115,11 @@ public final class Boot implements PrivilegedAction<Void> {
             + "  -noupdate             " + R("BONoupdate") + "\n"
             + "  -headless             " + R("BOHeadless") + "\n"
             + "  -strict               " + R("BOStrict") + "\n"
+            + "  -xml                  " + R("BOXml") + "\n"
+            + "  -allowredirect        " + R("BOredirect") + "\n"
             + "  -Xnofork              " + R("BXnofork") + "\n"
             + "  -Xclearcache          " + R("BXclearcache") + "\n"
+            + "  -Xignoreheaders       " + R("BXignoreheaders") + "\n"
             + "  -help                 " + R("BOHelp") + "\n";
 
     private static final String doubleArgs = "-basedir -jnlp -arg -param -property -update";
@@ -114,30 +132,54 @@ public final class Boot implements PrivilegedAction<Void> {
     public static void main(String[] argsIn) {
         args = argsIn;
 
-        if (null != getOption("-viewer")) {
+        if (AppContext.getAppContext() == null) {
+            SunToolkit.createNewAppContext();
+        }
+        if (null != getOption("-headless")) {
+            JNLPRuntime.setHeadless(true);
+        }
 
+        DeploymentConfiguration.move14AndOlderFilesTo15StructureCatched();
+
+        if (null != getOption("-viewer")) {
             try {
                 CertificateViewer.main(null);
-                System.exit(0);
+                JNLPRuntime.exit(0);
             } catch (Exception e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+                OutputController.getLogger().log(OutputController.Level.ERROR_ALL, e);
             }
+        }
 
+        if (null != getOption("-version")) {
+            OutputController.getLogger().printOutLn(nameAndVersion);
+            JNLPRuntime.exit(0);
         }
 
         if (null != getOption("-license")) {
-            System.out.println(miniLicense);
-            System.exit(0);
+            OutputController.getLogger().printOutLn(miniLicense);
+            JNLPRuntime.exit(0);
         }
 
         if (null != getOption("-help")) {
-            System.out.println(helpMessage);
-            System.exit(0);
+            OutputController.getLogger().printOutLn(helpMessage);
+            JNLPRuntime.exit(0);
         }
 
-        if (null != getOption("-about"))
-            System.out.println(aboutMessage);
+        if (null != getOption("-about")) {
+                OutputController.getLogger().printOutLn(itwInfoMessage);
+            if (null != getOption("-headless")) {
+                JNLPRuntime.exit(0);
+            } else {
+                try {
+                    UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+                } catch (Exception e) {
+                    OutputController.getLogger().log("Unable to set system look and feel");
+                }
+                OutputController.getLogger().printOutLn(R("BLaunchAbout"));
+                AboutDialog.display();
+                return;
+            }
+        }
 
         if (null != getOption("-verbose"))
             JNLPRuntime.setDebug(true);
@@ -146,9 +188,6 @@ public final class Boot implements PrivilegedAction<Void> {
             int value = Integer.parseInt(getOption("-update"));
             JNLPRuntime.setDefaultUpdatePolicy(new UpdatePolicy(value * 1000l));
         }
-
-        if (null != getOption("-headless"))
-            JNLPRuntime.setHeadless(true);
 
         if (null != getOption("-noupdate"))
             JNLPRuntime.setDefaultUpdatePolicy(UpdatePolicy.NEVER);
@@ -159,12 +198,18 @@ public final class Boot implements PrivilegedAction<Void> {
         if (null != getOption("-Xtrustall")) {
             JNLPRuntime.setTrustAll(true);
         }
+        if (null != getOption("-Xtrustnone")) {
+            JNLPRuntime.setTrustNone(true);
+        }
+        if (null != getOption("-Xignoreheaders")) {
+            JNLPRuntime.setIgnoreHeaders(true);
+        }
+        if (null != getOption("-allowredirect")) {
+            JNLPRuntime.setAllowRedirect(true);
+        }
 
         JNLPRuntime.setInitialArgments(Arrays.asList(argsIn));
 
-        // do in a privileged action to clear the security context of
-        // the Boot13 class, which doesn't have any privileges in
-        // JRE1.3; JRE1.4 works without Boot13 or this PrivilegedAction.
         AccessController.doPrivileged(new Boot());
 
     }
@@ -192,20 +237,17 @@ public final class Boot implements PrivilegedAction<Void> {
         extra.put("parameters", getOptions("-param"));
         extra.put("properties", getOptions("-property"));
 
-        boolean strict = (null != getOption("-strict"));
-        ParserSettings settings = new ParserSettings(strict);
+        ParserSettings settings = ParserSettings.setGlobalParserSettingsFromArgs(args);
 
         try {
             Launcher launcher = new Launcher(false);
             launcher.setParserSettings(settings);
             launcher.setInformationToMerge(extra);
-            launcher.launch(getFileLocation(), true);
+            launcher.launch(getFileLocation());
         } catch (LaunchException ex) {
             // default handler prints this
         } catch (Exception ex) {
-            if (JNLPRuntime.isDebug())
-                ex.printStackTrace();
-
+            OutputController.getLogger().log(ex);
             fatalError(R("RUnexpected", ex.toString(), ex.getStackTrace()[0]));
         }
 
@@ -213,35 +255,8 @@ public final class Boot implements PrivilegedAction<Void> {
     }
 
     private static void fatalError(String message) {
-        System.err.println("netx: " + message);
-        System.exit(1);
-    }
-
-    /**
-     * Returns the location of the about.jnlp file or null if this file
-     * does not exist.
-     */
-    private static String getAboutFile() {
-        ClassLoader cl = Boot.class.getClassLoader();
-        if (cl == null) {
-            cl = ClassLoader.getSystemClassLoader();
-        }
-        try {
-                    //extracts full path to about.jnlp
-            String s = cl.getResource("net/sourceforge/jnlp/runtime/Boot.class").toString();
-            s=s.substring(0,s.indexOf("!"));
-            s=s.substring(s.indexOf(":")+1);
-            s=s.substring(s.indexOf(":")+1);
-            s="file://"+s.replace("netx.jar","about.jnlp");
-            if (JNLPRuntime.isDebug()){
-                System.out.println("Using " + s + " as about.jnlp URL");
-            }
-
-            return s;
-         } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
+        OutputController.getLogger().log(OutputController.Level.ERROR_ALL, "netx: " + message);
+        JNLPRuntime.exit(1);
     }
 
     /**
@@ -252,22 +267,12 @@ public final class Boot implements PrivilegedAction<Void> {
 
         String location = getJNLPFile();
 
-        // override -jnlp with aboutFile
-        if (getOption("-about") != null) {
-            location = getAboutFile();
-            if (location == null)
-                fatalError(R("RNoAboutJnlp"));
-        } else {
-            location = getJNLPFile();
-        }
-
         if (location == null) {
-            System.out.println(helpMessage);
-            System.exit(1);
+            OutputController.getLogger().printOutLn(helpMessage);
+            JNLPRuntime.exit(1);
         }
 
-        if (JNLPRuntime.isDebug())
-            System.out.println(R("BFileLoc") + ": " + location);
+        OutputController.getLogger().log(R("BFileLoc") + ": " + location);
 
         URL url = null;
 
@@ -278,9 +283,8 @@ public final class Boot implements PrivilegedAction<Void> {
             else
                 url = new URL(ServiceUtil.getBasicService().getCodeBase(), location);
         } catch (Exception e) {
+            OutputController.getLogger().log(e);
             fatalError("Invalid jnlp file " + location);
-            if (JNLPRuntime.isDebug())
-                e.printStackTrace();
         }
 
         return url;
@@ -292,8 +296,8 @@ public final class Boot implements PrivilegedAction<Void> {
     private static String getJNLPFile() {
 
         if (args.length == 0) {
-            System.out.println(helpMessage);
-            System.exit(0);
+            OutputController.getLogger().printOutLn(helpMessage);
+            JNLPRuntime.exit(0);
         } else if (args.length == 1) {
             return args[args.length - 1];
         } else {
@@ -303,8 +307,8 @@ public final class Boot implements PrivilegedAction<Void> {
             if (doubleArgs.indexOf(secondLastArg) == -1) {
                 return lastArg;
             } else {
-                System.out.println(helpMessage);
-                System.exit(0);
+                OutputController.getLogger().printOutLn(helpMessage);
+                JNLPRuntime.exit(0);
             }
         }
         return null;

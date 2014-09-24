@@ -37,18 +37,17 @@ exception statement from your version.
 
 package net.sourceforge.jnlp;
 
-import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.List;
+import net.sourceforge.jnlp.mock.DummyJNLPFile;
+import net.sourceforge.jnlp.util.logging.NoStdOutErrTest;
 
-import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 /** Test that the parser works with basic jnlp files */
-public class ParserBasic {
+public class ParserBasic extends NoStdOutErrTest{
 
     private static Node root;
     private static Parser parser;
@@ -59,9 +58,10 @@ public class ParserBasic {
         if (cl == null) {
             cl = ClassLoader.getSystemClassLoader();
         }
+        ParserSettings defaultParser = new ParserSettings();
         InputStream jnlpStream = cl.getResourceAsStream("net/sourceforge/jnlp/basic.jnlp");
-        root = Parser.getRootNode(jnlpStream);
-        parser = new Parser(null, null, root, false, false);
+        root = Parser.getRootNode(jnlpStream, defaultParser);
+        parser = new Parser(new DummyJNLPFile(), null, root, defaultParser);
     }
 
     @Test

@@ -31,9 +31,9 @@ package net.sourceforge.nanoxml;
 /**
  * An XMLParseException is thrown when an error occures while parsing an XML
  * string.
- * <P>
- * $Revision: 1.1 $<BR>
- * $Date: 2002/08/03 04:05:32 $<P>
+ * <p>
+ * $Revision: 1.1 $<br/>
+ * $Date: 2002/08/03 04:05:32 $</p>
  *
  * @see net.sourceforge.nanoxml.XMLElement
  *
@@ -53,7 +53,7 @@ public class XMLParseException
      * <code>NO_LINE</code> if the line number is unknown.
      *
      * <dl><dt><b>Invariants:</b></dt><dd>
-     * <ul><li><code>lineNr &gt 0 || lineNr == NO_LINE</code>
+     * <ul><li>{@code lineNr > 0 || lineNr == NO_LINE}
      * </ul></dd></dl>
      */
     private int lineNr;
@@ -64,13 +64,13 @@ public class XMLParseException
      * @param name    The name of the element where the error is located.
      * @param message A message describing what went wrong.
      *
-     * </dl><dl><dt><b>Preconditions:</b></dt><dd>
-     * <ul><li><code>message != null</code>
+     * <dl><dt><b>Preconditions:</b></dt><dd>
+     * <ul><li>{@code message != null}</li>
      * </ul></dd></dl>
      *
      * <dl><dt><b>Postconditions:</b></dt><dd>
-     * <ul><li>getLineNr() => NO_LINE
-     * </ul></dd></dl><dl>
+     * <ul><li>{@code getLineNr() => NO_LINE}</li>
+     * </ul></dd></dl>
      */
     public XMLParseException(String name,
                              String message) {
@@ -88,14 +88,14 @@ public class XMLParseException
      * @param lineNr  The number of the line in the input.
      * @param message A message describing what went wrong.
      *
-     * </dl><dl><dt><b>Preconditions:</b></dt><dd>
-     * <ul><li><code>message != null</code>
-     *     <li><code>lineNr &gt; 0</code>
+     * <dl><dt><b>Preconditions:</b></dt><dd>
+     * <ul><li>{@code message != null}</li>
+     *     <li>{@code lineNr &gt; 0}</li>
      * </ul></dd></dl>
      *
      * <dl><dt><b>Postconditions:</b></dt><dd>
-     * <ul><li>getLineNr() => lineNr
-     * </ul></dd></dl><dl>
+     * <ul><li>{@code getLineNr() => lineNr}</li>
+     * </ul></dd></dl>
      */
     public XMLParseException(String name,
                              int lineNr,
@@ -108,7 +108,7 @@ public class XMLParseException
     }
 
     /**
-     * Where the error occurred, or <code>NO_LINE</code> if the line number is
+     * Where the error occurred, or {@code NO_LINE} if the line number is
      * unknown.
      *
      * @see net.sourceforge.nanoxml.XMLParseException#NO_LINE
@@ -116,5 +116,4 @@ public class XMLParseException
     public int getLineNr() {
         return this.lineNr;
     }
-
 }

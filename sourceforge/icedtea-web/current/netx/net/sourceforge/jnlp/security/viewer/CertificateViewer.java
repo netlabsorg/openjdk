@@ -52,6 +52,7 @@ import javax.swing.UIManager;
 
 import net.sourceforge.jnlp.runtime.JNLPRuntime;
 import net.sourceforge.jnlp.util.ImageResources;
+import net.sourceforge.jnlp.util.ScreenFinder;
 
 public class CertificateViewer extends JDialog {
 
@@ -94,30 +95,17 @@ public class CertificateViewer extends JDialog {
     }
 
     private void centerDialog() {
-        Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
-        Dimension dialogSize = getSize();
-
-        setLocation((screen.width - dialogSize.width) / 2,
-                        (screen.height - dialogSize.height) / 2);
+        ScreenFinder.centerWindowsToCurrentScreen(this);
     }
 
     public static void showCertificateViewer() throws Exception {
         JNLPRuntime.initialize(true);
-        setSystemLookAndFeel();
 
         CertificateViewer cv = new CertificateViewer();
         cv.setResizable(true);
         cv.centerDialog();
         cv.setVisible(true);
         cv.dispose();
-    }
-
-    private static void setSystemLookAndFeel() {
-        try {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        } catch (Exception e) {
-            // don't worry if we can't.
-        }
     }
 
     public static void main(String[] args) throws Exception {

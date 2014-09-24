@@ -359,56 +359,15 @@ AC_ARG_ENABLE([plugin],
 AC_MSG_RESULT(${enable_plugin})
 ])
 
-dnl ITW_GTK_CHECK_VERSION([gtk version])
-AC_DEFUN([ITW_GTK_CHECK_VERSION],
-[
-  AC_MSG_CHECKING([for GTK$1 version])
-  GTK_VER=`$PKG_CONFIG --modversion gtk+-$1.0`
-  AC_MSG_RESULT([$GTK_VER])
-])
-
-dnl ITW_GTK_CHECK([gtk version])
-AC_DEFUN([ITW_GTK_CHECK],
-[
-  case "$1" in
-    default)
-      PKG_CHECK_MODULES(GTK, gtk+-3.0,
-        [ITW_GTK_CHECK_VERSION([3])],
-        [PKG_CHECK_MODULES(GTK, gtk+-2.0,
-           [ITW_GTK_CHECK_VERSION([2])],
-           [AC_MSG_ERROR([GTK $1 not found])]
-        )]
-      )
-      ;;
-    *)
-      PKG_CHECK_MODULES(GTK, gtk+-$1.0,
-        [ITW_GTK_CHECK_VERSION([$1])],
-        [AC_MSG_ERROR([GTK $1 not found])]
-      )
-      ;;
-  esac
-])
-
 AC_DEFUN_ONCE([IT_CHECK_PLUGIN_DEPENDENCIES],
 [
 dnl Check for plugin support headers and libraries.
 dnl FIXME: use unstable
 AC_REQUIRE([IT_CHECK_PLUGIN])
 if test "x${enable_plugin}" = "xyes" ; then
-  AC_ARG_WITH([gtk],
-    [AS_HELP_STRING([--with-gtk=[2|3|default]],
-    [the GTK+ version to use (default: 3)])],
-    [case "$with_gtk" in
-       2|3|default) ;;
-       *) AC_MSG_ERROR([invalid GTK version specified]) ;;
-     esac],
-    [with_gtk=default])
-  ITW_GTK_CHECK([$with_gtk])
   PKG_CHECK_MODULES(GLIB, glib-2.0)
   AC_SUBST(GLIB_CFLAGS)
   AC_SUBST(GLIB_LIBS)
-  AC_SUBST(GTK_CFLAGS)
-  AC_SUBST(GTK_LIBS)
 
   PKG_CHECK_MODULES(MOZILLA, npapi-sdk, [
     AC_CACHE_CHECK([for xulrunner version], [xulrunner_cv_collapsed_version],[
@@ -442,6 +401,31 @@ then
     fi])
   AC_SUBST(MOZILLA_VERSION_COLLAPSED, $xulrunner_cv_collapsed_version)
 fi
+])
+
+AC_DEFUN_ONCE([IT_CHECK_FOR_TAGSOUP],
+[
+  AC_MSG_CHECKING([for tagsoup])
+  AC_ARG_WITH([tagsoup],
+             [AS_HELP_STRING([--with-tagsoup],
+                             [tagsoup.jar])],
+             [
+                TAGSOUP_JAR=${withval}
+             ],
+             [
+                TAGSOUP_JAR=
+             ])
+  if test -z "${TAGSOUP_JAR}"; then
+    for dir in /usr/share/java /usr/local/share/java ; do
+      if test -f $dir/tagsoup.jar; then
+        TAGSOUP_JAR=$dir/tagsoup.jar
+	    break
+      fi
+    done
+  fi
+  AC_MSG_RESULT(${TAGSOUP_JAR})
+  AC_SUBST(TAGSOUP_JAR)
+  AM_CONDITIONAL([HAVE_TAGSOUP], [test x$TAGSOUP_JAR != xno -a x$TAGSOUP_JAR != x ])
 ])
 
 dnl Generic macro to check for a Java class
@@ -536,23 +520,44 @@ AC_DEFUN_ONCE([IT_CHECK_GLIB_VERSION],[
    PKG_CHECK_MODULES([GLIB2_V_216],[glib-2.0 >= 2.16],[],[AC_DEFINE([LEGACY_GLIB])])
  ])
 
-AC_DEFUN_ONCE([IT_CHECK_XULRUNNER_API_VERSION],
+AC_DEFUN_ONCE([IT_CHECK_XULRUNNER_MIMEDESCRIPTION_CONSTCHAR],
 [
   AC_MSG_CHECKING([for legacy xulrunner api])
   AC_LANG_PUSH(C++)
-  CXXFLAGS_BACKUP=$CXXFLAGS
-  CXXFLAGS=$CXXFLAGS" "$MOZILLA_CFLAGS
-  AC_TRY_COMPILE([
-    #include <npfunctions.h>
-    const  char* NP_GetMIMEDescription ()
-    {return (char*) "yap!";}
-  ],[],[
+  CXXFLAGS_BACKUP="$CXXFLAGS"
+  CXXFLAGS="$CXXFLAGS"" ""$MOZILLA_CFLAGS"
+  AC_COMPILE_IFELSE([
+    AC_LANG_SOURCE([[#include <npfunctions.h>
+                     const  char* NP_GetMIMEDescription ()
+                       {return (char*) "yap!";}]])
+    ],[
     AC_MSG_RESULT(no)
-  ],[
+    ],[
     AC_MSG_RESULT(yes)
     AC_DEFINE([LEGACY_XULRUNNERAPI])
   ])
-  CXXFLAGS=$CXXFLAGS_BACKUP
+  CXXFLAGS="$CXXFLAGS_BACKUP"
+  AC_LANG_POP(C++)
+])
+
+AC_DEFUN_ONCE([IT_CHECK_XULRUNNER_REQUIRES_C11],
+[
+  AC_MSG_CHECKING([for xulrunner enforcing C++11 standard])
+  AC_LANG_PUSH(C++)
+  CXXFLAGS_BACKUP="$CXXFLAGS"
+  CXXFLAGS="$CXXFLAGS"" ""$MOZILLA_CFLAGS"
+  AC_COMPILE_IFELSE([
+    AC_LANG_SOURCE([[#include <npapi.h>
+                     #include <npruntime.h>
+                     void setnpptr (NPVariant *result)
+                       { VOID_TO_NPVARIANT(*result);}]])
+    ],[
+    AC_MSG_RESULT(no)
+    CXXFLAGS="$CXXFLAGS_BACKUP"
+    ],[
+    AC_MSG_RESULT(yes)
+    CXXFLAGS="$CXXFLAGS_BACKUP -std=c++11"
+  ])
   AC_LANG_POP(C++)
 ])
 
@@ -715,9 +720,12 @@ AC_DEFUN_ONCE([IT_FIND_JAVA],
   AC_MSG_RESULT(${JAVA})
   AC_SUBST(JAVA)
   JAVA_VERSION=`$JAVA -version 2>&1 | sed -n '1s/@<:@^"@:>@*"\(.*\)"$/\1/p'`
-  case "${JAVA_VERSION}" in
-    1.7*) VERSION_DEFS='-DHAVE_JAVA7';;
-  esac
+  HAVE_JAVA7=`echo $JAVA_VERSION | awk '{if ($(0) >= 1.7) print "yes"}'`
+  if  ! test -z "$HAVE_JAVA7" ; then
+    VERSION_DEFS='-DHAVE_JAVA7'
+  fi
+
+  AM_CONDITIONAL([HAVE_JAVA7], test x"${HAVE_JAVA7}" = "xyes" )
   AC_SUBST(VERSION_DEFS)
 ])
 
@@ -844,38 +852,29 @@ EOF
 dnl Checks that sun.applet.AppletViewerPanel is available
 dnl and public (via the patch in IcedTea6, applet_hole.patch)
 dnl Can be removed when that is upstream or unneeded
-AC_DEFUN([IT_CHECK_FOR_APPLETVIEWERPANEL_HOLE],[
+AC_DEFUN([IT_CHECK_FOR_SUN_APPLET_ACCESSIBILITY],[
 AC_REQUIRE([IT_FIND_JAVAC])
 AC_REQUIRE([IT_FIND_JAVA])
-AC_CACHE_CHECK([if sun.applet.AppletViewerPanel is available and public], it_cv_applet_hole, [
+AC_CACHE_CHECK([if selected classes, fields and methods from sun.applet are accessible via reflection], it_cv_applet_hole, [
 CLASS=TestAppletViewer.java
 BYTECODE=$(echo $CLASS|sed 's#\.java##')
 mkdir -p tmp.$$
 cd tmp.$$
 cat << \EOF > $CLASS
 [/* [#]line __oline__ "configure" */
-import java.lang.reflect.Modifier;
+import java.lang.reflect.*;
 
 public class TestAppletViewer
 {
-  public static void main(String[] args)
+  public static void main(String[] args) throws Exception
   {
-    try
-      {
-        Class<?> clazz = Class.forName("sun.applet.AppletViewerPanel");
-        if (Modifier.isPublic(clazz.getModifiers()))
-          {
-            System.err.println("Found public sun.applet.AppletViewerPanel");
-            System.exit(0);
-          }
-        System.err.println("Found non-public sun.applet.AppletViewerPanel");
-        System.exit(2);
-      }
-    catch (ClassNotFoundException e)
-      {
-        System.err.println("Could not find sun.applet.AppletViewerPanel");
-        System.exit(1);
-      }
+   Class<?> ap = Class.forName("sun.applet.AppletPanel");
+   Class<?> avp = Class.forName("sun.applet.AppletViewerPanel");
+   Field f1 = ap.getDeclaredField("applet");
+   Field f2 = avp.getDeclaredField("documentURL");
+   Method m1 = ap.getDeclaredMethod("run");
+   Method m2 = ap.getDeclaredMethod("runLoader");
+   Field f3 = avp.getDeclaredField("baseURL");
   }
 }
 ]
@@ -884,21 +883,17 @@ if $JAVAC -cp . $JAVACFLAGS -nowarn $CLASS >&AS_MESSAGE_LOG_FD 2>&1; then
   if $JAVA -classpath . $BYTECODE >&AS_MESSAGE_LOG_FD 2>&1; then
       it_cv_applet_hole=yes;
   else
-      it_cv_applet_hole=$?;
+      it_cv_applet_hole=no;
   fi
 else
-  it_cv_applet_hole=3;
+  it_cv_applet_hole=no;
 fi
 ])
 rm -f $CLASS *.class
 cd ..
 rmdir tmp.$$
-if test x"${it_cv_applet_hole}" = "x1"; then
-   AC_MSG_ERROR([sun.applet.AppletViewerPanel is not available.])
-elif test x"${it_cv_applet_hole}" = "x2"; then
-   AC_MSG_ERROR([sun.applet.AppletViewerPanel is not public.])
-elif test x"${it_cv_applet_hole}" = "x3"; then
-   AC_MSG_ERROR([Compilation failed.  See config.log.])
+if test x"${it_cv_applet_hole}" = "xno"; then
+   AC_MSG_ERROR([Some of the checked items is not avaiable. Check logs.])
 fi
 AC_PROVIDE([$0])dnl
 ])

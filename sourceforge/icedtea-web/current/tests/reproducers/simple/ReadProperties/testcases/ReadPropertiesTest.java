@@ -35,7 +35,7 @@ obligated to do so.  If you do not wish to do so, delete this
 exception statement from your version.
  */
 
-
+import net.sourceforge.jnlp.ProcessResult;
 import net.sourceforge.jnlp.ServerAccess;
 import org.junit.Assert;
 import org.junit.Test;
@@ -47,24 +47,22 @@ public class ReadPropertiesTest {
  
     @Test
     public void ReadPropertiesLunch1() throws Exception {
-        ServerAccess.ProcessResult pr=server.executeJavawsHeadless(null,"/ReadProperties1.jnlp");
+        ProcessResult pr=server.executeJavawsHeadless(null,"/ReadProperties1.jnlp");
         String s = "(?s).*java.security.AccessControlException.{0,5}access denied.{0,5}java.util.PropertyPermission.{0,5}" + "user.name.{0,5}read" + ".*";
         Assert.assertTrue("stderr should match "+s+" but didn't",pr.stderr.matches(s));
         String cc="ClassNotFoundException";
         Assert.assertFalse("stderr should NOT contains `"+cc+"`, but did",pr.stderr.contains(cc));
-        Assert.assertFalse("stdout length should be <=2, but was "+pr.stdout.length(),pr.stdout.length()>2);
         Assert.assertFalse("ReadPropertiesLunch1 should not be terminated, but was",pr.wasTerminated);
         Assert.assertEquals((Integer)0, pr.returnValue);
     }
 
     @Test
     public void ReadPropertiesLunch2() throws Exception {
-        ServerAccess.ProcessResult pr=server.executeJavawsHeadless(null,"/ReadProperties2.jnlp");
+        ProcessResult pr=server.executeJavawsHeadless(null,"/ReadProperties2.jnlp");
         String s = "(?s).*java.security.AccessControlException.{0,5}access denied.{0,5}java.util.PropertyPermission.{0,5}" + "user.home.{0,5}read" + ".*";
         Assert.assertTrue("stderr should match "+s+" but didn't",pr.stderr.matches(s));
         String cc="ClassNotFoundException";
         Assert.assertFalse("stderr should NOT contains `"+cc+"`, but did",pr.stderr.contains(cc));
-        Assert.assertFalse("stdout length should be <=2, but was "+pr.stdout.length(),pr.stdout.length()>2);
         Assert.assertFalse("ReadPropertiesLunch2 should not be terminated, but was",pr.wasTerminated);
         Assert.assertEquals((Integer)0, pr.returnValue);
     }

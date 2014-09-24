@@ -20,6 +20,8 @@ import static net.sourceforge.jnlp.runtime.Translator.R;
 
 import java.net.*;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * The J2SE/Java element.
@@ -28,24 +30,26 @@ import java.util.*;
  * @version $Revision: 1.5 $
  */
 public class JREDesc {
+    
+    private static final Pattern heapPattern= Pattern.compile("\\d+[kmg]?");
 
     /** the platform version or the product version if location is not null */
-    private Version version;
+    final private Version version;
 
     /** the location of a JRE product or null */
-    private URL location;
+    final private URL location;
 
     /** inital heap size */
-    private String initialHeapSize;
+    final private String initialHeapSize;
 
     /** maximum head size */
-    private String maximumHeapSize;
+    final private String maximumHeapSize;
 
     /** args to pass to the vm */
-    private String vmArgs;
+    final private String vmArgs;
 
     /** list of ResourceDesc objects */
-    private List resources;
+    final private List<ResourcesDesc> resources;
 
     /**
      * Create a JRE descriptor.
@@ -59,14 +63,12 @@ public class JREDesc {
      */
     public JREDesc(Version version, URL location,
             String vmArgs, String initialHeapSize,
-            String maximumHeapSize, List resources) throws ParseException {
+            String maximumHeapSize, List<ResourcesDesc> resources) throws ParseException {
         this.version = version;
         this.location = location;
         this.vmArgs = vmArgs;
-        checkHeapSize(initialHeapSize);
-        this.initialHeapSize = initialHeapSize;
-        checkHeapSize(maximumHeapSize);
-        this.maximumHeapSize = maximumHeapSize;
+        this.initialHeapSize = checkHeapSize(initialHeapSize);
+        this.maximumHeapSize = checkHeapSize(maximumHeapSize);
         this.resources = resources;
     }
 
@@ -112,7 +114,7 @@ public class JREDesc {
     /**
      * Returns the resources defined for this JRE.
      */
-    public List getResourcesDesc() {
+    public List<ResourcesDesc> getResourcesDesc() {
         return resources;
     }
 
@@ -126,37 +128,24 @@ public class JREDesc {
 
     /**
      * Check for valid heap size string
+     * @return trimed heapSize if correct
      * @throws ParseException if heapSize is invalid
      */
-    static private void checkHeapSize(String heapSize) throws ParseException {
+    static String checkHeapSize(String heapSize) throws ParseException {
         // need to implement for completeness even though not used in netx
         if (heapSize == null) {
-            return;
+            return null;
         }
-
-        boolean lastCharacterIsDigit = true;
-        // the last character must be 0-9 or k/K/m/M
-        char lastChar = Character.toLowerCase(heapSize.charAt(heapSize.length() - 1));
-        if ((lastChar < '0' || lastChar > '9')) {
-            lastCharacterIsDigit = false;
-            if (lastChar != 'k' && lastChar != 'm') {
-                throw new ParseException(R("PBadHeapSize", heapSize));
-            }
+        heapSize = heapSize.trim();
+        // the last character must be 0-9 or k/K/m/M/g/G
+        //0 or 0k/m/g is also accepted value
+        String heapSizeLower = heapSize.toLowerCase();
+        Matcher heapMatcher = heapPattern.matcher(heapSizeLower);
+        if (!heapMatcher.matches()) {
+            throw new ParseException(R("PBadHeapSize", heapSize));
         }
-
-        int indexOfLastDigit = heapSize.length() - 1;
-        if (!lastCharacterIsDigit) {
-            indexOfLastDigit = indexOfLastDigit - 1;
-        }
-
-        String size = heapSize.substring(0, indexOfLastDigit);
-        try {
-            // check that the number is a number!
-            Integer.valueOf(size);
-        } catch (NumberFormatException numberFormat) {
-            throw new ParseException(R("PBadHeapSize", heapSize), numberFormat);
-        }
-
+        return heapSize;
+        
     }
 
 }

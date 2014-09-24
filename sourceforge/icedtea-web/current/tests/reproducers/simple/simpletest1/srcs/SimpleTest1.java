@@ -39,5 +39,10 @@ public class SimpleTest1{
 
     public static void main(String[] args){
         System.out.println("Good simple javaws exapmle");
+        for (int i = 0; i < args.length; i++) {
+            String string = args[i];
+            System.out.println(string);
+
+        }
     }
 }

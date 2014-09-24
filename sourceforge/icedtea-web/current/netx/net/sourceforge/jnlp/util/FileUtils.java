@@ -16,16 +16,38 @@
 
 package net.sourceforge.jnlp.util;
 
+import java.awt.Component;
 import static net.sourceforge.jnlp.runtime.Translator.R;
 
+import java.awt.Window;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.io.RandomAccessFile;
+import java.io.Writer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
+import java.security.DigestInputStream;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.List;
 
+import javax.swing.JFrame;
+import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
+
+import net.sourceforge.jnlp.config.DirectoryValidator;
+import net.sourceforge.jnlp.config.DirectoryValidator.DirectoryCheckResults;
 import net.sourceforge.jnlp.runtime.JNLPRuntime;
+import net.sourceforge.jnlp.util.logging.OutputController;
 
 /**
  * This class contains a few file-related utility functions.
@@ -34,6 +56,23 @@ import net.sourceforge.jnlp.runtime.JNLPRuntime;
  */
 
 public final class FileUtils {
+
+    /**
+     * Indicates whether a file was successfully opened. If not, provides specific reasons
+     * along with a general failure case
+     */
+    public enum OpenFileResult {
+        /** The file was successfully opened */
+        SUCCESS,
+        /** The file could not be opened, for non-specified reasons */
+        FAILURE,
+        /** The file could not be opened because it did not exist and could not be created */
+        CANT_CREATE,
+        /** The file can be opened but in read-only */
+        CANT_WRITE,
+        /** The specified path pointed to a non-file filesystem object, ie a directory */
+        NOT_FILE;
+    }
 
     /**
      * list of characters not allowed in filenames
@@ -138,7 +177,7 @@ public final class FileUtils {
     public static void deleteWithErrMesg(File f, String eMsg) {
         if (f.exists()) {
             if (!f.delete()) {
-                System.err.println(R("RCantDeleteFile", eMsg == null ? f : eMsg));
+                OutputController.getLogger().log(OutputController.Level.ERROR_ALL, R("RCantDeleteFile", eMsg == null ? f : eMsg));
             }
         }
     }
@@ -176,6 +215,39 @@ public final class FileUtils {
             }
         }
 
+        if (JNLPRuntime.isWindows()) {
+            // remove all permissions
+            if (!tempFile.setExecutable(false, false)) {
+                OutputController.getLogger().log(OutputController.Level.ERROR_ALL, R("RRemoveXPermFailed", tempFile));
+            }
+            if (!tempFile.setReadable(false, false)) {
+                OutputController.getLogger().log(OutputController.Level.ERROR_ALL, R("RRemoveRPermFailed", tempFile));
+            }
+            if (!tempFile.setWritable(false, false)) {
+                OutputController.getLogger().log(OutputController.Level.ERROR_ALL, R("RRemoveWPermFailed", tempFile));
+            }
+
+            // allow owner to read
+            if (!tempFile.setReadable(true, true)) {
+                OutputController.getLogger().log(OutputController.Level.ERROR_ALL, R("RGetRPermFailed", tempFile));
+            }
+
+            // allow owner to write
+            if (writableByOwner && !tempFile.setWritable(true, true)) {
+                OutputController.getLogger().log(OutputController.Level.ERROR_ALL, R("RGetWPermFailed", tempFile));
+            }
+
+            // allow owner to enter directories
+            if (isDir && !tempFile.setExecutable(true, true)) {
+                OutputController.getLogger().log(OutputController.Level.ERROR_ALL, R("RGetXPermFailed", tempFile));
+            }
+            // rename this file. Unless the file is moved/renamed, any program that
+            // opened the file right after it was created might still be able to
+            // read the data.
+            if (!tempFile.renameTo(file)) {
+                OutputController.getLogger().log(OutputController.Level.ERROR_ALL, R("RCantRename", tempFile, file));
+            }
+        } else {
         // remove all permissions
         if (!tempFile.setExecutable(false, false)) {
             throw new IOException(R("RRemoveXPermFailed", tempFile));
@@ -201,14 +273,137 @@ public final class FileUtils {
         if (isDir && !tempFile.setExecutable(true, true)) {
             throw new IOException(R("RGetXPermFailed", tempFile));
         }
-
+        
         // rename this file. Unless the file is moved/renamed, any program that
         // opened the file right after it was created might still be able to
         // read the data.
         if (!tempFile.renameTo(file)) {
             throw new IOException(R("RCantRename", tempFile, file));
         }
+        }
 
+    }
+
+    /**
+     * Ensure that the parent directory of the file exists and that we are
+     * able to create and access files within this directory
+     * @param file the {@link File} representing a Java Policy file to test
+     * @return a {@link DirectoryCheckResults} object representing the results of the test
+     */
+    public static DirectoryCheckResults testDirectoryPermissions(File file) {
+        try {
+            file = file.getCanonicalFile();
+        } catch (final IOException e) {
+            OutputController.getLogger().log(e);
+            return null;
+        }
+        if (file == null || file.getParentFile() == null || !file.getParentFile().exists()) {
+            return null;
+        }
+        final List<File> policyDirectory = new ArrayList<File>();
+        policyDirectory.add(file.getParentFile());
+        final DirectoryValidator validator = new DirectoryValidator(policyDirectory);
+        final DirectoryCheckResults result = validator.ensureDirs();
+
+        return result;
+    }
+
+    /**
+     * Verify that a given file object points to a real, accessible plain file.
+     * @param file the {@link File} to verify
+     * @return an {@link OpenFileResult} representing the accessibility level of the file
+     */
+    public static OpenFileResult testFilePermissions(File file) {
+        if (file == null || !file.exists()) {
+            return OpenFileResult.FAILURE;
+        }
+        try {
+            file = file.getCanonicalFile();
+        } catch (final IOException e) {
+            return OpenFileResult.FAILURE;
+        }
+        final DirectoryCheckResults dcr = FileUtils.testDirectoryPermissions(file);
+        if (dcr != null && dcr.getFailures() == 0) {
+            if (file.isDirectory())
+                return OpenFileResult.NOT_FILE;
+            try {
+                if (!file.exists() && !file.createNewFile()) {
+                    return OpenFileResult.CANT_CREATE;
+                }
+            } catch (IOException e) {
+                return OpenFileResult.CANT_CREATE;
+            }
+            final boolean read = file.canRead(), write = file.canWrite();
+            if (read && write)
+                return OpenFileResult.SUCCESS;
+            else if (read)
+                return OpenFileResult.CANT_WRITE;
+            else
+                return OpenFileResult.FAILURE;
+        }
+        return OpenFileResult.FAILURE;
+    }
+
+    /**
+     * Show a dialog informing the user that the file is currently read-only
+     * @param frame a {@link JFrame} to act as parent to this dialog
+     */
+    public static void showReadOnlyDialog(final Component frame) {
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                JOptionPane.showMessageDialog(frame, R("RFileReadOnly"), R("Warning"), JOptionPane.WARNING_MESSAGE);
+            }
+        });
+    }
+
+    /**
+     * Show a generic error dialog indicating the  file could not be opened
+     * @param frame a {@link JFrame} to act as parent to this dialog
+     * @param filePath a {@link String} representing the path to the file we failed to open
+     */
+    public static void showCouldNotOpenFilepathDialog(final Component frame, final String filePath) {
+        showCouldNotOpenDialog(frame, R("RCantOpenFile", filePath));
+    }
+
+    /**
+     * Show an error dialog indicating the file could not be opened, with a particular reason
+     * @param frame a {@link JFrame} to act as parent to this dialog
+     * @param filePath a {@link String} representing the path to the file we failed to open
+     * @param reason a {@link OpenFileResult} specifying more precisely why we failed to open the file
+     */
+    public static void showCouldNotOpenFileDialog(final Component frame, final String filePath, final OpenFileResult reason) {
+        final String message;
+        switch (reason) {
+            case CANT_CREATE:
+                message = R("RCantCreateFile", filePath);
+                break;
+            case CANT_WRITE:
+                message = R("RCantWriteFile", filePath);
+                break;
+            case NOT_FILE:
+                message = R("RExpectedFile", filePath);
+                break;
+            default:
+                message = R("RCantOpenFile", filePath);
+                break;
+        }
+        showCouldNotOpenDialog(frame, message);
+    }
+
+    /**
+     * Show a dialog informing the user that the file could not be opened
+     * @param frame a {@link JFrame} to act as parent to this dialog
+     * @param filePath a {@link String} representing the path to the file we failed to open
+     * @param message a {@link String} giving the specific reason the file could not be opened
+     */
+    public static void showCouldNotOpenDialog(final Component frame, final String message) {
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                JOptionPane.showMessageDialog(frame, message, R("Error"), JOptionPane.ERROR_MESSAGE);
+            }
+        });
     }
 
     /**
@@ -275,9 +470,7 @@ public final class FileUtils {
      *         outside the base
      */
     public static void recursiveDelete(File file, File base) throws IOException {
-        if (JNLPRuntime.isDebug()) {
-            System.err.println("Deleting: " + file);
-        }
+        OutputController.getLogger().log(OutputController.Level.ERROR_DEBUG, "Deleting: " + file);
 
         if (!(file.getCanonicalPath().startsWith(base.getCanonicalPath()))) {
             throw new IOException("Trying to delete a file outside Netx's basedir: "
@@ -330,8 +523,96 @@ public final class FileUtils {
                 }
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            OutputController.getLogger().log(OutputController.Level.ERROR_ALL, e);
         }
         return lock;
+    }
+
+    /**
+     * helping dummy  method to save String as file
+     * 
+     * @param content
+     * @param f
+     * @throws IOException
+     */
+    public static void saveFile(String content, File f) throws IOException {
+        saveFile(content, f, "utf-8");
+    }
+
+    public static void saveFile(String content, File f, String encoding) throws IOException {
+        Writer output = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(f), encoding));
+        output.write(content);
+        output.flush();
+        output.close();
+    }
+
+    /**
+     * utility method which can read from any stream as one long String
+     * 
+     * @param is stream
+     * @param encoding the encoding to use to convert the bytes from the stream
+     * @return stream as string
+     * @throws IOException if connection can't be established or resource does not exist
+     */
+    public static String getContentOfStream(InputStream is, String encoding) throws IOException {
+        try {
+            BufferedReader br = new BufferedReader(new InputStreamReader(is, encoding));
+            StringBuilder sb = new StringBuilder();
+            while (true) {
+                String s = br.readLine();
+                if (s == null) {
+                    break;
+                }
+                sb.append(s).append("\n");
+
+            }
+            return sb.toString();
+        } finally {
+            is.close();
+        }
+
+    }
+
+    /**
+     * utility method which can read from any stream as one long String
+     *
+     * @param is stream
+     * @return stream as string
+     * @throws IOException if connection can't be established or resource does not exist
+     */
+    public static String getContentOfStream(InputStream is) throws IOException {
+        return getContentOfStream(is, "UTF-8");
+
+    }
+
+    public static String loadFileAsString(File f) throws IOException {
+        return getContentOfStream(new FileInputStream(f));
+    }
+
+    public static String loadFileAsString(File f, String encoding) throws IOException {
+        return getContentOfStream(new FileInputStream(f), encoding);
+    }
+
+    public static byte[] getFileMD5Sum(final File file, final String algorithm) throws NoSuchAlgorithmException,
+            FileNotFoundException, IOException {
+        final MessageDigest md5;
+        InputStream is = null;
+        DigestInputStream dis = null;
+        try {
+            md5 = MessageDigest.getInstance(algorithm);
+            is = new FileInputStream(file);
+            dis = new DigestInputStream(is, md5);
+
+            md5.update(getContentOfStream(dis).getBytes());
+        } finally {
+            if (is != null) {
+                is.close();
+            }
+            if (dis != null) {
+                dis.close();
+            }
+        }
+
+        return md5.digest();
     }
 }

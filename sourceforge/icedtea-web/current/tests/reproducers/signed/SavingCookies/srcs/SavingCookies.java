@@ -1,6 +1,6 @@
 /* SavingCookies.java
  Store cookies in the java cookie store, and go to a page that confirms they are there.
- 
+
 Copyright (C) 2012 Red Hat, Inc.
 
 This file is part of IcedTea.
