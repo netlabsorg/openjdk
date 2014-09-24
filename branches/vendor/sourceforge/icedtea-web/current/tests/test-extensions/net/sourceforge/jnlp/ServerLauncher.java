@@ -56,7 +56,19 @@ public class ServerLauncher implements Runnable {
     private boolean running;
     private final Integer port;
     private final File dir;
+    private ServerSocket serverSocket;
+    private boolean supportingHeadRequest = true;
 
+    public void setSupportingHeadRequest(boolean supportsHead) {
+        this.supportingHeadRequest = supportsHead;
+    }
+
+    public boolean isSupportingHeadRequest() {
+        return supportingHeadRequest;
+    }
+
+    
+    
     public String getServerName() {
         return serverName;
     }
@@ -99,22 +111,41 @@ public class ServerLauncher implements Runnable {
     public void run() {
         running = true;
         try {
-            ServerSocket s = new ServerSocket(port);
+            serverSocket = new ServerSocket(port);
             while (running) {
-                new TinyHttpdImpl(s.accept(), dir, port);
+                TinyHttpdImpl server = new TinyHttpdImpl(serverSocket.accept(), dir, false);
+                server.setSupportingHeadRequest(isSupportingHeadRequest());
+                server.start();
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            ServerAccess.logException(e);
         } finally {
             running = false;
         }
     }
 
     public URL getUrl(String resource) throws MalformedURLException {
+        if (resource == null) {
+            resource = "";
+        }
+        if (resource.trim().length() > 0 && !resource.startsWith("/")) {
+            resource = "/" + resource;
+        }
         return new URL("http", getServerName(), getPort(), resource);
     }
 
     public URL getUrl() throws MalformedURLException {
         return getUrl("");
+    }
+
+    public void stop() {
+        this.running = false;
+        if (serverSocket != null) {
+            try {
+                serverSocket.close();
+            } catch (Exception ex) {
+                ServerAccess.logException(ex);
+            }
+        }
     }
 }

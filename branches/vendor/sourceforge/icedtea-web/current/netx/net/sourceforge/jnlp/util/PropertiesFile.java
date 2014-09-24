@@ -16,6 +16,7 @@
 
 package net.sourceforge.jnlp.util;
 
+import net.sourceforge.jnlp.util.logging.OutputController;
 import java.io.*;
 import java.util.*;
 
@@ -23,7 +24,7 @@ import java.util.*;
  * A properties object backed by a specified file without throwing
  * exceptions.  The properties are automatically loaded from the
  * file when the first property is requested, but the save method
- * must be called before changes are saved to the file.<p>
+ * must be called before changes are saved to the file.
  *
  * @author <a href="mailto:jmaxwell@users.sourceforge.net">Jon A. Maxwell (JAM)</a> - initial author
  * @version $Revision: 1.4 $
@@ -138,7 +139,7 @@ public class PropertiesFile extends Properties {
                     }
                 }
             } catch (IOException ex) {
-                ex.printStackTrace();
+                OutputController.getLogger().log(OutputController.Level.ERROR_ALL, ex);
             }
         }
 
@@ -164,7 +165,7 @@ public class PropertiesFile extends Properties {
                 if (s != null) s.close();
             }
         } catch (IOException ex) {
-            ex.printStackTrace();
+            OutputController.getLogger().log(OutputController.Level.ERROR_ALL, ex);
         }
     }
 

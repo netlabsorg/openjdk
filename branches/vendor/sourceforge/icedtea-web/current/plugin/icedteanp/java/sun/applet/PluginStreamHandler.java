@@ -1,4 +1,4 @@
-/* VoidPluginCallRequest -- represent Java-to-JavaScript requests
+/*
    Copyright (C) 2008  Red Hat
 
 This file is part of IcedTea.
@@ -44,10 +44,13 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.net.MalformedURLException;
 import java.nio.charset.Charset;
 
 import javax.swing.SwingUtilities;
+import net.sourceforge.jnlp.runtime.JNLPRuntime;
+import net.sourceforge.jnlp.runtime.Translator;
+import net.sourceforge.jnlp.util.logging.JavaConsole;
+import net.sourceforge.jnlp.util.logging.OutputController;
 
 public class PluginStreamHandler {
 
@@ -56,14 +59,12 @@ public class PluginStreamHandler {
 
     private RequestQueue queue = new RequestQueue();
 
-    private JavaConsole console = new JavaConsole();
 
     private PluginMessageConsumer consumer;
     private volatile boolean shuttingDown = false;
 
 
-    public PluginStreamHandler(InputStream inputstream, OutputStream outputstream)
-            throws MalformedURLException, IOException {
+    public PluginStreamHandler(InputStream inputstream, OutputStream outputstream) {
 
         PluginDebug.debug("Current context CL=", Thread.currentThread().getContextClassLoader());
 
@@ -81,7 +82,7 @@ public class PluginStreamHandler {
 
     public void startProcessing() {
 
-        Thread listenerThread = new Thread() {
+        Thread listenerThread = new Thread("PluginStreamHandlerListenerThread") {
 
             public void run() {
 
@@ -104,7 +105,7 @@ public class PluginStreamHandler {
                         }
                         AppletSecurityContextManager.dumpStore(0);
                         PluginDebug.debug("APPLETVIEWER: exiting appletviewer");
-                        System.exit(0);
+                        JNLPRuntime.exit(0);
                     }
                 }
             }
@@ -241,9 +242,17 @@ public class PluginStreamHandler {
 
     private void handlePluginMessage(String message) {
         if (message.equals("plugin showconsole")) {
-            showConsole();
+            if (JavaConsole.isEnabled()){
+                JavaConsole.getConsole().showConsoleLater();
+            } else {
+                OutputController.getLogger().log(OutputController.Level.ERROR_ALL, Translator.R("DPJavaConsoleDisabledHint"));
+            }
         } else if (message.equals("plugin hideconsole")) {
-            hideConsole();
+            if (JavaConsole.isEnabled()){
+                JavaConsole.getConsole().hideConsoleLater();
+            } else {
+                OutputController.getLogger().log(OutputController.Level.ERROR_ALL, Translator.R("DPJavaConsoleDisabledHint"));
+            }
         } else {
             // else this is something that was specifically requested
             finishCallRequest(message);
@@ -311,8 +320,6 @@ public class PluginStreamHandler {
      * Read string from plugin.
      *
      * @return the read string
-     *
-     * @exception IOException if an error occurs
      */
     private String read() {
         String message = null;
@@ -333,10 +340,10 @@ public class PluginStreamHandler {
                 }
                 AppletSecurityContextManager.dumpStore(0);
                 PluginDebug.debug("APPLETVIEWER: exiting appletviewer");
-                System.exit(0);
+                JNLPRuntime.exit(0);
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            OutputController.getLogger().log(OutputController.Level.ERROR_ALL,e);
         }
 
         return message;
@@ -346,8 +353,6 @@ public class PluginStreamHandler {
      * Write string to plugin.
      * 
      * @param message the message to write
-     *
-     * @exception IOException if an error occurs
      */
     public void write(String message) {
 
@@ -361,32 +366,16 @@ public class PluginStreamHandler {
                 // if we are shutting down, ignore write failures as 
                 // pipe may have closed
                 if (!shuttingDown) {
-                    e.printStackTrace();
+                    OutputController.getLogger().log(OutputController.Level.ERROR_ALL,e);
                 }
 
                 // either ways, if the pipe is broken, there is nothing 
                 // we can do anymore. Don't hang around.
                 PluginDebug.debug("Unable to write to PIPE. APPLETVIEWER exiting");
-                System.exit(1);
+                JNLPRuntime.exit(1);
             }
         }
 
         return;
-    }
-
-    private void showConsole() {
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                console.showConsole();
-            }
-        });
-    }
-
-    private void hideConsole() {
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                console.hideConsole();
-            }
-        });
     }
 }

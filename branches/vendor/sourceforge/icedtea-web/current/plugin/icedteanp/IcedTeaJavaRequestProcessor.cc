@@ -78,7 +78,7 @@ JavaRequestProcessor::newMessageOnBus(const char* message)
 					result->error_msg->append(" ");
 				}
 
-				printf("Error on Java side: %s\n", result->error_msg->c_str());
+				PLUGIN_ERROR("Error on Java side: %s\n", result->error_msg->c_str());
 
 				result->error_occurred = true;
 				result_ready = true;
@@ -131,7 +131,7 @@ JavaRequestProcessor::newMessageOnBus(const char* message)
 			           !message_parts->at(4)->find("GetObjectArrayElement"))
 			{
 
-			    if (!message_parts->at(5)->find("literalreturn"))
+			    if (!message_parts->at(5)->find("literalreturn") || !message_parts->at(5)->find("jsobject"))
                 {
 			        // literal returns don't have a corresponding jni id
 			        result->return_identifier = 0;
@@ -751,36 +751,27 @@ JavaResultData*
 JavaRequestProcessor::getMethodID(std::string classID, NPIdentifier methodName,
                                   std::vector<std::string> args)
 {
-	JavaRequestProcessor* java_request;
-	std::string message = std::string();
-    std::string* signature;
-
-    signature = new std::string();
-    *signature += "(";
+	std::string message, signature = "(";
 
     // FIXME: Need to determine how to extract array types and complex java objects
     for (int i=0; i < args.size(); i++)
     {
-    	*signature += args[i];
+    	signature += args[i];
     }
 
-    *signature += ")";
+    signature += ")";
 
 	this->instance = 0; // context is always 0 (needed for java-side backwards compat.)
 	this->reference = IcedTeaPluginUtilities::getReference();
 
 	IcedTeaPluginUtilities::constructMessagePrefix(0, reference, &message);
-	message += " GetMethodID ";
-	message += classID;
-	message += " ";
-	message += browser_functions.utf8fromidentifier(methodName);
-	message += " ";
-	message += *signature;
+	message += " GetMethodID " + classID + " ";
+	message += IcedTeaPluginUtilities::NPIdentifierAsString(methodName) + " ";
+	message += signature;
 
 	postAndWaitForResponse(message);
 
 	IcedTeaPluginUtilities::releaseReference();
-	delete signature;
 
 	return result;
 }
@@ -789,36 +780,27 @@ JavaResultData*
 JavaRequestProcessor::getStaticMethodID(std::string classID, NPIdentifier methodName,
                                   std::vector<std::string> args)
 {
-    JavaRequestProcessor* java_request;
-    std::string message = std::string();
-    std::string* signature;
-
-    signature = new std::string();
-    *signature += "(";
+    std::string message, signature = "(";
 
     // FIXME: Need to determine how to extract array types and complex java objects
     for (int i=0; i < args.size(); i++)
     {
-        *signature += args[i];
+        signature += args[i];
     }
 
-    *signature += ")";
+    signature += ")";
 
     this->instance = 0; // context is always 0 (needed for java-side backwards compat.)
     this->reference = IcedTeaPluginUtilities::getReference();
 
     IcedTeaPluginUtilities::constructMessagePrefix(0, reference, &message);
-    message += " GetStaticMethodID ";
-    message += classID;
-    message += " ";
-    message += browser_functions.utf8fromidentifier(methodName);
-    message += " ";
-    message += *signature;
+    message += " GetStaticMethodID " + classID + " ";
+    message += IcedTeaPluginUtilities::NPIdentifierAsString(methodName) + " ";
+    message += signature;
 
     postAndWaitForResponse(message);
 
     IcedTeaPluginUtilities::releaseReference();
-    delete signature;
 
     return result;
 }
@@ -965,7 +947,7 @@ createJavaObjectFromVariant(NPP instance, NPVariant variant, std::string* id)
                 java_result = java_request.newArray(java_array_type, length_str);
 
                 if (java_result->error_occurred) {
-                    printf("Unable to create array\n");
+                    PLUGIN_ERROR("Unable to create array\n");
                     id->append("-1");
                     return;
                 }
@@ -984,7 +966,7 @@ createJavaObjectFromVariant(NPP instance, NPVariant variant, std::string* id)
                     createJavaObjectFromVariant(instance, value, &value_id);
 
                     if (value_id == "-1") {
-                        printf("Unable to populate array\n");
+                        PLUGIN_ERROR("Unable to populate array\n");
                         id->clear();
                         id->append("-1");
                         return;
@@ -1020,7 +1002,7 @@ createJavaObjectFromVariant(NPP instance, NPVariant variant, std::string* id)
                 // the result we want is in result_string (assuming there was no error)
                 if (java_result->error_occurred)
                 {
-                    printf("Unable to get JSObject class id\n");
+                    PLUGIN_ERROR("Unable to get JSObject class id\n");
                     id->clear();
                     id->append("-1");
                     return;
@@ -1036,7 +1018,7 @@ createJavaObjectFromVariant(NPP instance, NPVariant variant, std::string* id)
                 // the result we want is in result_string (assuming there was no error)
                 if (java_result->error_occurred)
                 {
-                    printf("Unable to get JSObject constructor id\n");
+                    PLUGIN_ERROR("Unable to get JSObject constructor id\n");
                     id->clear();
                     id->append("-1");
                     return;
@@ -1060,7 +1042,7 @@ createJavaObjectFromVariant(NPP instance, NPVariant variant, std::string* id)
                 // the result we want is in result_string (assuming there was no error)
                 if (java_result->error_occurred)
                 {
-                    printf("Unable to create JSObject\n");
+                    PLUGIN_ERROR("Unable to create JSObject\n");
                     id->clear();
                     id->append("-1");
                     return;
@@ -1077,7 +1059,7 @@ createJavaObjectFromVariant(NPP instance, NPVariant variant, std::string* id)
 
 		// the result we want is in result_string (assuming there was no error)
 		if (java_result->error_occurred) {
-			printf("Unable to find classid for %s\n", className.c_str());
+			PLUGIN_ERROR("Unable to find classid for %s\n", className.c_str());
 			id->append("-1");
 			return;
 		}
@@ -1092,7 +1074,7 @@ createJavaObjectFromVariant(NPP instance, NPVariant variant, std::string* id)
 
 		// the result we want is in result_string (assuming there was no error)
 		if (java_result->error_occurred) {
-			printf("Unable to find string constructor for %s\n", className.c_str());
+			PLUGIN_ERROR("Unable to find string constructor for %s\n", className.c_str());
 			id->append("-1");
             return;
 		}
@@ -1104,7 +1086,7 @@ createJavaObjectFromVariant(NPP instance, NPVariant variant, std::string* id)
 		java_result = java_request.newString(stringArg);
 
 		if (java_result->error_occurred) {
-			printf("Unable to create requested object\n");
+			PLUGIN_ERROR("Unable to create requested object\n");
 			id->append("-1");
             return;
 		}
@@ -1117,7 +1099,7 @@ createJavaObjectFromVariant(NPP instance, NPVariant variant, std::string* id)
 		java_result = java_request.newObjectWithConstructor("[System]", jsObjectClassID, jsObjectConstructorID, args);
 
         if (java_result->error_occurred) {
-            printf("Unable to create requested object\n");
+            PLUGIN_ERROR("Unable to create requested object\n");
             id->append("-1");
             return;
         }
@@ -1297,7 +1279,6 @@ JavaRequestProcessor::hasPackage(int plugin_instance_id,
 {
 	JavaResultData* java_result;
 	JavaRequestProcessor* java_request = new JavaRequestProcessor();
-	std::string message = std::string();
 	std::string plugin_instance_id_str = std::string();
 	IcedTeaPluginUtilities::itoa(plugin_instance_id, &plugin_instance_id_str);
 
@@ -1306,11 +1287,9 @@ JavaRequestProcessor::hasPackage(int plugin_instance_id,
 	this->instance = 0; // context is always 0 (needed for java-side backwards compat.)
 	this->reference = IcedTeaPluginUtilities::getReference();
 
+	std::string message;
 	IcedTeaPluginUtilities::constructMessagePrefix(0, reference, &message);
-	message.append(" HasPackage ");
-    message.append(plugin_instance_id_str);
-    message.append(" ");
-	message.append(java_result->return_string->c_str());
+	message += " HasPackage " + plugin_instance_id_str + " " + *java_result->return_string;
 
 	postAndWaitForResponse(message);
 

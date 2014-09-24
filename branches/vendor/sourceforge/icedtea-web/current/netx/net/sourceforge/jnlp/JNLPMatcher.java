@@ -47,6 +47,7 @@ import java.io.StringReader;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
+import net.sourceforge.jnlp.util.logging.OutputController;
 import net.sourceforge.nanoxml.XMLElement;
 
 /**
@@ -202,14 +203,12 @@ public final class JNLPMatcher {
     }
 
     /**
-     * Compares attributes of two Nodes regardless of order
+     * Compares attributes of two {@link Node Nodes} regardless of order
      * 
-     * @param appTemplateNode
-     *            signed application or template's Node with attributes
-     * @param launchJNLPNode
-     *            launching JNLP file's Node with attributes
+     * @param templateNode signed application or template's {@link Node} with attributes
+     * @param launchNode launching JNLP file's {@link Node} with attributes
      * 
-     * @return true if both Nodes have 'matched' attributes, otherwise false
+     * @return {@code true} if both {@link Node Nodes} have 'matched' attributes, otherwise {@code false}
      */
     private boolean matchAttributes(Node templateNode, Node launchNode) {
 
@@ -261,7 +260,7 @@ public final class JNLPMatcher {
             try {
                 stream.close();
             } catch (Exception e) {
-                e.printStackTrace(System.err);
+                OutputController.getLogger().log(OutputController.Level.ERROR_ALL, e);
             }
     }
 
@@ -276,7 +275,7 @@ public final class JNLPMatcher {
             try {
                 stream.close();
             } catch (Exception e) {
-                e.printStackTrace(System.err);
+                OutputController.getLogger().log(OutputController.Level.ERROR_ALL, e);
             }
     }
 }

@@ -1,3 +1,6 @@
+
+import java.applet.Applet;
+
 /* SimpleTest2.java
 Copyright (C) 2011 Red Hat, Inc.
 
@@ -35,10 +38,31 @@ obligated to do so.  If you do not wish to do so, delete this
 exception statement from your version.
  */
 
-public class SimpleTest2{
+public class SimpleTest2 extends Applet{
 
-    public static void main(String[] args){
-throw new RuntimeException("Correct exception");
-
+    public static void main(String[] args)  {
+      throw new RuntimeException("Correct exception");
     }
+
+    @Override
+    public void init() {
+        System.out.println("applet was initialised");
+    }
+
+    @Override
+    public void start() {
+        System.out.println("applet was started");
+        main(null);
+    }
+
+    @Override
+    public void stop() {
+        System.out.println("applet was stopped");
+    }
+
+    @Override
+    public void destroy() {
+        System.out.println("applet will be destroyed");
+    }
+
 }

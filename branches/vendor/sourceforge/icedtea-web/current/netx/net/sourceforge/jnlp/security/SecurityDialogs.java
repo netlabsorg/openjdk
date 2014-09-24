@@ -41,8 +41,10 @@ import java.awt.Dialog.ModalityType;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.net.NetPermission;
+import java.net.URL;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.Set;
 import java.util.concurrent.Semaphore;
 
 import javax.swing.JDialog;
@@ -50,16 +52,24 @@ import javax.swing.SwingUtilities;
 
 import net.sourceforge.jnlp.JNLPFile;
 import net.sourceforge.jnlp.config.DeploymentConfiguration;
+import net.sourceforge.jnlp.runtime.JNLPClassLoader.SecurityDelegate;
 import net.sourceforge.jnlp.runtime.JNLPRuntime;
+import net.sourceforge.jnlp.security.appletextendedsecurity.ExecuteAppletAction;
+import net.sourceforge.jnlp.security.dialogs.apptrustwarningpanel.AppTrustWarningPanel.AppSigningWarningAction;
+import net.sourceforge.jnlp.util.UrlUtils;
 
 /**
- * A factory for showing many possible types of security warning to the user.<p>
- *
+ * <p>
+ * A factory for showing many possible types of security warning to the user.
+ * </p>
+ * <p>
  * This contains all the public methods that classes outside this package should
  * use instead of using {@link SecurityDialog} directly.
- *
+ * </p>
+ * <p>
  * All of these methods post a message to the
  * {@link SecurityDialogMessageHandler} and block waiting for a response.
+ * </p>
  */
 public class SecurityDialogs {
     /** Types of dialogs we can create */
@@ -69,9 +79,13 @@ public class SecurityDialogs {
         CERT_INFO,
         SINGLE_CERT_INFO,
         ACCESS_WARNING,
-        NOTALLSIGNED_WARNING,
+        PARTIALLYSIGNED_WARNING,
+        UNSIGNED_WARNING,   /* requires confirmation with 'high-security' setting */
         APPLET_WARNING,
         AUTHENTICATION,
+        UNSIGNED_EAS_NO_PERMISSIONS_WARNING,   /* when Extended applet security is at High Security and no permission attribute is find, */
+        MISSING_ALACA, /*alaca - Application-Library-Allowable-Codebase Attribute*/
+        MATCHING_ALACA
     }
 
     /** The types of access which may need user permission. */
@@ -85,8 +99,27 @@ public class SecurityDialogs {
         NETWORK,
         VERIFIED,
         UNVERIFIED,
-        NOTALLSIGNED,
+        PARTIALLYSIGNED,
+        UNSIGNED,           /* requires confirmation with 'high-security' setting */
         SIGNING_ERROR
+    }
+
+    public static enum AppletAction {
+        RUN,
+        SANDBOX,
+        CANCEL;
+        public static AppletAction fromInteger(int i) {
+            switch (i) {
+                case 0:
+                    return RUN;
+                case 1:
+                    return SANDBOX;
+                case 2:
+                    return CANCEL;
+                default:
+                    return CANCEL;
+            }
+        }
     }
 
     /**
@@ -127,68 +160,48 @@ public class SecurityDialogs {
 
         Object selectedValue = getUserResponse(message);
 
-        if (selectedValue == null) {
-            return false;
-        } else if (selectedValue instanceof Integer) {
-            if (((Integer) selectedValue).intValue() == 0)
-                return true;
-            else
-                return false;
-        } else {
-            return false;
-        }
+        return getIntegerResponseAsBoolean(selectedValue);
     }
 
     /**
-     * Shows a warning dialog for when the main application jars are signed,
-     * but extensions aren't
+     * Shows a warning dialog for when a plugin applet is unsigned.
+     * This is used with 'high-security' setting.
      *
      * @return true if permission was granted by the user, false otherwise.
      */
-    public static boolean showNotAllSignedWarningDialog(JNLPFile file) {
+    public static AppSigningWarningAction showUnsignedWarningDialog(JNLPFile file) {
 
         if (!shouldPromptUser()) {
-            return false;
+            return new AppSigningWarningAction(ExecuteAppletAction.NO, false);
         }
 
         final SecurityDialogMessage message = new SecurityDialogMessage();
-        message.dialogType = DialogType.NOTALLSIGNED_WARNING;
-        message.accessType = AccessType.NOTALLSIGNED;
+        message.dialogType = DialogType.UNSIGNED_WARNING;
+        message.accessType = AccessType.UNSIGNED;
         message.file = file;
-        message.extras = new Object[0];
 
-        Object selectedValue = getUserResponse(message);
-
-        if (selectedValue == null) {
-            return false;
-        } else if (selectedValue instanceof Integer) {
-            if (((Integer) selectedValue).intValue() == 0) {
-                return true;
-            } else {
-                return false;
-            }
-        } else {
-            return false;
-        }
+        return (AppSigningWarningAction) getUserResponse(message);
     }
 
     /**
      * Shows a security warning dialog according to the specified type of
-     * access. If <code>type</code> is one of AccessType.VERIFIED or
-     * AccessType.UNVERIFIED, extra details will be available with regards
-     * to code signing and signing certificates.
+     * access. If {@code accessType} is one of {@link AccessType#VERIFIED} or
+     * {@link AccessType#UNVERIFIED}, extra details will be available with
+     * regards to code signing and signing certificates.
      *
      * @param accessType the type of warning dialog to show
      * @param file the JNLPFile associated with this warning
      * @param certVerifier the JarCertVerifier used to verify this application
      *
-     * @return true if the user accepted the certificate
+     * @return RUN if the user accepted the certificate, SANDBOX if the user
+     * wants the applet to run with only sandbox permissions, or CANCEL if the
+     * user did not accept running the applet
      */
-    public static boolean showCertWarningDialog(AccessType accessType,
-            JNLPFile file, CertVerifier certVerifier) {
+    public static AppletAction showCertWarningDialog(AccessType accessType,
+            JNLPFile file, CertVerifier certVerifier, SecurityDelegate securityDelegate) {
 
         if (!shouldPromptUser()) {
-            return false;
+            return AppletAction.CANCEL;
         }
 
         final SecurityDialogMessage message = new SecurityDialogMessage();
@@ -196,19 +209,33 @@ public class SecurityDialogs {
         message.accessType = accessType;
         message.file = file;
         message.certVerifier = certVerifier;
+        message.extras = new Object[] { securityDelegate };
 
         Object selectedValue = getUserResponse(message);
 
-        if (selectedValue == null) {
-            return false;
-        } else if (selectedValue instanceof Integer) {
-            if (((Integer) selectedValue).intValue() == 0)
-                return true;
-            else
-                return false;
-        } else {
-            return false;
+        return getIntegerResponseAsAppletAction(selectedValue);
+    }
+
+    /**
+     * Shows a warning dialog for when an applet or application is partially signed.
+     *
+     * @return true if permission was granted by the user, false otherwise.
+     */
+    public static AppSigningWarningAction showPartiallySignedWarningDialog(JNLPFile file, CertVerifier certVerifier,
+            SecurityDelegate securityDelegate) {
+
+        if (!shouldPromptUser()) {
+            return new AppSigningWarningAction(ExecuteAppletAction.NO, false);
         }
+
+        final SecurityDialogMessage message = new SecurityDialogMessage();
+        message.dialogType = DialogType.PARTIALLYSIGNED_WARNING;
+        message.accessType = AccessType.PARTIALLYSIGNED;
+        message.file = file;
+        message.certVerifier = certVerifier;
+        message.extras = new Object[] { securityDelegate };
+
+        return (AppSigningWarningAction) getUserResponse(message);
     }
 
     /**
@@ -238,16 +265,38 @@ public class SecurityDialogs {
         message.extras = new Object[] { host, port, prompt, type };
 
         Object response = getUserResponse(message);
-        if (response == null) {
-            return null;
-        } else {
-            return (Object[]) response;
-        }
+        return (Object[]) response;
     }
 
+     public static boolean  showMissingALACAttributePanel(String title, URL codeBase, Set<URL> remoteUrls) {
+
+        if (!shouldPromptUser()) {
+            return false;
+        }
+
+        SecurityDialogMessage message = new SecurityDialogMessage();
+        message.dialogType = DialogType.MISSING_ALACA;
+        message.extras = new Object[]{title, codeBase.toString(), UrlUtils.setOfUrlsToHtmlList(remoteUrls)};
+        Object selectedValue = getUserResponse(message);
+        return getIntegerResponseAsBoolean(selectedValue);
+    } 
+     
+     public static boolean showMatchingALACAttributePanel(String title, URL codeBase, Set<URL> remoteUrls) {
+
+        if (!shouldPromptUser()) {
+            return false;
+        }
+
+        SecurityDialogMessage message = new SecurityDialogMessage();
+        message.dialogType = DialogType.MATCHING_ALACA;
+        message.extras = new Object[]{title, codeBase.toString(), UrlUtils.setOfUrlsToHtmlList(remoteUrls)};
+        Object selectedValue = getUserResponse(message);
+        return getIntegerResponseAsBoolean(selectedValue);
+    } 
+     
     /**
      * FIXME This is unused. Remove it?
-     * @return (0, 1, 2) => (Yes, No, Cancel)
+     * @return (0, 1, 2) =&gt; (Yes, No, Cancel)
      */
     public static int showAppletWarning() {
 
@@ -261,15 +310,27 @@ public class SecurityDialogs {
         Object selectedValue = getUserResponse(message);
 
         // result 0 = Yes, 1 = No, 2 = Cancel
-        if (selectedValue == null) {
-            return 2;
-        } else if (selectedValue instanceof Integer) {
+        if (selectedValue instanceof Integer) {
+            // If the selected value can be cast to Integer, use that value
             return ((Integer) selectedValue).intValue();
         } else {
+            // Otherwise default to "cancel"
             return 2;
         }
     }
 
+     public static boolean showMissingPermissionsAttributeDialogue(String title, URL codeBase) {
+
+         if (!shouldPromptUser()) {
+             return false;
+         }
+
+         SecurityDialogMessage message = new SecurityDialogMessage();
+         message.dialogType = DialogType.UNSIGNED_EAS_NO_PERMISSIONS_WARNING;
+         message.extras = new Object[]{title, codeBase.toExternalForm()};
+         Object selectedValue = getUserResponse(message);
+         return SecurityDialogs.getIntegerResponseAsBoolean(selectedValue);
+    }
     /**
      * Posts the message to the SecurityThread and gets the response. Blocks
      * until a response has been recieved. It's safe to call this from an
@@ -351,6 +412,28 @@ public class SecurityDialogs {
     }
 
     /**
+     * Returns true iff the given Object reference can be cast to Integer and that Integer's
+     * intValue is 0.
+     * @param ref the Integer (hopefully) reference
+     * @return whether the given reference is both an Integer type and has intValue of 0
+     */
+    public static boolean getIntegerResponseAsBoolean(Object ref) {
+        boolean isInteger = ref instanceof Integer;
+        if (isInteger) {
+            Integer i = (Integer) ref;
+            return i.intValue() == 0;
+        }
+        return false;
+    }
+
+    public static AppletAction getIntegerResponseAsAppletAction(Object ref) {
+        if (ref instanceof Integer) {
+            return AppletAction.fromInteger((Integer) ref);
+        }
+        return AppletAction.CANCEL;
+    }
+
+    /**
      * Returns whether the current runtime configuration allows prompting user
      * for security warnings.
      *
@@ -365,5 +448,5 @@ public class SecurityDialogs {
             }
         });
     }
-
+    
 }

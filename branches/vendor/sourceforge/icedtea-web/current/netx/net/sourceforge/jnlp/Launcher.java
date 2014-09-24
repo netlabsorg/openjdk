@@ -19,7 +19,9 @@ package net.sourceforge.jnlp;
 import static net.sourceforge.jnlp.runtime.Translator.R;
 
 import java.applet.Applet;
+import java.applet.AppletStub;
 import java.awt.Container;
+import java.awt.SplashScreen;
 import java.io.File;
 import java.lang.reflect.Method;
 import java.net.InetAddress;
@@ -29,7 +31,7 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.jar.JarFile;
+import net.sourceforge.jnlp.util.JarFile;
 
 import net.sourceforge.jnlp.cache.CacheUtil;
 import net.sourceforge.jnlp.cache.UpdatePolicy;
@@ -42,17 +44,20 @@ import net.sourceforge.jnlp.services.ServiceUtil;
 
 import javax.swing.SwingUtilities;
 import javax.swing.text.html.parser.ParserDelegator;
+import net.sourceforge.jnlp.splashscreen.SplashUtils;
+import net.sourceforge.jnlp.util.logging.OutputController;
 
 import sun.awt.SunToolkit;
 
 /**
- * Launches JNLPFiles either in the foreground or background.<p>
- *
+ * Launches JNLPFiles either in the foreground or background.
+ * <p>
  * An optional LaunchHandler can be specified that is notified of
  * warning and error condition while launching and that indicates
  * whether a launch may proceed after a warning has occurred.  If
  * specified, the LaunchHandler is notified regardless of whether
- * the file is launched in the foreground or background.<p>
+ * the file is launched in the foreground or background.
+ * </p>
  *
  * @author <a href="mailto:jmaxwell@users.sourceforge.net">Jon A. Maxwell (JAM)</a> - initial author
  * @version $Revision: 1.22 $
@@ -73,7 +78,7 @@ public class Launcher {
     /** whether to create an AppContext (if possible) */
     private boolean context = true;
 
-    /** If the application should call System.exit on fatal errors */
+    /** If the application should call JNLPRuntime.exit on fatal errors */
     private boolean exitOnFailure = true;
 
     private ParserSettings parserSettings = new ParserSettings();
@@ -87,8 +92,9 @@ public class Launcher {
     public Launcher() {
         this(null, null);
 
-        if (handler == null)
+        if (handler == null) {
             handler = JNLPRuntime.getDefaultLaunchHandler();
+        }
     }
 
     /**
@@ -100,8 +106,9 @@ public class Launcher {
     public Launcher(boolean exitOnFailure) {
         this(null, null);
 
-        if (handler == null)
+        if (handler == null) {
             handler = JNLPRuntime.getDefaultLaunchHandler();
+        }
 
         this.exitOnFailure = exitOnFailure;
     }
@@ -136,8 +143,9 @@ public class Launcher {
      * Sets the update policy used by launched applications.
      */
     public void setUpdatePolicy(UpdatePolicy policy) {
-        if (policy == null)
+        if (policy == null) {
             throw new IllegalArgumentException(R("LNullUpdatePolicy"));
+        }
 
         this.updatePolicy = policy;
     }
@@ -219,25 +227,22 @@ public class Launcher {
         //First checks whether offline-allowed tag is specified inside the jnlp
         //file.
         if (!file.getInformation().isOfflineAllowed()) {
-            try {
-                //Checks the offline/online status of the system.
-                //If system is offline do not launch.
-                InetAddress.getByName(file.getSourceLocation().getHost());
-
-            } catch (UnknownHostException ue) {
-                System.err.println("File cannot be launched because offline-allowed tag not specified and system currently offline.");
+            //offline status should be already known from jnlp downloading
+            if (!JNLPRuntime.isOnlineDetected()) {
+                OutputController.getLogger().log(OutputController.Level.ERROR_ALL, "File cannot be launched because offline-allowed tag not specified and system currently offline.");
                 return null;
-            } catch (Exception e) {
-                System.err.println(e);
             }
         }
 
-        if (file instanceof PluginBridge && cont != null)
+        if (file instanceof PluginBridge && cont != null) {
             tg = new TgThread(file, cont, true);
-        else if (cont == null)
+        }
+        else if (cont == null) {
             tg = new TgThread(file);
-        else
+        }
+        else {
             tg = new TgThread(file, cont);
+        }
 
         tg.start();
 
@@ -248,39 +253,30 @@ public class Launcher {
             throw launchWarning(new LaunchException(file, ex, R("LSMinor"), R("LCSystem"), R("LThreadInterrupted"), R("LThreadInterruptedInfo")));
         }
 
-        if (tg.getException() != null)
-            throw tg.getException(); // passed to handler when first created
+        if (tg.getException() != null) {
+            throw tg.getException();
+        } // passed to handler when first created
 
-        if (handler != null)
+        if (handler != null) {
             handler.launchCompleted(tg.getApplication());
+        }
 
         return tg.getApplication();
     }
 
-    /**
-     * Launches a JNLP file by calling the launch method for the
-     * appropriate file type.
-     *
-     * @param location the URL of the JNLP file to launch
-     * @throws LaunchException if there was an exception
-     * @return the application instance
-     */
-    public ApplicationInstance launch(URL location) throws LaunchException {
-        return launch(toFile(location));
-    }
 
     /**
      * Launches a JNLP file by calling the launch method for the
      * appropriate file type.
      *
      * @param location the URL of the JNLP file to launch
-     * @param fromSource if true, the JNLP file will be re-read from the source
      * location to get the pristine version
      * @throws LaunchException if there was an exception
      * @return the application instance
      */
-    public ApplicationInstance launch(URL location, boolean fromSource) throws LaunchException {
-        return launch(fromUrl(location, fromSource));
+    public ApplicationInstance launch(URL location) throws LaunchException {
+        JNLPRuntime.saveHistory(location.toExternalForm());
+        return launch(fromUrl(location));
     }
 
     /**
@@ -369,28 +365,7 @@ public class Launcher {
         }
     }
 
-    /**
-     * Launches a JNLP file by calling the launch method for the
-     * appropriate file type in a different thread.
-     *
-     * @param file the JNLP file to launch
-     */
-    public void launchBackground(JNLPFile file) {
-        BgRunner runner = new BgRunner(file, null);
-        new Thread(runner).start();
-    }
-
-    /**
-     * Launches the JNLP file at the specified location in the
-     * background by calling the launch method for its file type.
-     *
-     * @param location the location of the JNLP file
-     */
-    public void launchBackground(URL location) {
-        BgRunner runner = new BgRunner(null, location);
-        new Thread(runner).start();
-    }
-
+  
     /**
      * Launches the JNLP file in a new JVM instance.  The launched
      * application's output is sent to the system out and it's
@@ -406,12 +381,15 @@ public class Launcher {
     public void launchExternal(List<String> vmArgs, JNLPFile file, List<String> javawsArgs) throws LaunchException {
         List<String> updatedArgs = new LinkedList<String>(javawsArgs);
 
-        if (file.getFileLocation() != null)
+        if (file.getFileLocation() != null) {
             updatedArgs.add(file.getFileLocation().toString());
-        else if (file.getSourceLocation() != null)
+        }
+        else if (file.getSourceLocation() != null) {
             updatedArgs.add(file.getFileLocation().toString());
-        else
+        }
+        else {
             launchError(new LaunchException(file, null, R("LSFatal"), R("LCExternalLaunch"), R("LNullLocation"), R("LNullLocationInfo")));
+        }
 
         launchExternal(vmArgs, updatedArgs);
 
@@ -470,76 +448,69 @@ public class Launcher {
     /**
      * Returns the JNLPFile for the URL, with error handling.
      */
-    private JNLPFile fromUrl(URL location, boolean fromSource) throws LaunchException {
+    private JNLPFile fromUrl(URL location) throws LaunchException {
         try {
-            JNLPFile file = null;
-
-            file = new JNLPFile(location, parserSettings.isStrict());
-
-            if (fromSource) {
-                // Launches the jnlp file where this file originated.
-                if (file.getSourceLocation() != null) {
-                    file = new JNLPFile(file.getSourceLocation(), parserSettings.isStrict());
+            JNLPFile file = new JNLPFile(location, parserSettings);
+            
+            boolean isLocal = false;
+            boolean haveHref = false;
+            if ("file".equalsIgnoreCase(location.getProtocol()) && new File(location.getFile()).exists()) {
+                isLocal = true;
+            }
+            if (file.getSourceLocation() != null) {
+                haveHref = true;
+            }
+            if (!isLocal && haveHref){
+                //this is case when remote file have href to different file
+                if (!location.equals(file.getSourceLocation())){
+                    //mark local true, so the folowing condition will be true and 
+                    //new jnlp file will be downlaoded
+                    isLocal = true;
+                    //maybe this check is to strict, and will force redownlaod to often
+                    //another check can be just on jnlp name. But it will not work
+                    //if the href will be the file of same name, but on diferent path (or even domain)
                 }
             }
-            return file;
-        } catch (Exception ex) {
-            if (ex instanceof LaunchException)
-                throw (LaunchException) ex; // already sent to handler when first thrown
-            else
-                // IO and Parse
-                throw launchError(new LaunchException(null, ex, R("LSFatal"), R("LCReadError"), R("LCantRead"), R("LCantReadInfo")));
-        }
-    }
 
-    /**
-     * Returns the JNLPFile for the URL, with error handling.
-     */
-    @Deprecated
-    private JNLPFile toFile(URL location) throws LaunchException {
-        try {
-            JNLPFile file = null;
-
-            try {
-                file = new JNLPFile(location, (Version) null, true, updatePolicy); // strict
-            } catch (ParseException ex) {
-                file = new JNLPFile(location, (Version) null, false, updatePolicy);
-
-                // only here if strict failed but lax did not fail
-                LaunchException lex =
-                        launchWarning(new LaunchException(file, ex, R("LSMinor"), R("LCFileFormat"), R("LNotToSpec"), R("LNotToSpecInfo")));
-
-                if (lex != null)
-                    throw lex;
+            if (isLocal && haveHref) {
+                file = new JNLPFile(file.getSourceLocation(), parserSettings);
             }
-
             return file;
         } catch (Exception ex) {
-            if (ex instanceof LaunchException)
+            if (ex instanceof LaunchException) {
                 throw (LaunchException) ex; // already sent to handler when first thrown
-            else
+            } else {
                 // IO and Parse
                 throw launchError(new LaunchException(null, ex, R("LSFatal"), R("LCReadError"), R("LCantRead"), R("LCantReadInfo")));
+            }
         }
     }
 
-    /**
+   /**
      * Launches a JNLP application.  This method should be called
      * from a thread in the application's thread group.
      */
     protected ApplicationInstance launchApplication(JNLPFile file) throws LaunchException {
-        if (!file.isApplication())
+        if (!file.isApplication()) {
             throw launchError(new LaunchException(file, null, R("LSFatal"), R("LCClient"), R("LNotApplication"), R("LNotApplicationInfo")));
+        }
 
         try {
 
             try {
                 ServiceUtil.checkExistingSingleInstance(file);
             } catch (InstanceExistsException e) {
+                OutputController.getLogger().log("Single instance application is already running.");
                 return null;
             }
 
             if (JNLPRuntime.getForksAllowed() && file.needsNewVM()) {
+                if (!JNLPRuntime.isHeadless()){
+                    SplashScreen sp = SplashScreen.getSplashScreen();
+                    if (sp!=null) {
+                        sp.close();
+                    }
+                }
                 List<String> netxArguments = new LinkedList<String>();
                 netxArguments.add("-Xnofork");
                 netxArguments.addAll(JNLPRuntime.getInitialArguments());
@@ -566,10 +537,11 @@ public class Launcher {
                 }
             }
 
-            if (mainName == null)
+            if (mainName == null) {
                 throw launchError(new LaunchException(file, null,
                         R("LSFatal"), R("LCClient"), R("LCantDetermineMainClass"),
                         R("LCantDetermineMainClassInfo")));
+            }
 
             Class<?> mainClass = app.getClassLoader().loadClass(mainName);
 
@@ -578,6 +550,7 @@ public class Launcher {
 
             SwingUtilities.invokeAndWait(new Runnable() {
                 // dummy method to force Event Dispatch Thread creation
+                @Override
                 public void run() {
                 }
             });
@@ -588,9 +561,7 @@ public class Launcher {
 
             main.setAccessible(true);
 
-            if (JNLPRuntime.isDebug()) {
-                System.out.println("Invoking main() with args: " + Arrays.toString(args));
-            }
+            OutputController.getLogger().log("Invoking main() with args: " + Arrays.toString(args));
             main.invoke(null, new Object[] { args });
 
             return app;
@@ -624,9 +595,7 @@ public class Launcher {
 
         for (Thread thread : threads) {
             if (thread != null) {
-                if (JNLPRuntime.isDebug()) {
-                    System.err.println("Setting " + classLoader + " as the classloader for thread " + thread.getName());
-                }
+                OutputController.getLogger().log(OutputController.Level.ERROR_DEBUG, "Setting " + classLoader + " as the classloader for thread " + thread.getName());
                 thread.setContextClassLoader(classLoader);
             }
         }
@@ -635,33 +604,55 @@ public class Launcher {
 
     /**
      * Launches a JNLP applet. This method should be called from a
-     * thread in the application's thread group.<p>
-     *
+     * thread in the application's thread group.
+     * <p>
      * The enableCodeBase parameter adds the applet's codebase to
      * the locations searched for resources and classes.  This can
      * slow down the applet loading but allows browser-style applets
      * that don't use JAR files exclusively to be run from a applet
      * JNLP file.  If the applet JNLP file does not specify any
      * resources then the code base will be enabled regardless of
-     * the specified value.<p>
+     * the specified value.
+     * </p>
      *
      * @param file the JNLP file
      * @param enableCodeBase whether to add the codebase URL to the classloader
      */
     protected ApplicationInstance launchApplet(JNLPFile file, boolean enableCodeBase, Container cont) throws LaunchException {
-        if (!file.isApplet())
+        if (!file.isApplet()) {
             throw launchError(new LaunchException(file, null, R("LSFatal"), R("LCClient"), R("LNotApplet"), R("LNotAppletInfo")));
-
+        }
+      
+        if (JNLPRuntime.getForksAllowed() && file.needsNewVM()) {
+            if (!JNLPRuntime.isHeadless()) {
+                SplashScreen sp = SplashScreen.getSplashScreen();
+                if (sp != null) {
+                    sp.close();
+                }
+            }
+        }
+        if (handler != null) {
+            handler.launchInitialized(file);
+        }
+        
+        AppletInstance applet = null;
         try {
-            AppletInstance applet = createApplet(file, enableCodeBase, cont);
+            ServiceUtil.checkExistingSingleInstance(file);
+            applet = createApplet(file, enableCodeBase, cont);
             applet.initialize();
-
             applet.getAppletEnvironment().startApplet(); // this should be a direct call to applet instance
             return applet;
+        } catch (InstanceExistsException ieex) {
+            OutputController.getLogger().log("Single instance applet is already running.");
+            throw launchError(new LaunchException(file, ieex, R("LSFatal"), R("LCLaunching"), R("LCouldNotLaunch"), R("LSingleInstanceExists")), applet);
         } catch (LaunchException lex) {
-            throw launchError(lex);
+            throw launchError(lex, applet);
         } catch (Exception ex) {
-            throw launchError(new LaunchException(file, ex, R("LSFatal"), R("LCLaunching"), R("LCouldNotLaunch"), R("LCouldNotLaunchInfo")));
+            throw launchError(new LaunchException(file, ex, R("LSFatal"), R("LCLaunching"), R("LCouldNotLaunch"), R("LCouldNotLaunchInfo")), applet);
+        }finally{
+            if (handler != null) {
+                handler.launchStarting(applet);
+            }
         }
     }
 
@@ -669,17 +660,23 @@ public class Launcher {
      * Gets an ApplicationInstance, but does not launch the applet.
      */
     protected ApplicationInstance getApplet(JNLPFile file, boolean enableCodeBase, Container cont) throws LaunchException {
-        if (!file.isApplet())
+        if (!file.isApplet()) {
             throw launchError(new LaunchException(file, null, R("LSFatal"), R("LCClient"), R("LNotApplet"), R("LNotAppletInfo")));
-
+        }
+        AppletInstance applet = null;
         try {
-            AppletInstance applet = createApplet(file, enableCodeBase, cont);
+            ServiceUtil.checkExistingSingleInstance(file);
+            applet = createApplet(file, enableCodeBase, cont);
             applet.initialize();
             return applet;
+
+        } catch (InstanceExistsException ieex) {
+            OutputController.getLogger().log("Single instance applet is already running.");
+            throw launchError(new LaunchException(file, ieex, R("LSFatal"), R("LCLaunching"), R("LCouldNotLaunch"), R("LSingleInstanceExists")), applet);
         } catch (LaunchException lex) {
-            throw launchError(lex);
+            throw launchError(lex, applet);
         } catch (Exception ex) {
-            throw launchError(new LaunchException(file, ex, R("LSFatal"), R("LCLaunching"), R("LCouldNotLaunch"), R("LCouldNotLaunchInfo")));
+            throw launchError(new LaunchException(file, ex, R("LSFatal"), R("LCLaunching"), R("LCouldNotLaunch"), R("LCouldNotLaunchInfo")), applet);
         }
     }
 
@@ -688,6 +685,8 @@ public class Launcher {
      * a thread in the application's thread group.
      */
     protected ApplicationInstance launchInstaller(JNLPFile file) throws LaunchException {
+        // TODO Check for an existing single instance once implemented.
+        // ServiceUtil.checkExistingSingleInstance(file);
         throw launchError(new LaunchException(file, null, R("LSFatal"), R("LCNotSupported"), R("LNoInstallers"), R("LNoInstallersInfo")));
     }
 
@@ -696,9 +695,14 @@ public class Launcher {
      *
      * @param enableCodeBase whether to add the code base URL to the classloader
      */
-    protected AppletInstance createApplet(JNLPFile file, boolean enableCodeBase, Container cont) throws LaunchException {
-        try {
-            JNLPClassLoader loader = JNLPClassLoader.getInstance(file, updatePolicy);
+     //FIXME - when multiple applets are on one page, this method is visited simultaneously
+    //and then appelts creates in little bit strange manner. This issue is visible with
+    //randomly showing/notshowing spalshscreens.
+    //See also PluginAppletViewer.framePanel
+    protected  AppletInstance createApplet(JNLPFile file, boolean enableCodeBase, Container cont) throws LaunchException {
+         AppletInstance appletInstance = null;
+         try {
+            JNLPClassLoader loader = JNLPClassLoader.getInstance(file, updatePolicy, enableCodeBase);
 
             if (enableCodeBase) {
                 loader.enableCodeBase();
@@ -711,19 +715,20 @@ public class Launcher {
             // appletInstance is needed by ServiceManager when looking up 
             // services. This could potentially be done in applet constructor
             // so initialize appletInstance before creating applet.
-            AppletInstance appletInstance;
-            if (cont == null)
-                appletInstance = new AppletInstance(file, group, loader, null);
-            else
-                appletInstance = new AppletInstance(file, group, loader, null, cont);
+            if (cont == null) {
+                 appletInstance = new AppletInstance(file, group, loader, null);
+             } else {
+                 appletInstance = new AppletInstance(file, group, loader, null, cont);
+             }
 
             loader.setApplication(appletInstance);
 
             // Initialize applet now that ServiceManager has access to its
             // appletInstance.
             String appletName = file.getApplet().getMainClass();
-            Class appletClass = loader.loadClass(appletName);
+            Class<?> appletClass = loader.loadClass(appletName);
             Applet applet = (Applet) appletClass.newInstance();
+            applet.setStub((AppletStub)cont);
             // Finish setting up appletInstance.
             appletInstance.setApplet(applet);
             appletInstance.getAppletEnvironment().setApplet(applet);
@@ -732,7 +737,7 @@ public class Launcher {
 
             return appletInstance;
         } catch (Exception ex) {
-            throw launchError(new LaunchException(file, ex, R("LSFatal"), R("LCInit"), R("LInitApplet"), R("LInitAppletInfo")));
+            throw launchError(new LaunchException(file, ex, R("LSFatal"), R("LCInit"), R("LInitApplet"), R("LInitAppletInfo")), appletInstance);
         }
     }
 
@@ -744,7 +749,7 @@ public class Launcher {
      */
     protected Applet createAppletObject(JNLPFile file, boolean enableCodeBase, Container cont) throws LaunchException {
         try {
-            JNLPClassLoader loader = JNLPClassLoader.getInstance(file, updatePolicy);
+            JNLPClassLoader loader = JNLPClassLoader.getInstance(file, updatePolicy, enableCodeBase);
 
             if (enableCodeBase) {
                 loader.enableCodeBase();
@@ -753,7 +758,7 @@ public class Launcher {
             }
 
             String appletName = file.getApplet().getMainClass();
-            Class appletClass = loader.loadClass(appletName);
+            Class<?> appletClass = loader.loadClass(appletName);
             Applet applet = (Applet) appletClass.newInstance();
 
             return applet;
@@ -767,7 +772,7 @@ public class Launcher {
      */
     protected ApplicationInstance createApplication(JNLPFile file) throws LaunchException {
         try {
-            JNLPClassLoader loader = JNLPClassLoader.getInstance(file, updatePolicy);
+            JNLPClassLoader loader = JNLPClassLoader.getInstance(file, updatePolicy, false);
             ThreadGroup group = Thread.currentThread().getThreadGroup();
 
             ApplicationInstance app = new ApplicationInstance(file, group, loader);
@@ -787,7 +792,7 @@ public class Launcher {
      * ThreadGroup has to be created at an earlier point in the applet code.
      */
     protected ThreadGroup createThreadGroup(JNLPFile file) {
-        ThreadGroup tg = null;
+        final ThreadGroup tg;
 
         if (file instanceof PluginBridge) {
             tg = Thread.currentThread().getThreadGroup();
@@ -803,8 +808,16 @@ public class Launcher {
      * caller.
      */
     private LaunchException launchError(LaunchException ex) {
-        if (handler != null)
+        return launchError(ex, null);
+    }
+    
+    private LaunchException launchError(LaunchException ex, AppletInstance applet) {
+        if (applet != null) {
+            SplashUtils.showErrorCaught(ex, applet);
+        }
+        if (handler != null) {
             handler.launchError(ex);
+        }
 
         return ex;
     }
@@ -817,10 +830,11 @@ public class Launcher {
      * @return an exception to throw if the launch should be aborted, or null otherwise
      */
     private LaunchException launchWarning(LaunchException ex) {
-        if (handler != null)
+        if (handler != null) {
             if (!handler.launchWarning(ex))
                 // no need to destroy the app b/c it hasn't started
-                return ex; // chose to abort
+                return ex;
+        } // chose to abort
 
         return null; // chose to continue, or no handler
     }
@@ -842,7 +856,7 @@ public class Launcher {
         new ParserDelegator();
     }
 
-    /**
+       /**
      * This runnable is used to call the appropriate launch method
      * for the application, applet, or installer in its thread group.
      */
@@ -871,12 +885,14 @@ public class Launcher {
             this.isPlugin = isPlugin;
         }
 
+        @Override
         public void run() {
             try {
                 // Do not create new AppContext if we're using NetX and icedteaplugin.
                 // The plugin needs an AppContext too, but it has to be created earlier.
-                if (context && !isPlugin)
+                if (context && !isPlugin) {
                     SunToolkit.createNewAppContext();
+                }
 
                 doPerApplicationAppContextHacks();
 
@@ -885,23 +901,31 @@ public class Launcher {
                     JNLPRuntime.setDefaultDownloadIndicator(null);
                     application = getApplet(file, ((PluginBridge)file).codeBaseLookup(), cont);
                 } else {
-                    if (file.isApplication())
+                    if (file.isApplication()) {
                         application = launchApplication(file);
-                    else if (file.isApplet())
-                        application = launchApplet(file, true, cont); // enable applet code base
-                    else if (file.isInstaller())
+                    }
+                    else if (file.isApplet()) {
+                        application = launchApplet(file, true, cont);
+                    } // enable applet code base
+                    else if (file.isInstaller()) {
                         application = launchInstaller(file);
-                    else
+                    }
+                    else {
                         throw launchError(new LaunchException(file, null,
                                                 R("LSFatal"), R("LCClient"), R("LNotLaunchable"),
                                                 R("LNotLaunchableInfo")));
+                    }
                 }
             } catch (LaunchException ex) {
-                ex.printStackTrace();
+                OutputController.getLogger().log(OutputController.Level.ERROR_ALL, ex);
                 exception = ex;
                 // Exit if we can't launch the application.
-                if (exitOnFailure)
-                    System.exit(1);
+                if (exitOnFailure) {
+                    JNLPRuntime.exit(1);
+                }
+            }  catch (Throwable ex) {
+                OutputController.getLogger().log(OutputController.Level.ERROR_ALL, ex);
+                throw new RuntimeException(ex);
             }
         }
 
@@ -913,33 +937,6 @@ public class Launcher {
             return application;
         }
 
-    };
-
-    /**
-     * This runnable is used by the <code>launchBackground</code>
-     * methods to launch a JNLP file from a separate thread.
-     */
-    private class BgRunner implements Runnable {
-        private JNLPFile file;
-        private URL location;
-
-        BgRunner(JNLPFile file, URL location) {
-            this.file = file;
-            this.location = location;
-        }
-
-        public void run() {
-            try {
-                if (file != null)
-                    launch(file);
-                if (location != null)
-                    launch(location);
-            } catch (LaunchException ex) {
-                // launch method communicates error conditions to the
-                // handler if it exists, otherwise we don't care because
-                // there's nothing that can be done about the exception.
-            }
-        }
     };
 
 }

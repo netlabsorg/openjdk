@@ -24,12 +24,16 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map.Entry;
+import java.util.Set;
 
 import javax.jnlp.SingleInstanceListener;
 import javax.management.InstanceAlreadyExistsException;
 
 import net.sourceforge.jnlp.JNLPFile;
+import net.sourceforge.jnlp.PluginBridge;
 import net.sourceforge.jnlp.runtime.JNLPRuntime;
+import net.sourceforge.jnlp.util.logging.OutputController;
 
 /**
  * This class implements SingleInstanceService
@@ -60,9 +64,7 @@ public class XSingleInstanceService implements ExtendedSingleInstanceService {
                 listeningSocket = new ServerSocket(0);
                 lockFile.createWithPort(listeningSocket.getLocalPort());
 
-                if (JNLPRuntime.isDebug()) {
-                    System.out.println("Starting SingleInstanceServer on port" + listeningSocket);
-                }
+                OutputController.getLogger().log("Starting SingleInstanceServer on port" + listeningSocket);
 
                 while (true) {
                     try {
@@ -73,19 +75,19 @@ public class XSingleInstanceService implements ExtendedSingleInstanceService {
                         notifySingleInstanceListeners(arguments);
                     } catch (Exception exception) {
                         // not much to do here...
-                        exception.printStackTrace();
+                        OutputController.getLogger().log(OutputController.Level.ERROR_ALL, exception);
                     }
 
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+                OutputController.getLogger().log(OutputController.Level.ERROR_ALL, e);
             } finally {
                 if (listeningSocket != null) {
                     try {
                         listeningSocket.close();
                     } catch (IOException e) {
                         // Give up.
-                        e.printStackTrace();
+                        OutputController.getLogger().log(OutputController.Level.ERROR_ALL, e);
                     }
                 }
             }
@@ -101,16 +103,17 @@ public class XSingleInstanceService implements ExtendedSingleInstanceService {
     /**
      * Initialize the new SingleInstanceService
      *
-     * @throws InstanceAlreadyExistsException if the instance already exists
+     * @throws InstanceExistsException if the instance already exists
      */
     public void initializeSingleInstance() {
-        if (!initialized) {
-            // this is called after the application has started. so safe to use
-            // JNLPRuntime.getApplication()
-            checkSingleInstanceRunning(JNLPRuntime.getApplication().getJNLPFile());
+        // this is called after the application has started. so safe to use
+        // JNLPRuntime.getApplication()
+        JNLPFile jnlpFile = JNLPRuntime.getApplication().getJNLPFile();
+        if (!initialized || jnlpFile instanceof PluginBridge) {
+            // Either a new process or a new applet being handled by the plugin.
+            checkSingleInstanceRunning(jnlpFile);
             initialized = true;
             SingleInstanceLock lockFile;
-            JNLPFile jnlpFile = JNLPRuntime.getApplication().getJNLPFile();
             lockFile = new SingleInstanceLock(jnlpFile);
             if (!lockFile.isValid()) {
                 startListeningServer(lockFile);
@@ -127,16 +130,34 @@ public class XSingleInstanceService implements ExtendedSingleInstanceService {
      * @throws InstanceExistsException if an instance of this application
      *         already exists
      */
+    @Override
     public void checkSingleInstanceRunning(JNLPFile jnlpFile) {
         SingleInstanceLock lockFile = new SingleInstanceLock(jnlpFile);
         if (lockFile.isValid()) {
             int port = lockFile.getPort();
-            if (JNLPRuntime.isDebug()) {
-                System.out.println("Lock file is valid (port=" + port + "). Exiting.");
+            OutputController.getLogger().log("Lock file is valid (port=" + port + "). Exiting.");
+
+            String[] args = null;
+            if (jnlpFile.isApplet()) {
+                // FIXME Proprietary plug-in is unclear about how to handle
+                // applets and their parameters. 
+                //Right now better to forward at least something
+                Set<Entry<String, String>> currentParams = jnlpFile.getApplet().getParameters().entrySet();
+                args = new String[currentParams.size() * 2];
+                int i = 0;
+                for (Entry<String, String> entry : currentParams) {
+                    args[i] = entry.getKey();
+                    args[i+1] = entry.getValue();
+                    i += 2;
+                }
+            } else if (jnlpFile.isInstaller()) {
+                // TODO Implement this once installer service is available.
+            } else {
+                args = jnlpFile.getApplication().getArguments();
             }
+
             try {
-                sendProgramArgumentsToExistingApplication(port, jnlpFile.getApplication()
-                        .getArguments());
+                sendProgramArgumentsToExistingApplication(port, args);
                 throw new InstanceExistsException(String.valueOf(port));
             } catch (IOException e) {
                 throw new RuntimeException(e);
@@ -180,9 +201,7 @@ public class XSingleInstanceService implements ExtendedSingleInstanceService {
             serverCommunicationSocket.close();
 
         } catch (UnknownHostException unknownHost) {
-            if (JNLPRuntime.isDebug()) {
-                System.out.println("Unable to find localhost");
-            }
+            OutputController.getLogger().log("Unable to find localhost");
             throw new RuntimeException(unknownHost);
         }
     }
@@ -203,7 +222,7 @@ public class XSingleInstanceService implements ExtendedSingleInstanceService {
     /**
      * Add the specified SingleInstanceListener
      *
-     * @throws InstanceExistsException, which is likely to terminate the
+     * @throws InstanceExistsException which is likely to terminate the
      *         application but not guaranteed to
      */
     public void addSingleInstanceListener(SingleInstanceListener sil) {

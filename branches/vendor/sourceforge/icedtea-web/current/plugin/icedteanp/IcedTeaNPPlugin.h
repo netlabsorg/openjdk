@@ -39,20 +39,13 @@ exception statement from your version. */
 #ifndef __ICEDTEANPPLUGIN_H__
 #define	__ICEDTEANPPLUGIN_H__
 
-#if MOZILLA_VERSION_COLLAPSED < 1090100
-#include <nsThreadUtils.h>
-#else
 #include <npapi.h>
 #include <npruntime.h>
 #include <npfunctions.h>
-#endif
 
 // GLib includes.
 #include <glib.h>
 #include <glib/gstdio.h>
-
-// GTK includes.
-#include <gtk/gtk.h>
 
 #include "IcedTeaPluginUtils.h"
 #include "IcedTeaPluginRequestProcessor.h"
@@ -66,8 +59,8 @@ struct ITNPPluginData
 {
   // A unique identifier for this plugin window.
   gchar* instance_id;
-  // The applet tag sent to Java side
-  gchar* applet_tag;
+  // The parameter list string sent to Java side
+  gchar* parameters_string;
   // Mutex to protect appletviewer_alive.
   GMutex* appletviewer_mutex;
   // Back-pointer to the plugin instance to which this data belongs.
@@ -81,18 +74,37 @@ struct ITNPPluginData
   // The last plugin window height sent to us by the browser.
   guint32 window_height;
   // The source location for this instance
-  gchar* source;
+  std::string source;
   // If this is an actual applet instance, or a dummy instance for static calls
   bool is_applet_instance;
+
+  ITNPPluginData() {
+      instance_id = NULL;
+      parameters_string = NULL;
+      appletviewer_mutex = NULL;
+      owner = (NPP)NULL;
+      window_handle = NULL;
+      window_width = 0;
+      window_height = 0;
+      is_applet_instance = false;
+  }
+  ~ITNPPluginData() {
+      if (appletviewer_mutex) {
+        g_mutex_free (appletviewer_mutex);
+      }
+      // cleanup_instance_string:
+      g_free (instance_id);
+      // cleanup applet tag
+      g_free (parameters_string);
+  }
 };
 
-// Queue processing threads
-static pthread_t plugin_request_processor_thread1;
-static pthread_t plugin_request_processor_thread2;
-static pthread_t plugin_request_processor_thread3;
+// Have the browser allocate a new ITNPPluginData structure.
+ITNPPluginData* plugin_data_new ();
+void plugin_data_destroy (NPP instance);
 
-// Condition on which the queue processor waits
-extern pthread_cond_t cond_message_available;
+NPError initialize_data_directory();
+NPError start_jvm_if_needed();
 
 // ID of plug-in thread
 extern pthread_t itnp_plugin_thread_id;
@@ -100,8 +112,22 @@ extern pthread_t itnp_plugin_thread_id;
 /* Mutex around plugin async call queue ops */
 extern pthread_mutex_t pluginAsyncCallMutex;
 
-// debug switch
+/*to sync pipe to apletviewer console*/
+extern pthread_mutex_t debug_pipe_lock;
+
+// debug switches
+extern bool debug_initiated;
 extern int plugin_debug;
+extern bool plugin_debug_headers;
+extern bool plugin_debug_to_file;
+extern bool plugin_debug_to_streams;
+extern bool plugin_debug_to_system;
+extern bool plugin_debug_to_console;
+extern FILE * plugin_file_log;
+extern std::string plugin_file_log_name;
+extern gchar* debug_pipe_name;
+
+extern gboolean jvm_up;
 
 // Browser function table.
 extern NPNetscapeFuncs browser_functions;
@@ -129,11 +155,16 @@ int get_id_from_instance(NPP instance);
 
 /* Sends a message to the appletviewer */
 void plugin_send_message_to_appletviewer(gchar const* message);
+/*this method is not logging, do not add \n and is using different pipe*/
+void plugin_send_message_to_appletviewer_console(gchar const* message);
+void flush_plugin_send_message_to_appletviewer_console();
 
 /* Returns an appropriate (package/object) scriptable npobject */
 NPObject* get_scriptable_object(NPP instance);
 
 /* Creates a new scriptable plugin object and returns it */
 NPObject* allocate_scriptable_object(NPP npp, NPClass *aClass);
+
+NPError plugin_start_appletviewer (ITNPPluginData* data);
 
 #endif	/* __ICEDTEANPPLUGIN_H__ */

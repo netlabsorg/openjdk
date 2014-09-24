@@ -37,21 +37,35 @@ exception statement from your version.
 
 package net.sourceforge.jnlp.security;
 
-import net.sourceforge.jnlp.JNLPFile;
-import net.sourceforge.jnlp.runtime.JNLPRuntime;
-import net.sourceforge.jnlp.security.SecurityDialogs.AccessType;
-import net.sourceforge.jnlp.security.SecurityDialogs.DialogType;
-import net.sourceforge.jnlp.util.ImageResources;
-
-import java.awt.*;
-
-import javax.swing.*;
-
-import java.awt.event.*;
+import java.awt.BorderLayout;
+import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.security.cert.X509Certificate;
+import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import java.util.List;
+import javax.swing.JDialog;
+
+import net.sourceforge.jnlp.JNLPFile;
+import net.sourceforge.jnlp.runtime.JNLPClassLoader.SecurityDelegate;
+import net.sourceforge.jnlp.security.SecurityDialogs.AccessType;
+import net.sourceforge.jnlp.security.SecurityDialogs.DialogType;
+import net.sourceforge.jnlp.security.dialogs.AccessWarningPane;
+import net.sourceforge.jnlp.security.dialogs.AppletWarningPane;
+import net.sourceforge.jnlp.security.dialogs.CertWarningPane;
+import net.sourceforge.jnlp.security.dialogs.CertsInfoPane;
+import net.sourceforge.jnlp.security.dialogs.MatchingALACAttributePanel;
+import net.sourceforge.jnlp.security.dialogs.MissingALACAttributePanel;
+import net.sourceforge.jnlp.security.dialogs.MissingPermissionsAttributePanel;
+import net.sourceforge.jnlp.security.dialogs.MoreInfoPane;
+import net.sourceforge.jnlp.security.dialogs.PasswordAuthenticationPane;
+import net.sourceforge.jnlp.security.dialogs.SecurityDialogPanel;
+import net.sourceforge.jnlp.security.dialogs.SingleCertInfoPane;
+import net.sourceforge.jnlp.security.dialogs.apptrustwarningpanel.AppTrustWarningDialog;
+import net.sourceforge.jnlp.util.ImageResources;
+import net.sourceforge.jnlp.util.ScreenFinder;
+import net.sourceforge.jnlp.util.logging.OutputController;
 
 /**
  * Provides methods for showing security warning dialogs for a wide range of
@@ -213,8 +227,6 @@ public class SecurityDialog extends JDialog {
     }
 
     private void initDialog() {
-        setSystemLookAndFeel();
-
         String dialogTitle = "";
         if (dialogType == DialogType.CERT_WARNING) {
             if (accessType == AccessType.VERIFIED)
@@ -229,7 +241,7 @@ public class SecurityDialog extends JDialog {
             dialogTitle = "Security Warning";
         else if (dialogType == DialogType.APPLET_WARNING)
             dialogTitle = "Applet Warning";
-        else if (dialogType == DialogType.NOTALLSIGNED_WARNING)
+        else if (dialogType == DialogType.PARTIALLYSIGNED_WARNING)
             dialogTitle = "Security Warning";
         else if (dialogType == DialogType.AUTHENTICATION)
             dialogTitle = "Authentication Required";
@@ -242,6 +254,7 @@ public class SecurityDialog extends JDialog {
         installPanel();
 
         pack();
+        centerDialog(this);
 
         WindowAdapter adapter = new WindowAdapter() {
             private boolean gotFocus = false;
@@ -260,14 +273,12 @@ public class SecurityDialog extends JDialog {
                 if (e.getSource() instanceof SecurityDialog) {
                     SecurityDialog dialog = (SecurityDialog) e.getSource();
                     dialog.setResizable(true);
-                    centerDialog(dialog);
                     dialog.setValue(null);
                 }
             }
         };
         addWindowListener(adapter);
         addWindowFocusListener(adapter);
-
     }
 
     public AccessType getAccessType() {
@@ -292,7 +303,7 @@ public class SecurityDialog extends JDialog {
     private void installPanel() {
 
         if (dialogType == DialogType.CERT_WARNING)
-            panel = new CertWarningPane(this, this.certVerifier);
+            panel = new CertWarningPane(this, this.certVerifier, (SecurityDelegate) extras[0]);
         else if (dialogType == DialogType.MORE_INFO)
             panel = new MoreInfoPane(this, this.certVerifier);
         else if (dialogType == DialogType.CERT_INFO)
@@ -303,40 +314,40 @@ public class SecurityDialog extends JDialog {
             panel = new AccessWarningPane(this, extras, this.certVerifier);
         else if (dialogType == DialogType.APPLET_WARNING)
             panel = new AppletWarningPane(this, this.certVerifier);
-        else if (dialogType == DialogType.NOTALLSIGNED_WARNING)
-            panel = new NotAllSignedWarningPane(this);
+        else if (dialogType == DialogType.PARTIALLYSIGNED_WARNING)
+            panel = AppTrustWarningDialog.partiallySigned(this, file, (SecurityDelegate) extras[0]);
+        else if (dialogType == DialogType.UNSIGNED_WARNING) // Only necessary for applets on 'high security' or above
+            panel = AppTrustWarningDialog.unsigned(this, file);
         else if (dialogType == DialogType.AUTHENTICATION)
             panel = new PasswordAuthenticationPane(this, extras);
+        else if (dialogType == DialogType.UNSIGNED_EAS_NO_PERMISSIONS_WARNING)
+            panel = new MissingPermissionsAttributePanel(this, (String) extras[0], (String) extras[1]);
+        else if (dialogType == DialogType.MISSING_ALACA)
+            panel = new MissingALACAttributePanel(this, (String) extras[0], (String) extras[1], (String) extras[2]);
+        else if (dialogType == DialogType.MATCHING_ALACA)
+            panel = new MatchingALACAttributePanel(this, (String) extras[0], (String) extras[1], (String) extras[2]);
 
         add(panel, BorderLayout.CENTER);
     }
 
     private static void centerDialog(JDialog dialog) {
-        Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
-        Dimension dialogSize = dialog.getSize();
-
-        dialog.setLocation((screen.width - dialogSize.width) / 2,
-                        (screen.height - dialogSize.height) / 2);
+        ScreenFinder.centerWindowsToCurrentScreen(dialog);
     }
 
     private void selectDefaultButton() {
         if (panel == null) {
-            System.out.println("initial value panel is null");
+            OutputController.getLogger().log(OutputController.Level.MESSAGE_ALL, "initial value panel is null");
         }
         panel.requestFocusOnDefaultButton();
     }
 
-    protected void setValue(Object value) {
-        if (JNLPRuntime.isDebug()) {
-            System.out.println("Setting value:" + value);
-        }
+    public void setValue(Object value) {
+        OutputController.getLogger().log("Setting value:" + value);
         this.value = value;
     }
 
     public Object getValue() {
-        if (JNLPRuntime.isDebug()) {
-            System.out.println("Returning value:" + value);
-        }
+        OutputController.getLogger().log("Returning value:" + value);
         return value;
     }
 
@@ -348,17 +359,6 @@ public class SecurityDialog extends JDialog {
     public void dispose() {
         notifySelectionMade();
         super.dispose();
-    }
-
-    /**
-     * Updates the look and feel of the window to be the system look and feel
-     */
-    protected void setSystemLookAndFeel() {
-        try {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        } catch (Exception e) {
-            //don't worry if we can't.
-        }
     }
 
     private final List<ActionListener> listeners = new CopyOnWriteArrayList<ActionListener>();
