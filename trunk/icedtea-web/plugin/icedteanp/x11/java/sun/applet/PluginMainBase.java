@@ -45,9 +45,17 @@ import java.io.IOException;
 class PluginMainBase {
 
     static boolean checkArgs(String args[]) {
-        if (args.length != 2 || !(new File(args[0]).exists()) || !(new File(args[1]).exists())) {
-            System.err.println("Invalid pipe names provided. Refusing to proceed.");
+        if (args.length < 2 || !(new File(args[0]).exists()) || !(new File(args[1]).exists())) {
+            OutputController.getLogger().log(OutputController.Level.ERROR_ALL, "Invalid pipe names provided. Refusing to proceed.");
             return false;
+        }
+        DeploymentConfiguration.move14AndOlderFilesTo15StructureCatched();
+        if (JavaConsole.isEnabled()) {
+            if ((args.length < 3) || !new File(args[2]).exists()) {
+                OutputController.getLogger().log(OutputController.Level.ERROR_ALL, "Warning, although console is on, plugin debug connection do not exists. No plugin information will be displayed in console (only java ones).");
+            } else {
+                JavaConsole.getConsole().createPluginReader(new File(args[2]));
+            }
         }
         return true;
     }
@@ -60,7 +68,7 @@ class PluginMainBase {
             streamHandler = new PluginStreamHandler(new FileInputStream(inPipe), new FileOutputStream(outPipe));
             PluginDebug.debug("Streams initialized");
         } catch (IOException ioe) {
-            ioe.printStackTrace();
+            OutputController.getLogger().log(OutputController.Level.ERROR_ALL,ioe);
         }
         return streamHandler;
     }

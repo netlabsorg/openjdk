@@ -642,15 +642,20 @@ queue_processor(void* data)
 #ifdef __OS2__
     QueueProcessorData *queue_processor_data = (QueueProcessorData *) data;
     PluginRequestProcessor* processor = queue_processor_data->processor;
+    processor->queueProcessorThread(queue_processor_data);
 #else
     PluginRequestProcessor* processor = (PluginRequestProcessor*) data;
-#endif
     processor->queueProcessorThread();
+#endif
     return NULL;
 }
 
 void
+#ifdef __OS2__
+PluginRequestProcessor::queueProcessorThread(QueueProcessorData *queue_processor_data)
+#else
 PluginRequestProcessor::queueProcessorThread()
+#endif
 {
     std::vector<std::string*>* message_parts = NULL;
     std::string command;

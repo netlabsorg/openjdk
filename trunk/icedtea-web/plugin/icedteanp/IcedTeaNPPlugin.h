@@ -106,6 +106,14 @@ void plugin_data_destroy (NPP instance);
 NPError initialize_data_directory();
 NPError start_jvm_if_needed();
 
+#ifdef __OS2__
+struct QueueProcessorData
+{
+    PluginRequestProcessor *processor;
+    bool stopRequested;
+};
+#endif
+
 // ID of plug-in thread
 extern pthread_t itnp_plugin_thread_id;
 

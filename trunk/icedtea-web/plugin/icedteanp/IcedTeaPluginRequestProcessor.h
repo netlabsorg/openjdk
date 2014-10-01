@@ -69,6 +69,10 @@ void _loadURL(void* data);
 
 void* queue_processor(void* data);
 
+#ifdef __OS2__
+struct QueueProcessorData;
+#endif
+
 /**
  * Processes requests made TO the plugin (by java or anyone else)
  */
@@ -126,7 +130,12 @@ class PluginRequestProcessor : public BusSubscriber
         virtual bool newMessageOnBus(const char* message);
 
         /* Thread run method for processing queued messages */
+#ifdef __OS2__
+        void queueProcessorThread(QueueProcessorData *queue_processor_data);
+        void cancelWait() { pthread_cond_broadcast(&cond_message_available); }
+#else
         void queueProcessorThread();
+#endif
 };
 
 #endif // __ICEDTEAPLUGINREQUESTPROCESSOR_H__

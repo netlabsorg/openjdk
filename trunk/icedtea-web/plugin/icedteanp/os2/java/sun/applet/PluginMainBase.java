@@ -43,19 +43,32 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
+import net.sourceforge.jnlp.config.DeploymentConfiguration;
+import net.sourceforge.jnlp.util.logging.JavaConsole;
+import net.sourceforge.jnlp.util.logging.OutputController;
+
 class PluginMainBase {
 
     private static int inPipe = -1;
     private static int outPipe = -1;
 
     static boolean checkArgs(String args[]) {
-        if (args.length == 2) {
+        if (args.length >= 2) {
             inPipe = Integer.valueOf(args[0]).intValue();
             outPipe = Integer.valueOf(args[1]).intValue();
-            if (inPipe >= 0 && outPipe >= 0)
+            if (inPipe >= 0 && outPipe >= 0) {
+                DeploymentConfiguration.move14AndOlderFilesTo15StructureCatched();
+                if (JavaConsole.isEnabled()) {
+                    if ((args.length < 3) || !new File(args[2]).exists()) {
+                        OutputController.getLogger().log(OutputController.Level.ERROR_ALL, "Warning, although console is on, plugin debug connection do not exists. No plugin information will be displayed in console (only java ones).");
+                    } else {
+                        JavaConsole.getConsole().createPluginReader(new File(args[2]));
+                    }
+                }
                 return true;
+            }
         }
-        System.err.println("Invalid pipe descriptors provided. Refusing to proceed.");
+        OutputController.getLogger().log(OutputController.Level.ERROR_ALL, "Invalid pipe descriptors provided. Refusing to proceed.");
         return false;
     }
 
@@ -66,12 +79,8 @@ class PluginMainBase {
         fdAccess.set(inPipeFD, inPipe);
         FileDescriptor outPipeFD = new FileDescriptor();
         fdAccess.set(outPipeFD, outPipe);
-        try {
-            streamHandler = new PluginStreamHandler(new FileInputStream(inPipeFD), new FileOutputStream(outPipeFD));
-            PluginDebug.debug("Streams initialized");
-        } catch (IOException ioe) {
-            ioe.printStackTrace();
-        }
+        streamHandler = new PluginStreamHandler(new FileInputStream(inPipeFD), new FileOutputStream(outPipeFD));
+        PluginDebug.debug("Streams initialized");
         return streamHandler;
     }
 }

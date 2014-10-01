@@ -37,7 +37,8 @@ npicedt_SOURCES     = \
     IcedTeaScriptablePluginObject.cc \
     IcedTeaJavaRequestProcessor.cc \
     IcedTeaPluginRequestProcessor.cc \
-    IcedTeaPluginUtils.cc
+    IcedTeaPluginUtils.cc \
+    IcedTeaParseProperties.cc
 
 npicedt_SOURCES.os2 = \
     os2/OS_OS2.cc \
