@@ -78,7 +78,7 @@ const char *icedtea_web_data_dir()
                 }
             }
             if (!ok)
-                strcpy(buf, ".");
+                buf[0] = '\0';
         }
         home = buf;
 #else
@@ -109,15 +109,17 @@ const char *icedtea_web_jre_dir()
                 if (end)
                 {
                     *end = '\0';
-                    ok = TRUE;
-                    // truncate \bin if present
+                    // truncate \bin if present (otherwise this path is considered invalid)
                     end = strrchr(buf, '\\');
                     if (end && stricmp(end + 1, "bin") == 0)
+                    {
                         *end = '\0';
+                        ok = TRUE;
+                    }
                 }
             }
             if (!ok)
-                strcpy(buf, ".");
+                buf[0] = '\0';
         }
         jre = buf;
 #else
