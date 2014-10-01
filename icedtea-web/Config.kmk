@@ -8,8 +8,8 @@
 
 PACKAGE_NAME       := icedtea-web
 PACKAGE_VER_MAJOR  := 1
-PACKAGE_VER_MINOR  := 3
-PACKAGE_VER_PATCH  := 0
+PACKAGE_VER_MINOR  := 5
+PACKAGE_VER_PATCH  := 1
 PACKAGE_VERSION    := $(PACKAGE_VER_MAJOR).$(PACKAGE_VER_MINOR).$(PACKAGE_VER_PATCH)
 PACKAGE_STRING     := $(PACKAGE_NAME) $(PACKAGE_VERSION)
 PACKAGE_URL        := http://icedtea.classpath.org/wiki/IcedTea-Web
@@ -29,7 +29,7 @@ INSTALL_DATA       := install -m 644
 #ICEDTEA_WEB_JRE_DIR     := /@unixroot/usr/lib/jre
 #ICEDTEA_WEB_DATA_DIR    := /@unixroot/usr/share/$(PACKAGE_NAME)
 
-ICEDTEA_WEB_JRE     = icedtea_web_jre_dir()
+ICEDTEA_WEB_JRE     = ""
 
 #
 # We need the jars in bootclasspath for a couple of reasons
@@ -38,10 +38,8 @@ ICEDTEA_WEB_JRE     = icedtea_web_jre_dir()
 #    IllegalAccessException
 #  - we want full privileges
 #
-LAUNCHER_BOOTCLASSPATH  = \"-Xbootclasspath/a:%s/netx.jar$(RHINO_RUNTIME)\", \
-                          icedtea_web_data_dir()
-PLUGIN_BOOTCLASSPATH    = \"-Xbootclasspath/a:%s/netx.jar;%s/plugin.jar$(RHINO_RUNTIME)\", \
-                          icedtea_web_data_dir(), icedtea_web_data_dir()
+LAUNCHER_BOOTCLASSPATH  = \"-Xbootclasspath/a:%s/netx.jar$(RHINO_RUNTIME)\"
+PLUGIN_BOOTCLASSPATH    = \"-Xbootclasspath/a:@DATADIR@/netx.jar;@DATADIR@/plugin.jar$(RHINO_RUNTIME)\"
 
 # Fake update version to work with the Deployment Toolkit script used by Oracle
 # http://download.oracle.com/javase/tutorial/deployment/deploymentInDepth/depltoolkit_index.html

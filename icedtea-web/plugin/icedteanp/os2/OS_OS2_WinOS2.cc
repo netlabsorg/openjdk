@@ -40,6 +40,7 @@ exception statement from your version. */
 
 #include <winuser32.h> // CreateFakeWindowEx and friends
 
+#include "IcedTeaNPPlugin.h"
 #include "IcedTeaPluginUtils.h"
 
 static ATOM WrapperClass;

@@ -132,14 +132,7 @@ public class PluginMain extends PluginMainBase {
         if (!checkArgs(args)) {
             JNLPRuntime.exit(1);
         }
-        DeploymentConfiguration.move14AndOlderFilesTo15StructureCatched();
-        if (JavaConsole.isEnabled()) {
-            if ((args.length < 3) || !new File(args[2]).exists()) {
-                OutputController.getLogger().log(OutputController.Level.ERROR_ALL, "Warning, although console is on, plugin debug connection do not exists. No plugin information will be displayed in console (only java ones).");
-            } else {
-                JavaConsole.getConsole().createPluginReader(new File(args[2]));
-            }
-        }
+
         try {
             PluginStreamHandler streamHandler = connect(args);
 

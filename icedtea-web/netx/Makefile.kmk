@@ -60,7 +60,7 @@ $$(netx_JARFILE): $$(netx_BUILD_PROPERTIES) $$(netx_MANIFEST) \
         $(netx_0_OUTDIR)/net/sourceforge/jnlp/runtime
 	(cd $(netx_0_OUTDIR); \
         $(PATH_BOOTSTRAP_JDK)/bin/jar cfm $(netx_JARFILE) \
-            $(netx_MANIFEST) javax/jnlp net)
+            $(netx_MANIFEST) javax/jnlp net sun)
 
 netx: $$(netx_JARFILE)
 

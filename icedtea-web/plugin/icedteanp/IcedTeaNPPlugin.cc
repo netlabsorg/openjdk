@@ -220,12 +220,6 @@ static pthread_t plugin_request_processor_thread2;
 static pthread_t plugin_request_processor_thread3;
 
 #ifdef __OS2__
-struct QueueProcessorData
-{
-    PluginRequestProcessor *processor;
-    bool stopRequested;
-};
-
 static QueueProcessorData queue_processor_data1 = { NULL, false };
 static QueueProcessorData queue_processor_data2 = { NULL, false };
 static QueueProcessorData queue_processor_data3 = { NULL, false };
@@ -313,6 +307,11 @@ static std::string get_plugin_executable(){
                  PLUGIN_ERROR("Your custom jre (/bin/java check) %s is not valid. Please fix %s in your %s. In attempt to run using default one. \n", custom_jre.c_str(), custom_jre_key.c_str(), default_file_ITW_deploy_props_name.c_str());
             }
       }
+#ifdef __OS2___
+      custom_jre = icedtea_web_jre_dir();
+      if (custom_jre.length())
+          return custom_jre+"/bin/java";
+#endif
       return appletviewer_default_executable;      
 }
 
@@ -326,7 +325,12 @@ static std::string get_plugin_rt_jar(){
                   PLUGIN_ERROR("Your custom jre (/lib/rt.jar check) %s is not valid. Please fix %s in your %s. In attempt to run using default one. \n", custom_jre.c_str(), custom_jre_key.c_str(), default_file_ITW_deploy_props_name.c_str());
             }
       }
-      return appletviewer_default_rtjar;      
+#ifdef __OS2___
+      custom_jre = icedtea_web_jre_dir();
+      if (custom_jre.length())
+          return custom_jre+"/lib/rt.jar";
+#endif
+      return appletviewer_default_rtjar;
 }
 
 static void cleanUpDir(){
@@ -512,7 +516,7 @@ NPError start_jvm_if_needed()
 #ifdef __OS2__
   if (socketpair (AF_LOCAL, SOCK_STREAM, 0, in_pipe) == -1)
     {
-      PLUGIN_ERROR_TWO ("Failed to create input pipe", strerror (errno));
+      PLUGIN_ERROR ("Failed to create input pipe", strerror (errno));
       np_error = NPERR_GENERIC_ERROR;
       goto cleanup_in_pipe;
     }
@@ -549,7 +553,7 @@ NPError start_jvm_if_needed()
 #ifdef __OS2__
   if (socketpair (AF_LOCAL, SOCK_STREAM, 0, out_pipe) == -1)
     {
-      PLUGIN_ERROR_TWO ("Failed to create output pipe", strerror (errno));
+      PLUGIN_ERROR ("Failed to create output pipe", strerror (errno));
       np_error = NPERR_GENERIC_ERROR;
       goto cleanup_out_pipe;
     }
@@ -1593,7 +1597,20 @@ plugin_start_appletviewer (ITNPPluginData* data)
     command_line.push_back(*jvm_args->at(i));
   }
 
+#ifdef __OS2__
+  {
+    std::string path = PLUGIN_BOOTCLASSPATH;
+    static const std::string datadir = "@DATADIR@";
+    size_t pos = 0;
+    while ((pos = path.find(datadir, pos)) != std::string::npos) {
+      path.replace(pos, datadir.length(), icedtea_web_data_dir());
+      pos += datadir.length();
+    }
+    command_line.push_back(path);
+  }
+#else
   command_line.push_back(PLUGIN_BOOTCLASSPATH);
+#endif
   // set the classpath to avoid using the default (cwd).
   command_line.push_back("-classpath");
   command_line.push_back(get_plugin_rt_jar());
@@ -1616,8 +1633,8 @@ plugin_start_appletviewer (ITNPPluginData* data)
 
   command_line.push_back("sun.applet.PluginMain");
 #ifdef __OS2__
-  command_line.push_back((std::ostrstream() << out_pipe[1]).str());
-  command_line.push_back((std::ostrstream() << in_pipe[1]).str());
+  command_line.push_back(static_cast<std::ostringstream &>(std::ostringstream() << out_pipe[1]).str());
+  command_line.push_back(static_cast<std::ostringstream &>(std::ostringstream() << in_pipe[1]).str());
 #else
   command_line.push_back(out_pipe_name);
   command_line.push_back(in_pipe_name);
@@ -2442,11 +2459,11 @@ OSCALL NP_Shutdown (void)
   initialized = false;
 
 #ifdef __OS2__
-  // pthread_cancel() isn't implemented on OS?2, so use an old good flag
+  // pthread_cancel() isn't implemented on OS/2, so use an old good flag
   queue_processor_data1.stopRequested = true;
   queue_processor_data2.stopRequested = true;
   queue_processor_data3.stopRequested = true;
-  pthread_cond_broadcast(&cond_message_available);
+  plugin_req_proc->cancelWait();
 #else
   pthread_cancel(plugin_request_processor_thread1);
   pthread_cancel(plugin_request_processor_thread2);
