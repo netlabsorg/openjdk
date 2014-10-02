@@ -307,12 +307,12 @@ static std::string get_plugin_executable(){
                  PLUGIN_ERROR("Your custom jre (/bin/java check) %s is not valid. Please fix %s in your %s. In attempt to run using default one. \n", custom_jre.c_str(), custom_jre_key.c_str(), default_file_ITW_deploy_props_name.c_str());
             }
       }
-#ifdef __OS2___
+#ifdef __OS2__
       custom_jre = icedtea_web_jre_dir();
       if (custom_jre.length())
           return custom_jre+"/bin/java";
 #endif
-      return appletviewer_default_executable;      
+      return appletviewer_default_executable;
 }
 
 static std::string get_plugin_rt_jar(){
@@ -325,7 +325,7 @@ static std::string get_plugin_rt_jar(){
                   PLUGIN_ERROR("Your custom jre (/lib/rt.jar check) %s is not valid. Please fix %s in your %s. In attempt to run using default one. \n", custom_jre.c_str(), custom_jre_key.c_str(), default_file_ITW_deploy_props_name.c_str());
             }
       }
-#ifdef __OS2___
+#ifdef __OS2__
       custom_jre = icedtea_web_jre_dir();
       if (custom_jre.length())
           return custom_jre+"/lib/rt.jar";
