@@ -87,11 +87,11 @@ BLDDIRS += $(dir $(liveconnect_JARFILE))
 OTHER_CLEAN += $(liveconnect_JARFILE)
 
 $$(liveconnect_JAVASRCLIST): $(MAKEFILE) | $$(call DIRDEP,$$(dir $$(@)))
-	@echo 'JAVASRC = \' > $@
+	@echo 'liveconnect_JAVASRC = \' > $@
 	find $(liveconnect_JAVASRCDIRS) -name '*.java' \
         -printf '%p \\\n' >> $@
 
-$$(liveconnect_JAVASRCLIST).stamp: $$(JAVASRC) | $(PATH_STAGE)/lib/netx.jar $$(call DIRDEP,$$(dir $$(@)))
+$$(liveconnect_JAVASRCLIST).stamp: $$(liveconnect_JAVASRC) | $(PATH_STAGE)/lib/netx.jar $$(call DIRDEP,$$(dir $$(@)))
 	$(call MSG_COMPILE,liveconnect,$(words $?) sources,$@,JAVA)
 	@echo $? > $(liveconnect_JAVASRCLIST).rsp
 	$(PATH_BOOTSTRAP_JDK)/bin/javac $(IT_JAVACFLAGS) \

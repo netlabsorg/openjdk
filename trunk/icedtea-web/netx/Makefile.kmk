@@ -33,14 +33,14 @@ $$(netx_MANIFEST): $(PATH_ROOT)/netx.manifest.in | $$(call DIRDEP,$$(dir $$(@)))
          s/@FULL_VERSION@/$(FULL_VERSION)/g; " < $^ > $@
 
 $$(netx_JAVASRCLIST): $(MAKEFILE) | $$(call DIRDEP,$$(dir $$(@)))
-	@echo 'JAVASRC = \' > $@
+	@echo 'netx_JAVASRC = \' > $@
 	find $(netx_JAVASRCDIRS) -name '*.java' \
         $(if $(WITH_RHINO),,! -name '*RhinoBasedPacEvaluator*') \
         $(if $(HAVE_TAGSOUP),,! -path '*/net/sourceforge/jnlp/MalformedXMLParser.java') \
         $(if $(HAVE_JAVA7),,! -path '*/net/sourceforge/jnlp/security/VariableX509TrustManagerJDK7.java') \
         -printf '%p \\\n' >> $@
 
-$$(netx_JAVASRCLIST).stamp: $$(JAVASRC) | $$(call DIRDEP,$$(dir $$(@)))
+$$(netx_JAVASRCLIST).stamp: $$(netx_JAVASRC) | $$(call DIRDEP,$$(dir $$(@)))
 	$(call MSG_COMPILE,netx,$(words $?) sources,$@,JAVA)
 	@echo $? > $(netx_JAVASRCLIST).rsp
 	$(PATH_BOOTSTRAP_JDK)/bin/javac $(IT_JAVACFLAGS) \
