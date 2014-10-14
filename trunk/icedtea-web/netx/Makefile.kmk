@@ -36,6 +36,8 @@ $$(netx_JAVASRCLIST): $(MAKEFILE) | $$(call DIRDEP,$$(dir $$(@)))
 	@echo 'JAVASRC = \' > $@
 	find $(netx_JAVASRCDIRS) -name '*.java' \
         $(if $(WITH_RHINO),,! -name '*RhinoBasedPacEvaluator*') \
+        $(if $(HAVE_TAGSOUP),,! -path '*/net/sourceforge/jnlp/MalformedXMLParser.java') \
+        $(if $(HAVE_JAVA7),,! -path '*/net/sourceforge/jnlp/security/VariableX509TrustManagerJDK7.java') \
         -printf '%p \\\n' >> $@
 
 $$(netx_JAVASRCLIST).stamp: $$(JAVASRC) | $$(call DIRDEP,$$(dir $$(@)))
