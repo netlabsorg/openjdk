@@ -51,6 +51,7 @@ class PluginMainBase {
 
     private static int inPipe = -1;
     private static int outPipe = -1;
+    private static int debugPipe = -1;
 
     static boolean checkArgs(String args[]) {
         if (args.length >= 2) {
@@ -59,10 +60,8 @@ class PluginMainBase {
             if (inPipe >= 0 && outPipe >= 0) {
                 DeploymentConfiguration.move14AndOlderFilesTo15StructureCatched();
                 if (JavaConsole.isEnabled()) {
-                    if ((args.length < 3) || !new File(args[2]).exists()) {
+                    if ((args.length < 3) || (debugPipe = Integer.valueOf(args[2]).intValue()) < 0) {
                         OutputController.getLogger().log(OutputController.Level.ERROR_ALL, "Warning, although console is on, plugin debug connection do not exists. No plugin information will be displayed in console (only java ones).");
-                    } else {
-                        JavaConsole.getConsole().createPluginReader(new File(args[2]));
                     }
                 }
                 return true;
@@ -80,6 +79,11 @@ class PluginMainBase {
         FileDescriptor outPipeFD = new FileDescriptor();
         fdAccess.set(outPipeFD, outPipe);
         streamHandler = new PluginStreamHandler(new FileInputStream(inPipeFD), new FileOutputStream(outPipeFD));
+        if (JavaConsole.isEnabled() && debugPipe != -1) {
+            FileDescriptor debugPipeFD = new FileDescriptor();
+            fdAccess.set(debugPipeFD, debugPipe);
+            JavaConsole.getConsole().createPluginReader(new FileInputStream(debugPipeFD));
+        }
         PluginDebug.debug("Streams initialized");
         return streamHandler;
     }

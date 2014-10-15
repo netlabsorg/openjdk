@@ -172,8 +172,12 @@ int out_pipe[2] = { -1 };
 gchar* out_pipe_name;
 #endif
 
+#ifdef __OS2__
+int debug_pipe[2] = { -1 };
+#else
 // Applet viewer debug pipe name.
 gchar* debug_pipe_name = NULL;
+#endif
 
 // Applet viewer output watch source.
 gint out_watch_source;
@@ -587,6 +591,15 @@ NPError start_jvm_if_needed()
   // debug pipe.
   initialize_debug();//should be already initialized, but...
   if (plugin_debug_to_console){
+#ifdef __OS2__
+    if (socketpair (AF_LOCAL, SOCK_STREAM, 0, debug_pipe) == -1)
+      {
+        PLUGIN_ERROR ("Failed to create debug pipe", strerror (errno));
+        np_error = NPERR_GENERIC_ERROR;
+        goto cleanup_debug_pipe;
+      }
+    PLUGIN_DEBUG ("ITNP_New: created debug fifo: %d/%d\n", debug_pipe [0], debug_pipe [1]);
+#else
     // debug_pipe_name
     debug_pipe_name = g_strdup_printf ("%s/%d-icedteanp-plugin-debug-to-appletviewer",
                                          data_directory.c_str(), getpid());
@@ -609,6 +622,7 @@ NPError start_jvm_if_needed()
         goto cleanup_debug_pipe_name;
       }
     PLUGIN_DEBUG ("ITNP_New: created debug fifo: %s\n", debug_pipe_name);
+#endif
   }
 
   // Start a separate appletviewer process for each applet, even if
@@ -621,6 +635,8 @@ NPError start_jvm_if_needed()
   // the child's side will not be aborted when the parent closes its end)
   fcntl (in_pipe [0], F_SETFD, FD_CLOEXEC);
   fcntl (out_pipe [0], F_SETFD, FD_CLOEXEC);
+  if (plugin_debug_to_console)
+    fcntl (debug_pipe [0], F_SETFD, FD_CLOEXEC);
 #endif
 
   np_error = plugin_start_appletviewer (data);
@@ -629,6 +645,8 @@ NPError start_jvm_if_needed()
   // close child ends of the pipes (not needed)
   CLOSE_FD (in_pipe [1]);
   CLOSE_FD (out_pipe [1]);
+  if (plugin_debug_to_console)
+    CLOSE_FD (debug_pipe [1]);
 #endif
 
   // Create plugin-to-appletviewer channel.  The default encoding for
@@ -697,8 +715,12 @@ NPError start_jvm_if_needed()
   // the file is UTF-8.
   // debug_to_appletviewer
   if (plugin_debug_to_console){
+#ifdef __OS2__
+    debug_to_appletviewer = g_io_channel_unix_new (debug_pipe [0]);
+#else
     debug_to_appletviewer = g_io_channel_new_file (debug_pipe_name,
                                                  "w", &channel_error);
+#endif
     if (!debug_to_appletviewer)
       {
         if (channel_error)
@@ -753,6 +775,13 @@ NPError start_jvm_if_needed()
     g_io_channel_unref (out_to_appletviewer);
   out_to_appletviewer = NULL;
 
+#ifdef __OS2__
+ cleanup_debug_pipe:
+  if (plugin_debug_to_console){
+    CLOSE_FD (debug_pipe [0]);
+    CLOSE_FD (debug_pipe [1]);
+  }
+#else
   if (plugin_debug_to_console){
     // cleanup_debug_pipe:
     // Delete output pipe.
@@ -765,8 +794,7 @@ NPError start_jvm_if_needed()
     g_free (debug_pipe_name);
     debug_pipe_name = NULL;
   }
-
-
+#endif
 
   // cleanup_out_pipe:
 #ifdef __OS2__
@@ -1635,13 +1663,15 @@ plugin_start_appletviewer (ITNPPluginData* data)
 #ifdef __OS2__
   command_line.push_back(static_cast<std::ostringstream &>(std::ostringstream() << out_pipe[1]).str());
   command_line.push_back(static_cast<std::ostringstream &>(std::ostringstream() << in_pipe[1]).str());
+  if (plugin_debug_to_console)
+    command_line.push_back(static_cast<std::ostringstream &>(std::ostringstream() << debug_pipe[1]).str());
 #else
   command_line.push_back(out_pipe_name);
   command_line.push_back(in_pipe_name);
-#endif
   if (plugin_debug_to_console){
       command_line.push_back(debug_pipe_name);
   }
+#endif
 
   // Finished command line parameters
 
@@ -2439,6 +2469,10 @@ OSCALL NP_Shutdown (void)
      g_io_channel_unref (debug_to_appletviewer);
     out_to_appletviewer = NULL;
     // cleanup_debug_pipe:
+#ifdef __OS2__
+    CLOSE_FD (debug_pipe [0]);
+    CLOSE_FD (debug_pipe [1]);
+#else
     // Delete debug pipe.
     PLUGIN_DEBUG ("NP_Shutdown: deleting debug fifo: %s\n", debug_pipe_name);
     unlink (debug_pipe_name);
@@ -2446,6 +2480,7 @@ OSCALL NP_Shutdown (void)
     // cleanup_out_pipe_name:
     g_free (debug_pipe_name);
     debug_pipe_name = NULL;
+#endif
   }
   
   // Destroy the call queue mutex

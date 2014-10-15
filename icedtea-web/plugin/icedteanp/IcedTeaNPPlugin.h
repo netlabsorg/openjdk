@@ -133,7 +133,11 @@ extern bool plugin_debug_to_system;
 extern bool plugin_debug_to_console;
 extern FILE * plugin_file_log;
 extern std::string plugin_file_log_name;
+#ifdef __OS2__
+extern int debug_pipe[2];
+#else
 extern gchar* debug_pipe_name;
+#endif
 
 extern gboolean jvm_up;
 
