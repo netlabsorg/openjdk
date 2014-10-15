@@ -50,6 +50,7 @@ import java.awt.event.WindowEvent;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -534,15 +535,16 @@ public class JavaConsole implements ObservableMessagesProvider {
         return observable;
     }
 
-    public void createPluginReader(final File file) {
-        OutputController.getLogger().log("Starting processing of plugin-debug-to-console " + file.getAbsolutePath());
+    public void createPluginReader(final InputStream inputstream) {
+        OutputController.getLogger().log("Starting processing of plugin-debug-to-console " + inputstream);
         Thread t = new Thread(new Runnable() {
 
             @Override
             public void run() {
+                OutputController.getLogger().log("Started processing of plugin-debug-to-console " + inputstream);
                 BufferedReader br = null;
                 try {
-                    br = new BufferedReader(new InputStreamReader(new FileInputStream(file),
+                    br = new BufferedReader(new InputStreamReader(inputstream,
                             Charset.forName("UTF-8")));
                     //never ending loop
                     while (true) {
@@ -566,12 +568,19 @@ public class JavaConsole implements ObservableMessagesProvider {
                         }
                     }
                 }
-                OutputController.getLogger().log("Ended processing of plugin-debug-to-console " + file.getAbsolutePath());
+                OutputController.getLogger().log("Ended processing of plugin-debug-to-console " + inputstream);
             }
         }, "plugin-debug-to-console reader thread");
         t.setDaemon(true);
         t.start();
+    }
 
-        OutputController.getLogger().log("Started processing of plugin-debug-to-console " + file.getAbsolutePath());
+    public void createPluginReader(final File file) {
+        OutputController.getLogger().log("Starting processing of plugin-debug-to-console " + file.getAbsolutePath());
+        try {
+            createPluginReader(new FileInputStream(file));
+        } catch (Exception ex) {
+            OutputController.getLogger().log(ex);
+        }
     }
 }

@@ -1206,11 +1206,17 @@ void IcedTeaPluginUtilities::printDebugStatus(){
           PLUGIN_DEBUG("plugin_debug_to_system: false\n");
         } 
         if (plugin_debug_to_console){ 
+#ifdef __OS2__
+          if (debug_pipe[0] != -1){
+            PLUGIN_DEBUG("plugin_debug_to_console: true, pipe %d\n", debug_pipe[0]);
+          }
+#else
           if (debug_pipe_name){
             PLUGIN_DEBUG("plugin_debug_to_console: true, pipe %s\n", debug_pipe_name);
           } else {
             PLUGIN_DEBUG("plugin_debug_to_console: true, pipe not yet known or broken\n");
           }
+#endif
         } else {
           PLUGIN_DEBUG("plugin_debug_to_console: false\n"); 
         } 
