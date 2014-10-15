@@ -58,6 +58,35 @@ exception statement from your version. */
  tested.
 */
 
+#ifdef __EMX__
+// getpwuid isn't fully implemented yet, let the env vars override it
+struct passwd *my_getpwuid(uid_t uid)
+{
+    static struct passwd pw_buf;
+
+    struct passwd *pw = getpwuid(uid);
+    if (pw)
+        memcpy(&pw_buf, pw, sizeof(struct passwd));
+    else
+        return 0;
+
+    char *env_var;
+    env_var = getenv("HOME");
+    if (env_var && env_var[0]) {
+        pw_buf.pw_dir = env_var;
+        while (*env_var) {
+            if (*env_var == '\\')
+                *env_var = '/';
+            ++env_var;
+        }
+    }
+
+    return &pw_buf;
+}
+#undef getpwuid
+#define getpwuid my_getpwuid
+#endif
+
 using namespace std;
 //private api
 
