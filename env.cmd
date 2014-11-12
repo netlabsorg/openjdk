@@ -256,6 +256,24 @@ if (\fRelease & \fMake) then do
     call EnvSet 'JAVA_TOOL_OPTIONS', '-XX:+UseOSErrorReporting'
 end
 
+/* Special hotspot build setup */
+if (fMake & wordpos('hotspot', fTargets) > 0) then do
+
+    /* Only build the clent JVM to speed up the rebuild cycle */
+    call EnvSet 'BUILD_CLIENT_ONLY', '1'
+
+    /* Also manually copy JVM.DLL to the right location as the hotspot target doesn't do so */
+    if (fProductRelease) then
+        build_path = DosSlashes(EnvGet('ALT_OUTPUTDIR'))
+    else do
+        build_path = ScriptDir'openjdk\build\os2-i586'
+        if (wordpos('debug_build', aArgs) > 0) then build_path = build_path'-debug'
+        else if (wordpos('fastdebug_build') > 0) then build_path = build_path'-fastdebug'
+    end
+    ExtraArgs = 'xcopy' build_path'\hotspot\import\jre\bin\client\*' build_path'\bin\client\'
+    aArgs = aArgs '&&' ExtraArgs 
+end
+
 /*
  * finally, start the command
  */
@@ -286,7 +304,7 @@ end
 else do
     if (G.LOG_FILE \== '' & aArgs \= '') then do
         /* copy all output to the log file */
-        aArgs = aArgs '2>&1 | tee' G.LOG_FILE
+        aArgs = '('aArgs') 2>&1 | tee' G.LOG_FILE
     end
     call EnvSet 'SE_CMD_ARGS', aArgs
 end
