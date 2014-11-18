@@ -548,7 +548,7 @@ public class PluginAppletViewer extends PluginAppletViewerBase
                            !status.containsKey(identifier) ||
                             status.get(identifier).equals(PAV_INIT_STATUS.PRE_INIT)
                          ))
-                    ;
+                    Thread.currentThread().yield();
 
                 // don't bother processing further for inactive applets
                 if (status.get(identifier).equals(PAV_INIT_STATUS.INACTIVE)) {
