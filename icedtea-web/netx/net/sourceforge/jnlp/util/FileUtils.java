@@ -216,7 +216,7 @@ public final class FileUtils {
             }
         }
 
-        if (JNLPRuntime.isWindows()) {
+        if (JNLPRuntime.OS_DOS_LIKE) {
             // remove all permissions
             if (!tempFile.setExecutable(false, false)) {
                 OutputController.getLogger().log(OutputController.Level.ERROR_ALL, R("RRemoveXPermFailed", tempFile));
@@ -242,6 +242,11 @@ public final class FileUtils {
             if (isDir && !tempFile.setExecutable(true, true)) {
                 OutputController.getLogger().log(OutputController.Level.ERROR_ALL, R("RGetXPermFailed", tempFile));
             }
+
+            // On OS/2 and Windows, renameTo() fails if the target exists
+            // so delete it first
+            file.delete();
+
             // rename this file. Unless the file is moved/renamed, any program that
             // opened the file right after it was created might still be able to
             // read the data.
@@ -249,45 +254,38 @@ public final class FileUtils {
                 OutputController.getLogger().log(OutputController.Level.ERROR_ALL, R("RCantRename", tempFile, file));
             }
         } else {
-        // remove all permissions
-        if (!Defaults.OS_DOS_LIKE) {
+            // remove all permissions
             if (!tempFile.setExecutable(false, false)) {
                 throw new IOException(R("RRemoveXPermFailed", tempFile));
             }
             if (!tempFile.setReadable(false, false)) {
                 throw new IOException(R("RRemoveRPermFailed", tempFile));
             }
-        }
-        if (!tempFile.setWritable(false, false)) {
-            throw new IOException(R("RRemoveWPermFailed", tempFile));
-        }
+            if (!tempFile.setWritable(false, false)) {
+                throw new IOException(R("RRemoveWPermFailed", tempFile));
+            }
 
-        // allow owner to read
-        if (!tempFile.setReadable(true, true)) {
-            throw new IOException(R("RGetRPermFailed", tempFile));
-        }
+            // allow owner to read
+            if (!tempFile.setReadable(true, true)) {
+                throw new IOException(R("RGetRPermFailed", tempFile));
+            }
 
-        // allow owner to write
-        if (writableByOwner && !tempFile.setWritable(true, true)) {
-            throw new IOException(R("RGetWPermFailed", tempFile));
-        }
+            // allow owner to write
+            if (writableByOwner && !tempFile.setWritable(true, true)) {
+                throw new IOException(R("RGetWPermFailed", tempFile));
+            }
 
-        // allow owner to enter directories
-        if (isDir && !tempFile.setExecutable(true, true)) {
-            throw new IOException(R("RGetXPermFailed", tempFile));
-        }
-        
-        // rename this file. Unless the file is moved/renamed, any program that
-        // opened the file right after it was created might still be able to
-        // read the data.
-        if (Defaults.OS_DOS_LIKE) {
-            // On OS/2 and Windows, renameTo() fails if the target exists
-            // so delete it first
-            file.delete();
-        }
-        if (!tempFile.renameTo(file)) {
-            throw new IOException(R("RCantRename", tempFile, file));
-        }
+            // allow owner to enter directories
+            if (isDir && !tempFile.setExecutable(true, true)) {
+                throw new IOException(R("RGetXPermFailed", tempFile));
+            }
+
+            // rename this file. Unless the file is moved/renamed, any program that
+            // opened the file right after it was created might still be able to
+            // read the data.
+            if (!tempFile.renameTo(file)) {
+                throw new IOException(R("RCantRename", tempFile, file));
+            }
         }
 
     }
@@ -509,7 +507,7 @@ public final class FileUtils {
      */
     public static FileLock getFileLock(String path, boolean shared, boolean allowBlock) throws FileNotFoundException {
         // @todo temporary solution, see http://svn.netlabs.org/java/ticket/169
-        if (Defaults.OS_DOS_LIKE)
+        if (JNLPRuntime.OS_DOS_LIKE)
             return null;
         RandomAccessFile rafFile = new RandomAccessFile(path, "rw");
         FileChannel fc = rafFile.getChannel();

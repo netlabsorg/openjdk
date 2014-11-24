@@ -65,7 +65,7 @@ public class FirefoxPreferencesFinder {
     public static File find() throws IOException {
 
         String configPath = System.getProperty("user.home") + File.separator
-                + (Defaults.OS_DOS_LIKE ? "Mozilla" : ".mozilla")
+                + (JNLPRuntime.OS_DOS_LIKE ? "Mozilla" : ".mozilla")
                 + File.separator + "firefox" + File.separator;
 
         String profilesPath = configPath + "profiles.ini";

@@ -760,21 +760,32 @@ public class JNLPRuntime {
     }
 
     /**
-     * @return {@code true} if running on Windows
+     * Set to {@code true} if running on Windows.
      */
-    public static boolean isWindows() {
+    public static final boolean OS_WIN;
+
+    /**
+     * Set to {@code true} if running on OS/2.
+     */
+    public static final boolean OS_OS2;
+
+    static {
         String os = System.getProperty("os.name");
-        return (os != null && os.startsWith("Windows"));
+        OS_WIN = os != null && System.getProperty("os.name").startsWith("Windows");
+        OS_OS2 = os != null && System.getProperty("os.name").startsWith("OS/2");
     }
 
     /**
-     * @return {@code true} if running on a Unix or Unix-like system (including
-     * Linux and *BSD)
+     * Set to {@code true} if running on Windows or OS/2.
      */
-    public static boolean isUnix() {
-        String sep = System.getProperty("file.separator");
-        return (sep != null && sep.equals("/"));
-    }
+    public static final boolean OS_DOS_LIKE = OS_WIN || OS_OS2;
+
+    /**
+     * Set to {@code true} if running on Unix or Unix-like system (including
+     * Linux and *BSD). This is pretty much dumb ATM as it simply negates OS_DOS but it's not
+     * dumbier than the method used before (based on 'file.separator' equal to '/').
+     */
+    public static final boolean OS_UNIX_LIKE = !OS_DOS_LIKE;
 
     public static void setInitialArgments(List<String> args) {
         checkInitialized();
