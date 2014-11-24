@@ -80,13 +80,6 @@ public class Defaults {
     }
 
     /**
-     * Whether the OS is a DOS-like (Windows, OS/2) or not.
-     */
-    public static final boolean OS_DOS_LIKE =
-        System.getProperty("os.name").startsWith("OS/2") ||
-        System.getProperty("os.name").contains("Windows");
-
-    /**
      * Get the default settings for deployment
      */
     public static Map<String, Setting<String>> getDefaults() {

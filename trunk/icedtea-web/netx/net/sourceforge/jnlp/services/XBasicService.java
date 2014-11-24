@@ -200,9 +200,9 @@ class XBasicService implements BasicService {
      * Initializes {@link #command} to launch a browser
      */
     private void initializeBrowserCommand() {
-        if (JNLPRuntime.isWindows()) {
+        if (JNLPRuntime.OS_WIN) {
             command = "rundll32 url.dll,FileProtocolHandler ";
-        } else if (JNLPRuntime.isUnix()) {
+        } else if (JNLPRuntime.OS_UNIX_LIKE) {
             DeploymentConfiguration config = JNLPRuntime.getConfiguration();
             command = config.getProperty(DeploymentConfiguration.KEY_BROWSER_PATH);
             if (command != null) {

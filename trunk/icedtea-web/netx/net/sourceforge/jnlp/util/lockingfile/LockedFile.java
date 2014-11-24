@@ -113,7 +113,8 @@ public class LockedFile {
      * Lock access to the file. Lock is reentrant.
      */
     public void lock() throws IOException {
-        if (JNLPRuntime.isWindows()) {
+        // @todo temporary solution, see http://svn.netlabs.org/java/ticket/169
+        if (JNLPRuntime.OS_DOS_LIKE) {
             return;
         }
         // Create if does not already exist, cannot lock non-existing file
@@ -140,7 +141,8 @@ public class LockedFile {
      * Unlock access to the file. Lock is reentrant.
      */
     public void unlock() throws IOException {
-        if (JNLPRuntime.isWindows()) {
+        // @todo temporary solution, see http://svn.netlabs.org/java/ticket/169
+        if (JNLPRuntime.OS_DOS_LIKE) {
             return;
         }
         boolean releaseProcessLock = (this.threadLock.getHoldCount() == 1);
