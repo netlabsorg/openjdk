@@ -346,7 +346,7 @@ public class OutputController {
         private static volatile SingleStreamLogger INSTANCE = initSystemLogger();
 
         private static SingleStreamLogger initSystemLogger() {
-            if (JNLPRuntime.OS_WIN) {
+            if (JNLPRuntime.OS_WIN || JNLPRuntime.OS_OS2) {
                 return new WinSystemLog();
             } else {
                 return new UnixSystemLog();
