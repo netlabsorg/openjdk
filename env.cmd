@@ -267,7 +267,7 @@ if (fMake & wordpos('hotspot', fTargets) > 0) then do
     else do
         build_path = ScriptDir'openjdk\build\os2-i586'
         if (wordpos('debug_build', aArgs) > 0) then build_path = build_path'-debug'
-        else if (wordpos('fastdebug_build') > 0) then build_path = build_path'-fastdebug'
+        else if (wordpos('fastdebug_build', aArgs) > 0) then build_path = build_path'-fastdebug'
     end
     ExtraArgs = 'xcopy' build_path'\hotspot\import\jre\bin\client\*' build_path'\bin\client\'
     aArgs = aArgs '&&' ExtraArgs
