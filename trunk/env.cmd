@@ -143,20 +143,19 @@ if (G.PATH_TOOL_ANT \== '') then do
 end
 
 /*
- * add SVN tools to PATH
- */
-call EnvAddFront 'PATH', ScriptDir'tools\bin'
-call EnvAddFront 'BEGINLIBPATH', ScriptDir'tools\bin'
-
-/*
  * add boot JDK tools to BEGINLIBPATH
  */
 call EnvAddFront 'BEGINLIBPATH', G.PATH_TOOL_BOOT_JDK'\bin'
 
 /*
- * bash is required for the build
+ * POSIX shell is required for the build (dash is recommended).
  */
-call EnvSet 'MAKESHELL', 'bash.exe'
+call EnvSet 'MAKESHELL', 'sh.exe'
+
+/*
+ * Force English messages.
+ */
+call EnvSet 'LANG', 'en_US'
 
 /*
  * these must be always unset
@@ -271,7 +270,7 @@ if (fMake & wordpos('hotspot', fTargets) > 0) then do
         else if (wordpos('fastdebug_build') > 0) then build_path = build_path'-fastdebug'
     end
     ExtraArgs = 'xcopy' build_path'\hotspot\import\jre\bin\client\*' build_path'\bin\client\'
-    aArgs = aArgs '&&' ExtraArgs 
+    aArgs = aArgs '&&' ExtraArgs
 end
 
 /*
