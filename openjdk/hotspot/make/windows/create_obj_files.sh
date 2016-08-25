@@ -19,7 +19,7 @@
 # Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
 # or visit www.oracle.com if you need additional information or have any
 # questions.
-#  
+#
 #
 
 set -e
@@ -108,17 +108,18 @@ case "${Platform_arch_model}" in
 esac
 
 # Locate all source files in the given directory, excluding files in Src_Files_EXCLUDE.
-function findsrc {
+findsrc()
+{
     $FIND ${1}/. ! -name . -prune \
 		-a \( -name \*.c -o -name \*.cpp -o -name \*.s \) \
-		-a \! \( -name ${Src_Files_EXCLUDE// / -o -name } \) \
+		-a \! \( -name `echo ${Src_Files_EXCLUDE} | sed 's/ / -o -name /g'` \) \
 		| sed 's/.*\/\(.*\)/\1/';
 }
 
 Src_Files=
 for e in ${Src_Dirs}; do
    Src_Files="${Src_Files}`findsrc ${e}` "
-done 
+done
 
 Obj_Files=
 for e in ${Src_Files}; do
