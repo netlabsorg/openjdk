@@ -83,10 +83,32 @@ ifdef ALT_UNIXCOMMAND_PATH
   fxALT_UNIXCOMMAND_PATH :=$(call FullPath,$(xALT_UNIXCOMMAND_PATH))
   UNIXCOMMAND_PATH       :=$(call PrefixPath,$(fxALT_UNIXCOMMAND_PATH))
 else
-  # assume commands are in PATH
-  UNIXCOMMAND_PATH :=
+  ifdef UNIXROOT
+    # assume UNIXROOT is properly set (note: /bin is not used on OS/2)
+    UNIXCOMMAND_PATH := $(subst \,/,$(UNIXROOT)/usr/bin/)
+  else
+    # assume commands are in PATH
+    UNIXCOMMAND_PATH :=
+  endif
 endif
 UNIXCOMMAND_PATH:=$(call AltCheckSpaces,UNIXCOMMAND_PATH)
+
+# USRBIN_PATH: path to where the most common Unix commands are.
+#  NOTE: Must end with / so that it could be empty, allowing PATH usage.
+ifdef ALT_USRBIN_PATH
+  xALT_USRBIN_PATH  :="$(subst \,/,$(ALT_USRBIN_PATH))"
+  fxALT_USRBIN_PATH :=$(call FullPath,$(xALT_USRBIN_PATH))
+  USRBIN_PATH       :=$(call PrefixPath,$(fxALT_USRBIN_PATH))
+else
+  ifdef UNIXROOT
+    # assume UNIXROOT is properly set
+    USRBIN_PATH := $(subst \,/,$(UNIXROOT)/usr/bin/)
+  else
+    # assume commands are in PATH
+    USRBIN_PATH :=
+  endif
+endif
+USRBIN_PATH:=$(call AltCheckSpaces,USRBIN_PATH)
 
 # SLASH_JAVA: location of all network accessable files
 ifdef ALT_SLASH_JAVA
