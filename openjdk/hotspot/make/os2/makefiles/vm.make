@@ -87,7 +87,7 @@ endif
 
 Def_File = vm.def
 $(Def_File): $(MAKEFILE)
-	@echo -e 'LIBRARY jvm INITINSTANCE TERMINSTANCE \n \
+	@printf 'LIBRARY jvm INITINSTANCE TERMINSTANCE \n \
 EXPORTS \n \
   _jio_snprintf \n \
   _jio_printf \n \

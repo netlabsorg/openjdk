@@ -166,7 +166,13 @@ endif
 
 # OS/2 specific
 ifeq ($(PLATFORM),os2)
-  ECHO   = $(UTILS_COMMAND_PATH)echo -e
+  # Prefer built-in echo if it does backslash-escaped character
+  # interpretation (e.g. dash echo does)
+  ifeq ($(shell V=`echo "foo\tbar"` ; [ "$${\#V}" = 7 ] ; echo $$?), 0)
+    ECHO = echo
+  else
+    ECHO = $(UTILS_COMMAND_PATH)echo -e
+  endif
   NAWK   = $(UTILS_COMMAND_PATH)awk
 endif
 
