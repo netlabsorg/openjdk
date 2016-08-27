@@ -66,7 +66,6 @@ ifeq ($(PLATFORM), os2)
   LINK         = $(COMPILER_PATH)g++
   AR           = $(COMPILER_PATH)emxomfar
   IMPLIB       = $(COMPILER_PATH)emximp
-  MAPSYM       = mapsym.exe
 
   # Option used to create a shared library
   SHARED_LIBRARY_FLAG = -Zdll
