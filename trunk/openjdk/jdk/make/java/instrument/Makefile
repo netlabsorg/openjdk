@@ -128,9 +128,7 @@ ifeq ($(PLATFORM), os2)
 DEF_FILE = $(OBJDIR)/$(LIBRARY).def
 $(DEF_FILE): $(MAKEFILE_LIST)
 	@$(ECHO) "LIBRARY $(LIBRARY_NAME) INITINSTANCE TERMINSTANCE" > $@
-	@$(ECHO) 'EXPORTS \n \
-  Agent_OnAttach \n \
-' >> $@
+	@$(ECHO) "EXPORTS\n  Agent_OnAttach\n" >> $@
 clean::
 	-$(RM) $(DEF_FILE)
 endif

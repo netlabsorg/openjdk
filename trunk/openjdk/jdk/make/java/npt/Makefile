@@ -75,10 +75,10 @@ ifeq ($(PLATFORM), os2)
 DEF_FILE = $(OBJDIR)/$(LIBRARY).def
 $(DEF_FILE): $(MAKEFILE_LIST)
 	@$(ECHO) "LIBRARY $(LIBRARY_NAME) INITINSTANCE TERMINSTANCE" > $@
-	@$(ECHO) 'EXPORTS \n \
-  nptInitialize \n \
-  nptTerminate \n \
-' >> $@
+	@$(ECHO) "EXPORTS\n\
+  nptInitialize\n\
+  nptTerminate\n\
+" >> $@
 
 clean::
 	-$(RM) $(DEF_FILE)

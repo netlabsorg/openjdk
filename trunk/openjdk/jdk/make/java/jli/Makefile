@@ -105,34 +105,34 @@ JAVALIB =
 DEF_FILE = $(OBJDIR)/$(LIBRARY).def
 $(DEF_FILE): $(MAKEFILE_LIST)
 	@$(ECHO) "LIBRARY $(LIBRARY_NAME) INITINSTANCE TERMINSTANCE" > $@
-	@$(ECHO) 'EXPORTS \n \
-  _JLI_ParseManifest \n \
-  _JLI_JarUnpackFile \n \
-  _JLI_FreeManifest \n \
-  _JLI_ManifestIterate \n \
-  _JLI_ExactVersionId \n \
-  _JLI_PrefixVersionId \n \
-  _JLI_AcceptableRelease \n \
-  _JLI_ValidVersionString \n \
-  _JLI_WildcardExpandClasspath \n \
-  _JLI_MemAlloc \n \
-  _JLI_MemRealloc \n \
-  _JLI_StringDup \n \
-  _JLI_MemFree \n \
-  JLI_ParseManifest = _JLI_ParseManifest \n \
-  JLI_JarUnpackFile = _JLI_JarUnpackFile \n \
-  JLI_FreeManifest = _JLI_FreeManifest \n \
-  JLI_ManifestIterate = _JLI_ManifestIterate \n \
-  JLI_ExactVersionId = _JLI_ExactVersionId \n \
-  JLI_PrefixVersionId = _JLI_PrefixVersionId \n \
-  JLI_AcceptableRelease = _JLI_AcceptableRelease \n \
-  JLI_ValidVersionString = _JLI_ValidVersionString \n \
-  JLI_WildcardExpandClasspath = _JLI_WildcardExpandClasspath \n \
-  JLI_MemAlloc = _JLI_MemAlloc \n \
-  JLI_MemRealloc = _JLI_MemRealloc \n \
-  JLI_StringDup = _JLI_StringDup \n \
-  JLI_MemFree = _JLI_MemFree \n \
-' >> $@
+	@$(ECHO) "EXPORTS\n\
+  _JLI_ParseManifest\n\
+  _JLI_JarUnpackFile\n\
+  _JLI_FreeManifest\n\
+  _JLI_ManifestIterate\n\
+  _JLI_ExactVersionId\n\
+  _JLI_PrefixVersionId\n\
+  _JLI_AcceptableRelease\n\
+  _JLI_ValidVersionString\n\
+  _JLI_WildcardExpandClasspath\n\
+  _JLI_MemAlloc\n\
+  _JLI_MemRealloc\n\
+  _JLI_StringDup\n\
+  _JLI_MemFree\n\
+  JLI_ParseManifest = _JLI_ParseManifest\n\
+  JLI_JarUnpackFile = _JLI_JarUnpackFile\n\
+  JLI_FreeManifest = _JLI_FreeManifest\n\
+  JLI_ManifestIterate = _JLI_ManifestIterate\n\
+  JLI_ExactVersionId = _JLI_ExactVersionId\n\
+  JLI_PrefixVersionId = _JLI_PrefixVersionId\n\
+  JLI_AcceptableRelease = _JLI_AcceptableRelease\n\
+  JLI_ValidVersionString = _JLI_ValidVersionString\n\
+  JLI_WildcardExpandClasspath = _JLI_WildcardExpandClasspath\n\
+  JLI_MemAlloc = _JLI_MemAlloc\n\
+  JLI_MemRealloc = _JLI_MemRealloc\n\
+  JLI_StringDup = _JLI_StringDup\n\
+  JLI_MemFree = _JLI_MemFree\n\
+" >> $@
 
 clean::
 	-$(RM) $(DEF_FILE)

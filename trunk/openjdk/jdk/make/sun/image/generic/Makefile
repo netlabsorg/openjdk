@@ -60,15 +60,15 @@ ifeq ($(PLATFORM), os2)
 DEF_FILE = $(OBJDIR)/$(LIBRARY).def
 $(DEF_FILE): $(MAKEFILE_LIST)
 	@$(ECHO) "LIBRARY $(LIBRARY_NAME) INITINSTANCE TERMINSTANCE" > $@
-	@$(ECHO) 'EXPORTS \n \
-  j2d_mlib_ImageConvMxN = _j2d_mlib_ImageConvMxN \n \
-  j2d_mlib_ImageConvKernelConvert = _j2d_mlib_ImageConvKernelConvert \n \
-  j2d_mlib_ImageCreateStruct = _j2d_mlib_ImageCreateStruct \n \
-  j2d_mlib_ImageCreate = _j2d_mlib_ImageCreate \n \
-  j2d_mlib_ImageDelete = _j2d_mlib_ImageDelete \n \
-  j2d_mlib_ImageAffine = _j2d_mlib_ImageAffine \n \
-  j2d_mlib_ImageLookUp = _j2d_mlib_ImageLookUp \n \
-' >> $@
+	@$(ECHO) "EXPORTS\n\
+  j2d_mlib_ImageConvMxN = _j2d_mlib_ImageConvMxN\n\
+  j2d_mlib_ImageConvKernelConvert = _j2d_mlib_ImageConvKernelConvert\n\
+  j2d_mlib_ImageCreateStruct = _j2d_mlib_ImageCreateStruct\n\
+  j2d_mlib_ImageCreate = _j2d_mlib_ImageCreate\n\
+  j2d_mlib_ImageDelete = _j2d_mlib_ImageDelete\n\
+  j2d_mlib_ImageAffine = _j2d_mlib_ImageAffine\n\
+  j2d_mlib_ImageLookUp = _j2d_mlib_ImageLookUp\n\
+" >> $@
 
 clean::
 	-$(RM) $(DEF_FILE)
