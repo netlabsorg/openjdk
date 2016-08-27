@@ -87,11 +87,9 @@ LINK_FLAGS = \
 
 ifeq ($(EMXOMFLD_TYPE), WLINK)
   LINK_FLAGS += -Zlinker "DISABLE 1121"
-  MAPSYM = wmapsym.cmd
 endif
 ifeq ($(EMXOMFLD_TYPE), VAC308)
   LINK_FLAGS += -Zlinker /OPTFUNC
-  MAPSYM = mapsym.exe
 endif
  
 IMPLIB = emximp

@@ -336,14 +336,12 @@ $(TZMAP): $(TZMAPFILE)
 endif
 
 #
-# On OS/2, save .MAP and .SYM files for JAVA.DLL under a different
+# On OS/2, save .MAP files for JAVA.DLL under a different
 # name since they clash with those from JAVA.EXE built later
 #
 ifeq ($(PLATFORM), os2)
-build: $(BINDIR)/$(LIBRARY).dll.map $(BINDIR)/$(LIBRARY).dll.sym
+build: $(BINDIR)/$(LIBRARY).dll.map
 $(BINDIR)/$(LIBRARY).dll.map: $(BINDIR)/$(LIBRARY).map
-	$(CP) $^ $@
-$(BINDIR)/$(LIBRARY).dll.sym: $(BINDIR)/$(LIBRARY).sym
 	$(CP) $^ $@
 endif
 

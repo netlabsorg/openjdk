@@ -53,7 +53,6 @@ JVM_NAME               = $(LIB_PREFIX)jvm.$(LIBRARY_SUFFIX)
 JVMLIB_NAME            = $(LIB_PREFIX)jvm.$(LIB_SUFFIX)
 JVMMAP_NAME            = $(LIB_PREFIX)jvm.map
 JVMPDB_NAME            = $(LIB_PREFIX)jvm.pdb
-JVMSYM_NAME            = $(LIB_PREFIX)jvm.sym
 LIBJSIG_NAME           = $(LIB_PREFIX)jsig.$(LIBRARY_SUFFIX)
 JVMDB_NAME             = $(LIB_PREFIX)jvm$(DB_SUFFIX).$(LIBRARY_SUFFIX)
 
@@ -159,20 +158,18 @@ else # PLATFORM == windows
 ifeq ($(PLATFORM), os2)
 #  OS/2        vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv  OS/2
 
-# Get the hotspot .map and .sym files for client and server
+# Get the hotspot .map files for client and server
 IMPORT_LIST += \
 	$(LIBDIR)/$(JVMLIB_NAME)
 
 ifndef BUILD_CLIENT_ONLY
 IMPORT_LIST += \
-	$(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVMMAP_NAME) \
-	$(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVMSYM_NAME)
+	$(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVMMAP_NAME)
 endif
 
 # Hotspot client is only available on 32-bit builds
 ifeq ($(ARCH_DATA_MODEL), 32)
-  IMPORT_LIST += $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(JVMMAP_NAME) \
-                 $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(JVMSYM_NAME)
+  IMPORT_LIST += $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(JVMMAP_NAME)
 endif
 
 $(LIBDIR)/$(JVMLIB_NAME): $(HOTSPOT_LIB_PATH)/$(JVMLIB_NAME)
@@ -182,12 +179,6 @@ $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(JVMMAP_NAME): $(HOTSPOT_CLIENT_PATH)/$(JVMM
 	$(install-import-file)
 
 $(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVMMAP_NAME): $(HOTSPOT_SERVER_PATH)/$(JVMMAP_NAME)
-	$(install-import-file)
-
-$(LIB_LOCATION)/$(CLIENT_LOCATION)/$(JVMSYM_NAME): $(HOTSPOT_CLIENT_PATH)/$(JVMSYM_NAME)
-	$(install-import-file)
-
-$(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVMSYM_NAME): $(HOTSPOT_SERVER_PATH)/$(JVMSYM_NAME)
 	$(install-import-file)
 
 #  OS/2        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  OS/2

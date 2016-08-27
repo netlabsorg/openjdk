@@ -67,13 +67,6 @@ ifeq ($(PLATFORM), os2)
   AR           = $(COMPILER_PATH)emxomfar
   IMPLIB       = $(COMPILER_PATH)emximp
 
-  ifeq ($(EMXOMFLD_TYPE), WLINK)
-    MAPSYM = wmapsym.cmd
-  endif
-  ifeq ($(EMXOMFLD_TYPE), VAC308)
-    MAPSYM = mapsym.exe
-  endif
-
   # Option used to create a shared library
   SHARED_LIBRARY_FLAG = -Zdll
   ifeq ($(EMXOMFLD_TYPE), VAC308)

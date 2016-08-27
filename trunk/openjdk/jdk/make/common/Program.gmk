@@ -170,7 +170,6 @@ $(ACTUAL_PROGRAM):: $(FILES_o)
 	@set -- $?; \
 	    $(ECHO) Rebuilding $@ because of $$1 $$2 $$3 $$4 $$5 $$6 $${7:+...};
 	$(LINK) $(LDFLAGS) -Zstack 0x2000 -o $@ $(FILES_o) $(LDLIBS)
-	cd $(@D) && $(MAPSYM) $(basename $(@F)).map
 
 else # PLATFORM == os2
 
@@ -218,7 +217,6 @@ ifeq ($(PLATFORM), os2)
 	$(RM) $(OBJDIR)/$(PROGRAM).map
 	$(RM) $(OBJDIR)/$(PROGRAM).lib
 	$(RM) $(OBJDIR)/$(PROGRAM)$(EXE_SUFFIX)
-	$(RM) *.sym
 endif
 
 
