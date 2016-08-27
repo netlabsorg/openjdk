@@ -65,18 +65,13 @@ OTHER_LCF = -export:DLL_Initialize
 endif
 
 ifeq ($(PLATFORM),os2)
-
 # exports live in .def file
 DEF_FILE = $(OBJDIR)/$(LIBRARY).def
 $(DEF_FILE): $(MAKEFILE_LIST)
 	@$(ECHO) "LIBRARY $(LIBRARY_NAME) INITINSTANCE TERMINSTANCE" > $@
-	@$(ECHO) 'EXPORTS \n \
-  DLL_Initialize \n \
-' >> $@
-
+	@$(ECHO) "EXPORTS\n  DLL_Initialize\n" >> $@
 clean::
 	-$(RM) $(DEF_FILE)
-
 endif
 
 #

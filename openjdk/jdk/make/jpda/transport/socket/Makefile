@@ -97,9 +97,9 @@ vpath %.c $(PLATFORM_SRC_OS2)/transport/socket
 DEF_FILE = $(OBJDIR)/$(LIBRARY).def
 $(DEF_FILE): $(MAKEFILE_LIST)
 	@$(ECHO) "LIBRARY $(LIBRARY_NAME) INITINSTANCE TERMINSTANCE" > $@
-	@$(ECHO) 'EXPORTS \n \
-  jdwpTransport_OnLoad \n \
-' >> $@
+	@$(ECHO) "EXPORTS\n\
+  jdwpTransport_OnLoad\n\
+" >> $@
 
 clean::
 	-$(RM) $(DEF_FILE)

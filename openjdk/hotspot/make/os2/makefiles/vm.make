@@ -82,20 +82,20 @@ CPP_FLAGS += -D_JNI_IMPLEMENTATION_
 ifeq ($(Variant), kernel)
 AGCT_EXPORT=
 else
-AGCT_EXPORT=_AsyncGetCallTrace \n  AsyncGetCallTrace = _AsyncGetCallTrace \n
+AGCT_EXPORT=_AsyncGetCallTrace\n  AsyncGetCallTrace=_AsyncGetCallTrace\n
 endif
 
 Def_File = vm.def
 $(Def_File): $(MAKEFILE)
-	@printf 'LIBRARY jvm INITINSTANCE TERMINSTANCE \n \
-EXPORTS \n \
-  _jio_snprintf \n \
-  _jio_printf \n \
-  _jio_fprintf \n \
-  _jio_vfprintf \n \
-  _jio_vsnprintf \n \
-  $(AGCT_EXPORT) \
-' > $(Def_File)
+	@printf "LIBRARY jvm INITINSTANCE TERMINSTANCE\n\
+EXPORTS\n\
+  _jio_snprintf\n\
+  _jio_printf\n\
+  _jio_fprintf\n\
+  _jio_vfprintf\n\
+  _jio_vsnprintf\n\
+  $(AGCT_EXPORT)\
+" > $(Def_File)
 
 LINK_FLAGS += -Zdll
 
