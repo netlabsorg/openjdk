@@ -73,7 +73,7 @@ $(DEF_FILE): $(MAKEFILE_LIST)
   _jio_snprintf\n\
   jio_fprintf = _jio_fprintf\n\
   jio_snprintf = _jio_snprintf\n\
-  NewStringPlatform = _NewStringPlatform n\
+  NewStringPlatform = _NewStringPlatform\n\
   VerifyClassCodesForMajorVersion = _VerifyClassCodesForMajorVersion\n\
   VerifyClassCodes = _VerifyClassCodes\n\
   _winFileHandleOpen\n\
